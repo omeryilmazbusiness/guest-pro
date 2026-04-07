@@ -1,28 +1,36 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { 
-  useCreateChatSession, 
-  useGetChatMessages, 
+import {
+  useCreateChatSession,
+  useGetChatMessages,
   useSendMessage,
   useGetHotelBranding,
-  useListQuickActions
+  useListQuickActions,
+  useLogout,
 } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
-import { LogOut, Send, Loader2, MapPin, Calendar, Sparkles } from "lucide-react";
+import { LogOut, Send, Loader2, MapPin, Calendar, Sparkles, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useLogout } from "@workspace/api-client-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import ReactMarkdown from "react-markdown";
 import type { Message } from "@workspace/api-client-react/generated/api.schemas";
+
+const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
+  "map-pin": MapPin,
+  "calendar": Calendar,
+  "phone": Phone,
+  "activity": Calendar,
+};
 
 export default function GuestDashboard() {
   const { user, isAuthenticated, logoutAuth } = useAuth();
   const [, setLocation] = useLocation();
   const logoutMutation = useLogout();
-  
+
   const createSessionMutation = useCreateChatSession();
   const sendMessageMutation = useSendMessage();
-  
+
   const { data: branding } = useGetHotelBranding();
   const { data: quickActions } = useListQuickActions();
 
@@ -31,14 +39,13 @@ export default function GuestDashboard() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { data: messages, isLoading: messagesLoading, refetch: refetchMessages } = useGetChatMessages(
-    sessionId!,
-    {
-      query: {
-        enabled: !!sessionId,
-      }
-    }
-  );
+  const {
+    data: messages,
+    isLoading: messagesLoading,
+    refetch: refetchMessages,
+  } = useGetChatMessages(sessionId!, {
+    query: { enabled: !!sessionId },
+  });
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -53,10 +60,10 @@ export default function GuestDashboard() {
       createSessionMutation.mutate(undefined, {
         onSuccess: (session) => {
           setSessionId(session.id);
-        }
+        },
       });
     }
-  }, [isAuthenticated, user, sessionId, createSessionMutation]);
+  }, [isAuthenticated, user, sessionId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -86,47 +93,43 @@ export default function GuestDashboard() {
         },
         onError: (err) => {
           toast.error("Failed to send message: " + (err.data?.error || "Unknown error"));
-          // Put the text back if it failed
           setInputValue(content);
-        }
+        },
       }
     );
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend(inputValue);
     }
   };
 
   const handleLogout = () => {
-    logoutMutation.mutate(undefined, {
-      onSuccess: () => {
-        logoutAuth();
-        toast.success("Checkout successful");
-      }
-    });
+    logoutAuth();
+    logoutMutation.mutate(undefined);
+    toast.success("You've checked out. Safe travels!");
   };
 
   if (!isAuthenticated || user?.role !== "guest") return null;
 
   return (
     <div className="flex flex-col h-[100dvh] bg-[#FAFAFA]">
-      <header className="bg-white/80 backdrop-blur-md border-b border-zinc-100 shrink-0 sticky top-0 z-20">
+      <header className="bg-white/90 backdrop-blur-md border-b border-zinc-100 shrink-0 sticky top-0 z-20">
         <div className="max-w-3xl mx-auto px-4 md:px-8 h-20 flex items-center justify-between">
           <div>
             <h1 className="font-serif text-xl font-medium text-zinc-900">
               {branding?.appName || "Guest Pro"}
             </h1>
             <p className="text-xs text-zinc-500 font-medium">
-              Welcome, {user.firstName} • Room {user.roomNumber}
+              Welcome, {user.firstName} &bull; Room {user.roomNumber}
             </p>
           </div>
-          <Button 
+          <Button
             data-testid="button-checkout"
-            variant="ghost" 
-            size="sm" 
+            variant="ghost"
+            size="sm"
             onClick={handleLogout}
             className="text-zinc-500 hover:text-zinc-900 rounded-xl"
           >
@@ -151,38 +154,58 @@ export default function GuestDashboard() {
               <Sparkles className="w-10 h-10 text-zinc-400" />
             </div>
             <h2 className="text-3xl font-serif text-zinc-800">
-              {branding?.welcomeText || `Good to see you, ${user.firstName}`}
+              {branding?.welcomeText
+                ? branding.welcomeText.split("!")[0] + "!"
+                : `Good to see you, ${user.firstName}`}
             </h2>
             <p className="text-zinc-500 max-w-sm mx-auto text-lg leading-relaxed">
-              I am your personal concierge. How can I make your stay exceptional today?
+              I&apos;m your personal concierge. How can I make your stay exceptional today?
             </p>
           </div>
         ) : (
           <div className="space-y-6 pb-4">
-            {messages?.filter(m => m.role !== "system").map((msg: Message) => (
-              <div 
-                key={msg.id} 
-                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div 
-                  className={`max-w-[85%] px-5 py-4 text-[15px] leading-relaxed shadow-sm
-                    ${msg.role === "user" 
-                      ? "bg-zinc-900 text-white rounded-3xl rounded-tr-sm" 
-                      : "bg-white text-zinc-800 rounded-3xl rounded-tl-sm border border-zinc-100"
-                    }`}
+            {messages
+              ?.filter((m: Message) => m.role !== "system")
+              .map((msg: Message) => (
+                <div
+                  key={msg.id}
+                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 >
-                  {msg.content}
+                  <div
+                    className={`max-w-[85%] px-5 py-4 text-[15px] leading-relaxed shadow-sm
+                    ${
+                      msg.role === "user"
+                        ? "bg-zinc-900 text-white rounded-3xl rounded-tr-sm"
+                        : "bg-white text-zinc-800 rounded-3xl rounded-tl-sm border border-zinc-100"
+                    }`}
+                  >
+                    {msg.role === "assistant" ? (
+                      <div className="prose prose-sm prose-zinc max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-headings:my-1 prose-strong:font-semibold">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      msg.content
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-            
+              ))}
+
             {sendMessageMutation.isPending && (
               <div className="flex justify-start">
                 <div className="bg-white border border-zinc-100 rounded-3xl rounded-tl-sm px-6 py-5 shadow-sm">
                   <div className="flex gap-1.5 items-center">
-                    <span className="w-2 h-2 rounded-full bg-zinc-300 animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-2 h-2 rounded-full bg-zinc-300 animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-2 h-2 rounded-full bg-zinc-300 animate-bounce" style={{ animationDelay: "300ms" }} />
+                    <span
+                      className="w-2 h-2 rounded-full bg-zinc-300 animate-bounce"
+                      style={{ animationDelay: "0ms" }}
+                    />
+                    <span
+                      className="w-2 h-2 rounded-full bg-zinc-300 animate-bounce"
+                      style={{ animationDelay: "150ms" }}
+                    />
+                    <span
+                      className="w-2 h-2 rounded-full bg-zinc-300 animate-bounce"
+                      style={{ animationDelay: "300ms" }}
+                    />
                   </div>
                 </div>
               </div>
@@ -194,25 +217,28 @@ export default function GuestDashboard() {
 
       <div className="bg-[#FAFAFA] shrink-0 sticky bottom-0 z-20 pb-safe">
         <div className="max-w-3xl mx-auto px-4 py-4 space-y-4">
-          {/* Quick Actions */}
-          {!messagesLoading && messages?.length === 0 && quickActions && quickActions.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory">
-              {quickActions.map(action => (
-                <button
-                  key={action.id}
-                  data-testid={`quick-action-${action.id}`}
-                  onClick={() => handleSend(action.label)}
-                  className="shrink-0 snap-start bg-white border border-zinc-200 shadow-sm px-4 py-2.5 rounded-full text-sm font-medium text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300 transition-colors whitespace-nowrap flex items-center gap-2"
-                >
-                  {action.icon === "map-pin" && <MapPin className="w-4 h-4 text-zinc-400" />}
-                  {action.icon === "calendar" && <Calendar className="w-4 h-4 text-zinc-400" />}
-                  {action.label}
-                </button>
-              ))}
-            </div>
-          )}
+          {!messagesLoading &&
+            messages?.length === 0 &&
+            quickActions &&
+            quickActions.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory">
+                {quickActions.map((action) => {
+                  const IconComponent = ICON_MAP[action.icon ?? ""] ?? MapPin;
+                  return (
+                    <button
+                      key={action.id}
+                      data-testid={`quick-action-${action.id}`}
+                      onClick={() => handleSend(action.label)}
+                      className="shrink-0 snap-start bg-white border border-zinc-200 shadow-sm px-4 py-2.5 rounded-full text-sm font-medium text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300 transition-colors whitespace-nowrap flex items-center gap-2"
+                    >
+                      <IconComponent className="w-4 h-4 text-zinc-400" />
+                      {action.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
-          {/* Premium Input Bar */}
           <div className="relative">
             <div className="premium-gradient-border rounded-3xl bg-white shadow-xl shadow-zinc-200/50 flex items-end p-2 relative z-10">
               <textarea
@@ -227,19 +253,26 @@ export default function GuestDashboard() {
                 disabled={sendMessageMutation.isPending || !sessionId}
               />
               <div className="p-1 shrink-0">
-                <Button 
+                <Button
                   data-testid="button-send"
                   size="icon"
-                  className={`w-12 h-12 rounded-2xl transition-all duration-300 ${inputValue.trim() ? 'bg-zinc-900 hover:bg-zinc-800 text-white shadow-md' : 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200'}`}
+                  className={`w-12 h-12 rounded-2xl transition-all duration-300 ${
+                    inputValue.trim()
+                      ? "bg-zinc-900 hover:bg-zinc-800 text-white shadow-md"
+                      : "bg-zinc-100 text-zinc-400 hover:bg-zinc-200"
+                  }`}
                   disabled={!inputValue.trim() || sendMessageMutation.isPending || !sessionId}
                   onClick={() => handleSend(inputValue)}
                 >
-                  {sendMessageMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                  {sendMessageMutation.isPending ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Send className="w-5 h-5" />
+                  )}
                 </Button>
               </div>
             </div>
           </div>
-          
         </div>
       </div>
     </div>

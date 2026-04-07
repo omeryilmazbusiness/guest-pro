@@ -22,6 +22,7 @@ import type {
   CreateGuestResponse,
   CurrentUser,
   ErrorResponse,
+  GoogleAuthStatus,
   Guest,
   HealthStatus,
   HotelBranding,
@@ -285,6 +286,81 @@ export const useLogout = <
 > => {
   return useMutation(getLogoutMutationOptions(options));
 };
+
+/**
+ * @summary Check if Google OAuth is configured
+ */
+export const getGetGoogleAuthStatusUrl = () => {
+  return `/api/auth/google/status`;
+};
+
+export const getGoogleAuthStatus = async (
+  options?: RequestInit,
+): Promise<GoogleAuthStatus> => {
+  return customFetch<GoogleAuthStatus>(getGetGoogleAuthStatusUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetGoogleAuthStatusQueryKey = () => {
+  return [`/api/auth/google/status`] as const;
+};
+
+export const getGetGoogleAuthStatusQueryOptions = <
+  TData = Awaited<ReturnType<typeof getGoogleAuthStatus>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getGoogleAuthStatus>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetGoogleAuthStatusQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getGoogleAuthStatus>>
+  > = ({ signal }) => getGoogleAuthStatus({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getGoogleAuthStatus>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetGoogleAuthStatusQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getGoogleAuthStatus>>
+>;
+export type GetGoogleAuthStatusQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Check if Google OAuth is configured
+ */
+
+export function useGetGoogleAuthStatus<
+  TData = Awaited<ReturnType<typeof getGoogleAuthStatus>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getGoogleAuthStatus>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetGoogleAuthStatusQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get current session user

@@ -61,6 +61,8 @@ export interface CurrentUser {
   /** @nullable */
   lastName?: string | null;
   /** @nullable */
+  avatarUrl?: string | null;
+  /** @nullable */
   roomNumber?: string | null;
   /** @nullable */
   guestId?: number | null;
@@ -71,6 +73,10 @@ export interface LoginResponse {
   role: LoginResponseRole;
   token: string;
   user: CurrentUser;
+}
+
+export interface GoogleAuthStatus {
+  configured: boolean;
 }
 
 export interface Guest {

@@ -31,6 +31,7 @@ async function seed() {
     hotelId: hotel.id,
     email: "manager@grandhotel.com",
     passwordHash,
+    provider: "local",
     role: "manager",
     firstName: "Hotel",
     lastName: "Manager",
@@ -73,7 +74,7 @@ async function seed() {
 
   await db.insert(quickActionsTable).values([
     { hotelId: hotel.id, label: "Reception", icon: "phone", category: "reception", sortOrder: 1 },
-    { hotelId: hotel.id, label: "Activities", icon: "activity", category: "activities", sortOrder: 2 },
+    { hotelId: hotel.id, label: "Activities", icon: "calendar", category: "activities", sortOrder: 2 },
   ]);
 
   console.log("\nSeed complete!");

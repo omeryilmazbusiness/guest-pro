@@ -34,6 +34,7 @@ export const LoginResponse = zod.object({
     email: zod.string().nullish(),
     firstName: zod.string().nullish(),
     lastName: zod.string().nullish(),
+    avatarUrl: zod.string().nullish(),
     roomNumber: zod.string().nullish(),
     guestId: zod.number().nullish(),
     hotelId: zod.number(),
@@ -48,6 +49,13 @@ export const LogoutResponse = zod.object({
 });
 
 /**
+ * @summary Check if Google OAuth is configured
+ */
+export const GetGoogleAuthStatusResponse = zod.object({
+  configured: zod.boolean(),
+});
+
+/**
  * @summary Get current session user
  */
 export const GetMeResponse = zod.object({
@@ -56,6 +64,7 @@ export const GetMeResponse = zod.object({
   email: zod.string().nullish(),
   firstName: zod.string().nullish(),
   lastName: zod.string().nullish(),
+  avatarUrl: zod.string().nullish(),
   roomNumber: zod.string().nullish(),
   guestId: zod.number().nullish(),
   hotelId: zod.number(),

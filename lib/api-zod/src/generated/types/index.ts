@@ -13,6 +13,7 @@ export * from "./createGuestResponse";
 export * from "./currentUser";
 export * from "./currentUserRole";
 export * from "./errorResponse";
+export * from "./googleAuthStatus";
 export * from "./guest";
 export * from "./healthStatus";
 export * from "./hotelBranding";

@@ -71,6 +71,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
 
+  /auth/google/status:
+    get:
+      operationId: getGoogleAuthStatus
+      tags: [auth]
+      summary: Check if Google OAuth is configured
+      responses:
+        "200":
+          description: Google OAuth configuration status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleAuthStatus"
+
   /auth/me:
     get:
       operationId: getMe
@@ -336,6 +349,14 @@ components:
         - token
         - user
 
+    GoogleAuthStatus:
+      type: object
+      properties:
+        configured:
+          type: boolean
+      required:
+        - configured
+
     CurrentUser:
       type: object
       properties:
@@ -349,6 +370,8 @@ components:
         firstName:
           type: ["string", "null"]
         lastName:
+          type: ["string", "null"]
+        avatarUrl:
           type: ["string", "null"]
         roomNumber:
           type: ["string", "null"]

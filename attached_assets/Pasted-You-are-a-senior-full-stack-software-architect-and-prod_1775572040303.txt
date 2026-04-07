@@ -1,0 +1,408 @@
+You are a senior full-stack software architect and production-grade engineer.
+
+Your job is to inspect, validate, fix, and professionally upgrade the existing project for a mobile-first premium hotel web app called “Guest Pro”.
+
+CRITICAL EXECUTION RULES:
+- First inspect the entire existing codebase, file tree, config files, and environment variable usage.
+- Do NOT rebuild the project from scratch if working systems already exist.
+- Preserve working parts.
+- Only refactor, fix, or upgrade where needed.
+- If the existing architecture already follows a good professional direction, keep it and strengthen it instead of replacing it.
+- Use SOLID principles and modular clean architecture.
+- Keep the codebase scalable, white-label ready, multi-hotel ready, and easy to adapt for new hotel brands by changing colors, texts, logos, and naming.
+- Prioritize mobile-first UX because users will mainly use the app from phones.
+
+PROJECT CONTEXT:
+The product is called “Guest Pro”.
+It is a premium web application for hotels.
+Roles:
+1. MANAGER
+2. GUEST
+
+Current product concept:
+- Guests log in with a guest key
+- Guests see their basic info:
+  - first name
+  - last name
+  - room number
+- Guests use an AI concierge/chat style interface
+- Quick actions for now:
+  - Reception
+  - Activities
+- Managers log in and create new guest keys
+- Manager login must support:
+  - email/password
+  - Google sign up / sign in
+- Google first-time sign up should automatically create manager account, assign MANAGER role, and log them in automatically
+
+TECH STACK TO PRESERVE / USE:
+- Next.js App Router
+- TypeScript
+- PostgreSQL
+- Drizzle ORM
+- Auth.js
+- Tailwind CSS
+- Zod
+- Gemini integration on server side only
+
+==================================================
+PHASE 1 — INSPECT THE CURRENT SYSTEM FIRST
+==================================================
+
+Before changing anything, perform a full inspection and explain:
+
+1. Current file tree and architecture
+2. Current auth system
+3. Current manager login implementation
+4. Current guest login implementation
+5. Current guest logout implementation
+6. Current AI/Gemini integration
+7. Current environment variable system
+8. Whether secrets are server-only or incorrectly exposed
+9. Whether the current code is already modular and production-appropriate
+10. Which parts should be preserved and which parts should be refactored
+
+IMPORTANT:
+Do not implement first.
+Inspect first.
+Then explain findings.
+Then create an upgrade plan.
+Then implement.
+
+==================================================
+PHASE 2 — ENV / SECRET / CONFIG VALIDATION
+==================================================
+
+The user has already added Gemini API key.
+You must first verify whether the current env-based system is already properly implemented.
+
+Inspect all of the following carefully:
+- .env usage
+- environment variable naming
+- where GEMINI_API_KEY is accessed
+- whether Gemini is called only from the server
+- whether any secret is imported into client components
+- whether there is a central env/config module
+- whether config validation exists
+- whether there is type-safe env parsing
+- whether secrets are safe in route handlers / server actions only
+- whether Auth.js secrets and Google credentials are correctly handled
+- whether database URL is handled properly
+- whether there is a good separation between public config and private secrets
+
+VALIDATE WHETHER THE PROJECT HAS A PROFESSIONAL ENV SYSTEM:
+- private envs validated centrally
+- server-only secret access
+- no secret leakage to client
+- clean config organization
+- production-safe patterns
+
+If the current env/config system is already good:
+- keep it
+- improve naming / organization only if necessary
+- do not replace it unnecessarily
+
+If the env/config system is weak or incomplete:
+- implement a professional env architecture
+- add a central typed env layer
+- validate required env values
+- separate private/server env from public env
+- make Gemini integration strictly server-side
+- ensure Google auth secrets remain server-side
+- ensure no unsafe direct usage across the codebase
+
+Expected private env examples:
+- DATABASE_URL
+- AUTH_SECRET
+- AUTH_GOOGLE_ID
+- AUTH_GOOGLE_SECRET
+- GEMINI_API_KEY
+
+If useful, create a professional env module structure such as:
+- src/config/env.ts
+- src/config/public-env.ts
+or a similarly professional equivalent
+
+==================================================
+PHASE 3 — FIX EXISTING BUGS FIRST
+==================================================
+
+BUG A:
+Guest screen logout is not working.
+
+You must:
+- inspect current guest logout flow
+- verify signOut wiring
+- verify session invalidation
+- verify redirect behavior
+- fix logout fully
+- redirect guest to guest login after logout
+- ensure protected guest pages cannot be reopened after logout via browser back without authentication
+
+BUG B:
+In the staff/manager login area, email and password fields cannot be typed into.
+
+You must inspect:
+- controlled input logic
+- missing/broken onChange handlers
+- frozen value props
+- disabled or readOnly bugs
+- loading states that permanently disable input
+- overlay / z-index / pointer-events issues
+- modal or layout layers blocking focus
+- mobile tap/focus issues
+
+Fix it fully so:
+- email input works
+- password input works
+- focus works on mobile and desktop
+- no invisible layer blocks interaction
+
+==================================================
+PHASE 4 — MANAGER GOOGLE SIGN UP / SIGN IN
+==================================================
+
+Add a professional Google authentication alternative to the Manager login page.
+
+Requirements:
+- Manager login supports:
+  1. email/password
+  2. Continue with Google
+- Google auth is only for MANAGER
+- GUEST continues to use guest key only
+
+Google auth behavior:
+- first-time Google sign in:
+  - automatically create manager record
+  - assign role = MANAGER
+  - auto-link to default hotel in MVP
+  - automatically log the manager in
+  - redirect directly to manager dashboard
+- returning Google user:
+  - sign in directly
+  - redirect to manager dashboard
+- no extra sign-up form after Google auth for MVP
+- architecture must remain extensible for future hotel invitation flow or domain restriction
+
+Implementation expectations:
+- use Auth.js Google provider
+- keep role in session/JWT safely
+- avoid duplicate manager records
+- keep provider linkage clean
+- keep code production-minded and modular
+
+==================================================
+PHASE 5 — PROFESSIONAL SOLID ARCHITECTURE
+==================================================
+
+After inspection, if the existing structure is already good, preserve it and strengthen it.
+If the existing structure is messy, refactor toward a professional modular architecture.
+
+Use a clean modular structure like:
+
+- app/
+- src/modules/auth
+- src/modules/hotels
+- src/modules/guests
+- src/modules/chat
+- src/modules/ai
+- src/modules/branding
+- src/shared
+- src/lib
+- src/db
+- src/config
+
+Recommended layered approach:
+- domain
+- application
+- infrastructure
+- presentation
+
+Rules:
+- business logic must not live inside page components
+- route handlers should stay thin
+- use use-cases/services for application logic
+- repositories/adapters for database and external providers
+- centralize validation
+- centralize config/env access
+- clean naming
+- remove dead code
+- do not create fake architecture; structure must be meaningful and actually used
+
+==================================================
+PHASE 6 — WHITE-LABEL / HOTEL-SCALABLE DESIGN
+==================================================
+
+Design or preserve the system so it can be sold to many hotels later with minimal changes.
+
+The architecture should support:
+- hotels
+- hotel branding
+- managers
+- guests
+- guest keys
+- chat sessions
+- messages
+- quick actions
+- audit logs
+
+Each hotel should be able to override later:
+- app name
+- logo
+- colors
+- welcome texts
+- quick action labels
+
+Do not necessarily implement full multi-tenant UI now, but make the architecture ready.
+
+==================================================
+PHASE 7 — DATABASE / DOMAIN EXPECTATIONS
+==================================================
+
+Inspect current database and improve if needed.
+
+Expected core entities:
+- hotels
+- hotel_branding
+- users
+- guests
+- guest_keys
+- chat_sessions
+- messages
+- quick_actions
+- audit_logs
+
+If tables already exist, preserve and improve.
+If not, create a professional Drizzle schema and migrations.
+
+Ensure:
+- manager belongs to hotel
+- guest belongs to hotel
+- guest key belongs to guest
+- chat session belongs to guest
+- messages stored with original and translated content
+- audit logs for critical actions
+
+Seed demo data if needed:
+- 1 demo hotel
+- 1 demo manager
+- 1 or 2 demo guests
+- Reception / Activities quick actions
+
+==================================================
+PHASE 8 — GEMINI / AI PROFESSIONALIZATION
+==================================================
+
+Now that the user has already added Gemini API key, inspect whether Gemini integration already exists.
+
+If Gemini integration already exists and is correct:
+- keep it
+- refactor only if needed
+- improve reliability, abstraction, and structure
+
+If Gemini integration is weak or missing:
+- create a professional server-side Gemini service layer
+- ensure GEMINI_API_KEY is never used in client components
+- create an AI service module
+- add clear abstraction for:
+  - prompt building
+  - AI response generation
+  - intent classification
+  - translation-ready response format
+- keep architecture ready for future:
+  - reception requests
+  - activities requests
+  - housekeeping
+  - live staff takeover
+  - multilingual conversations
+
+Store if appropriate:
+- original user text
+- translated text
+- AI response
+- metadata / intent if useful
+
+==================================================
+PHASE 9 — MOBILE-FIRST PREMIUM UX
+==================================================
+
+Preserve or improve the design to fit this direction:
+- white/light dominant theme
+- very soft rounded corners
+- premium modern hospitality look
+- minimal but expensive
+- clean typography
+- elegant spacing
+- subtle shadows
+- gentle gradients only where helpful
+- mobile-first interactions
+- large tap targets
+- polished cards
+- premium AI-style text bar
+
+Guest screen:
+- premium AI text bar should be the hero
+- quick actions under it:
+  - Reception
+  - Activities
+
+Manager login:
+- professional login card
+- working email/password inputs
+- Continue with Google button
+- clean error messages
+- mobile-friendly spacing
+
+==================================================
+PHASE 10 — SECURITY / QUALITY / ROBUSTNESS
+==================================================
+
+Implement or improve:
+- Zod validation
+- type-safe config/env
+- secure Auth.js session handling
+- role-based route protection
+- manager-only routes
+- guest-only routes
+- proper redirect logic
+- audit logging for important actions
+- clean error handling
+- loading and empty states
+- no secret leakage
+- no duplicated auth logic
+
+Add logs or audit records for:
+- manager created via Google
+- manager login
+- guest creation
+- guest logout
+- AI request if useful
+
+==================================================
+PHASE 11 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+
+1. Inspection summary
+2. Root cause analysis of the reported bugs
+3. Whether the existing env system was already professional or not
+4. What env/config changes were made
+5. What architecture was preserved
+6. What architecture was upgraded
+7. Final file map
+8. Final auth flow summary
+9. Final Gemini/env safety summary
+10. What was implemented
+11. What remains prepared for future phases
+12. Required environment variables
+13. How to run and test inside Replit
+14. Demo credentials or test instructions
+
+IMPORTANT:
+- Do not stop at superficial scaffolding
+- Do not rewrite the whole app if unnecessary
+- Inspect first, then decide
+- If the existing system already matches a professional structure, keep it and refine it
+- Only refactor where value is real
+- Deliver working fixes and a professional solid structure

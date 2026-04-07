@@ -17,6 +17,8 @@ export interface CurrentUser {
   /** @nullable */
   lastName?: string | null;
   /** @nullable */
+  avatarUrl?: string | null;
+  /** @nullable */
   roomNumber?: string | null;
   /** @nullable */
   guestId?: number | null;
