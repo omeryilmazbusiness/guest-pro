@@ -31,12 +31,9 @@ export default function ManagerDashboard() {
   }, [isAuthenticated, user, setLocation]);
 
   const handleLogout = () => {
-    logoutMutation.mutate(undefined, {
-      onSuccess: () => {
-        logoutAuth();
-        toast.success("Logged out successfully");
-      }
-    });
+    logoutAuth();
+    logoutMutation.mutate(undefined);
+    toast.success("Logged out successfully");
   };
 
   const toggleKey = (id: number) => {

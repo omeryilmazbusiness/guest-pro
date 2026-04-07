@@ -56,6 +56,17 @@ export const GetGoogleAuthStatusResponse = zod.object({
 });
 
 /**
+ * @summary Redeem a one-time Google OAuth exchange code for an auth token
+ */
+export const ExchangeGoogleCodeQueryParams = zod.object({
+  code: zod.coerce.string(),
+});
+
+export const ExchangeGoogleCodeResponse = zod.object({
+  token: zod.string(),
+});
+
+/**
  * @summary Get current session user
  */
 export const GetMeResponse = zod.object({

@@ -1,0 +1,369 @@
+You are a senior full-stack software architect and production-grade engineer.
+
+Your task is to inspect, harden, refactor where necessary, and fully implement a production-ready authentication architecture for the existing mobile-first hotel web app called “Guest Pro”.
+
+CRITICAL EXECUTION RULES:
+- First inspect the existing codebase, file tree, auth flow, config, environment variable usage, database schema, and routing.
+- Do NOT rebuild the project from scratch if working systems already exist.
+- Preserve working parts.
+- Refactor only where there is real architectural or security value.
+- The goal is not a cosmetic auth flow. The goal is a production-ready, secure, extensible, auditable auth system.
+- Use SOLID principles and meaningful modular architecture.
+- Keep the codebase white-label ready and hotel-scalable.
+- Prioritize mobile browser UX.
+
+PROJECT CONTEXT:
+Guest Pro is a premium hotel web app optimized for phone usage.
+
+ROLES:
+1. MANAGER
+2. GUEST
+
+CURRENT PRODUCT DIRECTION:
+- Guest logs in using a guest key
+- Manager logs in using email/password
+- We now need a fully production-ready Google OAuth sign up / sign in flow for MANAGER
+- Google auth must be a professional alternative on manager login
+- Guest must NEVER use Google auth
+- Guest stays on guest-key auth only
+
+PRIMARY OBJECTIVE:
+Implement a production-ready auth system with:
+- secure manager email/password login
+- production-ready Google OAuth sign up / sign in for manager
+- strong session handling
+- robust route protection
+- role-aware and hotel-aware authorization
+- auditability
+- clean modular architecture
+
+==================================================
+PHASE 1 — INSPECT FIRST, DO NOT IMPLEMENT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current file tree and auth-related architecture
+2. Current login page structure
+3. Current guest auth flow
+4. Current manager auth flow
+5. Current logout flow(s)
+6. Current use of localStorage, cookies, sessions, and tokens
+7. Current environment variable setup
+8. Whether Gemini key usage is server-only and safe
+9. Whether Auth.js is already installed and correctly structured
+10. Whether database adapter/session infrastructure already exists
+11. What is currently production-safe vs what is not
+12. What should be preserved, what should be refactored, and why
+
+Then provide:
+- a concise root-cause audit of auth weaknesses
+- a clear upgrade plan
+- a list of minimal but high-value refactors
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — BUILD A PRODUCTION-READY AUTH ARCHITECTURE
+==================================================
+
+Refactor or complete the authentication system using a professional modular structure.
+
+Preferred stack:
+- Next.js App Router
+- TypeScript
+- Auth.js
+- PostgreSQL
+- Drizzle ORM
+- Zod
+
+AUTH ARCHITECTURE GOALS:
+- central auth configuration
+- clean separation of auth domain/application/infrastructure
+- role-aware access control
+- hotel-aware authorization design
+- safe server-side session checks
+- no insecure reliance on client-side-only auth state
+- no broken or duplicated auth logic
+
+Use or refactor toward a structure like:
+- auth.ts
+- app/api/auth/[...nextauth]/route.ts (or equivalent current Auth.js handler structure)
+- src/modules/auth/domain
+- src/modules/auth/application
+- src/modules/auth/infrastructure
+- src/modules/auth/presentation
+- src/config/env.ts
+- src/lib/auth
+- src/shared/validation
+
+Rules:
+- page components must not contain core auth business logic
+- route handlers must stay thin
+- callbacks, provider logic, session shaping, authorization helpers, and persistence logic should be modularized
+- do not create fake architecture; only meaningful layers
+
+==================================================
+PHASE 3 — MANAGER GOOGLE OAUTH SIGN UP / LOGIN (PROD-READY)
+==================================================
+
+Implement Google OAuth as a fully production-ready alternative on the MANAGER login screen.
+
+REQUIRED BEHAVIOR:
+- On the manager login page, provide:
+  1. Email/password login
+  2. Continue with Google
+- Google auth is MANAGER only
+- Guest auth remains guest-key only
+
+GOOGLE FLOW:
+- First-time Google login:
+  - create a manager account automatically
+  - assign role = MANAGER
+  - link manager to the default hotel/tenant for MVP
+  - create or link the OAuth account properly
+  - sign the manager in automatically
+  - redirect directly to the manager dashboard
+- Returning Google user:
+  - sign in directly
+  - redirect to manager dashboard
+- No extra signup page after Google login for MVP
+- No manual approval step for MVP
+- Keep the architecture ready for future:
+  - invite-only manager onboarding
+  - hotel-based manager assignment
+  - company domain restrictions
+  - allowed-email-list onboarding
+
+GOOGLE OAUTH REQUIREMENTS:
+- Use Auth.js Google provider
+- Read credentials only from secure server env vars
+- Never expose secrets to client code
+- Handle provider/account linkage correctly
+- Prevent duplicate manager records
+- Normalize email safely
+- Handle OAuth errors gracefully
+- Show clean UX errors when OAuth fails
+- Redirect users safely after auth
+- Ensure callback/session data includes role and hotel/tenant id where needed
+
+==================================================
+PHASE 4 — PROD-READY SESSION STRATEGY
+==================================================
+
+Inspect the current session approach and implement a production-grade strategy.
+
+For this app, choose the best real production option:
+- Prefer a database-backed session architecture if it materially improves:
+  - session revocation
+  - manager access control
+  - auditability
+  - role/hotel scoping
+  - operational control
+- If the current implementation uses JWT and it is already strong and well-structured, evaluate carefully before changing it
+- Choose the better architecture based on the actual project state, not theory
+
+SESSION REQUIREMENTS:
+- no auth state that depends only on localStorage
+- server-side protected route checks
+- correct session invalidation on logout
+- reliable redirects after login/logout
+- no stale protected content after logout
+- support manager and guest flows cleanly
+- keep session data minimal and safe
+- expose only necessary fields to client session
+
+ROLE/SESSION DATA SHOULD SAFELY SUPPORT:
+- user id
+- role
+- hotel id / tenant id
+- provider/source if useful
+- no unnecessary sensitive exposure
+
+==================================================
+PHASE 5 — AUTHORIZATION AND ROUTE PROTECTION
+==================================================
+
+Implement or harden route protection.
+
+Requirements:
+- manager-only routes must require MANAGER role
+- guest-only routes must require valid guest auth
+- unauthorized users must be redirected correctly
+- protected API routes must be server-checked
+- protected pages must not rely only on client-side guards
+- hotel/tenant scoping must be supported by architecture
+- after logout, protected routes must be inaccessible even after refresh/back navigation
+
+Add reusable authorization helpers for:
+- requireManager()
+- requireGuest()
+- requireHotelScope()
+or equivalent professional abstractions
+
+==================================================
+PHASE 6 — CREDENTIALS LOGIN HARDENING
+==================================================
+
+Harden manager email/password auth to production quality.
+
+Requirements:
+- secure credentials provider integration
+- validation with Zod
+- password hashing verification using a proper secure algorithm already present or add one if missing
+- no plaintext password logic anywhere
+- friendly but safe error messages
+- rate limiting or abuse protection if appropriate
+- pending/loading states
+- accessible mobile-friendly login form
+- no input lock or focus bugs
+- no duplicated auth logic across client and server
+
+==================================================
+PHASE 7 — LOGOUT, SESSION INVALIDATION, AND UX CORRECTNESS
+==================================================
+
+Harden logout for both MANAGER and GUEST.
+
+Requirements:
+- logout must terminate the effective session correctly
+- redirect to the correct login page after logout
+- clear stale client auth state
+- ensure protected content is not available after logout
+- verify browser back behavior does not expose authenticated data
+- no optimistic-only auth illusion without real invalidation
+- if guest auth is custom and separate from Auth.js, keep it professional, explicit, and secure
+
+==================================================
+PHASE 8 — ENV / CONFIG / SECRET SAFETY
+==================================================
+
+Inspect and professionalize environment handling.
+
+Required private env vars may include:
+- DATABASE_URL
+- AUTH_SECRET
+- AUTH_GOOGLE_ID
+- AUTH_GOOGLE_SECRET
+- GEMINI_API_KEY
+
+Requirements:
+- central typed env/config module
+- validate required env vars
+- no secret leakage to client bundles
+- clear separation between server-only and public env
+- no scattered unsafe process.env usage everywhere
+- Gemini must stay server-side only
+- auth secrets must stay server-side only
+
+If the existing env structure is already strong, preserve it and improve only if needed.
+
+==================================================
+PHASE 9 — DATABASE / AUTH PERSISTENCE / DRIZZLE
+==================================================
+
+Inspect the current DB and improve where necessary.
+
+Required auth-related persistence should support:
+- manager users
+- guest users or guest access records
+- provider accounts for OAuth if using Auth.js adapter-based persistence
+- sessions if using database sessions
+- hotel/tenant relation
+- audit logs for security-critical actions
+
+If missing, implement the necessary schema and migrations professionally.
+If already present, preserve and normalize.
+
+Ensure the system supports:
+- one or more hotels
+- managers belonging to a hotel
+- guest access tied to a hotel
+- clean provider linkage for Google OAuth
+
+==================================================
+PHASE 10 — OBSERVABILITY, AUDIT, AND ERROR HANDLING
+==================================================
+
+Add production-minded visibility.
+
+Implement or improve:
+- auth event logging
+- audit logs for:
+  - manager created via Google
+  - manager login success/failure where appropriate
+  - logout
+  - guest key login
+- structured error handling
+- clean user-facing error messages
+- safe server-side logs for diagnosis
+- no leaking sensitive debug details to UI
+
+==================================================
+PHASE 11 — MOBILE-FIRST PROFESSIONAL UX
+==================================================
+
+Keep or improve the visual direction:
+- white/light dominant theme
+- soft rounded corners
+- premium but minimal
+- clean spacing
+- elegant manager login card
+- polished Google button
+- mobile-friendly auth screens
+- accessible states:
+  - idle
+  - loading
+  - error
+  - success
+
+The manager login screen must feel premium and production-ready, not like a demo.
+
+==================================================
+PHASE 12 — TESTING AND VERIFICATION
+==================================================
+
+Before finishing, verify end-to-end:
+
+1. Manager email/password login works
+2. Manager Google first-time signup works
+3. Manager Google returning login works
+4. Role is persisted correctly
+5. Hotel/tenant assignment is correct for MVP
+6. Manager logout works correctly
+7. Guest login still works
+8. Guest logout still works
+9. Protected manager routes block guests
+10. Protected guest routes block managers where intended
+11. Browser refresh preserves only valid session state
+12. Back navigation does not reveal protected content after logout
+13. No secrets are exposed client-side
+
+==================================================
+PHASE 13 — DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+
+1. Inspection summary
+2. Auth architecture summary
+3. Session strategy chosen and why
+4. What was preserved
+5. What was refactored
+6. Google OAuth flow summary
+7. Route protection summary
+8. Env/config safety summary
+9. Final file map
+10. Required environment variables
+11. Any Google Console redirect URI requirements
+12. How to test all login/logout flows inside Replit
+13. Demo credentials / test instructions
+14. Remaining future-ready extension points
+
+IMPORTANT:
+- Do not stop at UI changes
+- Do not implement fake OAuth
+- Do not rely on client-only auth state
+- Make it truly production-ready
+- Start by auditing the current codebase
+- Then implement the strongest practical solution for this existing project

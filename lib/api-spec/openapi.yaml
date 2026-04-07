@@ -84,6 +84,37 @@ paths:
               schema:
                 $ref: "#/components/schemas/GoogleAuthStatus"
 
+  /auth/google/exchange:
+    get:
+      operationId: exchangeGoogleCode
+      tags: [auth]
+      summary: Redeem a one-time Google OAuth exchange code for an auth token
+      parameters:
+        - in: query
+          name: code
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Auth token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleExchangeResponse"
+        "400":
+          description: Missing code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Invalid or expired code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /auth/me:
     get:
       operationId: getMe
@@ -356,6 +387,14 @@ components:
           type: boolean
       required:
         - configured
+
+    GoogleExchangeResponse:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+        - token
 
     CurrentUser:
       type: object

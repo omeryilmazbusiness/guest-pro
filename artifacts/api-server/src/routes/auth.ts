@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { Router } from "express";
 import type { IRouter, Request } from "express";
+import { z } from "zod";
 import { db, usersTable, guestKeysTable, guestsTable, hotelsTable, auditLogsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import {
@@ -10,6 +11,9 @@ import {
   verifyToken,
   exchangeGoogleCode,
   findOrCreateGoogleManager,
+  checkLoginRateLimit,
+  recordFailedLogin,
+  clearFailedLogins,
 } from "../lib/auth";
 import { requireAuth } from "../middlewares/requireAuth";
 import { env } from "../config/env";
@@ -17,7 +21,26 @@ import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
+// ---------------------------------------------------------------------------
+// Request schemas
+// ---------------------------------------------------------------------------
+const loginSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("manager"),
+    email: z.string().email("Invalid email"),
+    password: z.string().min(1, "Password required").max(200),
+  }),
+  z.object({
+    type: z.literal("guest"),
+    guestKey: z.string().min(1, "Guest key required").max(100),
+  }),
+]);
+
+// ---------------------------------------------------------------------------
+// Google OAuth state and exchange-code stores
+// ---------------------------------------------------------------------------
 const oauthStateStore = new Map<string, { expiresAt: number }>();
+const googleExchangeCodes = new Map<string, { token: string; expiresAt: number }>();
 
 function computeRedirectUri(req: Request): string {
   if (env.GOOGLE_REDIRECT_URI) return env.GOOGLE_REDIRECT_URI;
@@ -33,27 +56,81 @@ function getFrontendBase(req: Request): string {
   return `${proto}://${host}`;
 }
 
-function cleanOauthStates() {
+function cleanExpiredEntries() {
   const now = Date.now();
   for (const [k, v] of oauthStateStore) {
     if (now > v.expiresAt) oauthStateStore.delete(k);
   }
+  for (const [k, v] of googleExchangeCodes) {
+    if (now > v.expiresAt) googleExchangeCodes.delete(k);
+  }
 }
 
-router.post("/auth/login", async (req, res): Promise<void> => {
-  const { type, email, password, guestKey } = req.body;
+function getClientIp(req: Request): string {
+  return (
+    (req.headers["x-forwarded-for"] as string)?.split(",")[0].trim() ??
+    req.socket.remoteAddress ??
+    "unknown"
+  );
+}
 
-  if (type === "manager") {
-    if (!email || !password) {
-      res.status(400).json({ error: "Email and password required" });
+// ---------------------------------------------------------------------------
+// POST /auth/login
+// ---------------------------------------------------------------------------
+router.post("/auth/login", async (req, res): Promise<void> => {
+  const parsed = loginSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid request" });
+    return;
+  }
+
+  const body = parsed.data;
+
+  if (body.type === "manager") {
+    const rateLimitKey = `manager:${body.email.toLowerCase()}`;
+    const rateCheck = checkLoginRateLimit(rateLimitKey);
+    if (!rateCheck.allowed) {
+      const waitMin = Math.ceil((rateCheck.retryAfterMs ?? 0) / 60_000);
+      res.status(429).json({
+        error: `Too many failed attempts. Try again in ${waitMin} minute${waitMin !== 1 ? "s" : ""}.`,
+      });
       return;
     }
-    const user = await authenticateManager(email as string, password as string);
+
+    const user = await authenticateManager(body.email, body.password);
     if (!user) {
+      recordFailedLogin(rateLimitKey);
+      // Audit failed attempt — fire-and-forget
+      db.insert(auditLogsTable)
+        .values({
+          hotelId: null,
+          actorId: null,
+          actorType: "manager",
+          action: "login_failed",
+          targetType: "email",
+          targetId: null,
+          metadata: { email: body.email.toLowerCase(), reason: "invalid_credentials", ip: getClientIp(req) },
+        })
+        .catch(() => {});
       res.status(401).json({ error: "Invalid credentials" });
       return;
     }
+
+    clearFailedLogins(rateLimitKey);
     const token = generateToken(user.id, "manager", user.hotelId);
+
+    db.insert(auditLogsTable)
+      .values({
+        hotelId: user.hotelId,
+        actorId: user.id,
+        actorType: "manager",
+        action: "login_success",
+        targetType: "user",
+        targetId: user.id,
+        metadata: { email: user.email, provider: "local", ip: getClientIp(req) },
+      })
+      .catch(() => {});
+
     res.json({
       role: "manager",
       token,
@@ -72,12 +149,8 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
 
-  if (type === "guest") {
-    if (!guestKey) {
-      res.status(400).json({ error: "Guest key required" });
-      return;
-    }
-    const result = await authenticateGuest(guestKey as string);
+  if (body.type === "guest") {
+    const result = await authenticateGuest(body.guestKey);
     if (!result) {
       res.status(401).json({ error: "Invalid or inactive guest key" });
       return;
@@ -106,10 +179,18 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   res.status(400).json({ error: "Invalid login type" });
 });
 
+// ---------------------------------------------------------------------------
+// POST /auth/logout
+// ---------------------------------------------------------------------------
 router.post("/auth/logout", (_req, res): void => {
+  // Token revocation is not supported (stateless HMAC tokens).
+  // Clients must clear their stored token on receipt of this response.
   res.json({ success: true });
 });
 
+// ---------------------------------------------------------------------------
+// GET /auth/me
+// ---------------------------------------------------------------------------
 router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
   const session = req.session!;
 
@@ -156,6 +237,9 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
   res.status(401).json({ error: "Invalid session" });
 });
 
+// ---------------------------------------------------------------------------
+// GET /auth/google  — initiate OAuth flow
+// ---------------------------------------------------------------------------
 router.get("/auth/google", (req, res): void => {
   if (!env.isGoogleConfigured) {
     const frontendBase = getFrontendBase(req);
@@ -163,7 +247,7 @@ router.get("/auth/google", (req, res): void => {
     return;
   }
 
-  cleanOauthStates();
+  cleanExpiredEntries();
   const state = crypto.randomBytes(16).toString("hex");
   oauthStateStore.set(state, { expiresAt: Date.now() + 5 * 60 * 1000 });
 
@@ -181,6 +265,9 @@ router.get("/auth/google", (req, res): void => {
   res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
 });
 
+// ---------------------------------------------------------------------------
+// GET /auth/google/callback  — OAuth callback, issues exchange code
+// ---------------------------------------------------------------------------
 router.get("/auth/google/callback", async (req, res): Promise<void> => {
   const frontendBase = getFrontendBase(req);
   const { code, state, error } = req.query as Record<string, string>;
@@ -218,23 +305,60 @@ router.get("/auth/google/callback", async (req, res): Promise<void> => {
     const user = await findOrCreateGoogleManager(profile, hotel.id);
     const token = generateToken(user.id, "manager", user.hotelId);
 
-    await db.insert(auditLogsTable).values({
-      hotelId: user.hotelId,
-      actorId: user.id,
-      actorType: "manager",
-      action: "google_login",
-      targetType: "user",
-      targetId: user.id,
-      metadata: { email: user.email, provider: "google" },
-    });
+    // Issue a short-lived exchange code (60 s) — keeps the real token out of
+    // browser history and server access logs.
+    const exchangeCode = crypto.randomBytes(24).toString("hex");
+    googleExchangeCodes.set(exchangeCode, { token, expiresAt: Date.now() + 60_000 });
 
-    res.redirect(`${frontendBase}/?google_token=${encodeURIComponent(token)}`);
+    db.insert(auditLogsTable)
+      .values({
+        hotelId: user.hotelId,
+        actorId: user.id,
+        actorType: "manager",
+        action: "google_login",
+        targetType: "user",
+        targetId: user.id,
+        metadata: { email: user.email, provider: "google", ip: getClientIp(req) },
+      })
+      .catch(() => {});
+
+    res.redirect(`${frontendBase}/?google_code=${encodeURIComponent(exchangeCode)}`);
   } catch (err) {
-    logger.error({ err }, "Google OAuth error");
+    logger.error({ err }, "Google OAuth callback error");
     res.redirect(`${frontendBase}/?error=google_server_error`);
   }
 });
 
+// ---------------------------------------------------------------------------
+// GET /auth/google/exchange  — redeem exchange code for real token (once only)
+// ---------------------------------------------------------------------------
+router.get("/auth/google/exchange", (req, res): void => {
+  cleanExpiredEntries();
+  const { code } = req.query as Record<string, string>;
+  if (!code) {
+    res.status(400).json({ error: "Exchange code required" });
+    return;
+  }
+
+  const entry = googleExchangeCodes.get(code);
+  googleExchangeCodes.delete(code); // single-use
+  if (!entry || Date.now() > entry.expiresAt) {
+    res.status(401).json({ error: "Invalid or expired exchange code" });
+    return;
+  }
+
+  const session = verifyToken(entry.token);
+  if (!session) {
+    res.status(401).json({ error: "Token validation failed" });
+    return;
+  }
+
+  res.json({ token: entry.token });
+});
+
+// ---------------------------------------------------------------------------
+// GET /auth/google/status
+// ---------------------------------------------------------------------------
 router.get("/auth/google/status", (_req, res): void => {
   res.json({ configured: env.isGoogleConfigured });
 });

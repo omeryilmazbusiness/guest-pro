@@ -79,6 +79,10 @@ export interface GoogleAuthStatus {
   configured: boolean;
 }
 
+export interface GoogleExchangeResponse {
+  token: string;
+}
+
 export interface Guest {
   id: number;
   firstName: string;
@@ -175,3 +179,7 @@ export interface QuickAction {
   category: string;
   sortOrder: number;
 }
+
+export type ExchangeGoogleCodeParams = {
+  code: string;
+};

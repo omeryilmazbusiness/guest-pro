@@ -50,19 +50,34 @@ export default function Login() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const googleToken = params.get("google_token");
+    const googleCode = params.get("google_code");
     const error = params.get("error");
 
-    if (googleToken) {
+    // Clean URL immediately regardless of outcome
+    if (googleCode || error) {
       window.history.replaceState({}, "", window.location.pathname);
-      setToken(googleToken);
-      toast.success("Signed in with Google");
-      setLocation("/manager");
+    }
+
+    if (googleCode) {
+      // Exchange the short-lived code for the real token server-side
+      fetch(`/api/auth/google/exchange?code=${encodeURIComponent(googleCode)}`)
+        .then((r) => r.json())
+        .then((data: { token?: string; error?: string }) => {
+          if (data.token) {
+            setToken(data.token);
+            toast.success("Signed in with Google");
+            setLocation("/manager");
+          } else {
+            toast.error(data.error ?? "Google sign-in failed. Please try again.");
+          }
+        })
+        .catch(() => {
+          toast.error("Google sign-in failed. Please try again.");
+        });
       return;
     }
 
     if (error) {
-      window.history.replaceState({}, "", window.location.pathname);
       const message = GOOGLE_ERROR_MESSAGES[error] ?? "An error occurred. Please try again.";
       toast.error(message);
     }

@@ -49,3 +49,23 @@ export function requireGuest(req: Request, res: Response, next: NextFunction): v
     next();
   });
 }
+
+/**
+ * Ensures the authenticated user belongs to the hotel in the route param
+ * or query param `:hotelId`. Use after requireManager or requireGuest.
+ * Example:  router.get("/hotels/:hotelId/data", requireManager, requireHotelScope, handler)
+ */
+export function requireHotelScope(req: Request, res: Response, next: NextFunction): void {
+  const paramHotelId = req.params.hotelId
+    ? parseInt(req.params.hotelId, 10)
+    : NaN;
+  if (isNaN(paramHotelId)) {
+    next(); // No hotelId param — nothing to enforce
+    return;
+  }
+  if (req.session?.hotelId !== paramHotelId) {
+    res.status(403).json({ error: "Access denied to this hotel" });
+    return;
+  }
+  next();
+}

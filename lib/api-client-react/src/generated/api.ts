@@ -22,7 +22,9 @@ import type {
   CreateGuestResponse,
   CurrentUser,
   ErrorResponse,
+  ExchangeGoogleCodeParams,
   GoogleAuthStatus,
+  GoogleExchangeResponse,
   Guest,
   HealthStatus,
   HotelBranding,
@@ -354,6 +356,103 @@ export function useGetGoogleAuthStatus<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetGoogleAuthStatusQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Redeem a one-time Google OAuth exchange code for an auth token
+ */
+export const getExchangeGoogleCodeUrl = (params: ExchangeGoogleCodeParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/auth/google/exchange?${stringifiedParams}`
+    : `/api/auth/google/exchange`;
+};
+
+export const exchangeGoogleCode = async (
+  params: ExchangeGoogleCodeParams,
+  options?: RequestInit,
+): Promise<GoogleExchangeResponse> => {
+  return customFetch<GoogleExchangeResponse>(getExchangeGoogleCodeUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExchangeGoogleCodeQueryKey = (
+  params?: ExchangeGoogleCodeParams,
+) => {
+  return [`/api/auth/google/exchange`, ...(params ? [params] : [])] as const;
+};
+
+export const getExchangeGoogleCodeQueryOptions = <
+  TData = Awaited<ReturnType<typeof exchangeGoogleCode>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params: ExchangeGoogleCodeParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exchangeGoogleCode>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getExchangeGoogleCodeQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof exchangeGoogleCode>>
+  > = ({ signal }) => exchangeGoogleCode(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exchangeGoogleCode>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExchangeGoogleCodeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exchangeGoogleCode>>
+>;
+export type ExchangeGoogleCodeQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Redeem a one-time Google OAuth exchange code for an auth token
+ */
+
+export function useExchangeGoogleCode<
+  TData = Awaited<ReturnType<typeof exchangeGoogleCode>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params: ExchangeGoogleCodeParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exchangeGoogleCode>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExchangeGoogleCodeQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

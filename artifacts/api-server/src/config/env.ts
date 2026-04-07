@@ -16,11 +16,21 @@ export const env = {
   GOOGLE_CLIENT_SECRET: optionalEnv("AUTH_GOOGLE_CLIENT_SECRET"),
   GOOGLE_REDIRECT_URI: optionalEnv("AUTH_GOOGLE_REDIRECT_URI"),
   APP_BASE_URL: optionalEnv("APP_BASE_URL"),
+  ALLOWED_ORIGIN: optionalEnv("ALLOWED_ORIGIN"),
   get isGoogleConfigured() {
     return !!(this.GOOGLE_CLIENT_ID && this.GOOGLE_CLIENT_SECRET);
   },
 };
 
-if (env.NODE_ENV === "production" && env.SESSION_SECRET === "guestpro_dev_secret_change_in_production") {
-  console.warn("[WARN] SESSION_SECRET is using the default dev value in production. Set SESSION_SECRET env var.");
+if (env.NODE_ENV === "production") {
+  const defaultSecret = "guestpro_dev_secret_change_in_production";
+  if (env.SESSION_SECRET === defaultSecret) {
+    throw new Error(
+      "[FATAL] SESSION_SECRET is using the default dev value in production. " +
+        "Set a strong SESSION_SECRET environment variable before deploying."
+    );
+  }
+  if (env.SESSION_SECRET && env.SESSION_SECRET.length < 32) {
+    throw new Error("[FATAL] SESSION_SECRET must be at least 32 characters in production.");
+  }
 }
