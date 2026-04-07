@@ -4,6 +4,7 @@ import type { IRouter, Request } from "express";
 import { z } from "zod";
 import { db, usersTable, guestKeysTable, guestsTable, hotelsTable, auditLogsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
+import { deriveLocaleFromCountry } from "../lib/locale";
 import {
   authenticateManager,
   authenticateGuest,
@@ -158,6 +159,9 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     const { guest } = result;
     const syntheticUserId = guest.id * -1;
     const token = generateToken(syntheticUserId, "guest", guest.hotelId, guest.id);
+    // Derive voice locale from stored language (stored at creation) or countryCode as fallback
+    const { voiceLocale } = deriveLocaleFromCountry(guest.countryCode ?? "TR");
+    const resolvedLanguage = guest.language || voiceLocale;
     res.json({
       role: "guest",
       token,
@@ -171,6 +175,8 @@ router.post("/auth/login", async (req, res): Promise<void> => {
         roomNumber: guest.roomNumber,
         guestId: guest.id,
         hotelId: guest.hotelId,
+        countryCode: guest.countryCode ?? "TR",
+        language: resolvedLanguage,
       },
     });
     return;
@@ -220,6 +226,8 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
       res.status(401).json({ error: "Guest not found" });
       return;
     }
+    const { voiceLocale } = deriveLocaleFromCountry(guest.countryCode ?? "TR");
+    const resolvedLanguage = guest.language || voiceLocale;
     res.json({
       id: session.userId,
       role: "guest",
@@ -230,6 +238,8 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
       roomNumber: guest.roomNumber,
       guestId: guest.id,
       hotelId: guest.hotelId,
+      countryCode: guest.countryCode ?? "TR",
+      language: resolvedLanguage,
     });
     return;
   }

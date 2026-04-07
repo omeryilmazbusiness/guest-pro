@@ -67,6 +67,10 @@ export interface CurrentUser {
   /** @nullable */
   guestId?: number | null;
   hotelId: number;
+  /** @nullable */
+  countryCode?: string | null;
+  /** @nullable */
+  language?: string | null;
 }
 
 export interface LoginResponse {
@@ -88,6 +92,9 @@ export interface Guest {
   firstName: string;
   lastName: string;
   roomNumber: string;
+  countryCode: string;
+  /** @nullable */
+  language?: string | null;
   hotelId: number;
   createdAt: string;
   /** @nullable */
@@ -98,6 +105,7 @@ export interface CreateGuestRequest {
   firstName: string;
   lastName: string;
   roomNumber: string;
+  countryCode: string;
 }
 
 export interface CreateGuestResponse {

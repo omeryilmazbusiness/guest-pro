@@ -418,6 +418,10 @@ components:
           type: ["integer", "null"]
         hotelId:
           type: integer
+        countryCode:
+          type: ["string", "null"]
+        language:
+          type: ["string", "null"]
       required:
         - id
         - role
@@ -434,6 +438,10 @@ components:
           type: string
         roomNumber:
           type: string
+        countryCode:
+          type: string
+        language:
+          type: ["string", "null"]
         hotelId:
           type: integer
         createdAt:
@@ -446,6 +454,7 @@ components:
         - firstName
         - lastName
         - roomNumber
+        - countryCode
         - hotelId
         - createdAt
 
@@ -458,10 +467,13 @@ components:
           type: string
         roomNumber:
           type: string
+        countryCode:
+          type: string
       required:
         - firstName
         - lastName
         - roomNumber
+        - countryCode
 
     CreateGuestResponse:
       type: object

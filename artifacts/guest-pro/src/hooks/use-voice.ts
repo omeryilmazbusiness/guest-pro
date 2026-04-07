@@ -1,10 +1,22 @@
 import { useState, useRef, useCallback } from "react";
 
+export interface VoiceMessages {
+  notSupported?: string;
+  micDenied?: string;
+  noSpeech?: string;
+  genericError?: (code: string) => string;
+  micNotAvailable?: string;
+}
+
 export interface VoiceHookOptions {
   onResult: (transcript: string, detectedLanguage: string) => void;
   onError?: (message: string) => void;
   onStart?: () => void;
   onEnd?: () => void;
+  /** BCP 47 hint for the speech recognizer (e.g. "tr-TR"). Falls back to browser default. */
+  defaultLang?: string;
+  /** Localised error messages. Falls back to English strings. */
+  messages?: VoiceMessages;
 }
 
 export interface VoiceHookReturn {
@@ -25,13 +37,16 @@ declare global {
 
 /**
  * Detect language from transcribed text using Unicode character ranges.
- * Falls back to "en-US" for Latin scripts.
+ * Falls back to the provided defaultLang or "en-US" for Latin scripts.
  */
-function detectLanguageFromText(text: string): string {
+function detectLanguageFromText(text: string, defaultLang = "en-US"): string {
   if (/[\u0600-\u06FF]/.test(text)) return "ar-SA";
   if (/[\u0400-\u04FF]/.test(text)) return "ru-RU";
   if (/[ğşçıöüĞŞÇİÖÜ]/.test(text)) return "tr-TR";
-  return "en-US";
+  if (/[\u4E00-\u9FFF]/.test(text)) return "zh-CN";
+  if (/[\u3040-\u30FF\u31F0-\u31FF]/.test(text)) return "ja-JP";
+  if (/[\uAC00-\uD7AF]/.test(text)) return "ko-KR";
+  return defaultLang;
 }
 
 /**
@@ -54,13 +69,12 @@ function stripMarkdown(text: string): string {
 }
 
 /**
- * Find the best available voice for a given language code.
- * Called after voices are guaranteed to be loaded.
+ * Find the best available voice for a given BCP 47 language code.
+ * Prefers exact match → prefix match → undefined (browser picks default).
  */
 function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
   const voices = window.speechSynthesis.getVoices();
   const langPrefix = lang.split("-")[0];
-  // Prefer exact match, then prefix match, then any match
   return (
     voices.find((v) => v.lang === lang) ??
     voices.find((v) => v.lang.startsWith(langPrefix)) ??
@@ -71,7 +85,7 @@ function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
 /**
  * Speak text aloud using the Web Speech Synthesis API.
  * Waits for voices to load if not yet available (Chrome race condition).
- * Strips markdown before speaking.
+ * Strips markdown formatting before speaking.
  */
 export function speakText(text: string, lang: string): void {
   if (!("speechSynthesis" in window)) return;
@@ -108,6 +122,8 @@ export function useVoice({
   onError,
   onStart,
   onEnd,
+  defaultLang,
+  messages = {},
 }: VoiceHookOptions): VoiceHookReturn {
   const isSupported =
     typeof window !== "undefined" &&
@@ -152,7 +168,7 @@ export function useVoice({
 
   const startListening = useCallback(async () => {
     if (!isSupported) {
-      onError?.("Ses tanıma bu tarayıcıda desteklenmiyor. Lütfen mesajınızı yazın.");
+      onError?.(messages.notSupported ?? "Speech recognition is not supported in this browser. Please type your message.");
       return;
     }
 
@@ -184,7 +200,8 @@ export function useVoice({
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = true;
-      recognition.lang = ""; // Browser's configured language
+      // Use the guest's expected language as a hint for better accuracy
+      recognition.lang = defaultLang ?? "";
 
       recognition.onstart = () => {
         setIsListening(true);
@@ -197,7 +214,8 @@ export function useVoice({
         setTranscript(text);
 
         if (result.isFinal) {
-          const detectedLang = detectLanguageFromText(text);
+          // Detect language from content; fall back to the guest's default
+          const detectedLang = detectLanguageFromText(text, defaultLang ?? "en-US");
           stopListening();
           onResult(text, detectedLang);
         }
@@ -205,13 +223,11 @@ export function useVoice({
 
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
         if (event.error === "not-allowed") {
-          onError?.(
-            "Mikrofon erişimi reddedildi. Tarayıcı ayarlarından izin verin."
-          );
+          onError?.(messages.micDenied ?? "Microphone access denied. Please allow access in your browser settings.");
         } else if (event.error === "no-speech") {
-          onError?.("Ses algılanamadı. Lütfen tekrar deneyin.");
+          onError?.(messages.noSpeech ?? "No speech detected. Please try again.");
         } else {
-          onError?.(`Ses hatası: ${event.error}`);
+          onError?.(messages.genericError?.(event.error) ?? `Voice error: ${event.error}`);
         }
         stopListening();
       };
@@ -224,17 +240,13 @@ export function useVoice({
       recognition.start();
     } catch (err) {
       if ((err as Error).name === "NotAllowedError") {
-        onError?.(
-          "Mikrofon izni verilmedi. Tarayıcı ayarlarınızı kontrol edin."
-        );
+        onError?.(messages.micDenied ?? "Microphone access denied. Please allow access in your browser settings.");
       } else {
-        onError?.(
-          "Mikrofona erişilemiyor. Cihaz ayarlarınızı kontrol edin."
-        );
+        onError?.(messages.micNotAvailable ?? "Cannot access microphone. Please check your device settings.");
       }
       stopListening();
     }
-  }, [isSupported, onResult, onError, onStart, stopListening]);
+  }, [isSupported, onResult, onError, onStart, stopListening, defaultLang, messages]);
 
   return {
     isListening,

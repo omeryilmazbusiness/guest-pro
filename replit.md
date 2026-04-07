@@ -5,6 +5,27 @@
 pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
 The main product is **Guest Pro** — a premium mobile-first hotel guest web app.
 
+## Localization (i18n) Architecture
+
+### Locale Derivation Chain
+`countryCode` (ISO 3166-1, stored in DB) → `deriveLocaleFromCountry()` (API server) → `{ voiceLocale, uiLocale, dir }` returned on login and `/auth/me`.
+
+- **voiceLocale**: BCP 47 (e.g. `"tr-TR"`) — used for TTS, STT, and Gemini language hints. Stored as `language` column.
+- **uiLocale**: short code (e.g. `"tr"`) — used for translation dictionary lookup.
+- **dir**: `"ltr"` or `"rtl"` — set on `document.dir` by `useLocale()` hook.
+
+### Supported UI Languages
+`en`, `tr`, `ar` (RTL), `ru`, `de`, `fr`, `es` — all via `artifacts/guest-pro/src/lib/i18n.ts`.
+
+### Key Files
+- `artifacts/guest-pro/src/lib/locale.ts` — COUNTRY_LOCALE_MAP, COUNTRIES list, countryFlag helper, uiLocaleFromVoiceLocale, dirFromUiLocale
+- `artifacts/guest-pro/src/lib/i18n.ts` — GuestTranslations interface + full dictionaries for 7 locales
+- `artifacts/guest-pro/src/hooks/use-locale.ts` — reads `user.language` → returns `{ t, voiceLocale, uiLocale, dir }`; sets document.dir/lang
+- `artifacts/api-server/src/lib/locale.ts` — server-side country→locale mapping (70+ countries)
+
+### Country Selector (Manager)
+`create-guest.tsx` uses a shadcn Command + Popover combobox to pick country. Validation requires country selection.
+
 ## Stack
 
 - **Monorepo tool**: pnpm workspaces

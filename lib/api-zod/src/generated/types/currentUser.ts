@@ -23,4 +23,8 @@ export interface CurrentUser {
   /** @nullable */
   guestId?: number | null;
   hotelId: number;
+  /** @nullable */
+  countryCode?: string | null;
+  /** @nullable */
+  language?: string | null;
 }

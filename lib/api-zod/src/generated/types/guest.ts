@@ -11,6 +11,9 @@ export interface Guest {
   firstName: string;
   lastName: string;
   roomNumber: string;
+  countryCode: string;
+  /** @nullable */
+  language?: string | null;
   hotelId: number;
   createdAt: Date;
   /** @nullable */

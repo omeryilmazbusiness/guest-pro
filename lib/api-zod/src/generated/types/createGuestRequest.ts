@@ -10,4 +10,5 @@ export interface CreateGuestRequest {
   firstName: string;
   lastName: string;
   roomNumber: string;
+  countryCode: string;
 }

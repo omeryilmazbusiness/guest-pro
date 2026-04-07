@@ -1,0 +1,413 @@
+You are a senior full-stack software architect, premium mobile UX designer, i18n/voice systems engineer, and production-grade product engineer.
+
+Your task is to inspect, redesign, extend, and harden the existing “Guest Pro” project so that guest language is driven by the guest’s registered country and the entire guest experience becomes fully localized and voice-capable in a production-ready, SOLID, maintainable architecture.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the entire existing codebase, file tree, routing, guest auth flow, manager flow, guest creation flow, chat flow, voice conversation flow, storage schema, i18n structure, and UI component architecture.
+- Do NOT rebuild the app from scratch if working systems already exist.
+- Preserve working guest auth, guest logout, manager login, guest key flow, AI/chat backend integration, rate limit/quota logic, route protection, and stable APIs.
+- Refactor only where there is real architecture, maintainability, internationalization, performance, UX, or production value.
+- Keep everything mobile-first, premium, simple, soft, modern, and production-ready.
+- The final result must feel like a top-tier hotel AI concierge with automatic guest-language personalization.
+
+PROJECT CONTEXT:
+Guest Pro is a premium hotel guest web app.
+
+ROLES:
+1. MANAGER
+2. GUEST
+
+NEW CORE BUSINESS REQUIREMENT:
+Each guest must have a registered country.
+When the manager creates a guest, the manager selects the guest’s country.
+When that guest logs in with guest key:
+- the guest dashboard and guest-facing screens must appear in that guest’s language
+- the conversation/chat mode must default to that guest’s language
+- the AI must reply in that language
+- the AI voice must speak in that language
+- the voice conversation mode must also behave in that language by default
+
+IMPORTANT PRODUCT INTERPRETATION:
+Implement this in a truly production-ready way.
+Do NOT make a naive country = language assumption only in UI text.
+Instead:
+- store the guest’s country
+- derive a default language from country intelligently
+- keep the architecture ready for manual override of preferred language if needed
+- ensure the system remains extensible for multilingual countries and future customization
+
+TARGET EXPERIENCE:
+- Manager creates guest
+- Manager selects country during guest creation
+- Guest logs in with guest key
+- Guest sees the dashboard, buttons, labels, prompts, helper texts, and key UX copy in the guest’s language
+- Chat starts in that guest’s language by default
+- AI responds in that language
+- Voice conversation speaks in that language
+- The experience feels automatic, premium, and highly personalized
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current manager guest-creation flow
+2. Current guest data model
+3. Current guest login flow
+4. Current guest dashboard structure
+5. Current chat/conversation mode
+6. Current voice input implementation
+7. Current text-to-speech implementation
+8. Current language handling / translation / localization setup
+9. Current DB schema
+10. Current route protection and session logic
+11. Current UI component structure
+12. Current message storage / conversation memory logic
+13. What already works
+14. What should be preserved
+15. What is missing for a production-ready country-driven language architecture
+
+Then provide:
+- concise architecture audit
+- country/language gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — DATA MODEL / DOMAIN MODEL EXTENSION
+==================================================
+
+Extend the domain model professionally.
+
+REQUIREMENTS:
+Add country support to guest records in a production-ready way.
+
+At minimum, support:
+- guest country (prefer standardized country code, e.g. ISO country code)
+- derived default language / locale
+- architecture ready for future preferredLanguage override
+
+PROFESSIONAL MODELING EXPECTATION:
+Instead of hardcoding fragile string values everywhere, use a clean design such as:
+- countryCode
+- defaultLocale
+- optional preferredLocale
+- optional preferredVoiceLocale
+
+This allows:
+- country selected by manager
+- UI localization
+- AI language routing
+- TTS voice selection
+- future per-guest language override if necessary
+
+If DB schema needs changes:
+- add the required columns professionally
+- create migration(s)
+- update validation schemas
+- update repositories / services cleanly
+
+==================================================
+PHASE 3 — MANAGER GUEST CREATION FLOW
+==================================================
+
+Update the manager-side guest creation flow.
+
+REQUIREMENTS:
+When manager creates a guest, the form must include country selection.
+
+UX REQUIREMENTS:
+- premium, clean, mobile-friendly manager UI
+- professional country selector
+- searchable/selectable if appropriate
+- do not make the form messy
+- sensible default placeholder
+- strong validation
+
+BEHAVIOR:
+- manager must choose the guest’s country
+- country must be saved with the guest record
+- language/locale should be derived automatically from that country
+- if the architecture already has a good guest service/use-case layer, preserve it and extend it properly
+
+OPTIONAL BUT STRONGLY RECOMMENDED:
+- keep the code ready for future manual language override
+- for now, the manager can select country and the system can derive the default language automatically
+- but the data model should be ready for later manual language selection if needed
+
+==================================================
+PHASE 4 — COUNTRY-TO-LANGUAGE MAPPING (PROD-READY)
+==================================================
+
+Implement a clean, maintainable country-to-language strategy.
+
+IMPORTANT:
+Do not implement this as a giant messy if/else in UI code.
+
+Implement a professional mapping layer or service.
+
+REQUIREMENTS:
+- map guest country to a default locale/language
+- keep the mapping centralized
+- use clean naming
+- make it easy to extend later
+- avoid scattering locale assumptions across the app
+
+EXAMPLES OF EXPECTED BEHAVIOR:
+- guest country Turkey -> Turkish UI / Turkish AI responses / Turkish voice
+- guest country Saudi Arabia -> Arabic UI / Arabic AI responses / Arabic voice
+- guest country Russia -> Russian UI / Russian AI responses / Russian voice
+- guest country United Kingdom -> English UI / English AI responses / English voice
+
+PROFESSIONAL NOTE:
+The architecture must remain ready for countries with multiple languages or future overrides.
+Do not trap the system in an inflexible country=one-language hack.
+
+==================================================
+PHASE 5 — GUEST LOGIN AND SESSION CONTEXT
+==================================================
+
+When guest logs in with guest key, their country-driven language context must be loaded properly.
+
+REQUIREMENTS:
+- after guest login, fetch the guest’s country and derived locale
+- store only the necessary safe session/context values
+- make locale available to guest-facing UI
+- make locale available to chat/AI routing
+- make locale available to text-to-speech / voice systems
+- keep this clean and secure
+- do not rely on fragile client-only hacks
+
+The guest experience should feel instantly localized after login.
+
+==================================================
+PHASE 6 — FULL GUEST UI LOCALIZATION
+==================================================
+
+Localize the guest-facing screens using the guest’s language.
+
+REQUIREMENTS:
+- guest dashboard copy
+- Ask Something section
+- voice conversation hero
+- buttons
+- headers
+- helper text
+- empty states
+- errors
+- install popup texts
+- remove all / chat actions
+- voice mode state labels
+- quota messages
+- all key guest-facing content
+
+IMPORTANT:
+- manager/admin screens do not need to be force-localized by guest country
+- this requirement is for the guest experience
+- use a proper i18n architecture, not scattered hardcoded translation strings
+
+IMPLEMENTATION EXPECTATIONS:
+- central translation dictionaries or locale modules
+- consistent translation keys
+- maintainable structure
+- production-ready fallback locale
+- no dead or duplicated translation code
+
+==================================================
+PHASE 7 — CHAT / AI LANGUAGE ROUTING
+==================================================
+
+The conversation mode must default to the guest’s language.
+
+REQUIREMENTS:
+- when guest opens chat, the assistant should behave in the guest’s default language
+- greeting, system prompts, helper texts, and AI responses should use that language
+- if the current backend already supports language steering, preserve and improve it
+- if missing, add a clean language routing layer
+
+IMPORTANT:
+- the AI should not randomly switch languages
+- use the guest’s locale as the baseline language context
+- keep the architecture clean and explicit
+
+If dynamic language detection during live voice mode already exists:
+- guest locale should remain the primary default
+- the architecture should allow future flexibility
+- but for now the product behavior should remain consistent with the guest’s registered country language
+
+==================================================
+PHASE 8 — VOICE CONVERSATION IN GUEST LANGUAGE
+==================================================
+
+Make voice conversation fully aligned with the guest’s language context.
+
+REQUIREMENTS:
+- speech input handling should start with the guest’s expected language/locale where appropriate
+- AI responses should be generated in that guest’s language
+- TTS should use that guest’s language/locale
+- select the best available voice for that locale
+- degrade gracefully if an exact voice is unavailable
+
+TARGET EXPERIENCE:
+- guest from Turkey logs in -> UI Turkish -> AI text Turkish -> AI voice Turkish
+- guest from Saudi Arabia logs in -> UI Arabic -> AI text Arabic -> AI voice Arabic
+- guest from Russia logs in -> UI Russian -> AI text Russian -> AI voice Russian
+- guest from UK logs in -> UI English -> AI text English -> AI voice English
+
+Also preserve:
+- chat messages still appear visually
+- voice mode still functions as a continuous professional conversation loop
+- speech interruption / stop logic still works
+- AI spoken response stops if user interrupts and resumes listening if that behavior already exists or is being implemented
+
+==================================================
+PHASE 9 — GUEST DASHBOARD EXPERIENCE
+==================================================
+
+Preserve and improve the premium guest dashboard experience.
+
+REQUIREMENTS:
+- voice conversation hero remains the primary focus
+- Ask Something remains available below as secondary entry
+- all guest-facing labels in the guest’s language
+- premium white/light theme
+- soft modern hospitality design
+- mobile-first layout
+- clean information hierarchy
+- no visual clutter
+
+Also localize:
+- “Let’s Ask”
+- “Ask Something”
+- voice CTA labels
+- state labels such as listening / thinking / speaking / stop
+- install popup copy
+- quick actions
+- overview/info labels
+
+==================================================
+PHASE 10 — CONVERSATION MEMORY AND REMOVE ALL
+==================================================
+
+If conversation memory and remove-all features already exist or are being built, ensure they remain consistent with the localized experience.
+
+REQUIREMENTS:
+- recent messages remain visible in guest language
+- summarized conversation memory stays clean and efficient
+- remove all clears chat safely
+- any system messages or empty states shown after reset must also respect guest locale
+
+==================================================
+PHASE 11 — VALIDATION / ERROR HANDLING / FALLBACKS
+==================================================
+
+Implement this professionally.
+
+REQUIREMENTS:
+- validate country selection on manager guest creation
+- if country is missing, guest creation should fail safely with clean UI feedback
+- if locale mapping fails, use a safe fallback locale
+- if a specific voice is unavailable, use the best fallback voice in the same or nearest supported language
+- if localization key is missing, use safe fallback text
+- no broken untranslated UI
+- no mixed random language UI
+
+==================================================
+PHASE 12 — SOLID / ARCHITECTURE REQUIREMENTS
+==================================================
+
+Implement with a meaningful modular architecture.
+
+REQUIREMENTS:
+- keep domain logic separate from presentation
+- country/language mapping must not live in random UI files
+- localization must not be hardcoded in component bodies
+- voice locale selection must be centralized
+- AI language routing must be explicit and maintainable
+- no giant messy files
+- no fake architecture
+- no dead code
+- meaningful reusable modules/services/helpers only
+
+Possible clean structure:
+- GuestCountryLanguagePolicy
+- LocaleResolver
+- GuestLocaleContext
+- TranslationDictionary / LocaleMessages
+- VoiceLocaleSelector
+- AIResponseLanguageRouter
+- GuestCreationService
+- GuestSessionContextBuilder
+- GuestDashboardHeader
+- VoiceConversationController
+
+==================================================
+PHASE 13 — DO NOT BREAK WORKING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- guest login
+- guest logout
+- manager login
+- Google OAuth manager flow if already active
+- guest key auth
+- chat backend / AI integration
+- request quota logic
+- route protection
+- manager flows
+- stable APIs
+
+This task is primarily about:
+- country-aware guest creation
+- automatic guest-language localization
+- AI and voice responding in the guest’s language
+- production-ready localization architecture
+
+==================================================
+PHASE 14 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Manager can create guest with country selection
+2. Country is saved correctly
+3. Guest logs in successfully with guest key
+4. Guest dashboard appears in the guest’s language
+5. Ask Something and voice hero appear in the guest’s language
+6. Guest chat defaults to the guest’s language
+7. AI text response is in the guest’s language
+8. AI spoken response is in the guest’s language
+9. Voice conversation still works continuously
+10. Remove All still works if present
+11. Memory logic still works if present
+12. No regression in auth/logout/chat flow
+13. No mixed-language broken UI states remain
+14. Fallback behavior works when locale/voice is partially unavailable
+
+==================================================
+PHASE 15 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was preserved
+3. What was redesigned
+4. What DB/schema/domain changes were made
+5. How country selection now works
+6. How country-to-language routing now works
+7. How guest UI localization now works
+8. How AI language routing now works
+9. How voice language/voice selection now works
+10. Which files were changed
+11. How to test manager guest creation with country
+12. How to test guest login with different countries
+13. How to test localized UI + AI text + AI voice end-to-end
+14. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result premium, simple, soft, modern, and production-ready
+- Make localization feel automatic and highly polished for every guest

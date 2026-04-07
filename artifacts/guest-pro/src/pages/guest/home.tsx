@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useLocale } from "@/hooks/use-locale";
 import {
   useGetHotelBranding,
   useListQuickActions,
@@ -21,6 +22,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useVoice } from "@/hooks/use-voice";
+import { tFmt } from "@/lib/i18n";
 import { MicrophoneButton } from "@/components/chat/MicrophoneButton";
 import { useInstallPrompt } from "@/hooks/use-install-prompt";
 import { InstallSheet } from "@/components/InstallSheet";
@@ -32,29 +34,12 @@ const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   activity: Calendar,
 };
 
-const INFO_ITEMS = [
-  {
-    icon: Phone,
-    title: "7/24 Resepsiyon",
-    desc: "Her isteğiniz için ekibimiz her zaman hazır.",
-  },
-  {
-    icon: BedDouble,
-    title: "Oda Servisi",
-    desc: "Concierge'den oda temizliği veya servis talep edin.",
-  },
-  {
-    icon: Clock,
-    title: "Check-out",
-    desc: "Standart çıkış saati 12:00'dir.",
-  },
-];
-
 export default function GuestHome() {
   const { user, isAuthenticated, logoutAuth } = useAuth();
   const [, setLocation] = useLocation();
   const logoutMutation = useLogout();
   const install = useInstallPrompt();
+  const { t, voiceLocale } = useLocale();
 
   const { data: branding } = useGetHotelBranding();
   const { data: quickActions } = useListQuickActions();
@@ -70,7 +55,7 @@ export default function GuestHome() {
   const handleLogout = () => {
     logoutAuth();
     logoutMutation.mutate(undefined);
-    toast.success("Güvenli yolculuklar!");
+    toast.success(t.logoutSuccess);
   };
 
   const goToChat = (q?: string) => {
@@ -87,6 +72,14 @@ export default function GuestHome() {
       }
     },
     onError: (msg) => toast.error(msg),
+    defaultLang: voiceLocale,
+    messages: {
+      notSupported: t.voiceNotSupported,
+      micDenied: t.micDenied,
+      noSpeech: t.noSpeech,
+      genericError: (code) => t.voiceErrorGeneric.replace("{code}", code),
+      micNotAvailable: t.micDenied,
+    },
   });
 
   const handleMicTap = () => {
@@ -98,6 +91,12 @@ export default function GuestHome() {
   };
 
   if (!isAuthenticated || user?.role !== "guest") return null;
+
+  const INFO_ITEMS = [
+    { icon: Phone, title: t.receptionTitle, desc: t.receptionDesc },
+    { icon: BedDouble, title: t.roomServiceTitle, desc: t.roomServiceDesc },
+    { icon: Clock, title: t.checkoutTitle, desc: t.checkoutDesc },
+  ];
 
   return (
     <div className="min-h-[100dvh] bg-[#F8F8F8]">
@@ -115,7 +114,7 @@ export default function GuestHome() {
           <button
             onClick={handleLogout}
             className="text-zinc-400 hover:text-zinc-700 transition-colors p-2 -mr-2"
-            aria-label="Çıkış yap"
+            aria-label={t.logout}
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -126,7 +125,7 @@ export default function GuestHome() {
         {/* Welcome line */}
         <div className="pt-8 pb-2 text-center">
           <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-widest">
-            Hoş geldiniz, {user.firstName}
+            {tFmt(t.welcome, { name: user.firstName ?? "" })}
           </p>
         </div>
 
@@ -134,13 +133,13 @@ export default function GuestHome() {
         <section className="mb-6">
           <div className="bg-zinc-900 rounded-3xl px-6 py-8 flex flex-col items-center text-center shadow-xl shadow-zinc-900/20">
             <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-widest mb-4">
-              Sesle Sor
+              {t.voiceLabel}
             </p>
             <h1 className="text-4xl font-serif text-white tracking-tight leading-tight mb-2">
-              Konuş Benimle
+              {t.voiceTitle}
             </h1>
             <p className="text-zinc-400 text-[14px] leading-relaxed mb-8 max-w-xs">
-              Concierge'iniz dinliyor. İstediğiniz dilde konuşun.
+              {t.voiceSubtitle}
             </p>
 
             {/* Large mic button */}
@@ -173,7 +172,7 @@ export default function GuestHome() {
                     ? "bg-white text-zinc-900 shadow-white/25"
                     : "bg-white/10 text-white border border-white/20 hover:bg-white/20"
                 }`}
-                aria-label={voice.isListening ? "Dinlemeyi durdur" : "Sesle sor"}
+                aria-label={voice.isListening ? t.cancel : t.voiceLabel}
               >
                 <Mic className="w-8 h-8" />
               </button>
@@ -184,8 +183,8 @@ export default function GuestHome() {
               {voice.isListening
                 ? voice.transcript
                   ? `"${voice.transcript}"`
-                  : "Dinleniyor…"
-                : "Mikrofona dokunun ve konuşmaya başlayın"}
+                  : t.listeningState
+                : t.voiceHint}
             </p>
 
             {/* Or go straight to voice chat page */}
@@ -195,7 +194,7 @@ export default function GuestHome() {
                 className="mt-5 text-[13px] text-zinc-500 hover:text-zinc-300 flex items-center gap-1.5 transition-colors"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
-                Sesli sohbete geç
+                {t.goToVoiceChat}
               </button>
             )}
           </div>
@@ -204,7 +203,7 @@ export default function GuestHome() {
         {/* ── Ask Something — SECONDARY CTA ── */}
         <section className="mb-7">
           <h3 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-3 px-1">
-            Yazarak Sor
+            {t.askSomethingLabel}
           </h3>
           <button
             onClick={() => goToChat()}
@@ -214,10 +213,8 @@ export default function GuestHome() {
               <Sparkles className="w-4 h-4 text-zinc-400" />
             </div>
             <div className="flex-1 text-left">
-              <p className="text-[15px] font-medium text-zinc-800">Bir Şey Sor</p>
-              <p className="text-[12px] text-zinc-400 mt-0.5">
-                Konaklamanız hakkında her şey
-              </p>
+              <p className="text-[15px] font-medium text-zinc-800">{t.askSomethingTitle}</p>
+              <p className="text-[12px] text-zinc-400 mt-0.5">{t.askSomethingSubtitle}</p>
             </div>
             <ArrowRight className="w-4 h-4 text-zinc-300 group-hover:text-zinc-400 transition-colors" />
           </button>
@@ -226,13 +223,13 @@ export default function GuestHome() {
         {/* Your Stay card */}
         <section className="mb-7">
           <h3 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-3 px-1">
-            Konaklamanız
+            {t.staySection}
           </h3>
           <div className="bg-white rounded-3xl border border-zinc-100 shadow-sm overflow-hidden">
             <div className="px-6 py-5 flex items-center justify-between">
               <div>
                 <p className="text-[11px] text-zinc-400 font-medium uppercase tracking-wide mb-1.5">
-                  Oda
+                  {t.room}
                 </p>
                 <p className="text-3xl font-serif text-zinc-900 leading-none">
                   {user.roomNumber}
@@ -240,7 +237,7 @@ export default function GuestHome() {
               </div>
               <div className="text-right">
                 <p className="text-[11px] text-zinc-400 font-medium uppercase tracking-wide mb-1.5">
-                  Misafir
+                  {t.guest}
                 </p>
                 <p className="text-[15px] font-medium text-zinc-800">
                   {user.firstName} {user.lastName}
@@ -250,12 +247,12 @@ export default function GuestHome() {
             <div className="border-t border-zinc-50 px-6 py-3.5">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span className="text-[13px] text-zinc-500">Konaklama aktif</span>
+                <span className="text-[13px] text-zinc-500">{t.stayActive}</span>
                 <button
                   onClick={() => goToChat()}
                   className="ml-auto flex items-center gap-1 text-[13px] text-zinc-400 hover:text-zinc-700 transition-colors"
                 >
-                  Chat <ChevronRight className="w-3.5 h-3.5" />
+                  {t.chatLink} <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -266,7 +263,7 @@ export default function GuestHome() {
         {quickActions && quickActions.length > 0 && (
           <section className="mb-7">
             <h3 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-3 px-1">
-              Hızlı İstekler
+              {t.quickActionsSection}
             </h3>
             <div className="grid grid-cols-2 gap-3">
               {quickActions.map(
@@ -284,7 +281,7 @@ export default function GuestHome() {
                       <p className="text-[14px] font-medium text-zinc-800 leading-snug">
                         {action.label}
                       </p>
-                      <p className="text-[12px] text-zinc-400 mt-1">Sormak için dokun →</p>
+                      <p className="text-[12px] text-zinc-400 mt-1">{t.touchToAsk}</p>
                     </button>
                   );
                 }
@@ -296,7 +293,7 @@ export default function GuestHome() {
         {/* Info section */}
         <section className="mb-7">
           <h3 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-3 px-1">
-            Hizmetinizde
+            {t.infoSection}
           </h3>
           <div className="bg-white rounded-3xl border border-zinc-100 shadow-sm overflow-hidden">
             {INFO_ITEMS.map((item, i) => (
@@ -321,7 +318,7 @@ export default function GuestHome() {
         </section>
 
         <p className="text-center text-[12px] text-zinc-300 px-4">
-          {branding?.appName || "Guest Pro"} · AI destekli concierge
+          {branding?.appName || "Guest Pro"} · {t.footerText}
         </p>
       </main>
 
@@ -342,9 +339,9 @@ export default function GuestHome() {
               size="lg"
             />
             <div className="text-center">
-              <p className="text-[15px] font-medium text-white">Dinleniyor…</p>
+              <p className="text-[15px] font-medium text-white">{t.listeningState}</p>
               <p className="text-[13px] text-zinc-400 mt-1">
-                {voice.transcript || "İstediğiniz dilde konuşun"}
+                {voice.transcript || t.voiceSubtitle}
               </p>
             </div>
           </div>
@@ -352,7 +349,7 @@ export default function GuestHome() {
             onClick={() => voice.stopListening()}
             className="text-white/50 text-[14px] hover:text-white/80 transition-colors"
           >
-            İptal
+            {t.cancel}
           </button>
         </div>
       )}

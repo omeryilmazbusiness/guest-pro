@@ -4,6 +4,7 @@ import { db, guestsTable, guestKeysTable, auditLogsTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
 import { requireManager } from "../middlewares/requireAuth";
 import { generateGuestKey } from "../lib/auth";
+import { deriveLocaleFromCountry } from "../lib/locale";
 
 const router: IRouter = Router();
 
@@ -15,6 +16,8 @@ router.get("/guests", requireManager, async (req, res): Promise<void> => {
       firstName: guestsTable.firstName,
       lastName: guestsTable.lastName,
       roomNumber: guestsTable.roomNumber,
+      countryCode: guestsTable.countryCode,
+      language: guestsTable.language,
       hotelId: guestsTable.hotelId,
       createdAt: guestsTable.createdAt,
       guestKey: guestKeysTable.keyDisplay,
@@ -28,7 +31,7 @@ router.get("/guests", requireManager, async (req, res): Promise<void> => {
 });
 
 router.post("/guests", requireManager, async (req, res): Promise<void> => {
-  const { firstName, lastName, roomNumber } = req.body;
+  const { firstName, lastName, roomNumber, countryCode } = req.body;
   const hotelId = req.session!.hotelId;
   const actorId = req.session!.userId;
 
@@ -37,9 +40,17 @@ router.post("/guests", requireManager, async (req, res): Promise<void> => {
     return;
   }
 
+  if (!countryCode || typeof countryCode !== "string" || countryCode.trim().length < 2) {
+    res.status(400).json({ error: "countryCode is required (ISO 3166-1 alpha-2)" });
+    return;
+  }
+
+  const normalizedCountry = countryCode.trim().toUpperCase();
+  const { voiceLocale } = deriveLocaleFromCountry(normalizedCountry);
+
   const [guest] = await db
     .insert(guestsTable)
-    .values({ firstName, lastName, roomNumber, hotelId })
+    .values({ firstName, lastName, roomNumber, hotelId, countryCode: normalizedCountry, language: voiceLocale })
     .returning();
 
   const { key, keyHash } = generateGuestKey();
@@ -55,7 +66,7 @@ router.post("/guests", requireManager, async (req, res): Promise<void> => {
     action: "create_guest",
     targetType: "guest",
     targetId: guest.id,
-    metadata: { roomNumber, firstName, lastName },
+    metadata: { roomNumber, firstName, lastName, countryCode: normalizedCountry, language: voiceLocale },
   });
 
   res.status(201).json({
@@ -64,6 +75,8 @@ router.post("/guests", requireManager, async (req, res): Promise<void> => {
       firstName: guest.firstName,
       lastName: guest.lastName,
       roomNumber: guest.roomNumber,
+      countryCode: guest.countryCode,
+      language: guest.language,
       hotelId: guest.hotelId,
       createdAt: guest.createdAt,
       guestKey: guestKey.keyDisplay,
@@ -86,6 +99,8 @@ router.get("/guests/:id", requireManager, async (req, res): Promise<void> => {
       firstName: guestsTable.firstName,
       lastName: guestsTable.lastName,
       roomNumber: guestsTable.roomNumber,
+      countryCode: guestsTable.countryCode,
+      language: guestsTable.language,
       hotelId: guestsTable.hotelId,
       createdAt: guestsTable.createdAt,
       guestKey: guestKeysTable.keyDisplay,

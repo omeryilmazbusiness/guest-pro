@@ -38,6 +38,8 @@ export const LoginResponse = zod.object({
     roomNumber: zod.string().nullish(),
     guestId: zod.number().nullish(),
     hotelId: zod.number(),
+    countryCode: zod.string().nullish(),
+    language: zod.string().nullish(),
   }),
 });
 
@@ -79,6 +81,8 @@ export const GetMeResponse = zod.object({
   roomNumber: zod.string().nullish(),
   guestId: zod.number().nullish(),
   hotelId: zod.number(),
+  countryCode: zod.string().nullish(),
+  language: zod.string().nullish(),
 });
 
 /**
@@ -89,6 +93,8 @@ export const ListGuestsResponseItem = zod.object({
   firstName: zod.string(),
   lastName: zod.string(),
   roomNumber: zod.string(),
+  countryCode: zod.string(),
+  language: zod.string().nullish(),
   hotelId: zod.number(),
   createdAt: zod.coerce.date(),
   guestKey: zod.string().nullish(),
@@ -102,6 +108,7 @@ export const CreateGuestBody = zod.object({
   firstName: zod.string(),
   lastName: zod.string(),
   roomNumber: zod.string(),
+  countryCode: zod.string(),
 });
 
 /**
@@ -116,6 +123,8 @@ export const GetGuestResponse = zod.object({
   firstName: zod.string(),
   lastName: zod.string(),
   roomNumber: zod.string(),
+  countryCode: zod.string(),
+  language: zod.string().nullish(),
   hotelId: zod.number(),
   createdAt: zod.coerce.date(),
   guestKey: zod.string().nullish(),

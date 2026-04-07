@@ -1,5 +1,6 @@
 import { Download, X } from "lucide-react";
 import type { UseInstallPromptReturn } from "@/hooks/use-install-prompt";
+import { useLocale } from "@/hooks/use-locale";
 
 interface Props {
   install: UseInstallPromptReturn;
@@ -16,6 +17,8 @@ export function InstallSheet({ install }: Props) {
     dismissPermanent,
   } = install;
 
+  const { t } = useLocale();
+
   if (!showSheet) return null;
 
   return (
@@ -29,7 +32,7 @@ export function InstallSheet({ install }: Props) {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Ana ekrana ekle"
+        aria-label={t.installTitle}
         className="fixed bottom-0 inset-x-0 z-50 animate-in slide-in-from-bottom duration-300"
       >
         <div className="bg-white rounded-t-[28px] shadow-2xl">
@@ -47,43 +50,42 @@ export function InstallSheet({ install }: Props) {
                 </div>
                 <div>
                   <p className="text-[18px] font-semibold text-zinc-900 leading-tight">
-                    Ana Ekrana Ekle
+                    {t.installTitle}
                   </p>
-                  <p className="text-[13px] text-zinc-400 mt-0.5">
-                    Guest Pro · AI Concierge
-                  </p>
+                  <p className="text-[13px] text-zinc-400 mt-0.5">Guest Pro · AI Concierge</p>
                 </div>
               </div>
               <button
                 onClick={dismiss}
                 className="p-1.5 text-zinc-300 hover:text-zinc-500 transition-colors -mr-1"
-                aria-label="Kapat"
+                aria-label={t.cancel}
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <p className="text-[14px] text-zinc-500 leading-relaxed mb-6">
-              Guest Pro'yu ana ekranınıza ekleyin — uygulama gibi açılır, tam
-              ekran çalışır ve her zaman bir dokunuşla hazır olur.
+              {t.installSubtitle}
             </p>
 
             {canNativeInstall ? (
               <NativeInstallCTA
+                installNow={t.installNow}
+                installLater={t.installLater}
                 onInstall={triggerInstall}
                 onDismiss={dismiss}
               />
             ) : isIOS ? (
-              <IOSInstructions isIPad={isIPad} onDismiss={dismiss} />
+              <IOSInstructions isIPad={isIPad} onDismiss={dismiss} t={t} />
             ) : (
-              <FallbackInstructions onDismiss={dismiss} />
+              <FallbackInstructions onDismiss={dismiss} t={t} />
             )}
 
             <button
               onClick={dismissPermanent}
               className="w-full text-center text-[12px] text-zinc-300 hover:text-zinc-400 transition-colors mt-5 py-1"
             >
-              Bir daha gösterme
+              {t.installDontShow}
             </button>
           </div>
         </div>
@@ -114,9 +116,13 @@ function AppIcon() {
 }
 
 function NativeInstallCTA({
+  installNow,
+  installLater,
   onInstall,
   onDismiss,
 }: {
+  installNow: string;
+  installLater: string;
   onInstall: () => Promise<void>;
   onDismiss: () => void;
 }) {
@@ -127,13 +133,13 @@ function NativeInstallCTA({
         className="w-full bg-zinc-900 text-white rounded-2xl py-4 text-[16px] font-medium flex items-center justify-center gap-2.5 shadow-lg shadow-zinc-900/15 active:scale-[0.98] hover:bg-zinc-800 transition-all duration-150"
       >
         <Download className="w-5 h-5 opacity-70" />
-        Ana Ekrana Ekle
+        {installNow}
       </button>
       <button
         onClick={onDismiss}
         className="w-full bg-zinc-50 text-zinc-500 rounded-2xl py-4 text-[16px] font-medium active:scale-[0.98] hover:bg-zinc-100 transition-all duration-150"
       >
-        Daha sonra
+        {installLater}
       </button>
     </div>
   );
@@ -142,9 +148,11 @@ function NativeInstallCTA({
 function IOSInstructions({
   isIPad,
   onDismiss,
+  t,
 }: {
   isIPad: boolean;
   onDismiss: () => void;
+  t: ReturnType<typeof useLocale>["t"];
 }) {
   return (
     <div className="space-y-3">
@@ -153,42 +161,34 @@ function IOSInstructions({
         <StepCard
           number={1}
           icon={<ShareIcon />}
-          title={
-            isIPad
-              ? "Sağ üstteki Share ikonuna dokunun"
-              : "Alt bardaki Share ikonuna dokunun"
-          }
-          hint={
-            isIPad
-              ? "Safari'nin sağ üst köşesindeki kutu-ok simgesi"
-              : "Safari'nin alt çubuğundaki kutu-ok simgesi"
-          }
+          title={t.iosStep1Title}
+          hint={t.iosStep1Hint}
         />
 
-        {/* Step 2 — iPad needs "View More" step */}
+        {/* Step 2 — iPad only: "View More" */}
         {isIPad && (
           <StepCard
             number={2}
             icon={<MoreIcon />}
-            title="View More / More seçeneğine dokunun"
-            hint="Paylaşım menüsünde aşağı kaydırın veya More'a dokunun"
+            title={t.iosPadStep2Title}
+            hint={t.iosPadStep2Hint}
           />
         )}
 
-        {/* Step 3 */}
+        {/* Step 3 — Add to Home Screen */}
         <StepCard
           number={isIPad ? 3 : 2}
           icon={<AddHomeIcon />}
-          title="Add to Home Screen'e dokunun"
-          hint="Listeyi aşağı kaydırarak bulabilirsiniz"
+          title={t.iosStep3Title}
+          hint={t.iosStep3Hint}
         />
 
-        {/* Step 4 */}
+        {/* Step 4 — Tap Add */}
         <StepCard
           number={isIPad ? 4 : 3}
           icon={<AddButtonIcon />}
-          title="Add diyerek onaylayın"
-          hint="Guest Pro ana ekranınızda görünecek"
+          title={t.iosStep4Title}
+          hint="Guest Pro ✓"
         />
       </div>
 
@@ -196,40 +196,46 @@ function IOSInstructions({
         onClick={onDismiss}
         className="w-full bg-zinc-50 text-zinc-500 rounded-2xl py-4 text-[16px] font-medium active:scale-[0.98] hover:bg-zinc-100 transition-all duration-150 mt-1"
       >
-        Daha sonra
+        {t.installLater}
       </button>
     </div>
   );
 }
 
-function FallbackInstructions({ onDismiss }: { onDismiss: () => void }) {
+function FallbackInstructions({
+  onDismiss,
+  t,
+}: {
+  onDismiss: () => void;
+  t: ReturnType<typeof useLocale>["t"];
+}) {
   return (
     <div className="space-y-3">
       <div className="space-y-2">
         <StepCard
           number={1}
           icon={<MoreIcon />}
-          title="Tarayıcı menüsünü açın"
-          hint="Üç nokta menüsü veya paylaşım simgesi"
+          title={t.iosStep3Title}
+          hint={t.iosStep3Hint}
         />
         <StepCard
           number={2}
           icon={<AddHomeIcon />}
-          title="Ana Ekrana Ekle'yi seçin"
-          hint="Veya 'Uygulamayı Yükle' seçeneği"
+          title={t.installNow}
+          hint=""
         />
         <StepCard
           number={3}
           icon={<AddButtonIcon />}
-          title="Onaylayın"
-          hint="Guest Pro ana ekranınızda görünecek"
+          title={t.iosStep4Title}
+          hint="Guest Pro ✓"
         />
       </div>
       <button
         onClick={onDismiss}
         className="w-full bg-zinc-50 text-zinc-500 rounded-2xl py-4 text-[16px] font-medium active:scale-[0.98] hover:bg-zinc-100 transition-all duration-150 mt-1"
       >
-        Daha sonra
+        {t.installLater}
       </button>
     </div>
   );
@@ -255,12 +261,10 @@ function StepCard({
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-semibold text-zinc-800 leading-snug">
-          {title}
-        </p>
-        <p className="text-[11px] text-zinc-400 mt-0.5 leading-relaxed">
-          {hint}
-        </p>
+        <p className="text-[13px] font-semibold text-zinc-800 leading-snug">{title}</p>
+        {hint && (
+          <p className="text-[11px] text-zinc-400 mt-0.5 leading-relaxed">{hint}</p>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useLocale } from "@/hooks/use-locale";
 import {
   useCreateChatSession,
   useGetChatMessages,
@@ -30,18 +31,20 @@ import { ShimmerBubble } from "@/components/chat/ShimmerBubble";
 import { OptimisticUserBubble } from "@/components/chat/OptimisticUserBubble";
 import { MicrophoneButton } from "@/components/chat/MicrophoneButton";
 import { useVoice, speakText } from "@/hooks/use-voice";
+import { tFmt } from "@/lib/i18n";
 
 const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   "map-pin": MapPin,
-  "calendar": Calendar,
-  "phone": Phone,
-  "activity": Calendar,
+  calendar: Calendar,
+  phone: Phone,
+  activity: Calendar,
 };
 
 export default function GuestChat() {
   const { user, isAuthenticated, logoutAuth } = useAuth();
   const [, setLocation] = useLocation();
   const logoutMutation = useLogout();
+  const { t, voiceLocale } = useLocale();
 
   const createSessionMutation = useCreateChatSession();
   const sendMessageMutation = useSendMessage();
@@ -57,7 +60,8 @@ export default function GuestChat() {
   const [voiceAutoStart, setVoiceAutoStart] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
-  const [detectedLanguage, setDetectedLanguage] = useState<string>("en-US");
+  // Initialize to the guest's registered locale; updated by actual voice recognition
+  const [detectedLanguage, setDetectedLanguage] = useState<string>(voiceLocale);
 
   const autoSendFiredRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -105,7 +109,7 @@ export default function GuestChat() {
     }
   }, [isAuthenticated, user, sessionId]);
 
-  // Voice hook
+  // Voice hook — seeded with guest's registered language
   const voice = useVoice({
     onResult: (transcript, lang) => {
       setDetectedLanguage(lang);
@@ -114,6 +118,14 @@ export default function GuestChat() {
       handleSend(transcript, lang);
     },
     onError: (msg) => toast.error(msg),
+    defaultLang: voiceLocale,
+    messages: {
+      notSupported: t.voiceNotSupported,
+      micDenied: t.micDenied,
+      noSpeech: t.noSpeech,
+      genericError: (code) => t.voiceErrorGeneric.replace("{code}", code),
+      micNotAvailable: t.micDenied,
+    },
   });
 
   // Auto-start voice if ?voice=1 in URL
@@ -129,7 +141,7 @@ export default function GuestChat() {
       if (voice.isSupported) {
         voice.startListening();
       } else {
-        toast.error("Ses tanıma bu tarayıcıda desteklenmiyor.");
+        toast.error(t.voiceNotSupported);
       }
     }
   }, [voiceAutoStart, sessionId, messagesLoading]);
@@ -210,7 +222,7 @@ export default function GuestChat() {
           if (err.data?.quotaExceeded) {
             setQuotaExceeded(true);
           } else {
-            toast.error(err.data?.error || "Gönderilemedi. Lütfen tekrar deneyin.");
+            toast.error(err.data?.error || t.sendFailed);
             setInputValue(trimmed);
           }
         },
@@ -236,12 +248,13 @@ export default function GuestChat() {
       voicePendingTTSRef.current = false;
       setAnimatingIds(new Set());
       setQuotaExceeded(false);
-      setDetectedLanguage("en-US");
+      // Reset detected language back to guest's registered locale (not "en-US")
+      setDetectedLanguage(voiceLocale);
       window.speechSynthesis?.cancel();
       await refetchMessages();
-      toast.success("Konuşma silindi.");
+      toast.success(t.clearedMessage);
     } catch {
-      toast.error("Silinemedi. Lütfen tekrar deneyin.");
+      toast.error(t.sendFailed);
     } finally {
       setIsClearing(false);
       setShowClearConfirm(false);
@@ -251,7 +264,7 @@ export default function GuestChat() {
   const handleLogout = () => {
     logoutAuth();
     logoutMutation.mutate(undefined);
-    toast.success("Güvenli yolculuklar!");
+    toast.success(t.logoutSuccess);
   };
 
   const toggleVoice = () => {
@@ -277,7 +290,7 @@ export default function GuestChat() {
           <button
             onClick={() => setLocation("/guest")}
             className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-50 transition-all -ml-1"
-            aria-label="Ana sayfaya dön"
+            aria-label={t.backLabel}
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -287,7 +300,10 @@ export default function GuestChat() {
               {branding?.appName || "Concierge"}
             </p>
             <p className="text-[11px] text-zinc-400 uppercase tracking-wide font-medium">
-              {user.firstName} · Oda {user.roomNumber}
+              {tFmt(t.headerRoom, {
+                name: user.firstName ?? "",
+                room: user.roomNumber ?? "",
+              })}
             </p>
           </div>
 
@@ -295,7 +311,7 @@ export default function GuestChat() {
             <button
               onClick={() => setShowClearConfirm(true)}
               className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-50 transition-all"
-              aria-label="Konuşmayı temizle"
+              aria-label={t.clearChatLabel}
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -305,7 +321,7 @@ export default function GuestChat() {
             data-testid="button-checkout"
             onClick={handleLogout}
             className="text-zinc-400 hover:text-zinc-700 transition-colors p-1"
-            aria-label="Çıkış yap"
+            aria-label={t.logout}
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -328,9 +344,9 @@ export default function GuestChat() {
               <MessageSquare className="w-7 h-7 text-zinc-300" />
             </div>
             <div className="space-y-1.5">
-              <h2 className="text-[18px] font-serif text-zinc-800">Nasıl yardımcı olabilirim?</h2>
+              <h2 className="text-[18px] font-serif text-zinc-800">{t.emptyTitle}</h2>
               <p className="text-zinc-400 text-[14px] leading-relaxed max-w-xs">
-                Konaklamanız, otel veya şehir hakkında her şeyi sorabilirsiniz.
+                {t.emptySubtitle}
               </p>
             </div>
             {voice.isSupported && (
@@ -363,7 +379,7 @@ export default function GuestChat() {
                 <div className="max-w-[88%] px-5 py-4 bg-white rounded-3xl rounded-tl-sm border border-zinc-100 shadow-sm flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-zinc-400 shrink-0 mt-0.5" />
                   <p className="text-[15px] text-zinc-600 leading-relaxed">
-                    Bugünkü mesaj limitiniz doldu. Lütfen yarın tekrar deneyin.
+                    {t.quotaMessage}
                   </p>
                 </div>
               </div>
@@ -420,10 +436,10 @@ export default function GuestChat() {
               onKeyDown={handleKeyDown}
               placeholder={
                 voice.isListening
-                  ? "Dinleniyor…"
+                  ? t.listeningPlaceholder
                   : quotaExceeded
-                  ? "Günlük limit doldu. Yarın görüşürüz."
-                  : "Bir şey sorun…"
+                  ? t.quotaPlaceholder
+                  : t.inputPlaceholder
               }
               rows={1}
               className="flex-1 max-h-[120px] bg-transparent border-0 resize-none outline-none focus:ring-0 py-2 text-[15px] text-zinc-900 placeholder:text-zinc-400 leading-relaxed font-sans"
@@ -474,10 +490,10 @@ export default function GuestChat() {
                 <Trash2 className="w-5 h-5 text-zinc-400" />
               </div>
               <h3 className="text-[17px] font-serif font-medium text-zinc-900">
-                Konuşmayı sil?
+                {t.clearTitle}
               </h3>
               <p className="text-[14px] text-zinc-500 leading-relaxed">
-                Tüm mesajlar kalıcı olarak silinecek. Bu işlem geri alınamaz.
+                {t.clearMessage}
               </p>
             </div>
             <div className="space-y-2">
@@ -486,14 +502,14 @@ export default function GuestChat() {
                 disabled={isClearing}
                 className="w-full bg-zinc-900 text-white rounded-2xl py-3.5 text-[15px] font-medium flex items-center justify-center gap-2 active:scale-[0.99] transition-all disabled:opacity-50"
               >
-                {isClearing ? <Loader2 className="w-4 h-4 animate-spin" /> : "Tümünü Sil"}
+                {isClearing ? <Loader2 className="w-4 h-4 animate-spin" /> : t.clearConfirm}
               </button>
               <button
                 onClick={() => setShowClearConfirm(false)}
                 disabled={isClearing}
                 className="w-full text-zinc-500 rounded-2xl py-3 text-[15px] font-medium hover:text-zinc-700 transition-colors"
               >
-                İptal
+                {t.cancel}
               </button>
             </div>
           </div>
