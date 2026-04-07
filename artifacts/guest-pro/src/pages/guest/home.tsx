@@ -17,6 +17,8 @@ import {
 import { toast } from "sonner";
 import { useVoice } from "@/hooks/use-voice";
 import { MicrophoneButton } from "@/components/chat/MicrophoneButton";
+import { useInstallPrompt } from "@/hooks/use-install-prompt";
+import { InstallSheet } from "@/components/InstallSheet";
 
 const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   "map-pin": MapPin,
@@ -47,6 +49,7 @@ export default function GuestHome() {
   const { user, isAuthenticated, logoutAuth } = useAuth();
   const [, setLocation] = useLocation();
   const logoutMutation = useLogout();
+  const install = useInstallPrompt();
 
   const { data: branding } = useGetHotelBranding();
   const { data: quickActions } = useListQuickActions();
@@ -257,6 +260,9 @@ export default function GuestHome() {
           Powered by {branding?.appName || "Guest Pro"} &middot; AI-assisted concierge
         </p>
       </main>
+
+      {/* Install prompt sheet */}
+      {!install.isAlreadyInstalled && <InstallSheet install={install} />}
 
       {/* Floating mic visualizer when listening from home page */}
       {voice.isListening && (

@@ -1,0 +1,170 @@
+You are a senior PWA architect, premium mobile UX designer, and production-grade full-stack engineer.
+
+Your task is to inspect and implement a production-ready “Add to Home Screen” experience for the existing Guest Pro project.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the current codebase, app structure, manifest setup, service worker/PWA setup, guest entry flow, dashboard, and installability status.
+- Do NOT rebuild the app from scratch if working parts already exist.
+- Preserve working guest auth, dashboard flow, chat flow, and routing.
+- Refactor only where there is real value.
+- The result must be mobile-first, premium, simple, and production-ready.
+
+PRODUCT GOAL:
+When the guest opens the app, show a polished popup/banner/sheet encouraging them to add Guest Pro to the home screen so it behaves like an installed app.
+
+CRITICAL BEHAVIOR:
+- If the browser supports real PWA install prompting, use the proper install flow professionally
+- If the browser does NOT support programmatic prompting (such as iOS Safari), show a premium instructional fallback instead
+- Never fake installation
+- Never promise one-click install where the browser/platform does not allow it
+- Keep the UX elegant, soft, clear, and high-end
+
+PHASE 1 — INSPECT FIRST
+Before changing anything, inspect and explain:
+1. Whether the app is already installable as a PWA
+2. Whether there is already a manifest
+3. Whether there is already a service worker / PWA plugin setup
+4. Whether icons, name, short_name, display, theme_color, start_url, and screenshots are configured
+5. Whether the current project can trigger beforeinstallprompt on supported browsers
+6. Whether the guest dashboard is the correct place to show install promotion
+7. Whether install state detection already exists
+8. What should be preserved and what should be added
+
+Then provide:
+- concise inspection summary
+- whether the app is truly installable today
+- exact implementation plan
+
+PHASE 2 — MAKE THE APP INSTALLABLE IF NEEDED
+If the app is not fully installable yet, implement the missing PWA requirements professionally:
+- valid web app manifest
+- icons
+- mobile-friendly metadata
+- proper display mode
+- proper start_url
+- theme/background colors
+- screenshots/description if useful for richer install UI
+- service worker or current framework-appropriate PWA support
+Do not overengineer. Keep it production-ready and minimal.
+
+PHASE 3 — ADD TO HOME SCREEN PROMOTION UX
+Implement a premium install promotion flow.
+
+REQUIREMENTS:
+- Show a polished popup / bottom sheet / modal on guest entry at an intelligent moment
+- Suggested timing:
+  - after guest reaches dashboard
+  - not before auth completes
+  - not aggressively on every page load
+- The popup should say something like:
+  - “Add Guest Pro to your home screen”
+  - “Faster access like an app”
+- Keep the design soft, premium, simple, and modern
+- Mobile-first layout
+- Large tap targets
+- Elegant spacing
+- White/light hospitality style
+- Not noisy, not pushy
+
+CTA BEHAVIOR:
+- Primary CTA:
+  - If supported, trigger the real browser install prompt
+- Fallback CTA:
+  - If unsupported, show platform-specific instructions
+- Secondary CTA:
+  - “Maybe later”
+- Optional:
+  - “Don’t show again”
+
+PHASE 4 — SUPPORTED BROWSERS: REAL INSTALL PROMPT
+For browsers that support beforeinstallprompt:
+- listen for beforeinstallprompt
+- prevent the default behavior if appropriate
+- store the deferred prompt
+- show your own premium install UI only when install is actually available
+- when the user taps the CTA, call prompt()
+- handle the result cleanly
+- hide the install UI after success or after proper dismissal logic
+- do not show install CTA if the app is already installed
+
+PHASE 5 — UNSUPPORTED BROWSERS: IOS / FALLBACK FLOW
+For iPhone/iPad and any unsupported browser:
+- do not pretend the install can be triggered directly
+- instead show a premium instructional sheet
+- explain the steps clearly and briefly
+- example style:
+  1. Tap Share
+  2. Choose “Add to Home Screen”
+  3. Confirm
+- tailor copy for mobile
+- keep the instructions calm and visual if possible
+- if the app is already installed, do not show this again
+
+PHASE 6 — INSTALL STATE DETECTION
+Implement professional logic so the install promotion is not annoying.
+
+REQUIREMENTS:
+- detect if the app is already running in standalone/app mode
+- do not show the popup if already installed
+- store dismissal/install state intelligently
+- avoid showing the popup too often
+- use a reasonable cooldown if dismissed
+- keep logic maintainable and production-ready
+
+PHASE 7 — GUEST DASHBOARD INTEGRATION
+Integrate this cleanly into the guest experience:
+- show after guest dashboard opens
+- do not block critical actions
+- do not interfere with Ask Something / chat / voice entry
+- keep the guest dashboard premium
+- the install promotion should feel like a helpful upgrade, not an ad
+
+PHASE 8 — DESIGN DIRECTION
+The install popup must feel:
+- premium
+- simple
+- soft
+- modern
+- mobile-first
+- luxury hospitality quality
+- elegant and trustworthy
+
+Use:
+- white/light dominant theme
+- soft rounded corners
+- subtle shadows
+- strong clarity
+- concise text
+- premium CTA styling
+
+PHASE 9 — CODE QUALITY
+Implement cleanly:
+- no giant messy component
+- meaningful reusable install prompt component/hook if appropriate
+- keep platform detection and install logic modular
+- no fake architecture
+- no dead code
+- preserve performance
+
+PHASE 10 — FINAL VERIFICATION
+Before finishing, verify:
+1. Guest dashboard still works
+2. Popup appears at the right time
+3. Popup does not appear when the app is already installed
+4. Supported browsers can trigger the real install prompt
+5. Unsupported browsers show a proper manual instruction flow
+6. Dismiss logic works
+7. UI is mobile-first and premium
+8. No regression in auth/chat/dashboard
+
+PHASE 11 — FINAL DELIVERY FORMAT
+At the end, provide:
+1. Inspection summary
+2. Whether the app is truly installable as a PWA
+3. What was added
+4. What browsers get real install prompt vs fallback instructions
+5. Which files were changed
+6. How install-state detection works
+7. How to test on Android/Chromium
+8. How to test on iPhone/iPad
+9. Any remaining recommendations

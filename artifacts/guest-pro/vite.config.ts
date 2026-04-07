@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
@@ -26,12 +27,64 @@ if (!basePath) {
   );
 }
 
+const startUrl = basePath === "/" ? "/" : `${basePath}/`;
+
 export default defineConfig({
   base: basePath,
   plugins: [
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),
+    VitePWA({
+      registerType: "autoUpdate",
+      devOptions: {
+        enabled: true,
+        type: "module",
+      },
+      includeAssets: ["favicon.svg", "apple-touch-icon.svg", "pwa-192.svg", "pwa-512.svg"],
+      manifest: {
+        name: "Guest Pro",
+        short_name: "Guest Pro",
+        description: "Your premium AI concierge for a seamless hotel stay.",
+        theme_color: "#0A0A0A",
+        background_color: "#F8F8F8",
+        display: "standalone",
+        orientation: "portrait",
+        start_url: startUrl,
+        scope: basePath === "/" ? "/" : `${basePath}/`,
+        id: "guestpro-app",
+        icons: [
+          {
+            src: "pwa-192.svg",
+            sizes: "192x192",
+            type: "image/svg+xml",
+            purpose: "any",
+          },
+          {
+            src: "pwa-512.svg",
+            sizes: "512x512",
+            type: "image/svg+xml",
+            purpose: "any maskable",
+          },
+        ],
+        categories: ["travel", "lifestyle"],
+      },
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        navigateFallback: null,
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts-cache",
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
+      },
+    }),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [
