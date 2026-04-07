@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { IRouter } from "express";
-import { db, chatSessionsTable, messagesTable, guestsTable } from "@workspace/db";
+import { db, chatSessionsTable, messagesTable, guestsTable, dailyUsageTable } from "@workspace/db";
 import { eq, and, asc } from "drizzle-orm";
 import { requireGuest } from "../middlewares/requireAuth";
 import { generateConciergeResponse } from "../lib/gemini";
@@ -8,6 +8,9 @@ import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
+// ---------------------------------------------------------------------------
+// Per-minute rate limit (20 messages / 60s per guest — burst protection)
+// ---------------------------------------------------------------------------
 const rateLimitMap = new Map<number, { count: number; resetAt: number }>();
 const RATE_LIMIT = 20;
 const RATE_WINDOW_MS = 60 * 1000;
@@ -24,6 +27,58 @@ function checkRateLimit(guestId: number): boolean {
   return true;
 }
 
+// ---------------------------------------------------------------------------
+// Daily quota (75 AI requests / day per guest — enforced server-side)
+// ---------------------------------------------------------------------------
+const DAILY_LIMIT = 75;
+const QUOTA_TIMEZONE = "Europe/Istanbul";
+
+function getTodayInTimezone(tz: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+async function checkAndIncrementDailyQuota(
+  guestId: number
+): Promise<{ allowed: boolean; remaining: number; resetAt: string }> {
+  const today = getTodayInTimezone(QUOTA_TIMEZONE);
+
+  const [usage] = await db
+    .select()
+    .from(dailyUsageTable)
+    .where(and(eq(dailyUsageTable.guestId, guestId), eq(dailyUsageTable.date, today)));
+
+  const currentCount = usage?.requestCount ?? 0;
+
+  if (currentCount >= DAILY_LIMIT) {
+    return { allowed: false, remaining: 0, resetAt: today };
+  }
+
+  if (usage) {
+    await db
+      .update(dailyUsageTable)
+      .set({ requestCount: currentCount + 1, updatedAt: new Date() })
+      .where(eq(dailyUsageTable.id, usage.id));
+  } else {
+    await db
+      .insert(dailyUsageTable)
+      .values({ guestId, date: today, requestCount: 1 });
+  }
+
+  return {
+    allowed: true,
+    remaining: DAILY_LIMIT - (currentCount + 1),
+    resetAt: today,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Routes
+// ---------------------------------------------------------------------------
 router.post("/chat/sessions", requireGuest, async (req, res): Promise<void> => {
   const guestId = req.session!.guestId!;
   const hotelId = req.session!.hotelId;
@@ -102,8 +157,21 @@ router.post("/chat/sessions/:sessionId/messages", requireGuest, async (req, res)
     return;
   }
 
+  // Per-minute burst protection
   if (!checkRateLimit(guestId)) {
     res.status(429).json({ error: "Too many messages. Please wait a moment." });
+    return;
+  }
+
+  // Daily quota enforcement
+  const quota = await checkAndIncrementDailyQuota(guestId);
+  if (!quota.allowed) {
+    res.status(429).json({
+      error: "Bugünkü mesaj limitiniz doldu. Lütfen yarın tekrar deneyin.",
+      quotaExceeded: true,
+      remaining: 0,
+      limit: DAILY_LIMIT,
+    });
     return;
   }
 
@@ -168,6 +236,10 @@ router.post("/chat/sessions/:sessionId/messages", requireGuest, async (req, res)
   res.json({
     userMessage,
     assistantMessage,
+    quota: {
+      remaining: quota.remaining,
+      limit: DAILY_LIMIT,
+    },
   });
 });
 

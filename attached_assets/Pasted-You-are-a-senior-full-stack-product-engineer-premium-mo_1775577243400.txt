@@ -1,0 +1,269 @@
+You are a senior full-stack product engineer, premium mobile UX architect, and production-grade front-end/backend engineer.
+
+Your task is to inspect and upgrade the existing “Guest Pro” guest chat experience to a truly production-ready level.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the current codebase, guest dashboard, chat flow, API flow, DB schema, animation logic, and message rendering.
+- Do NOT rebuild the app from scratch if working systems already exist.
+- Preserve working auth, guest login, logout, chat submission flow, AI integration, and route protection.
+- Refactor only where there is real product, UX, performance, or architectural value.
+- Keep everything mobile-first, premium, soft, modern, and production-ready.
+- The result must feel like a luxury hospitality AI assistant, not a flashy prototype.
+
+PROJECT CONTEXT:
+Guest Pro is a hotel guest web app.
+This task is specifically for the GUEST chat screen and the AI messaging flow.
+
+NEW REQUIRED FEATURES:
+1. Daily AI request quota per guest key: 75 requests per day
+2. Guest message should animate as if letters are appearing sequentially after send
+3. Before AI response appears, show a premium gradient/shimmer loading bubble
+4. Then AI response should appear in a polished typing/streaming style
+5. Everything must remain smooth, simple, soft, modern, and production-ready
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current guest chat screen architecture
+2. Current message submission flow
+3. Current AI request flow
+4. Current DB schema related to guest keys, guests, chat sessions, messages, audit logs, or usage tracking
+5. Current message bubble components
+6. Current animation implementation
+7. Current markdown rendering
+8. Current mobile keyboard / sticky input behavior
+9. Current performance risks
+10. What should be preserved vs redesigned
+
+Then provide:
+- concise architecture/design audit
+- what already works
+- what is missing
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — DAILY 75 REQUEST QUOTA PER GUEST KEY
+==================================================
+
+Implement a real production-ready daily quota system.
+
+BUSINESS RULE:
+- Each guest key can send at most 75 AI requests per day
+
+ARCHITECTURE REQUIREMENTS:
+- Enforce quota on the server side only
+- Do NOT rely on client-side counters
+- The quota must be tied to the guest key or authenticated guest session in a trustworthy way
+- Reset daily based on hotel timezone if available
+- If hotel timezone is not yet implemented, use Europe/Istanbul as the default timezone
+- Keep the architecture ready for future hotel-specific timezone support
+
+EXPECTED BEHAVIOR:
+- If guest is under the daily quota, request proceeds normally
+- If guest reaches 75 requests for the day:
+  - block new AI requests
+  - return a clear structured error response
+  - show a premium user-facing message such as:
+    “Bugünkü mesaj limitiniz doldu. Lütfen yarın tekrar deneyin.”
+- Avoid ugly raw error rendering
+- Keep the UX premium and calm
+
+DATA / IMPLEMENTATION OPTIONS:
+Choose the best production-minded approach based on current architecture:
+- either store per-day usage in a dedicated table
+- or store robust usage counters in an existing suitable structure
+- ensure correctness, performance, and maintainability
+
+PREFERRED QUALITY:
+- easy to audit
+- easy to extend later to hotel-based pricing/plans
+- ready for future per-hotel quotas or per-role quotas
+- no fake front-end-only limitation
+
+Also expose clean data if useful:
+- remaining requests for today
+- daily limit
+- next reset timing if appropriate
+
+==================================================
+PHASE 3 — GUEST MESSAGE TYPING APPEARANCE
+==================================================
+
+When the guest sends a message:
+
+REQUIRED UX:
+- the message bubble should appear immediately in the correct side/position
+- but the text inside should not just pop in all at once
+- instead, the text should appear progressively as if the letters are being laid out / typed into the bubble
+- the effect must feel premium, smooth, and subtle
+- do not make it cartoonish or slow
+- do not make it feel laggy
+- it should feel like a polished messaging UI micro-interaction
+
+QUALITY RULES:
+- animation must be performant on mobile
+- must not cause layout shift chaos
+- must not break line wrapping
+- must not interfere with message persistence or actual send state
+- must remain stable even for longer messages
+
+==================================================
+PHASE 4 — AI PRE-RESPONSE LOADING BUBBLE
+==================================================
+
+Before the AI response starts rendering, show a premium temporary AI loading bubble.
+
+REQUIRED UX:
+- after guest message is sent, before the AI text begins,
+  display an AI response placeholder bubble
+- this bubble should have a premium soft gradient loading effect
+- the effect should feel like a smooth passing light / shimmer / gradient motion
+- use a refined transition cadence around 40–50ms animation steps or an equivalent smooth timing that visually matches this requirement
+- the effect must look elegant, modern, and high-end
+- avoid loud neon colors, avoid cheap glow, avoid noisy visuals
+
+VISUAL DIRECTION:
+- soft light gradient
+- premium neutral palette
+- subtle layered shimmer
+- calm, modern, elegant
+- luxury hospitality assistant feeling
+- not futuristic gaming UI
+
+TECHNICAL REQUIREMENTS:
+- loading bubble should be shown only while waiting for AI response
+- should transition gracefully into the actual AI response bubble
+- no flicker
+- no jumpy DOM replacement
+- maintain stable scroll behavior
+- keyboard behavior must remain correct on mobile
+
+==================================================
+PHASE 5 — AI RESPONSE TYPING / STREAMING EFFECT
+==================================================
+
+After the loading bubble state, the actual AI response should appear in a premium progressive way.
+
+REQUIRED UX:
+- AI response should render progressively, as if it is being typed/written
+- effect must be elegant and fast enough for real use
+- do not make it annoyingly slow
+- keep the experience premium and fluid
+- markdown rendering must remain beautiful
+- if necessary, first animate plain text and then finalize markdown cleanly
+- avoid broken formatting during animation
+- avoid excessive re-renders
+- ensure lists, bold text, and paragraphs still look polished
+
+FALLBACKS:
+- if streaming effect is unstable, use a robust staged rendering approach that still feels premium
+- never sacrifice correctness of the message for animation gimmicks
+
+==================================================
+PHASE 6 — MESSAGE BUBBLES AND VISUAL POLISH
+==================================================
+
+Redesign or refine the chat UI to support these new interactions professionally.
+
+Requirements:
+- remove any visually noisy or overly colorful AI bar style if still present
+- keep the entire guest chat screen simple, soft, modern, premium
+- message bubbles must feel elegant and production-ready
+- guest bubble and AI bubble must be visually distinct but restrained
+- typography must be highly readable on mobile
+- spacing must be polished
+- shadows and borders must be subtle and premium
+- markdown must remain beautifully styled
+
+Think:
+- premium hotel concierge
+- clean modern messenger
+- luxury hospitality calmness
+- soft, trustworthy, expensive-looking interface
+
+==================================================
+PHASE 7 — PERFORMANCE AND STABILITY
+==================================================
+
+Everything must remain production-grade.
+
+Requirements:
+- no animation spam
+- no heavy unnecessary libraries unless already present and clearly useful
+- avoid excessive re-renders
+- keep chat performant on mobile devices
+- keep scroll stable during guest send animation, loading bubble, and AI typing effect
+- sticky input must remain reliable
+- keyboard-safe layout must remain correct
+- preserve working auth/logout/AI request flow
+
+==================================================
+PHASE 8 — CODE QUALITY / SOLID
+==================================================
+
+Implement cleanly and professionally.
+
+Requirements:
+- keep business logic out of presentation components where possible
+- quota enforcement must be in backend/service layer
+- chat UI animations should be modularized into meaningful reusable components/hooks if appropriate
+- no giant messy component file
+- no dead code
+- no fake architecture
+- use maintainable naming
+- structure must be meaningful and actually used
+
+Possible clean separation:
+- chat UI components
+- typing/animation hook or utility
+- quota service / usage service
+- backend request guard or middleware for daily usage
+- shared response/error handling
+
+==================================================
+PHASE 9 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Guest can still send messages normally
+2. Guest message now animates progressively in the bubble
+3. AI loading bubble appears before response
+4. Loading bubble shimmer/gradient effect looks premium
+5. AI response appears progressively after loading
+6. Markdown still renders correctly
+7. Mobile performance remains smooth
+8. Sticky input and keyboard behavior remain correct
+9. Daily quota of 75 requests is enforced server-side
+10. Quota resets correctly by day
+11. Exceeded quota shows clean premium error feedback
+12. No regression in guest auth/logout
+13. No regression in AI request flow
+
+==================================================
+PHASE 10 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was preserved
+3. What was redesigned
+4. How the 75/day guest key quota was implemented
+5. Which files were changed
+6. How the guest message animation works
+7. How the AI loading bubble works
+8. How the AI response typing effect works
+9. Any performance considerations
+10. How to test the quota and the new chat UX
+
+IMPORTANT:
+- Start by inspecting first
+- Then implement the upgrade professionally
+- Keep the result simple, soft, modern, premium, and production-ready
+- Do not break working auth or chat integrations
+- Focus on realistic, maintainable, high-quality implementation
