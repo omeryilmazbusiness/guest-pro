@@ -1,0 +1,369 @@
+You are a senior full-stack product architect, premium mobile UX designer, PWA specialist, and production-grade voice UX engineer.
+
+Your task is to inspect, diagnose, redesign, and fix the existing GUEST dashboard, install popup flow, and voice conversation flow of the “Guest Pro” project in a truly production-ready, SOLID, maintainable way.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, guest dashboard, chat page, routing, PWA/installability setup, voice conversation flow, AI response flow, auth/session handling, and UI structure.
+- Do NOT rebuild the app from scratch if working parts already exist.
+- Preserve working guest auth, logout, chat backend integration, rate limits/quota, route protection, and stable API flows.
+- Refactor only where there is real UX, architecture, performance, or production value.
+- Keep everything mobile-first, premium, simple, soft, modern, and production-ready.
+- The final result must feel like a high-end hotel AI concierge, not a prototype.
+
+PROJECT GOALS FOR THIS TASK:
+1. Find and fix why the install popup does not appear after guest login
+2. On iOS/iPad, show a very clear manual “Add to Home Screen” instructional popup with icons and step-by-step visual guidance
+3. On supported Chromium browsers, trigger the real install prompt professionally
+4. Make voice conversation the main focus of the guest dashboard
+5. Move voice conversation hero to the top and make it the most attention-grabbing CTA
+6. Keep “Ask Something” below voice as the secondary entry
+7. Fix the issue where AI response returns in text but is not spoken aloud
+8. Make voice conversation understand the user’s spoken language and answer in that same language
+9. Keep the chat UI updating visually while voice conversation is active
+10. Preserve a clean SOLID and production-ready architecture
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current guest dashboard structure
+2. Current guest chat entry flow
+3. Current install popup / PWA prompt logic
+4. Current manifest / PWA / service worker / installability setup
+5. Whether beforeinstallprompt is currently captured
+6. Whether the app is actually installable
+7. Whether the guest device/browser conditions prevent prompt display
+8. Whether standalone/app-installed detection is implemented correctly
+9. Current voice conversation implementation
+10. Current speech recognition flow
+11. Current text-to-speech flow
+12. Current language detection or language propagation logic
+13. Current AI response rendering flow
+14. What should be preserved
+15. What is broken
+16. Exact root causes
+
+Then provide:
+- concise architecture audit
+- popup root cause analysis
+- voice/TTS root cause analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — FIND AND FIX WHY INSTALL POPUP DOES NOT APPEAR
+==================================================
+
+Diagnose why the install/add-to-home-screen popup is missing after guest login.
+
+Check all likely causes:
+- app not meeting installability requirements
+- beforeinstallprompt not firing
+- prompt shown too early or event lost
+- popup gated behind wrong condition
+- app already considered installed / standalone
+- cooldown or dismissal logic blocking it incorrectly
+- browser/platform not supporting programmatic prompt
+- iOS/Safari fallback not implemented correctly
+- manifest or icons missing/weak
+- service worker/PWA registration issue
+- popup mounted in the wrong lifecycle or route timing
+
+Fix the problem professionally.
+
+REQUIRED BEHAVIOR:
+- after guest login and dashboard load, show a premium install promotion at the correct moment
+- if real install prompt is available, use it properly
+- if not available, show a polished fallback instructional sheet
+- do not fake installation
+- do not show the popup if app is already installed
+- do not annoy the user repeatedly
+
+==================================================
+PHASE 3 — IOS / IPAD SAFARI INSTALL POPUP WITH VISUAL INSTRUCTIONS
+==================================================
+
+For iOS / iPad Safari, implement a premium manual install popup because programmatic install prompt is not available there.
+
+This popup must be extremely clear, visual, and premium.
+
+REQUIRED UX COPY / FLOW FOR IPAD / IOS:
+Show step-by-step guidance in a very understandable way with matching icons and visual hints:
+
+Step 1:
+- “Sağ üstteki Share ikonuna dokunun”
+- Show the share icon visually
+
+Step 2:
+- “Ardından View More / More seçeneğine dokunun”
+- Show the three-dots / more icon visually where appropriate for iPad-style guidance
+
+Step 3:
+- “Aşağı kaydırın ve Add to Home Screen seçeneğine dokunun”
+- Show the Add to Home Screen icon/row visually
+
+Step 4:
+- “Gerekirse Open as Web App seçeneğini açın”
+- Show this as an optional hint only when relevant
+
+Step 5:
+- “Son olarak Add diyerek ana ekranınıza ekleyin”
+
+IMPORTANT:
+- Make the instructions cleaner, more understandable, and more visual than plain text
+- Use icons, rows, mini mock UI blocks, and premium visual explanation cards
+- The popup should feel like a polished onboarding sheet, not a technical warning
+- Keep Turkish copy elegant and simple
+- Adapt wording slightly if device is iPhone vs iPad
+- Do not claim one-click install on iOS
+
+==================================================
+PHASE 4 — SUPPORTED BROWSERS: REAL INSTALL PROMPT
+==================================================
+
+For supported Chromium-like browsers:
+- listen for beforeinstallprompt
+- preserve the deferred prompt properly
+- show install CTA only when actually available
+- when tapped, trigger the real browser install prompt
+- handle accepted / dismissed states cleanly
+- hide or cool down the promo after dismissal
+- do not show the promo if already installed
+
+==================================================
+PHASE 5 — REDESIGN GUEST DASHBOARD HIERARCHY
+==================================================
+
+Make voice conversation the main focus of the guest dashboard.
+
+NEW PRIORITY ORDER:
+1. Voice conversation hero section at the top
+2. Ask Something / text chat section below it
+3. Other guest info / quick actions below
+
+VOICE HERO REQUIREMENTS:
+- large, premium, highly visible section
+- this is now the main CTA on the dashboard
+- clear label and helper text
+- make it the fastest and most understandable way to get help
+- polished microphone action
+- elegant motion
+- mobile-first layout
+- premium but simple
+- not noisy
+
+ASK SOMETHING SECTION:
+- keep text chat entry
+- place it below the voice conversation hero
+- make it secondary but still premium
+- preserve chat flow
+
+==================================================
+PHASE 6 — VOICE CONVERSATION MUST WORK END-TO-END
+==================================================
+
+Fix and harden the voice conversation flow.
+
+REQUIREMENTS:
+- tapping the large voice CTA starts voice conversation mode
+- microphone permission handling must be clean
+- supported browsers should listen properly
+- spoken user input should be transcribed or captured
+- the AI must process that input correctly
+- the AI response must appear visually in the chat
+- the AI response must also be spoken aloud
+- the flow must remain stable and production-ready
+
+FIND THE CURRENT BUG:
+The current system returns a response, but does not speak it aloud.
+Inspect the real reason:
+- missing speechSynthesis invocation
+- response text never passed to TTS
+- wrong lifecycle timing
+- language/voice not set correctly
+- speech queue blocked
+- autoplay/user-gesture issue
+- muted/cancelled speech state
+- unsupported browser path not handled
+
+Then fix it properly.
+
+==================================================
+PHASE 7 — SAME LANGUAGE IN, SAME LANGUAGE OUT
+==================================================
+
+Implement robust spoken-language matching.
+
+REQUIREMENTS:
+- if user speaks Arabic, answer in Arabic
+- if user speaks Turkish, answer in Turkish
+- if user speaks Russian, answer in Russian
+- if user speaks English, answer in English
+- choose the response language based on the user’s spoken input
+- keep it maintainable and production-minded
+
+IMPLEMENTATION EXPECTATIONS:
+- inspect whether speech recognition already returns language info
+- if not, infer language from transcript/AI pipeline in a robust way
+- ensure both:
+  1. text response language
+  2. spoken response language
+  match the detected language
+- set speech synthesis language/voice accordingly
+- choose the best available voice for that language
+- degrade gracefully if a specific voice is unavailable
+
+==================================================
+PHASE 8 — CHAT SHOULD KEEP UPDATING VISUALLY DURING VOICE MODE
+==================================================
+
+While voice conversation is active:
+- the conversation must still behave like a premium chat UI
+- user speech should appear as a chat message
+- AI response should appear as a chat message
+- if progressive rendering already exists, preserve or improve it
+- do not separate voice into a disconnected screen
+- typed chat and voice chat must feel like the same conversation
+
+==================================================
+PHASE 9 — MICROPHONE VISUALIZER / PREMIUM VOICE UX
+==================================================
+
+Make the microphone UI premium and attention-grabbing.
+
+REQUIREMENTS:
+- microphone UI should react to live audio amplitude / frequency where possible
+- elegant motion
+- soft premium visual language
+- no noisy neon/gaming effect
+- no childish animation
+- calm, luxury hospitality AI feel
+- smooth on mobile devices
+
+VOICE STATES:
+- idle
+- listening
+- thinking
+- speaking
+- stopped / error / permission denied
+
+==================================================
+PHASE 10 — PWA / INSTALL POPUP UX POLISH
+==================================================
+
+Professionalize the popup/install experience.
+
+REQUIREMENTS:
+- premium popup or bottom sheet
+- concise, elegant Turkish copy
+- platform-aware behavior:
+  - real prompt when supported
+  - clean fallback steps when not supported
+- not shown if already installed
+- not shown too aggressively
+- elegant mobile-first UI
+- iPad/iOS instruction version should be especially clear and visual
+
+==================================================
+PHASE 11 — DO NOT BREAK WORKING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- guest login
+- guest logout
+- chat backend / AI integration
+- request quota logic if already present
+- markdown rendering if present
+- route protection
+- manager flows
+- stable APIs
+
+This task is primarily about:
+- install popup diagnosis/fix
+- iOS/iPad manual install instruction popup
+- guest dashboard hierarchy redesign
+- voice conversation as primary CTA
+- TTS fix
+- language-matched voice replies
+
+==================================================
+PHASE 12 — CODE QUALITY / SOLID / PRODUCTION READINESS
+==================================================
+
+Implement professionally.
+
+REQUIREMENTS:
+- keep business logic separate from UI
+- do not put everything in one giant component
+- use meaningful reusable components/hooks/services
+- no dead code
+- no fake architecture
+- keep code maintainable
+- keep performance in mind
+- preserve mobile responsiveness
+- organize clearly for future hotel-specific customization
+
+Possible structure:
+- GuestVoiceHero
+- GuestAskSomethingCard
+- GuestInstallPrompt
+- GuestIOSInstallGuide
+- useInstallPrompt
+- VoiceConversationController
+- MicrophoneVisualizer
+- SpeechSynthesisService
+- SpeechRecognitionService
+- LanguageRoutingHelper
+- GuestDashboardHeader
+
+==================================================
+PHASE 13 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Guest dashboard loads correctly
+2. Install popup now appears when it should
+3. iOS / iPad shows the correct manual install instructions
+4. Supported browsers can trigger real install prompt
+5. Install popup does not appear when app is already installed
+6. Voice conversation hero is now the main focus at the top
+7. Ask Something is below it
+8. Microphone starts voice mode correctly
+9. Spoken input is captured correctly
+10. AI understands and answers in the same language
+11. AI response appears in chat
+12. AI response is also spoken aloud
+13. Voice/chat flow is stable on mobile
+14. No regression in guest auth/logout
+15. No regression in chat backend integration
+
+==================================================
+PHASE 14 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. Root cause of missing popup
+3. Root cause of silent AI response
+4. What was redesigned
+5. What was fixed
+6. How install logic now works on iPad/iPhone
+7. How install logic now works on Chromium/Android
+8. How voice conversation now works
+9. How language matching now works
+10. Which files were changed
+11. How to test Android/Chromium install flow
+12. How to test iPhone/iPad fallback flow
+13. How to test voice input + spoken AI response
+14. Any remaining future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result simple, soft, modern, premium, and production-ready
+- Make voice conversation the main guest experience
+- Make the iPad/iOS install popup especially clear and visual

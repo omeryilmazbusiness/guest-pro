@@ -57,11 +57,13 @@ export default function GuestChat() {
   const [voiceAutoStart, setVoiceAutoStart] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
-  const [detectedLanguage, setDetectedLanguage] = useState<string | null>(null);
+  const [detectedLanguage, setDetectedLanguage] = useState<string>("en-US");
 
   const autoSendFiredRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Tracks whether the LAST send was triggered by voice, so we know to read the reply aloud
+  const voicePendingTTSRef = useRef(false);
 
   const seenIdsRef = useRef<Set<number>>(new Set());
   const initialLoadedRef = useRef(false);
@@ -103,25 +105,31 @@ export default function GuestChat() {
     }
   }, [isAuthenticated, user, sessionId]);
 
-  // Voice conversation hook
+  // Voice hook
   const voice = useVoice({
     onResult: (transcript, lang) => {
       setDetectedLanguage(lang);
+      // Mark that the NEXT AI reply should be spoken aloud
+      voicePendingTTSRef.current = true;
       handleSend(transcript, lang);
     },
-    onError: (msg) => {
-      toast.error(msg);
-    },
+    onError: (msg) => toast.error(msg),
   });
 
-  // Auto-start voice mode if requested from home
+  // Auto-start voice if ?voice=1 in URL
   useEffect(() => {
-    if (voiceAutoStart && sessionId && !messagesLoading && !voice.isListening && !autoSendFiredRef.current) {
+    if (
+      voiceAutoStart &&
+      sessionId &&
+      !messagesLoading &&
+      !voice.isListening &&
+      !autoSendFiredRef.current
+    ) {
       setVoiceAutoStart(false);
       if (voice.isSupported) {
         voice.startListening();
       } else {
-        toast.error("Voice recognition is not supported in this browser.");
+        toast.error("Ses tanıma bu tarayıcıda desteklenmiyor.");
       }
     }
   }, [voiceAutoStart, sessionId, messagesLoading]);
@@ -132,20 +140,23 @@ export default function GuestChat() {
       autoSendFiredRef.current = true;
       const msg = pendingAutoSend;
       setPendingAutoSend(null);
-      handleSend(msg, detectedLanguage ?? undefined);
+      handleSend(msg, detectedLanguage);
     }
   }, [sessionId, pendingAutoSend, messagesLoading]);
 
-  // Track new message IDs for animation + TTS
+  // Track new messages → animation + TTS
   useEffect(() => {
     if (!messages) return;
+
     if (!initialLoadedRef.current) {
       messages.forEach((m: Message) => seenIdsRef.current.add(m.id));
       initialLoadedRef.current = true;
       return;
     }
+
     const newIds: number[] = [];
     const newAssistantMessages: Message[] = [];
+
     messages.forEach((m: Message) => {
       if (!seenIdsRef.current.has(m.id)) {
         newIds.push(m.id);
@@ -153,11 +164,14 @@ export default function GuestChat() {
         seenIdsRef.current.add(m.id);
       }
     });
+
     if (newIds.length > 0) {
       setAnimatingIds((prev) => new Set([...prev, ...newIds]));
     }
-    // TTS: speak the latest AI response when in voice mode
-    if (voice.isListening === false && detectedLanguage && newAssistantMessages.length > 0) {
+
+    // TTS: only speak if the last send came from voice input
+    if (voicePendingTTSRef.current && newAssistantMessages.length > 0) {
+      voicePendingTTSRef.current = false;
       const latest = newAssistantMessages[newAssistantMessages.length - 1];
       speakText(latest.content, detectedLanguage);
     }
@@ -184,7 +198,7 @@ export default function GuestChat() {
     if (textareaRef.current) textareaRef.current.style.height = "auto";
 
     sendMessageMutation.mutate(
-      { sessionId, data: { content: trimmed, language: lang ?? detectedLanguage ?? undefined } },
+      { sessionId, data: { content: trimmed, language: lang ?? detectedLanguage } },
       {
         onSuccess: () => {
           setPendingUserMessage(null);
@@ -192,10 +206,11 @@ export default function GuestChat() {
         },
         onError: (err: { data?: { quotaExceeded?: boolean; error?: string } }) => {
           setPendingUserMessage(null);
+          voicePendingTTSRef.current = false;
           if (err.data?.quotaExceeded) {
             setQuotaExceeded(true);
           } else {
-            toast.error(err.data?.error || "Failed to send. Please try again.");
+            toast.error(err.data?.error || "Gönderilemedi. Lütfen tekrar deneyin.");
             setInputValue(trimmed);
           }
         },
@@ -215,17 +230,18 @@ export default function GuestChat() {
     setIsClearing(true);
     try {
       await customFetch(`/api/chat/sessions/${sessionId}/messages`, { method: "DELETE" });
-      // Reset all local state
       seenIdsRef.current = new Set();
       initialLoadedRef.current = false;
       autoSendFiredRef.current = false;
+      voicePendingTTSRef.current = false;
       setAnimatingIds(new Set());
       setQuotaExceeded(false);
-      setDetectedLanguage(null);
+      setDetectedLanguage("en-US");
+      window.speechSynthesis?.cancel();
       await refetchMessages();
-      toast.success("Conversation cleared.");
+      toast.success("Konuşma silindi.");
     } catch {
-      toast.error("Failed to clear conversation. Please try again.");
+      toast.error("Silinemedi. Lütfen tekrar deneyin.");
     } finally {
       setIsClearing(false);
       setShowClearConfirm(false);
@@ -235,7 +251,7 @@ export default function GuestChat() {
   const handleLogout = () => {
     logoutAuth();
     logoutMutation.mutate(undefined);
-    toast.success("You've checked out. Safe travels!");
+    toast.success("Güvenli yolculuklar!");
   };
 
   const toggleVoice = () => {
@@ -261,7 +277,7 @@ export default function GuestChat() {
           <button
             onClick={() => setLocation("/guest")}
             className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-50 transition-all -ml-1"
-            aria-label="Back to home"
+            aria-label="Ana sayfaya dön"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -271,16 +287,15 @@ export default function GuestChat() {
               {branding?.appName || "Concierge"}
             </p>
             <p className="text-[11px] text-zinc-400 uppercase tracking-wide font-medium">
-              {user.firstName} &middot; Room {user.roomNumber}
+              {user.firstName} · Oda {user.roomNumber}
             </p>
           </div>
 
-          {/* Clear conversation */}
           {hasMessages && (
             <button
               onClick={() => setShowClearConfirm(true)}
               className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-50 transition-all"
-              aria-label="Clear conversation"
+              aria-label="Konuşmayı temizle"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -290,7 +305,7 @@ export default function GuestChat() {
             data-testid="button-checkout"
             onClick={handleLogout}
             className="text-zinc-400 hover:text-zinc-700 transition-colors p-1"
-            aria-label="Sign out"
+            aria-label="Çıkış yap"
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -313,9 +328,9 @@ export default function GuestChat() {
               <MessageSquare className="w-7 h-7 text-zinc-300" />
             </div>
             <div className="space-y-1.5">
-              <h2 className="text-[18px] font-serif text-zinc-800">How can I help?</h2>
+              <h2 className="text-[18px] font-serif text-zinc-800">Nasıl yardımcı olabilirim?</h2>
               <p className="text-zinc-400 text-[14px] leading-relaxed max-w-xs">
-                Ask me anything about your stay, the hotel, or local tips.
+                Konaklamanız, otel veya şehir hakkında her şeyi sorabilirsiniz.
               </p>
             </div>
             {voice.isSupported && (
@@ -361,7 +376,7 @@ export default function GuestChat() {
       {/* Input area */}
       <div className="shrink-0 sticky bottom-0 z-20 bg-[#F8F8F8]/95 backdrop-blur-sm">
         <div className="max-w-3xl mx-auto px-4 md:px-8 pt-2 pb-6 space-y-3">
-          {/* Quick actions — shown only before first message */}
+          {/* Quick actions */}
           {!messagesLoading && !hasMessages && quickActions && quickActions.length > 0 && (
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none snap-x">
               {quickActions.map((action: { id: number; icon?: string; label: string }) => {
@@ -380,7 +395,7 @@ export default function GuestChat() {
             </div>
           )}
 
-          {/* Voice transcript preview */}
+          {/* Live voice transcript preview */}
           {voice.isListening && voice.transcript && (
             <div className="flex justify-end">
               <div className="bg-zinc-100 text-zinc-500 italic text-[14px] px-4 py-2 rounded-full max-w-xs truncate">
@@ -389,7 +404,7 @@ export default function GuestChat() {
             </div>
           )}
 
-          {/* Chat input */}
+          {/* Chat input bar */}
           <div
             className={`flex items-end gap-2 bg-white rounded-3xl border shadow-sm transition-all duration-200 px-4 py-2.5 ${
               quotaExceeded
@@ -405,17 +420,16 @@ export default function GuestChat() {
               onKeyDown={handleKeyDown}
               placeholder={
                 voice.isListening
-                  ? "Listening…"
+                  ? "Dinleniyor…"
                   : quotaExceeded
-                  ? "Daily limit reached. See you tomorrow."
-                  : "Ask for anything…"
+                  ? "Günlük limit doldu. Yarın görüşürüz."
+                  : "Bir şey sorun…"
               }
               rows={1}
               className="flex-1 max-h-[120px] bg-transparent border-0 resize-none outline-none focus:ring-0 py-2 text-[15px] text-zinc-900 placeholder:text-zinc-400 leading-relaxed font-sans"
               disabled={isWaiting || !sessionId || quotaExceeded || voice.isListening}
             />
 
-            {/* Mic button */}
             {voice.isSupported && !quotaExceeded && (
               <div className="shrink-0 pb-1">
                 <MicrophoneButton
@@ -429,7 +443,6 @@ export default function GuestChat() {
               </div>
             )}
 
-            {/* Send button */}
             <div className="shrink-0 pb-1">
               <button
                 data-testid="button-send"
@@ -461,10 +474,10 @@ export default function GuestChat() {
                 <Trash2 className="w-5 h-5 text-zinc-400" />
               </div>
               <h3 className="text-[17px] font-serif font-medium text-zinc-900">
-                Clear conversation?
+                Konuşmayı sil?
               </h3>
               <p className="text-[14px] text-zinc-500 leading-relaxed">
-                All messages will be permanently deleted. This cannot be undone.
+                Tüm mesajlar kalıcı olarak silinecek. Bu işlem geri alınamaz.
               </p>
             </div>
             <div className="space-y-2">
@@ -473,18 +486,14 @@ export default function GuestChat() {
                 disabled={isClearing}
                 className="w-full bg-zinc-900 text-white rounded-2xl py-3.5 text-[15px] font-medium flex items-center justify-center gap-2 active:scale-[0.99] transition-all disabled:opacity-50"
               >
-                {isClearing ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  "Remove All"
-                )}
+                {isClearing ? <Loader2 className="w-4 h-4 animate-spin" /> : "Tümünü Sil"}
               </button>
               <button
                 onClick={() => setShowClearConfirm(false)}
                 disabled={isClearing}
                 className="w-full text-zinc-500 rounded-2xl py-3 text-[15px] font-medium hover:text-zinc-700 transition-colors"
               >
-                Cancel
+                İptal
               </button>
             </div>
           </div>

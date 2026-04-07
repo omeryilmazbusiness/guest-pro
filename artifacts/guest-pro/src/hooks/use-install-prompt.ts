@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 const STORAGE_KEY = "guestpro_install";
 const COOLDOWN_DAYS = 7;
 
-type InstallStatus = "pending" | "installed" | "dismissed" | "unavailable";
+type InstallStatus = "pending" | "installed" | "dismissed" | "permanent";
 
 interface InstallState {
   status: InstallStatus;
@@ -35,12 +35,42 @@ function isStandalone(): boolean {
   );
 }
 
-function isIOS(): boolean {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+/**
+ * Detects iOS/iPadOS including iPadOS 13+ which reports MacIntel platform
+ * but has multiple touch points.
+ */
+function isIOSDevice(): boolean {
+  const ua = navigator.userAgent;
+  if (/iphone|ipad|ipod/i.test(ua)) return true;
+  // iPadOS 13+ reports as MacIntel with touch support
+  if (
+    typeof navigator.platform !== "undefined" &&
+    navigator.platform === "MacIntel" &&
+    typeof navigator.maxTouchPoints === "number" &&
+    navigator.maxTouchPoints > 1
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function isIPad(): boolean {
+  if (/ipad/i.test(navigator.userAgent)) return true;
+  // iPadOS 13+
+  if (
+    typeof navigator.platform !== "undefined" &&
+    navigator.platform === "MacIntel" &&
+    typeof navigator.maxTouchPoints === "number" &&
+    navigator.maxTouchPoints > 1
+  ) {
+    return true;
+  }
+  return false;
 }
 
 function shouldShowPrompt(state: InstallState): boolean {
   if (state.status === "installed") return false;
+  if (state.status === "permanent") return false;
   if (state.status === "dismissed" && state.dismissedAt) {
     const daysSince =
       (Date.now() - state.dismissedAt) / (1000 * 60 * 60 * 24);
@@ -52,10 +82,12 @@ function shouldShowPrompt(state: InstallState): boolean {
 export interface UseInstallPromptReturn {
   showSheet: boolean;
   canNativeInstall: boolean;
-  isIOSDevice: boolean;
+  isIOS: boolean;
+  isIPad: boolean;
   isAlreadyInstalled: boolean;
   triggerInstall: () => Promise<void>;
-  dismiss: (permanent?: boolean) => void;
+  dismiss: () => void;
+  dismissPermanent: () => void;
   openSheet: () => void;
 }
 
@@ -64,7 +96,8 @@ export function useInstallPrompt(): UseInstallPromptReturn {
   const [showSheet, setShowSheet] = useState(false);
   const [isAlreadyInstalled, setIsAlreadyInstalled] = useState(false);
 
-  const iosDevice = isIOS();
+  const ios = isIOSDevice();
+  const ipad = isIPad();
 
   useEffect(() => {
     if (isStandalone()) {
@@ -80,7 +113,6 @@ export function useInstallPrompt(): UseInstallPromptReturn {
       e.preventDefault();
       setDeferredPrompt(e);
     };
-
     window.addEventListener("beforeinstallprompt", handler);
 
     const appInstalled = () => {
@@ -90,12 +122,13 @@ export function useInstallPrompt(): UseInstallPromptReturn {
     };
     window.addEventListener("appinstalled", appInstalled);
 
+    // Show after a brief delay — after guest dashboard has fully loaded
     const timer = setTimeout(() => {
       const fresh = loadState();
       if (shouldShowPrompt(fresh)) {
         setShowSheet(true);
       }
-    }, 3500);
+    }, 3000);
 
     return () => {
       clearTimeout(timer);
@@ -117,12 +150,13 @@ export function useInstallPrompt(): UseInstallPromptReturn {
     setShowSheet(false);
   }, [deferredPrompt]);
 
-  const dismiss = useCallback((permanent = false) => {
-    saveState(
-      permanent
-        ? { status: "dismissed", dismissedAt: Date.now() - 1000 * 60 * 60 * 24 * COOLDOWN_DAYS }
-        : { status: "dismissed", dismissedAt: Date.now() }
-    );
+  const dismiss = useCallback(() => {
+    saveState({ status: "dismissed", dismissedAt: Date.now() });
+    setShowSheet(false);
+  }, []);
+
+  const dismissPermanent = useCallback(() => {
+    saveState({ status: "permanent" });
     setShowSheet(false);
   }, []);
 
@@ -133,10 +167,12 @@ export function useInstallPrompt(): UseInstallPromptReturn {
   return {
     showSheet,
     canNativeInstall: !!deferredPrompt,
-    isIOSDevice: iosDevice,
+    isIOS: ios,
+    isIPad: ipad,
     isAlreadyInstalled,
     triggerInstall,
     dismiss,
+    dismissPermanent,
     openSheet,
   };
 }

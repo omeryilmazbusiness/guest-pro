@@ -1,6 +1,10 @@
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useGetHotelBranding, useListQuickActions, useLogout } from "@workspace/api-client-react";
+import {
+  useGetHotelBranding,
+  useListQuickActions,
+  useLogout,
+} from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import {
   LogOut,
@@ -13,6 +17,7 @@ import {
   BedDouble,
   ChevronRight,
   ArrowRight,
+  MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useVoice } from "@/hooks/use-voice";
@@ -22,26 +27,26 @@ import { InstallSheet } from "@/components/InstallSheet";
 
 const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   "map-pin": MapPin,
-  "calendar": Calendar,
-  "phone": Phone,
-  "activity": Calendar,
+  calendar: Calendar,
+  phone: Phone,
+  activity: Calendar,
 };
 
 const INFO_ITEMS = [
   {
     icon: Phone,
-    title: "24/7 Front Desk",
-    desc: "Our team is always available for any request.",
+    title: "7/24 Resepsiyon",
+    desc: "Her isteğiniz için ekibimiz her zaman hazır.",
   },
   {
     icon: BedDouble,
-    title: "Housekeeping",
-    desc: "Ask your concierge to schedule a room service.",
+    title: "Oda Servisi",
+    desc: "Concierge'den oda temizliği veya servis talep edin.",
   },
   {
     icon: Clock,
     title: "Check-out",
-    desc: "Standard check-out is at 12:00 noon.",
+    desc: "Standart çıkış saati 12:00'dir.",
   },
 ];
 
@@ -65,7 +70,7 @@ export default function GuestHome() {
   const handleLogout = () => {
     logoutAuth();
     logoutMutation.mutate(undefined);
-    toast.success("You've checked out. Safe travels!");
+    toast.success("Güvenli yolculuklar!");
   };
 
   const goToChat = (q?: string) => {
@@ -73,9 +78,7 @@ export default function GuestHome() {
     setLocation(url);
   };
 
-  const goToVoice = () => {
-    setLocation("/guest/chat?voice=1");
-  };
+  const goToVoice = () => setLocation("/guest/chat?voice=1");
 
   const voice = useVoice({
     onResult: (transcript, _lang) => {
@@ -83,15 +86,12 @@ export default function GuestHome() {
         setLocation(`/guest/chat?q=${encodeURIComponent(transcript)}&voice=1`);
       }
     },
-    onError: (msg) => {
-      toast.error(msg);
-    },
+    onError: (msg) => toast.error(msg),
   });
 
   const handleMicTap = () => {
     if (voice.isListening) {
       voice.stopListening();
-      goToVoice();
     } else {
       voice.startListening();
     }
@@ -115,63 +115,124 @@ export default function GuestHome() {
           <button
             onClick={handleLogout}
             className="text-zinc-400 hover:text-zinc-700 transition-colors p-2 -mr-2"
-            aria-label="Sign out"
+            aria-label="Çıkış yap"
           >
             <LogOut className="w-4 h-4" />
           </button>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 pb-16">
-        {/* Welcome + "Let's Ask" hero */}
-        <div className="pt-10 pb-6 text-center">
-          <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-widest mb-4">
-            Welcome back, {user.firstName}
-          </p>
-          <h1 className="text-5xl font-serif text-zinc-900 tracking-tight leading-tight mb-3">
-            Let's Ask
-          </h1>
-          <p className="text-zinc-400 text-[15px] leading-relaxed">
-            Your AI concierge is ready &middot; Room {user.roomNumber}
+      <main className="max-w-2xl mx-auto px-4 pb-20">
+        {/* Welcome line */}
+        <div className="pt-8 pb-2 text-center">
+          <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-widest">
+            Hoş geldiniz, {user.firstName}
           </p>
         </div>
 
-        {/* Hero CTA block */}
-        <div className="mb-8 space-y-3">
-          {/* Primary — Ask Something */}
-          <button
-            onClick={() => goToChat()}
-            className="w-full bg-zinc-900 text-white rounded-[28px] py-[18px] text-[17px] font-medium flex items-center justify-center gap-3 shadow-lg shadow-zinc-900/15 active:scale-[0.98] hover:bg-zinc-800 transition-all duration-150"
-          >
-            <Sparkles className="w-5 h-5 opacity-70" />
-            Ask Something
-            <ArrowRight className="w-4 h-4 opacity-50" />
-          </button>
+        {/* ── Voice Hero — PRIMARY CTA ── */}
+        <section className="mb-6">
+          <div className="bg-zinc-900 rounded-3xl px-6 py-8 flex flex-col items-center text-center shadow-xl shadow-zinc-900/20">
+            <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-widest mb-4">
+              Sesle Sor
+            </p>
+            <h1 className="text-4xl font-serif text-white tracking-tight leading-tight mb-2">
+              Konuş Benimle
+            </h1>
+            <p className="text-zinc-400 text-[14px] leading-relaxed mb-8 max-w-xs">
+              Concierge'iniz dinliyor. İstediğiniz dilde konuşun.
+            </p>
 
-          <p className="text-center text-[12px] text-zinc-400 px-4 leading-relaxed">
-            Need help with your stay, transport, reception, or anything else?
-          </p>
+            {/* Large mic button */}
+            <div className="relative flex items-center justify-center mb-6">
+              {/* Ambient rings */}
+              {voice.isListening && (
+                <>
+                  <div
+                    className="absolute rounded-full bg-white/8 transition-transform duration-100"
+                    style={{
+                      width: 120,
+                      height: 120,
+                      transform: `scale(${1 + Math.min(voice.amplitude * 0.5, 0.5)})`,
+                    }}
+                  />
+                  <div
+                    className="absolute rounded-full bg-white/12 transition-transform duration-150"
+                    style={{
+                      width: 96,
+                      height: 96,
+                      transform: `scale(${1 + Math.min(voice.amplitude * 0.35, 0.35)})`,
+                    }}
+                  />
+                </>
+              )}
+              <button
+                onClick={handleMicTap}
+                className={`relative z-10 w-20 h-20 rounded-full flex items-center justify-center transition-all duration-200 active:scale-95 shadow-lg ${
+                  voice.isListening
+                    ? "bg-white text-zinc-900 shadow-white/25"
+                    : "bg-white/10 text-white border border-white/20 hover:bg-white/20"
+                }`}
+                aria-label={voice.isListening ? "Dinlemeyi durdur" : "Sesle sor"}
+              >
+                <Mic className="w-8 h-8" />
+              </button>
+            </div>
 
-          {/* Secondary — Voice */}
-          <button
-            onClick={goToVoice}
-            className="w-full bg-white border border-zinc-200 rounded-[28px] py-4 text-[16px] font-medium flex items-center justify-center gap-2.5 text-zinc-700 shadow-sm active:scale-[0.98] hover:border-zinc-300 hover:bg-zinc-50 transition-all duration-150"
-          >
-            <Mic className="w-5 h-5 text-zinc-400" />
-            Voice Conversation
-          </button>
-        </div>
+            {/* State label */}
+            <p className="text-[13px] text-zinc-400 min-h-[20px]">
+              {voice.isListening
+                ? voice.transcript
+                  ? `"${voice.transcript}"`
+                  : "Dinleniyor…"
+                : "Mikrofona dokunun ve konuşmaya başlayın"}
+            </p>
 
-        {/* Overview section */}
+            {/* Or go straight to voice chat page */}
+            {!voice.isListening && (
+              <button
+                onClick={goToVoice}
+                className="mt-5 text-[13px] text-zinc-500 hover:text-zinc-300 flex items-center gap-1.5 transition-colors"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                Sesli sohbete geç
+              </button>
+            )}
+          </div>
+        </section>
+
+        {/* ── Ask Something — SECONDARY CTA ── */}
         <section className="mb-7">
           <h3 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-3 px-1">
-            Your Stay
+            Yazarak Sor
+          </h3>
+          <button
+            onClick={() => goToChat()}
+            className="w-full bg-white border border-zinc-200 rounded-2xl py-4 px-5 flex items-center gap-3 shadow-sm hover:border-zinc-300 hover:bg-zinc-50 active:scale-[0.99] transition-all duration-150 group"
+          >
+            <div className="w-9 h-9 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center shrink-0 group-hover:bg-zinc-100 transition-colors">
+              <Sparkles className="w-4 h-4 text-zinc-400" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="text-[15px] font-medium text-zinc-800">Bir Şey Sor</p>
+              <p className="text-[12px] text-zinc-400 mt-0.5">
+                Konaklamanız hakkında her şey
+              </p>
+            </div>
+            <ArrowRight className="w-4 h-4 text-zinc-300 group-hover:text-zinc-400 transition-colors" />
+          </button>
+        </section>
+
+        {/* Your Stay card */}
+        <section className="mb-7">
+          <h3 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-3 px-1">
+            Konaklamanız
           </h3>
           <div className="bg-white rounded-3xl border border-zinc-100 shadow-sm overflow-hidden">
             <div className="px-6 py-5 flex items-center justify-between">
               <div>
                 <p className="text-[11px] text-zinc-400 font-medium uppercase tracking-wide mb-1.5">
-                  Room
+                  Oda
                 </p>
                 <p className="text-3xl font-serif text-zinc-900 leading-none">
                   {user.roomNumber}
@@ -179,7 +240,7 @@ export default function GuestHome() {
               </div>
               <div className="text-right">
                 <p className="text-[11px] text-zinc-400 font-medium uppercase tracking-wide mb-1.5">
-                  Guest
+                  Misafir
                 </p>
                 <p className="text-[15px] font-medium text-zinc-800">
                   {user.firstName} {user.lastName}
@@ -189,43 +250,45 @@ export default function GuestHome() {
             <div className="border-t border-zinc-50 px-6 py-3.5">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span className="text-[13px] text-zinc-500">Stay active</span>
+                <span className="text-[13px] text-zinc-500">Konaklama aktif</span>
                 <button
                   onClick={() => goToChat()}
                   className="ml-auto flex items-center gap-1 text-[13px] text-zinc-400 hover:text-zinc-700 transition-colors"
                 >
-                  Open chat <ChevronRight className="w-3.5 h-3.5" />
+                  Chat <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Quick Actions section */}
+        {/* Quick Actions */}
         {quickActions && quickActions.length > 0 && (
           <section className="mb-7">
             <h3 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-3 px-1">
-              Quick Actions
+              Hızlı İstekler
             </h3>
             <div className="grid grid-cols-2 gap-3">
-              {quickActions.map((action: { id: number; icon?: string; label: string }) => {
-                const IconComponent = ICON_MAP[action.icon ?? ""] ?? MapPin;
-                return (
-                  <button
-                    key={action.id}
-                    onClick={() => goToChat(action.label)}
-                    className="bg-white rounded-2xl border border-zinc-100 shadow-sm px-5 py-5 text-left active:scale-[0.97] hover:border-zinc-200 transition-all duration-150 group"
-                  >
-                    <div className="w-9 h-9 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center mb-3.5 group-hover:bg-zinc-100 transition-colors">
-                      <IconComponent className="w-4 h-4 text-zinc-400" />
-                    </div>
-                    <p className="text-[14px] font-medium text-zinc-800 leading-snug">
-                      {action.label}
-                    </p>
-                    <p className="text-[12px] text-zinc-400 mt-1">Tap to ask →</p>
-                  </button>
-                );
-              })}
+              {quickActions.map(
+                (action: { id: number; icon?: string; label: string }) => {
+                  const IconComponent = ICON_MAP[action.icon ?? ""] ?? MapPin;
+                  return (
+                    <button
+                      key={action.id}
+                      onClick={() => goToChat(action.label)}
+                      className="bg-white rounded-2xl border border-zinc-100 shadow-sm px-5 py-5 text-left active:scale-[0.97] hover:border-zinc-200 transition-all duration-150 group"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center mb-3.5 group-hover:bg-zinc-100 transition-colors">
+                        <IconComponent className="w-4 h-4 text-zinc-400" />
+                      </div>
+                      <p className="text-[14px] font-medium text-zinc-800 leading-snug">
+                        {action.label}
+                      </p>
+                      <p className="text-[12px] text-zinc-400 mt-1">Sormak için dokun →</p>
+                    </button>
+                  );
+                }
+              )}
             </div>
           </section>
         )}
@@ -233,7 +296,7 @@ export default function GuestHome() {
         {/* Info section */}
         <section className="mb-7">
           <h3 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-3 px-1">
-            At Your Service
+            Hizmetinizde
           </h3>
           <div className="bg-white rounded-3xl border border-zinc-100 shadow-sm overflow-hidden">
             {INFO_ITEMS.map((item, i) => (
@@ -248,26 +311,27 @@ export default function GuestHome() {
                 </div>
                 <div>
                   <p className="text-[14px] font-medium text-zinc-800">{item.title}</p>
-                  <p className="text-[12px] text-zinc-500 mt-0.5 leading-relaxed">{item.desc}</p>
+                  <p className="text-[12px] text-zinc-500 mt-0.5 leading-relaxed">
+                    {item.desc}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Footer */}
         <p className="text-center text-[12px] text-zinc-300 px-4">
-          Powered by {branding?.appName || "Guest Pro"} &middot; AI-assisted concierge
+          {branding?.appName || "Guest Pro"} · AI destekli concierge
         </p>
       </main>
 
-      {/* Install prompt sheet */}
+      {/* Install bottom sheet */}
       {!install.isAlreadyInstalled && <InstallSheet install={install} />}
 
-      {/* Floating mic visualizer when listening from home page */}
+      {/* Floating mic overlay when listening from home */}
       {voice.isListening && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-6 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl px-8 py-10 flex flex-col items-center gap-5 shadow-2xl mx-6 max-w-xs w-full">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-6 animate-in fade-in duration-200">
+          <div className="bg-zinc-900 rounded-3xl px-8 py-10 flex flex-col items-center gap-5 shadow-2xl mx-6 max-w-xs w-full border border-white/8">
             <MicrophoneButton
               isListening={voice.isListening}
               isSupported={voice.isSupported}
@@ -278,17 +342,17 @@ export default function GuestHome() {
               size="lg"
             />
             <div className="text-center">
-              <p className="text-[15px] font-medium text-zinc-800">Listening…</p>
+              <p className="text-[15px] font-medium text-white">Dinleniyor…</p>
               <p className="text-[13px] text-zinc-400 mt-1">
-                {voice.transcript || "Speak naturally in any language"}
+                {voice.transcript || "İstediğiniz dilde konuşun"}
               </p>
             </div>
           </div>
           <button
             onClick={() => voice.stopListening()}
-            className="text-white/70 text-[14px] hover:text-white transition-colors"
+            className="text-white/50 text-[14px] hover:text-white/80 transition-colors"
           >
-            Cancel
+            İptal
           </button>
         </div>
       )}
