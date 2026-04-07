@@ -1,0 +1,170 @@
+You are a senior full-stack software architect and production-grade auth engineer.
+
+Your task is to inspect, harden, and complete the existing Google OAuth sign up / login flow for the project “Guest Pro” in a truly production-ready way.
+
+CRITICAL RULES:
+- First inspect the current codebase, auth flow, routing, environment handling, and login UI.
+- Do NOT rebuild the app from scratch if working pieces already exist.
+- Preserve working guest login and manager email/password login.
+- Refactor only where there is real architecture, security, or product value.
+- Do NOT hardcode any Google credentials in source files.
+- Read credentials only from Replit environment variables / secrets.
+- Keep the result SOLID, modular, auditable, and production-ready.
+
+PROJECT CONTEXT:
+Guest Pro has 2 roles:
+1. MANAGER
+2. GUEST
+
+Auth requirements:
+- Guest logs in only with guest key
+- Manager logs in with:
+  1. email/password
+  2. Google OAuth
+- Google OAuth is for MANAGER only
+- First-time Google sign-in must behave like sign-up:
+  - create the manager automatically
+  - assign MANAGER role
+  - attach to default hotel/tenant for MVP
+  - sign in automatically
+  - redirect directly to manager dashboard
+- Returning Google manager:
+  - sign in directly
+  - redirect directly to manager dashboard
+
+ENVIRONMENT VARIABLES:
+Use these exact secret names from Replit environment variables:
+- AUTH_GOOGLE_CLIENT_ID
+- AUTH_GOOGLE_CLIENT_SECRET
+
+Do not print secret values to logs or UI.
+Do not expose them to the client bundle.
+
+CURRENT DOMAIN / CALLBACK:
+Current app domain:
+https://0e04b30e-59ee-419c-8c04-46df692d0250-00-293phdtk46kni.janeway.replit.dev
+
+Expected Google callback path:
+https://0e04b30e-59ee-419c-8c04-46df692d0250-00-293phdtk46kni.janeway.replit.dev/api/auth/google/callback
+
+REQUIRED IMPLEMENTATION PHASES:
+
+PHASE 1 — INSPECT FIRST
+Before changing anything:
+1. Inspect current auth architecture
+2. Inspect current manager login page
+3. Inspect current guest login page
+4. Inspect current Google OAuth implementation
+5. Inspect which env variable names the code actually expects
+6. Inspect callback handling and redirect logic
+7. Inspect session/token strategy
+8. Inspect route protection
+9. Inspect login/logout correctness
+10. Inspect whether Google button visibility is incorrectly conditional
+
+Then provide:
+- concise inspection summary
+- what already works
+- what is weak or incomplete
+- exact implementation plan
+
+PHASE 2 — NORMALIZE GOOGLE OAUTH CONFIG
+- Ensure the app reads:
+  - AUTH_GOOGLE_CLIENT_ID
+  - AUTH_GOOGLE_CLIENT_SECRET
+- Centralize env/config reading in a clean server-side config layer
+- Do not use scattered raw process.env access across random files if the structure is weak
+- Preserve current good env architecture if it already exists
+- Ensure secrets stay server-only
+
+PHASE 3 — COMPLETE REAL GOOGLE OAUTH FOR MANAGER
+Implement a real, production-grade Google OAuth flow.
+
+Requirements:
+- Manager login screen must show a professional “Continue with Google” button
+- If Google is configured correctly, the button must be active and start the real OAuth flow
+- If Google is missing config, show a professional disabled/config-hint state in development rather than silently hiding the feature
+- First-time Google login must create the manager automatically
+- Role must be MANAGER
+- Link the manager to the default hotel/tenant for MVP
+- Prevent duplicate manager creation
+- Returning Google manager must sign in directly
+- Redirect to manager dashboard after success
+- No fake OAuth
+- No demo-only behavior
+- No token in URL if there is a safer existing exchange-code mechanism already built; preserve and strengthen it if present
+
+PHASE 4 — AUTH HARDENING
+Make the auth system production-ready:
+- secure session/token handling
+- no client-only fake auth
+- server-side protected route checks
+- correct logout invalidation
+- manager-only route protection
+- guest-only route protection
+- safe redirects after login/logout
+- no stale protected content after logout
+- preserve or improve current brute-force protection, expiry checks, and audit logging if already implemented
+
+PHASE 5 — LOGIN UI PROFESSIONALIZATION
+Make both login screens production-ready:
+- mobile-first
+- premium white/light theme
+- soft rounded corners
+- elegant spacing
+- clear focus states
+- safe error messaging
+- loading states
+- disabled submit while pending
+- polished Google button
+- no broken typing/focus/overlay issues
+- no invisible layer blocking inputs
+- keep manager email/password login working
+- keep guest key login working
+
+PHASE 6 — MULTI-HOTEL / SOLID READINESS
+Keep the auth system architecturally ready for:
+- multiple hotels
+- hotel-scoped managers
+- invite-only manager onboarding later
+- domain restrictions later
+- white-label branding later
+
+Use meaningful modular structure, such as:
+- auth domain/application/infrastructure/presentation
+- shared config/env
+- reusable authorization helpers
+Do not create fake architecture. Make the structure meaningful and actually used.
+
+PHASE 7 — VERIFICATION
+Before finishing, verify all of these:
+1. Guest login still works
+2. Guest logout still works
+3. Manager email/password login still works
+4. Manager Google first-time signup works
+5. Manager Google returning login works
+6. Google button is visible when configured
+7. Redirect callback works correctly
+8. No redirect mismatch in app logic
+9. Protected manager routes are secure
+10. No secret is exposed client-side
+
+FINAL OUTPUT REQUIRED:
+At the end, provide:
+1. Inspection summary
+2. What was preserved
+3. What was fixed
+4. What was added
+5. Which env names are now used
+6. Whether Google OAuth is fully active
+7. Final auth flow summary
+8. Final file map of changed auth/login files
+9. Exact steps for me to test Google sign-up/login
+10. Any remaining action needed from me
+
+IMPORTANT:
+- Do not hardcode credentials
+- Do not expose secrets
+- Do not rebuild unnecessarily
+- Start with inspection
+- Then complete the Google manager sign-up/login flow in a real production-ready way
