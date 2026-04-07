@@ -6,7 +6,7 @@ Your personality:
 - Warm, professional, and attentive
 - Always address guests by their first name when known
 - Speak with elegance and care
-- Multilingual: respond in the same language the guest uses
+- Multilingual: detect the language the guest is writing or speaking in and always respond in that exact same language
 - Keep responses concise but complete — guests are on mobile devices
 
 Your capabilities:
@@ -16,14 +16,7 @@ Your capabilities:
 - Assist with wake-up calls, spa bookings, and activity inquiries
 - Handle special requests with grace
 
-For each guest message, also classify the request category internally:
-- reception: front desk, check-in/out, keys, general inquiries
-- room_service: food, drinks, amenities to room
-- housekeeping: cleaning, towels, linens
-- activities: spa, pool, gym, local attractions
-- transport: taxi, airport transfers, car rental
-- maintenance: repairs, issues in room
-- general: everything else
+Language rule: If the guest message is in Turkish, respond in Turkish. If Arabic, respond in Arabic. If Russian, respond in Russian. Match the guest's language exactly.
 
 Keep responses under 150 words. Be warm and helpful.`;
 
@@ -34,31 +27,74 @@ interface ChatMessage {
 
 function detectCategory(message: string): string {
   const lower = message.toLowerCase();
-  if (lower.includes("reception") || lower.includes("check") || lower.includes("key") || lower.includes("desk")) {
+  if (lower.includes("reception") || lower.includes("check") || lower.includes("key") || lower.includes("desk") || lower.includes("resepsiyon") || lower.includes("anahtar")) {
     return "reception";
-  } else if (lower.includes("room service") || lower.includes("food") || lower.includes("drink") || lower.includes("eat") || lower.includes("breakfast") || lower.includes("lunch") || lower.includes("dinner")) {
+  } else if (lower.includes("room service") || lower.includes("food") || lower.includes("drink") || lower.includes("eat") || lower.includes("breakfast") || lower.includes("yemek") || lower.includes("kahvaltı")) {
     return "room_service";
-  } else if (lower.includes("clean") || lower.includes("towel") || lower.includes("housekeep") || lower.includes("linen")) {
+  } else if (lower.includes("clean") || lower.includes("towel") || lower.includes("housekeep") || lower.includes("temizlik") || lower.includes("havlu")) {
     return "housekeeping";
-  } else if (lower.includes("spa") || lower.includes("pool") || lower.includes("gym") || lower.includes("activit") || lower.includes("tour")) {
+  } else if (lower.includes("spa") || lower.includes("pool") || lower.includes("gym") || lower.includes("activit") || lower.includes("havuz")) {
     return "activities";
-  } else if (lower.includes("taxi") || lower.includes("transport") || lower.includes("airport") || lower.includes("car")) {
+  } else if (lower.includes("taxi") || lower.includes("transport") || lower.includes("airport") || lower.includes("car") || lower.includes("taksi") || lower.includes("transfer")) {
     return "transport";
   }
   return "general";
 }
 
+export async function generateConversationSummary(messages: ChatMessage[]): Promise<string> {
+  if (messages.length === 0) return "";
+
+  const historyText = messages
+    .map((m) => `${m.role === "user" ? "Guest" : "Concierge"}: ${m.content}`)
+    .join("\n");
+
+  try {
+    const result = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: `Summarize this hotel guest conversation in 2-3 concise sentences. Focus on the main topics discussed, requests made, and any important context for continuing the conversation naturally:\n\n${historyText}`,
+            },
+          ],
+        },
+      ],
+      config: {
+        temperature: 0.3,
+        maxOutputTokens: 200,
+      },
+    });
+    return result.text ?? "";
+  } catch {
+    return "";
+  }
+}
+
 export async function generateConciergeResponse(
   userMessage: string,
   conversationHistory: ChatMessage[],
-  guestFirstName?: string
+  guestFirstName?: string,
+  contextSummary?: string,
+  detectedLanguage?: string
 ): Promise<{ response: string; category: string }> {
-  const systemNote = guestFirstName
-    ? `${HOTEL_SYSTEM_PROMPT}\n\nThe guest's first name is ${guestFirstName}.`
-    : HOTEL_SYSTEM_PROMPT;
+  let systemNote = HOTEL_SYSTEM_PROMPT;
 
-  const contents = conversationHistory.slice(-10).map((msg) => ({
-    role: msg.role === "assistant" ? "model" as const : "user" as const,
+  if (guestFirstName) {
+    systemNote += `\n\nThe guest's first name is ${guestFirstName}.`;
+  }
+
+  if (contextSummary) {
+    systemNote += `\n\nEarlier conversation summary (use this as background context): ${contextSummary}`;
+  }
+
+  if (detectedLanguage) {
+    systemNote += `\n\nThe guest is communicating in: ${detectedLanguage}. Respond in this language.`;
+  }
+
+  const contents = conversationHistory.slice(-8).map((msg) => ({
+    role: msg.role === "assistant" ? ("model" as const) : ("user" as const),
     parts: [{ text: msg.content }],
   }));
 
@@ -78,11 +114,15 @@ export async function generateConciergeResponse(
       },
     });
 
-    const responseText = result.text ?? "I apologize, I'm having trouble responding right now. Please try again.";
+    const responseText =
+      result.text ??
+      "I apologize, I'm having trouble responding right now. Please try again.";
     const category = detectCategory(userMessage);
 
     return { response: responseText, category };
   } catch (error) {
-    throw new Error(`Failed to generate AI response: ${error instanceof Error ? error.message : "Unknown error"}`);
+    throw new Error(
+      `Failed to generate AI response: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
   }
 }

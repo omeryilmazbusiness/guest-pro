@@ -1,0 +1,343 @@
+You are a senior full-stack product architect, premium mobile UX designer, and production-grade engineer.
+
+Your task is to inspect, redesign, and upgrade the GUEST dashboard and chat experience of the existing “Guest Pro” project into a highly polished, production-ready hospitality AI experience.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the current codebase, guest dashboard, chat screen, routing, auth/session flow, AI request flow, data storage, and UI components.
+- Do NOT rebuild the project from scratch if working parts already exist.
+- Preserve working guest auth, guest logout, AI backend integration, rate limits/quota if already implemented, and route protection.
+- Refactor only where there is real UX, product, architecture, or maintainability value.
+- Keep everything mobile-first, premium, simple, soft, modern, and production-ready.
+- The final result must feel like a luxury hospitality assistant, not a flashy prototype.
+
+PROJECT CONTEXT:
+Guest Pro is a premium hotel guest web app mostly used from mobile browsers.
+
+NEW PRODUCT GOALS:
+1. Guest dashboard should open to a premium main page, not directly to raw chat
+2. The main center CTA should be much more visible and easy to understand
+3. Add a large “Let’s Ask” treatment above the main ask area
+4. Tapping Ask Something should open the chat screen
+5. Tapping the microphone should automatically open the chat screen and start voice conversation mode
+6. Voice conversation must understand the language the guest speaks and respond in that same language
+7. While voice conversation is happening, the AI responses must still appear in the chat visually as normal messages
+8. Chat should support “Remove All” so the guest can clear the conversation
+9. Memory should not bloat: retain only recent conversation context and keep only a compact summary of older context
+10. Everything must be implemented in a clean, scalable, production-ready way
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current guest dashboard structure
+2. Current guest chat page structure
+3. Current ask/chat entry flow
+4. Current message persistence/storage model
+5. Current AI response rendering
+6. Current guest session/auth flow
+7. Current UI component structure
+8. Current language handling if any
+9. Current animation/effect system
+10. Current DB schema or local/session storage for messages, summaries, chat sessions
+11. What should be preserved
+12. What should be redesigned
+
+Then provide:
+- concise architecture and UX audit
+- what currently feels weak or unclear
+- what needs to change
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — REDESIGN THE GUEST DASHBOARD MAIN PAGE
+==================================================
+
+Redesign the guest dashboard so the first screen feels like a premium AI concierge home screen.
+
+MAIN REQUIREMENTS:
+- mobile-first
+- white/light dominant
+- soft rounded corners
+- premium modern hospitality feel
+- simple and very understandable
+- clean, uncluttered, high-end
+- visually calm but clear
+
+MAIN HERO SECTION:
+- place a large prominent title above the main ask CTA:
+  “Let’s Ask”
+- below it, create a large premium central CTA/surface:
+  “Ask Something”
+- this must be much more noticeable and understandable than before
+- it should feel like the main thing the guest is supposed to do
+- elegant micro-interaction on tap
+- large tap target for mobile
+- premium helper text if useful, such as:
+  “Need help with your stay, transport, reception, or anything else?”
+
+MICROPHONE CTA:
+- include a clear microphone action in the hero area
+- microphone action should feel premium and obvious
+- tapping microphone should:
+  1. open the chat screen automatically
+  2. immediately enter voice conversation mode
+
+==================================================
+PHASE 3 — CHAT ENTRY FLOW
+==================================================
+
+Implement clear and clean navigation rules:
+
+- Tapping “Ask Something” opens the chat screen
+- Tapping the microphone opens the chat screen and starts voice mode immediately
+- Preserve auth/session protection
+- Preserve working AI backend integration
+- Ensure transitions feel smooth and intentional
+- Avoid messy navigation hacks
+
+==================================================
+PHASE 4 — CONVERSATION MEMORY STRATEGY (NO MEMORY BLOAT)
+==================================================
+
+Implement a production-ready conversation memory strategy.
+
+GOAL:
+Do not keep unlimited full chat memory.
+Keep only what is useful.
+
+REQUIREMENTS:
+- Store only the recent conversation window in full detail
+- After a certain threshold, older messages should no longer stay in full memory context
+- Instead, generate and store a compact rolling summary of the conversation topic/context
+- The AI should remember only the latest topic context as a concise summary
+- This summary should be enough to preserve continuity without bloating memory
+- The exact threshold should be chosen professionally based on current architecture, but keep it practical and efficient
+
+EXPECTED BEHAVIOR:
+- recent messages remain visible and usable
+- older messages are summarized into a compact memory field
+- AI continues conversation with recent context + summary
+- system remains performant and token-efficient
+- no huge context history sent unnecessarily
+
+ARCHITECTURE QUALITY:
+- implement this server-side or in a robust backend-aware way where appropriate
+- do not fake memory only in the UI
+- keep it extendable for future long-term memory policies per hotel or per guest
+
+==================================================
+PHASE 5 — REMOVE ALL CHAT
+==================================================
+
+Add a production-ready “Remove All” action in the chat screen.
+
+REQUIREMENTS:
+- clear button placement in chat screen header or menu
+- when used:
+  - clear visible chat history
+  - clear stored recent conversation memory
+  - reset summarized conversation context as appropriate
+- include a professional confirm step if needed
+- should feel safe and polished
+- after clearing, the chat screen should return to a clean initial state
+
+==================================================
+PHASE 6 — VOICE CONVERSATION MODE
+==================================================
+
+Add a real production-ready voice conversation experience.
+
+GOAL:
+The guest should be able to speak naturally, and the AI should understand and respond in the same language.
+
+REQUIREMENTS:
+- microphone permission handling
+- start/stop voice mode cleanly
+- support active voice conversation mode
+- detect or infer the language the user is speaking
+- respond in the same language
+- while voice mode is active, still render the conversation into the chat UI as normal message bubbles
+- maintain chat continuity between typed and spoken interactions
+- voice mode should feel premium and reliable
+
+LANGUAGE REQUIREMENTS:
+- if the guest speaks Turkish, reply in Turkish
+- if the guest speaks Arabic, reply in Arabic
+- if the guest speaks Russian, reply in Russian
+- if the guest speaks English, reply in English
+- choose the reply language based on the current voice input language
+- keep this robust and production-minded
+
+IMPLEMENTATION QUALITY:
+- choose the best practical voice architecture based on what already exists
+- preserve maintainability
+- handle permission-denied and unsupported-browser cases gracefully
+- add fallback UX if full voice mode is not available in the environment
+
+==================================================
+PHASE 7 — VISUAL MICROPHONE EXPERIENCE
+==================================================
+
+When the microphone is active, create a premium animated microphone UI.
+
+REQUIREMENTS:
+- microphone visual should feel AI-assisted and premium
+- it should animate based on input amplitude / frequency level
+- use a refined, elegant motion style
+- do not make it flashy or childish
+- no cheap neon gaming effect
+- calm, premium, modern motion
+- movement should react to actual microphone energy if possible
+- use a production-quality implementation (for example Web Audio API analysis if appropriate)
+
+EXPECTED UX:
+- when mic is idle: clean premium mic icon
+- when mic is active: animated mic/frequency visualization
+- the animation should signal that the app is listening
+- the animation should remain smooth on mobile devices
+
+==================================================
+PHASE 8 — AI RESPONSE FLOW DURING VOICE MODE
+==================================================
+
+When the guest speaks in voice mode:
+
+REQUIRED FLOW:
+1. user speaks
+2. system captures/transcribes input
+3. user message appears in chat
+4. AI prepares response
+5. AI response appears in chat progressively if that effect already exists or is useful
+6. AI also speaks back if voice reply is part of the current architecture or can be added cleanly
+7. response language must match the user’s spoken language
+
+IMPORTANT:
+- even while voice conversation is active, the UI should continue to look like a polished chat conversation
+- do not make voice mode a separate disconnected screen
+- typed chat and voice chat should belong to the same conversation experience
+
+==================================================
+PHASE 9 — HEADER AND CHAT UX POLISH
+==================================================
+
+Make the guest chat screen and dashboard feel production-ready.
+
+DASHBOARD HEADER:
+- include only necessary information
+- hotel/app branding if useful
+- guest welcome / first name
+- room number if available
+- clean layout
+- not overloaded
+- premium and mobile friendly
+
+CHAT HEADER:
+- clean title
+- back action
+- remove all action
+- any essential voice controls if appropriate
+- no clutter
+
+VISUAL DIRECTION:
+- white/light dominant
+- soft rounded corners
+- modern premium hospitality feel
+- simple and expensive-looking
+- no noisy gradients
+- no clutter
+- premium calmness
+
+==================================================
+PHASE 10 — DO NOT BREAK EXISTING WORKING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- guest login
+- guest logout
+- chat backend / AI integration
+- request quota logic if already present
+- existing markdown support if present
+- route protection
+- manager flows
+- stable APIs
+
+This task is primarily about guest UX restructuring, voice conversation, and memory strategy.
+
+==================================================
+PHASE 11 — CODE QUALITY / SOLID / PRODUCTION READINESS
+==================================================
+
+Implement professionally.
+
+REQUIREMENTS:
+- keep business logic separate from UI/presentation
+- do not put everything into one giant component
+- use meaningful reusable components and hooks where appropriate
+- no dead code
+- no fake architecture
+- use clean naming
+- preserve performance
+- memory summarization logic should live in a proper service/use-case layer
+- voice handling should be modular and maintainable
+- chat rendering should remain clean and stable
+
+Possible clean component/service structure:
+- GuestDashboardHeader
+- GuestLetsAskHero
+- GuestAskEntryCard
+- GuestVoiceEntryButton
+- GuestChatHeader
+- RemoveAllAction
+- VoiceConversationController
+- MicrophoneVisualizer
+- ConversationSummaryService
+- RecentContextWindow helper
+- ChatEntryFlow helper
+
+==================================================
+PHASE 12 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Guest lands on the new premium dashboard
+2. “Let’s Ask” is clearly visible and understandable
+3. “Ask Something” opens chat correctly
+4. Microphone button opens chat and starts voice mode
+5. Voice mode handles microphone permission correctly
+6. Voice input is transcribed or captured correctly
+7. AI responds in the same language the user speaks
+8. Voice conversation also appears as normal chat messages
+9. Remove All clears chat correctly
+10. Memory does not keep unlimited history
+11. Older context is summarized instead of fully retained
+12. Mobile UX remains polished and stable
+13. No regression in guest auth/logout
+14. No regression in AI request flow
+
+==================================================
+PHASE 13 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was weak before
+3. What was redesigned
+4. What was added
+5. How conversation memory now works
+6. How Remove All works
+7. How voice conversation works
+8. How language matching works
+9. Which files were changed
+10. How to test the new guest dashboard and voice chat flow
+11. Any remaining future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result simple, soft, modern, premium, and production-ready
+- Make the guest dashboard and chat experience feel like a top-tier hotel AI concierge

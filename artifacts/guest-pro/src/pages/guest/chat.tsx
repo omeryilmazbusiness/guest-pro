@@ -7,15 +7,29 @@ import {
   useGetHotelBranding,
   useListQuickActions,
   useLogout,
+  customFetch,
 } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
-import { LogOut, Send, Loader2, MapPin, Calendar, Phone, ArrowLeft, MessageSquare, AlertCircle } from "lucide-react";
+import {
+  LogOut,
+  Send,
+  Loader2,
+  MapPin,
+  Calendar,
+  Phone,
+  ArrowLeft,
+  MessageSquare,
+  AlertCircle,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Message } from "@workspace/api-client-react/generated/api.schemas";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { ShimmerBubble } from "@/components/chat/ShimmerBubble";
 import { OptimisticUserBubble } from "@/components/chat/OptimisticUserBubble";
+import { MicrophoneButton } from "@/components/chat/MicrophoneButton";
+import { useVoice, speakText } from "@/hooks/use-voice";
 
 const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   "map-pin": MapPin,
@@ -40,6 +54,11 @@ export default function GuestChat() {
   const [pendingUserMessage, setPendingUserMessage] = useState<string | null>(null);
   const [quotaExceeded, setQuotaExceeded] = useState(false);
   const [pendingAutoSend, setPendingAutoSend] = useState<string | null>(null);
+  const [voiceAutoStart, setVoiceAutoStart] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+  const [detectedLanguage, setDetectedLanguage] = useState<string | null>(null);
+
   const autoSendFiredRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -65,38 +84,59 @@ export default function GuestChat() {
     }
   }, [isAuthenticated, user, setLocation]);
 
-  // Parse ?q= param from URL on mount
+  // Parse URL params on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const q = params.get("q");
-    if (q) {
-      setPendingAutoSend(decodeURIComponent(q));
-      window.history.replaceState({}, "", window.location.pathname);
-    }
+    const voice = params.get("voice");
+    if (q) setPendingAutoSend(decodeURIComponent(q));
+    if (voice === "1") setVoiceAutoStart(true);
+    window.history.replaceState({}, "", window.location.pathname);
   }, []);
 
   // Create session on mount
   useEffect(() => {
     if (isAuthenticated && user?.role === "guest" && !sessionId) {
       createSessionMutation.mutate(undefined, {
-        onSuccess: (session: { id: number }) => {
-          setSessionId(session.id);
-        },
+        onSuccess: (session: { id: number }) => setSessionId(session.id),
       });
     }
   }, [isAuthenticated, user, sessionId]);
 
-  // Auto-send when session + messages are ready
+  // Voice conversation hook
+  const voice = useVoice({
+    onResult: (transcript, lang) => {
+      setDetectedLanguage(lang);
+      handleSend(transcript, lang);
+    },
+    onError: (msg) => {
+      toast.error(msg);
+    },
+  });
+
+  // Auto-start voice mode if requested from home
+  useEffect(() => {
+    if (voiceAutoStart && sessionId && !messagesLoading && !voice.isListening && !autoSendFiredRef.current) {
+      setVoiceAutoStart(false);
+      if (voice.isSupported) {
+        voice.startListening();
+      } else {
+        toast.error("Voice recognition is not supported in this browser.");
+      }
+    }
+  }, [voiceAutoStart, sessionId, messagesLoading]);
+
+  // Auto-send ?q= param when session + messages ready
   useEffect(() => {
     if (sessionId && pendingAutoSend && !autoSendFiredRef.current && !messagesLoading) {
       autoSendFiredRef.current = true;
       const msg = pendingAutoSend;
       setPendingAutoSend(null);
-      handleSend(msg);
+      handleSend(msg, detectedLanguage ?? undefined);
     }
   }, [sessionId, pendingAutoSend, messagesLoading]);
 
-  // Track new message IDs for animation
+  // Track new message IDs for animation + TTS
   useEffect(() => {
     if (!messages) return;
     if (!initialLoadedRef.current) {
@@ -105,14 +145,21 @@ export default function GuestChat() {
       return;
     }
     const newIds: number[] = [];
+    const newAssistantMessages: Message[] = [];
     messages.forEach((m: Message) => {
       if (!seenIdsRef.current.has(m.id)) {
         newIds.push(m.id);
+        if (m.role === "assistant") newAssistantMessages.push(m);
         seenIdsRef.current.add(m.id);
       }
     });
     if (newIds.length > 0) {
       setAnimatingIds((prev) => new Set([...prev, ...newIds]));
+    }
+    // TTS: speak the latest AI response when in voice mode
+    if (voice.isListening === false && detectedLanguage && newAssistantMessages.length > 0) {
+      const latest = newAssistantMessages[newAssistantMessages.length - 1];
+      speakText(latest.content, detectedLanguage);
     }
   }, [messages]);
 
@@ -129,7 +176,7 @@ export default function GuestChat() {
     }
   };
 
-  const handleSend = (content: string) => {
+  const handleSend = (content: string, lang?: string) => {
     if (!content.trim() || !sessionId || quotaExceeded) return;
     const trimmed = content.trim();
     setPendingUserMessage(trimmed);
@@ -137,7 +184,7 @@ export default function GuestChat() {
     if (textareaRef.current) textareaRef.current.style.height = "auto";
 
     sendMessageMutation.mutate(
-      { sessionId, data: { content: trimmed } },
+      { sessionId, data: { content: trimmed, language: lang ?? detectedLanguage ?? undefined } },
       {
         onSuccess: () => {
           setPendingUserMessage(null);
@@ -163,10 +210,41 @@ export default function GuestChat() {
     }
   };
 
+  const handleClearAll = async () => {
+    if (!sessionId) return;
+    setIsClearing(true);
+    try {
+      await customFetch(`/api/chat/sessions/${sessionId}/messages`, { method: "DELETE" });
+      // Reset all local state
+      seenIdsRef.current = new Set();
+      initialLoadedRef.current = false;
+      autoSendFiredRef.current = false;
+      setAnimatingIds(new Set());
+      setQuotaExceeded(false);
+      setDetectedLanguage(null);
+      await refetchMessages();
+      toast.success("Conversation cleared.");
+    } catch {
+      toast.error("Failed to clear conversation. Please try again.");
+    } finally {
+      setIsClearing(false);
+      setShowClearConfirm(false);
+    }
+  };
+
   const handleLogout = () => {
     logoutAuth();
     logoutMutation.mutate(undefined);
     toast.success("You've checked out. Safe travels!");
+  };
+
+  const toggleVoice = () => {
+    if (voice.isListening) {
+      voice.stopListening();
+      window.speechSynthesis?.cancel();
+    } else {
+      voice.startListening();
+    }
   };
 
   if (!isAuthenticated || user?.role !== "guest") return null;
@@ -187,6 +265,7 @@ export default function GuestChat() {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
+
           <div className="flex-1 min-w-0">
             <p className="text-[15px] font-medium text-zinc-900 truncate">
               {branding?.appName || "Concierge"}
@@ -195,6 +274,18 @@ export default function GuestChat() {
               {user.firstName} &middot; Room {user.roomNumber}
             </p>
           </div>
+
+          {/* Clear conversation */}
+          {hasMessages && (
+            <button
+              onClick={() => setShowClearConfirm(true)}
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-50 transition-all"
+              aria-label="Clear conversation"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+
           <button
             data-testid="button-checkout"
             onClick={handleLogout}
@@ -217,18 +308,27 @@ export default function GuestChat() {
             <Skeleton className="h-24 w-5/6 max-w-md rounded-3xl rounded-tl-sm bg-zinc-100" />
           </div>
         ) : !hasMessages ? (
-          <div className="h-full flex flex-col items-center justify-center text-center gap-4 animate-in fade-in duration-500">
+          <div className="h-full flex flex-col items-center justify-center text-center gap-5 animate-in fade-in duration-500">
             <div className="w-16 h-16 rounded-full bg-white border border-zinc-100 shadow-sm flex items-center justify-center">
               <MessageSquare className="w-7 h-7 text-zinc-300" />
             </div>
             <div className="space-y-1.5">
-              <h2 className="text-[18px] font-serif text-zinc-800">
-                How can I help?
-              </h2>
+              <h2 className="text-[18px] font-serif text-zinc-800">How can I help?</h2>
               <p className="text-zinc-400 text-[14px] leading-relaxed max-w-xs">
                 Ask me anything about your stay, the hotel, or local tips.
               </p>
             </div>
+            {voice.isSupported && (
+              <MicrophoneButton
+                isListening={voice.isListening}
+                isSupported={voice.isSupported}
+                amplitude={voice.amplitude}
+                transcript={voice.transcript}
+                onToggle={toggleVoice}
+                variant="hero"
+                size="lg"
+              />
+            )}
           </div>
         ) : (
           <div className="space-y-3 pb-2">
@@ -280,9 +380,18 @@ export default function GuestChat() {
             </div>
           )}
 
+          {/* Voice transcript preview */}
+          {voice.isListening && voice.transcript && (
+            <div className="flex justify-end">
+              <div className="bg-zinc-100 text-zinc-500 italic text-[14px] px-4 py-2 rounded-full max-w-xs truncate">
+                "{voice.transcript}"
+              </div>
+            </div>
+          )}
+
           {/* Chat input */}
           <div
-            className={`flex items-end gap-3 bg-white rounded-3xl border shadow-sm transition-all duration-200 px-4 py-2.5 ${
+            className={`flex items-end gap-2 bg-white rounded-3xl border shadow-sm transition-all duration-200 px-4 py-2.5 ${
               quotaExceeded
                 ? "border-zinc-100 opacity-60"
                 : "border-zinc-200 focus-within:border-zinc-300 focus-within:shadow-md"
@@ -295,21 +404,39 @@ export default function GuestChat() {
               onChange={handleInput}
               onKeyDown={handleKeyDown}
               placeholder={
-                quotaExceeded
+                voice.isListening
+                  ? "Listening…"
+                  : quotaExceeded
                   ? "Daily limit reached. See you tomorrow."
                   : "Ask for anything…"
               }
               rows={1}
               className="flex-1 max-h-[120px] bg-transparent border-0 resize-none outline-none focus:ring-0 py-2 text-[15px] text-zinc-900 placeholder:text-zinc-400 leading-relaxed font-sans"
-              disabled={isWaiting || !sessionId || quotaExceeded}
+              disabled={isWaiting || !sessionId || quotaExceeded || voice.isListening}
             />
+
+            {/* Mic button */}
+            {voice.isSupported && !quotaExceeded && (
+              <div className="shrink-0 pb-1">
+                <MicrophoneButton
+                  isListening={voice.isListening}
+                  isSupported={voice.isSupported}
+                  amplitude={voice.amplitude}
+                  onToggle={toggleVoice}
+                  size="sm"
+                  variant="inline"
+                />
+              </div>
+            )}
+
+            {/* Send button */}
             <div className="shrink-0 pb-1">
               <button
                 data-testid="button-send"
-                disabled={!inputValue.trim() || isWaiting || !sessionId || quotaExceeded}
+                disabled={!inputValue.trim() || isWaiting || !sessionId || quotaExceeded || voice.isListening}
                 onClick={() => handleSend(inputValue)}
                 className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 ${
-                  inputValue.trim() && !isWaiting && !quotaExceeded
+                  inputValue.trim() && !isWaiting && !quotaExceeded && !voice.isListening
                     ? "bg-zinc-900 text-white shadow-sm hover:bg-zinc-800"
                     : "bg-zinc-100 text-zinc-400"
                 }`}
@@ -324,6 +451,45 @@ export default function GuestChat() {
           </div>
         </div>
       </div>
+
+      {/* Clear confirmation overlay */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-end justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
+            <div className="text-center space-y-2 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-zinc-50 flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-5 h-5 text-zinc-400" />
+              </div>
+              <h3 className="text-[17px] font-serif font-medium text-zinc-900">
+                Clear conversation?
+              </h3>
+              <p className="text-[14px] text-zinc-500 leading-relaxed">
+                All messages will be permanently deleted. This cannot be undone.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <button
+                onClick={handleClearAll}
+                disabled={isClearing}
+                className="w-full bg-zinc-900 text-white rounded-2xl py-3.5 text-[15px] font-medium flex items-center justify-center gap-2 active:scale-[0.99] transition-all disabled:opacity-50"
+              >
+                {isClearing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "Remove All"
+                )}
+              </button>
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                disabled={isClearing}
+                className="w-full text-zinc-500 rounded-2xl py-3 text-[15px] font-medium hover:text-zinc-700 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

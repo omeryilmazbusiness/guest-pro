@@ -4,16 +4,19 @@ import { useGetHotelBranding, useListQuickActions, useLogout } from "@workspace/
 import { useLocation } from "wouter";
 import {
   LogOut,
+  Mic,
   Sparkles,
-  ArrowRight,
   Phone,
   Calendar,
   MapPin,
   Clock,
   BedDouble,
   ChevronRight,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useVoice } from "@/hooks/use-voice";
+import { MicrophoneButton } from "@/components/chat/MicrophoneButton";
 
 const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   "map-pin": MapPin,
@@ -31,7 +34,7 @@ const INFO_ITEMS = [
   {
     icon: BedDouble,
     title: "Housekeeping",
-    desc: "Ask your concierge to schedule room service.",
+    desc: "Ask your concierge to schedule a room service.",
   },
   {
     icon: Clock,
@@ -67,6 +70,30 @@ export default function GuestHome() {
     setLocation(url);
   };
 
+  const goToVoice = () => {
+    setLocation("/guest/chat?voice=1");
+  };
+
+  const voice = useVoice({
+    onResult: (transcript, _lang) => {
+      if (transcript.trim()) {
+        setLocation(`/guest/chat?q=${encodeURIComponent(transcript)}&voice=1`);
+      }
+    },
+    onError: (msg) => {
+      toast.error(msg);
+    },
+  });
+
+  const handleMicTap = () => {
+    if (voice.isListening) {
+      voice.stopListening();
+      goToVoice();
+    } else {
+      voice.startListening();
+    }
+  };
+
   if (!isAuthenticated || user?.role !== "guest") return null;
 
   return (
@@ -84,7 +111,8 @@ export default function GuestHome() {
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-700 transition-colors text-sm py-2 -mr-1"
+            className="text-zinc-400 hover:text-zinc-700 transition-colors p-2 -mr-2"
+            aria-label="Sign out"
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -92,42 +120,42 @@ export default function GuestHome() {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 pb-16">
-        {/* Welcome line */}
-        <div className="pt-8 pb-6 px-1">
-          <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-widest mb-1">
-            Welcome back
+        {/* Welcome + "Let's Ask" hero */}
+        <div className="pt-10 pb-6 text-center">
+          <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-widest mb-4">
+            Welcome back, {user.firstName}
           </p>
-          <h1 className="text-3xl font-serif text-zinc-900 tracking-tight">
-            {user.firstName}
+          <h1 className="text-5xl font-serif text-zinc-900 tracking-tight leading-tight mb-3">
+            Let's Ask
           </h1>
-          <p className="text-zinc-400 text-[14px] mt-1">
-            Room {user.roomNumber} &middot; Your personal concierge is ready
+          <p className="text-zinc-400 text-[15px] leading-relaxed">
+            Your AI concierge is ready &middot; Room {user.roomNumber}
           </p>
         </div>
 
-        {/* Hero CTA — Ask something */}
-        <div className="mb-8">
+        {/* Hero CTA block */}
+        <div className="mb-8 space-y-3">
+          {/* Primary — Ask Something */}
           <button
             onClick={() => goToChat()}
-            className="w-full bg-white rounded-3xl border border-zinc-100 shadow-md shadow-zinc-200/50 p-7 text-left active:scale-[0.99] transition-all duration-150 group"
+            className="w-full bg-zinc-900 text-white rounded-[28px] py-[18px] text-[17px] font-medium flex items-center justify-center gap-3 shadow-lg shadow-zinc-900/15 active:scale-[0.98] hover:bg-zinc-800 transition-all duration-150"
           >
-            <div className="flex flex-col items-center text-center gap-5">
-              <div className="w-14 h-14 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center group-active:bg-zinc-100 transition-colors">
-                <Sparkles className="w-6 h-6 text-zinc-400" />
-              </div>
-              <div className="space-y-1.5">
-                <h2 className="text-[22px] font-serif text-zinc-900 leading-snug">
-                  Ask your concierge
-                </h2>
-                <p className="text-zinc-500 text-[15px] leading-relaxed">
-                  Need help with anything during your stay?
-                </p>
-              </div>
-              <div className="flex items-center gap-2 bg-zinc-900 text-white text-[14px] font-medium px-6 py-3 rounded-full">
-                Ask something
-                <ArrowRight className="w-4 h-4" />
-              </div>
-            </div>
+            <Sparkles className="w-5 h-5 opacity-70" />
+            Ask Something
+            <ArrowRight className="w-4 h-4 opacity-50" />
+          </button>
+
+          <p className="text-center text-[12px] text-zinc-400 px-4 leading-relaxed">
+            Need help with your stay, transport, reception, or anything else?
+          </p>
+
+          {/* Secondary — Voice */}
+          <button
+            onClick={goToVoice}
+            className="w-full bg-white border border-zinc-200 rounded-[28px] py-4 text-[16px] font-medium flex items-center justify-center gap-2.5 text-zinc-700 shadow-sm active:scale-[0.98] hover:border-zinc-300 hover:bg-zinc-50 transition-all duration-150"
+          >
+            <Mic className="w-5 h-5 text-zinc-400" />
+            Voice Conversation
           </button>
         </div>
 
@@ -224,11 +252,40 @@ export default function GuestHome() {
           </div>
         </section>
 
-        {/* Footer note */}
+        {/* Footer */}
         <p className="text-center text-[12px] text-zinc-300 px-4">
           Powered by {branding?.appName || "Guest Pro"} &middot; AI-assisted concierge
         </p>
       </main>
+
+      {/* Floating mic visualizer when listening from home page */}
+      {voice.isListening && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-6 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl px-8 py-10 flex flex-col items-center gap-5 shadow-2xl mx-6 max-w-xs w-full">
+            <MicrophoneButton
+              isListening={voice.isListening}
+              isSupported={voice.isSupported}
+              amplitude={voice.amplitude}
+              transcript={voice.transcript}
+              onToggle={handleMicTap}
+              variant="hero"
+              size="lg"
+            />
+            <div className="text-center">
+              <p className="text-[15px] font-medium text-zinc-800">Listening…</p>
+              <p className="text-[13px] text-zinc-400 mt-1">
+                {voice.transcript || "Speak naturally in any language"}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => voice.stopListening()}
+            className="text-white/70 text-[14px] hover:text-white transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 }
