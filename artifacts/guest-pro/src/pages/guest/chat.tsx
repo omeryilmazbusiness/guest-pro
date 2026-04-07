@@ -9,7 +9,7 @@ import {
   useLogout,
 } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
-import { LogOut, Send, Loader2, MapPin, Calendar, Sparkles, Phone, AlertCircle } from "lucide-react";
+import { LogOut, Send, Loader2, MapPin, Calendar, Phone, ArrowLeft, MessageSquare, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Message } from "@workspace/api-client-react/generated/api.schemas";
@@ -24,7 +24,7 @@ const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   "activity": Calendar,
 };
 
-export default function GuestDashboard() {
+export default function GuestChat() {
   const { user, isAuthenticated, logoutAuth } = useAuth();
   const [, setLocation] = useLocation();
   const logoutMutation = useLogout();
@@ -39,6 +39,8 @@ export default function GuestDashboard() {
   const [inputValue, setInputValue] = useState("");
   const [pendingUserMessage, setPendingUserMessage] = useState<string | null>(null);
   const [quotaExceeded, setQuotaExceeded] = useState(false);
+  const [pendingAutoSend, setPendingAutoSend] = useState<string | null>(null);
+  const autoSendFiredRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -54,6 +56,7 @@ export default function GuestDashboard() {
     query: { enabled: !!sessionId },
   });
 
+  // Auth guard
   useEffect(() => {
     if (!isAuthenticated) {
       setLocation("/");
@@ -62,6 +65,17 @@ export default function GuestDashboard() {
     }
   }, [isAuthenticated, user, setLocation]);
 
+  // Parse ?q= param from URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q");
+    if (q) {
+      setPendingAutoSend(decodeURIComponent(q));
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
+  // Create session on mount
   useEffect(() => {
     if (isAuthenticated && user?.role === "guest" && !sessionId) {
       createSessionMutation.mutate(undefined, {
@@ -72,28 +86,37 @@ export default function GuestDashboard() {
     }
   }, [isAuthenticated, user, sessionId]);
 
+  // Auto-send when session + messages are ready
+  useEffect(() => {
+    if (sessionId && pendingAutoSend && !autoSendFiredRef.current && !messagesLoading) {
+      autoSendFiredRef.current = true;
+      const msg = pendingAutoSend;
+      setPendingAutoSend(null);
+      handleSend(msg);
+    }
+  }, [sessionId, pendingAutoSend, messagesLoading]);
+
+  // Track new message IDs for animation
   useEffect(() => {
     if (!messages) return;
-
     if (!initialLoadedRef.current) {
       messages.forEach((m: Message) => seenIdsRef.current.add(m.id));
       initialLoadedRef.current = true;
       return;
     }
-
-    const newAnimatingIds: number[] = [];
+    const newIds: number[] = [];
     messages.forEach((m: Message) => {
       if (!seenIdsRef.current.has(m.id)) {
-        newAnimatingIds.push(m.id);
+        newIds.push(m.id);
         seenIdsRef.current.add(m.id);
       }
     });
-
-    if (newAnimatingIds.length > 0) {
-      setAnimatingIds((prev) => new Set([...prev, ...newAnimatingIds]));
+    if (newIds.length > 0) {
+      setAnimatingIds((prev) => new Set([...prev, ...newIds]));
     }
   }, [messages]);
 
+  // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, pendingUserMessage]);
@@ -108,13 +131,10 @@ export default function GuestDashboard() {
 
   const handleSend = (content: string) => {
     if (!content.trim() || !sessionId || quotaExceeded) return;
-
     const trimmed = content.trim();
     setPendingUserMessage(trimmed);
     setInputValue("");
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-    }
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
 
     sendMessageMutation.mutate(
       { sessionId, data: { content: trimmed } },
@@ -128,7 +148,7 @@ export default function GuestDashboard() {
           if (err.data?.quotaExceeded) {
             setQuotaExceeded(true);
           } else {
-            toast.error(err.data?.error || "Failed to send message. Please try again.");
+            toast.error(err.data?.error || "Failed to send. Please try again.");
             setInputValue(trimmed);
           }
         },
@@ -159,55 +179,59 @@ export default function GuestDashboard() {
     <div className="flex flex-col h-[100dvh] bg-[#F8F8F8]">
       {/* Header */}
       <header className="bg-white/95 backdrop-blur-sm border-b border-zinc-100/80 shrink-0 sticky top-0 z-20">
-        <div className="max-w-3xl mx-auto px-5 md:px-8 h-[72px] flex items-center justify-between">
-          <div>
-            <h1 className="font-serif text-[19px] font-medium text-zinc-900 tracking-tight">
-              {branding?.appName || "Guest Pro"}
-            </h1>
-            <p className="text-[11px] text-zinc-400 font-medium tracking-wide uppercase mt-0.5">
+        <div className="max-w-3xl mx-auto px-4 h-[64px] flex items-center gap-3">
+          <button
+            onClick={() => setLocation("/guest")}
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-50 transition-all -ml-1"
+            aria-label="Back to home"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <p className="text-[15px] font-medium text-zinc-900 truncate">
+              {branding?.appName || "Concierge"}
+            </p>
+            <p className="text-[11px] text-zinc-400 uppercase tracking-wide font-medium">
               {user.firstName} &middot; Room {user.roomNumber}
             </p>
           </div>
           <button
             data-testid="button-checkout"
             onClick={handleLogout}
-            className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-700 transition-colors text-sm py-2 px-1 -mr-1"
+            className="text-zinc-400 hover:text-zinc-700 transition-colors p-1"
+            aria-label="Sign out"
           >
             <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">Sign Out</span>
           </button>
         </div>
       </header>
 
       {/* Messages */}
-      <main className="flex-1 overflow-y-auto w-full max-w-3xl mx-auto px-4 md:px-8 py-6">
+      <main className="flex-1 overflow-y-auto w-full max-w-3xl mx-auto px-4 md:px-8 py-5">
         {!sessionId || messagesLoading ? (
-          <div className="space-y-5">
-            <Skeleton className="h-20 w-3/4 max-w-sm rounded-3xl rounded-tl-sm bg-zinc-100" />
+          <div className="space-y-4">
+            <Skeleton className="h-18 w-3/4 max-w-sm rounded-3xl rounded-tl-sm bg-zinc-100" />
             <div className="flex justify-end">
-              <Skeleton className="h-14 w-2/3 max-w-xs rounded-3xl rounded-tr-sm bg-zinc-100" />
+              <Skeleton className="h-12 w-2/3 max-w-xs rounded-3xl rounded-tr-sm bg-zinc-100" />
             </div>
-            <Skeleton className="h-28 w-5/6 max-w-md rounded-3xl rounded-tl-sm bg-zinc-100" />
+            <Skeleton className="h-24 w-5/6 max-w-md rounded-3xl rounded-tl-sm bg-zinc-100" />
           </div>
         ) : !hasMessages ? (
-          <div className="h-full flex flex-col items-center justify-center text-center space-y-5 animate-in fade-in duration-700">
-            <div className="w-20 h-20 rounded-full bg-white shadow-md shadow-zinc-200/60 flex items-center justify-center border border-zinc-50">
-              <Sparkles className="w-8 h-8 text-zinc-300" />
+          <div className="h-full flex flex-col items-center justify-center text-center gap-4 animate-in fade-in duration-500">
+            <div className="w-16 h-16 rounded-full bg-white border border-zinc-100 shadow-sm flex items-center justify-center">
+              <MessageSquare className="w-7 h-7 text-zinc-300" />
             </div>
-            <div className="space-y-2">
-              <h2 className="text-2xl font-serif text-zinc-800">
-                {branding?.welcomeText
-                  ? branding.welcomeText.split("!")[0] + "!"
-                  : `Good to see you, ${user.firstName}`}
+            <div className="space-y-1.5">
+              <h2 className="text-[18px] font-serif text-zinc-800">
+                How can I help?
               </h2>
-              <p className="text-zinc-400 max-w-xs mx-auto text-[15px] leading-relaxed">
-                I'm your personal concierge. How can I make your stay exceptional today?
+              <p className="text-zinc-400 text-[14px] leading-relaxed max-w-xs">
+                Ask me anything about your stay, the hotel, or local tips.
               </p>
             </div>
           </div>
         ) : (
           <div className="space-y-3 pb-2">
-            {/* Persisted messages */}
             {visibleMessages.map((msg: Message) => (
               <MessageBubble
                 key={msg.id}
@@ -215,16 +239,10 @@ export default function GuestDashboard() {
                 animate={animatingIds.has(msg.id)}
               />
             ))}
-
-            {/* Optimistic user message — animates while AI is thinking */}
             {isWaiting && pendingUserMessage && (
               <OptimisticUserBubble content={pendingUserMessage} />
             )}
-
-            {/* Premium shimmer loading bubble — AI is thinking */}
             {isWaiting && <ShimmerBubble />}
-
-            {/* Quota exceeded — shown inline as a system message */}
             {quotaExceeded && (
               <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-400">
                 <div className="max-w-[88%] px-5 py-4 bg-white rounded-3xl rounded-tl-sm border border-zinc-100 shadow-sm flex items-start gap-3">
@@ -235,25 +253,22 @@ export default function GuestDashboard() {
                 </div>
               </div>
             )}
-
             <div ref={messagesEndRef} className="h-2" />
           </div>
         )}
       </main>
 
-      {/* Input bar */}
+      {/* Input area */}
       <div className="shrink-0 sticky bottom-0 z-20 bg-[#F8F8F8]/95 backdrop-blur-sm">
         <div className="max-w-3xl mx-auto px-4 md:px-8 pt-2 pb-6 space-y-3">
-
-          {/* Quick actions — only before first message */}
+          {/* Quick actions — shown only before first message */}
           {!messagesLoading && !hasMessages && quickActions && quickActions.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none snap-x snap-mandatory">
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none snap-x">
               {quickActions.map((action: { id: number; icon?: string; label: string }) => {
                 const IconComponent = ICON_MAP[action.icon ?? ""] ?? MapPin;
                 return (
                   <button
                     key={action.id}
-                    data-testid={`quick-action-${action.id}`}
                     onClick={() => handleSend(action.label)}
                     className="shrink-0 snap-start bg-white border border-zinc-200 shadow-sm px-4 py-2.5 rounded-full text-[13px] font-medium text-zinc-600 hover:bg-zinc-50 hover:border-zinc-300 active:scale-95 transition-all whitespace-nowrap flex items-center gap-1.5"
                   >
@@ -279,7 +294,11 @@ export default function GuestDashboard() {
               value={inputValue}
               onChange={handleInput}
               onKeyDown={handleKeyDown}
-              placeholder={quotaExceeded ? "Daily limit reached. See you tomorrow." : "Ask for anything…"}
+              placeholder={
+                quotaExceeded
+                  ? "Daily limit reached. See you tomorrow."
+                  : "Ask for anything…"
+              }
               rows={1}
               className="flex-1 max-h-[120px] bg-transparent border-0 resize-none outline-none focus:ring-0 py-2 text-[15px] text-zinc-900 placeholder:text-zinc-400 leading-relaxed font-sans"
               disabled={isWaiting || !sessionId || quotaExceeded}
@@ -303,7 +322,6 @@ export default function GuestDashboard() {
               </button>
             </div>
           </div>
-
         </div>
       </div>
     </div>

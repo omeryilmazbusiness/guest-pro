@@ -1,0 +1,367 @@
+You are a senior product designer, mobile UX architect, and production-grade full-stack engineer.
+
+Your task is to inspect and professionally redesign the GUEST experience of the existing “Guest Pro” project.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, guest dashboard, guest chat screen, routing, auth flow, and UI component structure.
+- Do NOT rebuild the app from scratch if working systems already exist.
+- Preserve working guest auth, logout, request quota, AI/chat backend, and route protection.
+- Refactor only where there is real UX, product, architecture, and maintainability value.
+- Keep everything mobile-first, premium, simple, soft, modern, and production-ready.
+- The final result must feel like a polished luxury hospitality assistant, not a demo.
+
+PROJECT CONTEXT:
+Guest Pro is a hotel guest web app mostly used from mobile browsers.
+
+MAIN PRODUCT GOAL FOR THIS TASK:
+The guest side should no longer open directly into a raw chat-first layout.
+Instead, create a premium GUEST MAIN PAGE and make chat a second step.
+
+NEW GUEST FLOW:
+1. Guest logs in
+2. Guest lands on a premium main page / home page
+3. In the center of the page there is a large, elegant primary CTA:
+   “Ask something”
+4. When the guest taps “Ask something”, open the guest chat screen
+5. The rest of the main page should include clean sections such as:
+   - Overview
+   - Bilgiler / Info
+   - Quick Actions
+6. The header must be production-ready and contain only the most necessary information
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current guest route structure
+2. Current guest dashboard/home screen
+3. Current guest chat page
+4. Current auth/session handling for guest
+5. Current header implementation
+6. Current UI tokens, spacing, shadows, border radius, typography
+7. Current quick actions structure
+8. Current AI/chat entry flow
+9. What should be preserved
+10. What should be redesigned
+
+Then provide:
+- concise UX/architecture audit
+- what feels too chat-first or unstructured now
+- what is missing for a premium guest landing experience
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — BUILD A PREMIUM GUEST MAIN PAGE
+==================================================
+
+Create or redesign the guest landing page into a production-ready premium main page.
+
+MAIN PAGE REQUIREMENTS:
+- this page should be the first page the guest sees after login
+- it must be mobile-first and highly polished
+- it must feel simple, soft, modern, premium, and trustworthy
+- it must not feel cluttered
+- use elegant spacing and clear section hierarchy
+- keep the design white/light dominant
+- soft rounded surfaces
+- subtle premium shadows
+- refined typography
+- luxury hospitality + modern SaaS feel
+
+PAGE STRUCTURE:
+1. Header
+2. Main centered hero action
+3. Overview section
+4. Bilgiler / Info section
+5. Quick Actions section
+
+VISUAL GOAL:
+The page should feel like a calm premium assistant home screen where the guest can quickly understand their status and take action.
+
+==================================================
+PHASE 3 — CENTER HERO CTA: “ASK SOMETHING”
+==================================================
+
+The central focus of the guest main page should be a large premium CTA.
+
+REQUIREMENTS:
+- large centered button/card/interactive surface
+- text like: “Ask something”
+- make it feel very polished and premium
+- it should look inviting, modern, and effortless
+- should not be overly colorful or noisy
+- keep it elegant and simple
+- subtle premium motion on press/tap if appropriate
+- excellent mobile tap target
+- visually dominant but restrained
+
+BEHAVIOR:
+- when tapped, it opens the guest chat screen
+- transition should feel smooth and premium
+- no broken routing
+- no auth regression
+- preserve chat functionality
+
+OPTIONAL SUPPORTING TEXT:
+- a short helper line below or above can be used, such as:
+  “Need help with your stay?”
+or a similarly premium short message
+
+==================================================
+PHASE 4 — HEADER DESIGN (PROD-READY)
+==================================================
+
+Redesign the guest header to be production-ready and useful.
+
+The header should contain only the most necessary information.
+
+Include only what adds real value, such as:
+- hotel/app name or subtle branding
+- guest first name / welcome
+- room number
+- maybe one compact status/context item if useful
+- logout or profile/menu action in a clean place
+
+Do NOT overload the header.
+Do NOT turn it into an admin-style top bar.
+
+HEADER UX RULES:
+- simple
+- elegant
+- compact
+- mobile friendly
+- clean hierarchy
+- premium hospitality look
+- stable on small screens
+- optionally sticky only if it genuinely improves UX
+
+==================================================
+PHASE 5 — OVERVIEW SECTION
+==================================================
+
+Create a clean Overview section on the guest main page.
+
+Purpose:
+- give the guest a quick understanding of their current stay context
+
+Possible content:
+- welcome card
+- room number
+- current stay summary
+- short support summary
+- any relevant hotel context already available in data
+
+RULES:
+- do not fake data if not available
+- if data is missing, create elegant placeholder/empty states
+- keep cards soft and premium
+- no clutter
+- strong readability
+
+==================================================
+PHASE 6 — BILGILER / INFO SECTION
+==================================================
+
+Create an Info section that feels useful and premium.
+
+Purpose:
+- give the guest quick access to helpful stay information
+
+Possible examples:
+- hotel info
+- support notes
+- available service highlights
+- useful tips for the guest
+
+IMPORTANT:
+- if the backend data for this is not ready, build the UI structure in a clean extensible way using safe placeholders or static MVP content
+- do not create fake complex backend logic if it is not already there
+- keep the architecture ready for future dynamic content
+
+The section should feel:
+- informative
+- calm
+- premium
+- easy to scan
+
+==================================================
+PHASE 7 — QUICK ACTIONS SECTION
+==================================================
+
+Create a Quick Actions section in a highly polished way.
+
+Requirements:
+- clear section title
+- actions displayed as elegant cards/buttons
+- touch-friendly on mobile
+- premium but minimal
+- visually aligned with the rest of the page
+
+Current likely actions:
+- Reception
+- Activities
+
+If current quick actions already exist:
+- preserve working logic
+- redesign presentation professionally
+
+If no working quick actions exist yet:
+- create polished UI placeholders connected cleanly for future functionality
+
+==================================================
+PHASE 8 — CHAT SCREEN ENTRY FLOW
+==================================================
+
+Tapping “Ask something” should open the chat screen professionally.
+
+Requirements:
+- preserve existing chat logic
+- preserve AI request flow
+- preserve quota logic if already implemented
+- preserve auth/session protection
+- keep route structure clean
+- no messy one-off navigation hack
+- transition should feel smooth and intentional
+- if appropriate, route to a dedicated guest chat page rather than mixing everything in one overcrowded screen
+
+Also:
+- chat screen should feel like a second-level focused screen
+- main page is the calm home
+- chat page is the active conversation space
+
+==================================================
+PHASE 9 — MOBILE-FIRST UX QUALITY
+==================================================
+
+Everything must be optimized for mobile browsers.
+
+Requirements:
+- excellent spacing on phone screens
+- no cramped layouts
+- strong thumb-friendly interactions
+- large tap targets
+- clean vertical rhythm
+- safe area awareness if useful
+- polished card stacking and spacing
+- no horizontal overflow
+- no visual noise
+- smooth transition between home and chat
+- premium but restrained micro-interactions
+
+==================================================
+PHASE 10 — VISUAL DIRECTION
+==================================================
+
+Design language must be:
+
+- white/light dominant
+- soft rounded corners
+- modern premium hospitality feel
+- simple and expensive-looking
+- calm and elegant
+- not overly futuristic
+- not colorful AI-noise heavy
+- no clutter
+- no cheap glow effects
+
+Think:
+- luxury hotel guest assistant
+- modern Apple-level calmness
+- premium SaaS clarity
+- soft and trustworthy hospitality UI
+
+Typography:
+- polished hierarchy
+- readable on mobile
+- not too many font sizes
+- elegant section titles
+- strong content readability
+
+Shadows and surfaces:
+- subtle
+- layered softly
+- premium
+- restrained
+
+==================================================
+PHASE 11 — DO NOT BREAK EXISTING WORKING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- guest login
+- guest logout
+- chat backend / AI integration
+- request quota logic if already present
+- markdown rendering if already present
+- route protection
+- manager flows
+- existing stable APIs
+
+This task is primarily about guest UX restructuring and premium UI.
+
+==================================================
+PHASE 12 — CODE QUALITY / SOLID / PRODUCTION READINESS
+==================================================
+
+Implement the redesign cleanly and professionally.
+
+Requirements:
+- keep business logic separate from presentation
+- do not put everything into one giant guest page file
+- create meaningful reusable UI sections/components where appropriate
+- use clear naming
+- no dead code
+- no fake architecture
+- structure must be maintainable and actually used
+- avoid unnecessary libraries unless they clearly improve the result
+- preserve performance
+
+Possible component structure:
+- GuestHeader
+- GuestHeroAskCard
+- GuestOverviewSection
+- GuestInfoSection
+- GuestQuickActionsSection
+- GuestHomeLayout
+- ChatEntryNavigation helper if useful
+
+==================================================
+PHASE 13 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify:
+1. Guest lands on the new main page after login
+2. Header looks production-ready
+3. Ask Something CTA is centered and polished
+4. Tapping Ask Something opens the chat screen correctly
+5. Overview section looks premium
+6. Info section looks premium
+7. Quick Actions section looks premium
+8. Mobile layout is polished and stable
+9. No regression in guest auth/logout
+10. No regression in chat access or AI flow
+11. Overall guest experience feels production-ready
+
+==================================================
+PHASE 14 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was weak before
+3. What was redesigned
+4. What was preserved
+5. Final guest flow summary
+6. Final file map of changed guest UI files
+7. Any performance considerations
+8. How to test the new guest home page and chat entry flow
+
+IMPORTANT:
+- Start by inspecting first
+- Then redesign professionally
+- Keep the result simple, soft, modern, premium, and production-ready
+- Make the guest main page feel like a true premium hotel assistant home screen

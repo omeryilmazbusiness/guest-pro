@@ -6,7 +6,8 @@ import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import ManagerDashboard from "@/pages/manager/dashboard";
 import CreateGuest from "@/pages/manager/create-guest";
-import GuestDashboard from "@/pages/guest/dashboard";
+import GuestHome from "@/pages/guest/home";
+import GuestChat from "@/pages/guest/chat";
 
 const queryClient = new QueryClient();
 
@@ -16,7 +17,8 @@ function Router() {
       <Route path="/" component={Login} />
       <Route path="/manager" component={ManagerDashboard} />
       <Route path="/manager/guests/new" component={CreateGuest} />
-      <Route path="/guest" component={GuestDashboard} />
+      <Route path="/guest" component={GuestHome} />
+      <Route path="/guest/chat" component={GuestChat} />
       <Route component={NotFound} />
     </Switch>
   );
