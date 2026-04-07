@@ -1,0 +1,298 @@
+You are a senior product designer, mobile UX architect, and production-grade front-end engineer.
+
+Your task is to inspect and professionally redesign the GUEST CHAT SCREEN of the existing “Guest Pro” project.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the current codebase, file tree, guest chat screen, chat components, message rendering, input bar, animations, and theme tokens.
+- Do NOT rebuild the app from scratch if working parts already exist.
+- Preserve working business logic, auth, message sending, and API integrations.
+- Focus on redesigning the guest chat experience to feel production-ready, premium, simple, soft, modern, and mobile-first.
+- Remove unnecessary visual noise.
+- Keep the implementation performant and realistic for production.
+- The result must feel like a polished hospitality AI assistant, not a flashy demo.
+
+PROJECT CONTEXT:
+Guest Pro is a premium hotel web app used mainly from mobile browsers.
+This task is specifically about the GUEST screen and chat UI/UX.
+
+MAIN PRODUCT GOAL FOR THIS TASK:
+The guest chat screen must become:
+- simple
+- soft
+- modern
+- premium
+- elegant
+- mobile-first
+- production-ready
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything:
+1. Inspect the current guest dashboard/chat screen
+2. Inspect the current chat bar/input UI
+3. Inspect the current message bubble components
+4. Inspect current animations and effects
+5. Inspect how AI responses render
+6. Inspect how markdown is rendered
+7. Inspect theme tokens, spacing, typography, shadows, and border radii
+8. Inspect whether current effects are too colorful, noisy, or visually heavy
+9. Inspect mobile usability, keyboard behavior, safe spacing, and scroll behavior
+10. Identify what should be preserved and what should be redesigned
+
+Then provide:
+- concise design audit
+- what feels non-premium right now
+- what makes the current chat bar too “AI-colorful” or noisy
+- a clear implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — REMOVE THE CURRENT COLORFUL AI CHAT BAR STYLE
+==================================================
+
+The current colorful AI-style chat bar should be removed.
+
+Requirements:
+- remove the overly colorful / flashy / gradient-heavy AI input appearance
+- replace it with a more professional, simple, soft, modern premium style
+- no loud neon borders
+- no excessive colorful glow
+- no gimmicky visual noise
+- keep it elegant and premium
+- keep the chat input highly usable on mobile
+
+New chat bar direction:
+- soft light surface
+- refined rounded corners
+- subtle border
+- elegant shadow
+- premium spacing
+- very clean icon/button treatment
+- polished placeholder text
+- refined focus state
+- modern but understated
+- should feel trustworthy and expensive
+
+The final input bar should feel like:
+luxury hospitality assistant + clean modern SaaS + premium mobile messenger
+
+==================================================
+PHASE 3 — MESSAGE BUBBLES REDESIGN
+==================================================
+
+Professionally redesign the message bubbles.
+
+Requirements:
+- create beautiful, soft, premium message bubbles
+- distinct visual styling for:
+  - guest messages
+  - AI responses
+- keep them minimal and elegant
+- use high-quality spacing and readable line height
+- ensure excellent readability on small screens
+- avoid childish or over-stylized chat UI
+- support markdown output beautifully
+- ensure lists, bold text, headings, and links look polished
+
+Guest bubble direction:
+- clean, subtle, slightly stronger emphasis
+- premium rounded shape
+- comfortable padding
+- elegant but restrained color usage
+
+AI bubble direction:
+- soft neutral/light surface
+- premium card-like feel
+- slightly richer content styling
+- refined typography
+- clear structure for markdown responses
+- visually calm and helpful
+
+Micro-details:
+- smooth appearance animation
+- no laggy heavy animation
+- proper spacing between grouped messages
+- consistent timestamp/meta treatment if present
+- support long responses gracefully
+
+==================================================
+PHASE 4 — TYPING / STREAMING EFFECT FOR AI RESPONSE
+==================================================
+
+Add a premium AI typing effect so the response appears as if it is being written gradually.
+
+Requirements:
+- AI response should appear character-by-character or token-by-token in a professional way
+- effect must feel elegant, not childish
+- must be smooth and performant
+- must work well on mobile
+- must not break markdown rendering
+- if necessary, render the typing effect first, then finalize markdown formatting cleanly
+- avoid layout flicker and unstable jumping
+- provide a tasteful typing indicator before response begins if helpful
+
+Also:
+- ensure there is a graceful fallback if streaming/typing effect fails
+- do not make the effect too slow
+- do not block usability while typing
+- if the user sends a new message quickly, the interface should remain stable
+
+==================================================
+PHASE 5 — PREMIUM MICRO-INTERACTIONS
+==================================================
+
+Add professional, subtle, production-ready UX effects.
+
+Requirements:
+- smooth message enter animation
+- polished send button state
+- tasteful focus transitions
+- soft hover/tap feedback where appropriate
+- elegant loading state for pending AI response
+- subtle typing indicator
+- smooth scroll-to-latest behavior
+- keyboard-safe mobile behavior
+- no distracting animation spam
+- no excessive motion
+- keep everything premium and restrained
+
+The animations should feel:
+- refined
+- soft
+- modern
+- expensive
+- calm
+
+==================================================
+PHASE 6 — MOBILE-FIRST CHAT EXPERIENCE
+==================================================
+
+Optimize the guest chat UI for phone usage.
+
+Requirements:
+- sticky bottom input bar
+- keyboard-safe layout
+- proper bottom padding
+- safe scroll behavior
+- no input hidden behind keyboard
+- comfortable one-hand usage
+- large enough tap targets
+- polished spacing between top content and chat content
+- no overflow issues
+- no jitter while keyboard opens/closes
+
+Also ensure:
+- iPhone Safari and Android Chrome style behavior is considered
+- message list remains readable when keyboard opens
+- send interaction remains fast and clear
+
+==================================================
+PHASE 7 — VISUAL DIRECTION
+==================================================
+
+The final visual design must be:
+
+- white/light dominant
+- soft rounded corners
+- modern premium hospitality feel
+- simple and high-end
+- calm and professional
+- no noisy AI gradients
+- no clutter
+- no exaggerated futuristic visuals
+- no cheap looking glow effects
+
+Think:
+- premium hotel concierge
+- clean Apple-level calmness
+- modern SaaS clarity
+- luxury hospitality softness
+
+Typography:
+- strong readability
+- elegant hierarchy
+- not too many font sizes
+- polished message text rendering
+
+Shadows and borders:
+- subtle
+- layered softly
+- premium
+- restrained
+
+==================================================
+PHASE 8 — DO NOT BREAK WORKING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- guest auth
+- logout
+- chat send flow
+- backend AI integration
+- markdown support
+- quick actions if they still exist
+- route protection
+- existing stable logic
+
+Only redesign and polish the experience where relevant.
+
+==================================================
+PHASE 9 — CODE QUALITY / SOLID / PRODUCTION READINESS
+==================================================
+
+Implement this professionally.
+
+Requirements:
+- keep components modular
+- separate presentation from business logic
+- reusable chat UI components if appropriate
+- no giant messy component file
+- no dead code
+- no fake architecture
+- use meaningful structure
+- keep animations maintainable
+- keep performance in mind
+- avoid unnecessary re-renders
+- avoid animation libraries unless they clearly add value
+- if a motion library already exists and is appropriate, use it cleanly
+- otherwise prefer lightweight, professional implementation
+
+==================================================
+PHASE 10 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify:
+1. Chat bar no longer looks overly colorful or noisy
+2. New input bar feels premium and simple
+3. Guest message bubbles look polished
+4. AI message bubbles look polished
+5. AI typing effect works smoothly
+6. Markdown still renders beautifully
+7. Mobile keyboard behavior is correct
+8. No regression in chat sending
+9. No regression in logout/auth flow
+10. Overall guest chat screen feels production-ready
+
+==================================================
+PHASE 11 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was visually wrong before
+3. What was redesigned
+4. What was preserved
+5. What animations/effects were added
+6. Final file map of changed guest chat UI files
+7. Any performance considerations
+8. How to test the new guest chat experience
+
+IMPORTANT:
+- Start by inspecting first
+- Then redesign professionally
+- Keep the result simple, soft, modern, premium, and production-ready
+- Remove the current colorful AI chat bar style completely
+- Deliver the best possible guest chat UX

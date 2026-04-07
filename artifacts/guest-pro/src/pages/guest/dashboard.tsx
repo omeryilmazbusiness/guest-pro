@@ -13,8 +13,9 @@ import { LogOut, Send, Loader2, MapPin, Calendar, Sparkles, Phone } from "lucide
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import ReactMarkdown from "react-markdown";
 import type { Message } from "@workspace/api-client-react/generated/api.schemas";
+import { MessageBubble } from "@/components/chat/MessageBubble";
+import { TypingIndicator } from "@/components/chat/TypingIndicator";
 
 const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   "map-pin": MapPin,
@@ -38,6 +39,10 @@ export default function GuestDashboard() {
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const seenIdsRef = useRef<Set<number>>(new Set());
+  const initialLoadedRef = useRef(false);
+  const [animatingIds, setAnimatingIds] = useState<Set<number>>(new Set());
 
   const {
     data: messages,
@@ -64,6 +69,28 @@ export default function GuestDashboard() {
       });
     }
   }, [isAuthenticated, user, sessionId]);
+
+  useEffect(() => {
+    if (!messages) return;
+
+    if (!initialLoadedRef.current) {
+      messages.forEach((m: Message) => seenIdsRef.current.add(m.id));
+      initialLoadedRef.current = true;
+      return;
+    }
+
+    const newAnimatingIds: number[] = [];
+    messages.forEach((m: Message) => {
+      if (m.role === "assistant" && !seenIdsRef.current.has(m.id)) {
+        newAnimatingIds.push(m.id);
+        seenIdsRef.current.add(m.id);
+      }
+    });
+
+    if (newAnimatingIds.length > 0) {
+      setAnimatingIds((prev) => new Set([...prev, ...newAnimatingIds]));
+    }
+  }, [messages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -114,165 +141,132 @@ export default function GuestDashboard() {
 
   if (!isAuthenticated || user?.role !== "guest") return null;
 
+  const visibleMessages = messages?.filter((m: Message) => m.role !== "system") ?? [];
+
   return (
-    <div className="flex flex-col h-[100dvh] bg-[#FAFAFA]">
-      <header className="bg-white/90 backdrop-blur-md border-b border-zinc-100 shrink-0 sticky top-0 z-20">
-        <div className="max-w-3xl mx-auto px-4 md:px-8 h-20 flex items-center justify-between">
+    <div className="flex flex-col h-[100dvh] bg-[#F8F8F8]">
+      {/* Header */}
+      <header className="bg-white/95 backdrop-blur-sm border-b border-zinc-100/80 shrink-0 sticky top-0 z-20">
+        <div className="max-w-3xl mx-auto px-5 md:px-8 h-[72px] flex items-center justify-between">
           <div>
-            <h1 className="font-serif text-xl font-medium text-zinc-900">
+            <h1 className="font-serif text-[19px] font-medium text-zinc-900 tracking-tight">
               {branding?.appName || "Guest Pro"}
             </h1>
-            <p className="text-xs text-zinc-500 font-medium">
-              Welcome, {user.firstName} &bull; Room {user.roomNumber}
+            <p className="text-[11px] text-zinc-400 font-medium tracking-wide uppercase mt-0.5">
+              {user.firstName} &middot; Room {user.roomNumber}
             </p>
           </div>
-          <Button
+          <button
             data-testid="button-checkout"
-            variant="ghost"
-            size="sm"
             onClick={handleLogout}
-            className="text-zinc-500 hover:text-zinc-900 rounded-xl"
+            className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-700 transition-colors text-sm py-2 px-1 -mr-1"
           >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
-          </Button>
+            <LogOut className="w-4 h-4" />
+            <span className="hidden sm:inline">Sign Out</span>
+          </button>
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto w-full max-w-3xl mx-auto px-4 py-8">
+      {/* Messages */}
+      <main className="flex-1 overflow-y-auto w-full max-w-3xl mx-auto px-4 md:px-8 py-6">
         {!sessionId || messagesLoading ? (
-          <div className="space-y-6 animate-pulse">
-            <Skeleton className="h-24 w-3/4 max-w-sm rounded-3xl rounded-tl-sm bg-zinc-100" />
+          <div className="space-y-5">
+            <Skeleton className="h-20 w-3/4 max-w-sm rounded-3xl rounded-tl-sm bg-zinc-100" />
             <div className="flex justify-end">
-              <Skeleton className="h-16 w-2/3 max-w-sm rounded-3xl rounded-tr-sm bg-zinc-100" />
+              <Skeleton className="h-14 w-2/3 max-w-xs rounded-3xl rounded-tr-sm bg-zinc-100" />
             </div>
-            <Skeleton className="h-32 w-5/6 max-w-md rounded-3xl rounded-tl-sm bg-zinc-100" />
+            <Skeleton className="h-28 w-5/6 max-w-md rounded-3xl rounded-tl-sm bg-zinc-100" />
           </div>
-        ) : messages?.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center space-y-6 mt-12 animate-in fade-in duration-1000">
-            <div className="w-24 h-24 rounded-full bg-white shadow-xl shadow-zinc-200/50 flex items-center justify-center border border-zinc-50 mb-4">
-              <Sparkles className="w-10 h-10 text-zinc-400" />
+        ) : visibleMessages.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center text-center space-y-5 animate-in fade-in duration-700">
+            <div className="w-20 h-20 rounded-full bg-white shadow-md shadow-zinc-200/60 flex items-center justify-center border border-zinc-50">
+              <Sparkles className="w-8 h-8 text-zinc-300" />
             </div>
-            <h2 className="text-3xl font-serif text-zinc-800">
-              {branding?.welcomeText
-                ? branding.welcomeText.split("!")[0] + "!"
-                : `Good to see you, ${user.firstName}`}
-            </h2>
-            <p className="text-zinc-500 max-w-sm mx-auto text-lg leading-relaxed">
-              I&apos;m your personal concierge. How can I make your stay exceptional today?
-            </p>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-serif text-zinc-800">
+                {branding?.welcomeText
+                  ? branding.welcomeText.split("!")[0] + "!"
+                  : `Good to see you, ${user.firstName}`}
+              </h2>
+              <p className="text-zinc-400 max-w-xs mx-auto text-[15px] leading-relaxed">
+                I'm your personal concierge. How can I make your stay exceptional today?
+              </p>
+            </div>
           </div>
         ) : (
-          <div className="space-y-6 pb-4">
-            {messages
-              ?.filter((m: Message) => m.role !== "system")
-              .map((msg: Message) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-[85%] px-5 py-4 text-[15px] leading-relaxed shadow-sm
-                    ${
-                      msg.role === "user"
-                        ? "bg-zinc-900 text-white rounded-3xl rounded-tr-sm"
-                        : "bg-white text-zinc-800 rounded-3xl rounded-tl-sm border border-zinc-100"
-                    }`}
-                  >
-                    {msg.role === "assistant" ? (
-                      <div className="prose prose-sm prose-zinc max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-headings:my-1 prose-strong:font-semibold">
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
-                      </div>
-                    ) : (
-                      msg.content
-                    )}
-                  </div>
-                </div>
-              ))}
+          <div className="space-y-3 pb-2">
+            {visibleMessages.map((msg: Message) => (
+              <MessageBubble
+                key={msg.id}
+                message={msg}
+                animate={animatingIds.has(msg.id)}
+              />
+            ))}
 
-            {sendMessageMutation.isPending && (
-              <div className="flex justify-start">
-                <div className="bg-white border border-zinc-100 rounded-3xl rounded-tl-sm px-6 py-5 shadow-sm">
-                  <div className="flex gap-1.5 items-center">
-                    <span
-                      className="w-2 h-2 rounded-full bg-zinc-300 animate-bounce"
-                      style={{ animationDelay: "0ms" }}
-                    />
-                    <span
-                      className="w-2 h-2 rounded-full bg-zinc-300 animate-bounce"
-                      style={{ animationDelay: "150ms" }}
-                    />
-                    <span
-                      className="w-2 h-2 rounded-full bg-zinc-300 animate-bounce"
-                      style={{ animationDelay: "300ms" }}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} className="h-4" />
+            {sendMessageMutation.isPending && <TypingIndicator />}
+
+            <div ref={messagesEndRef} className="h-2" />
           </div>
         )}
       </main>
 
-      <div className="bg-[#FAFAFA] shrink-0 sticky bottom-0 z-20 pb-safe">
-        <div className="max-w-3xl mx-auto px-4 py-4 space-y-4">
-          {!messagesLoading &&
-            messages?.length === 0 &&
-            quickActions &&
-            quickActions.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory">
-                {quickActions.map((action) => {
-                  const IconComponent = ICON_MAP[action.icon ?? ""] ?? MapPin;
-                  return (
-                    <button
-                      key={action.id}
-                      data-testid={`quick-action-${action.id}`}
-                      onClick={() => handleSend(action.label)}
-                      className="shrink-0 snap-start bg-white border border-zinc-200 shadow-sm px-4 py-2.5 rounded-full text-sm font-medium text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300 transition-colors whitespace-nowrap flex items-center gap-2"
-                    >
-                      <IconComponent className="w-4 h-4 text-zinc-400" />
-                      {action.label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+      {/* Input bar */}
+      <div className="shrink-0 sticky bottom-0 z-20 bg-[#F8F8F8]/95 backdrop-blur-sm">
+        <div className="max-w-3xl mx-auto px-4 md:px-8 pt-2 pb-6 space-y-3">
 
-          <div className="relative">
-            <div className="premium-gradient-border rounded-3xl bg-white shadow-xl shadow-zinc-200/50 flex items-end p-2 relative z-10">
-              <textarea
-                ref={textareaRef}
-                data-testid="input-message"
-                value={inputValue}
-                onChange={handleInput}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask for anything..."
-                rows={1}
-                className="flex-1 max-h-[120px] bg-transparent border-0 resize-none outline-none focus:ring-0 px-4 py-3 text-base text-zinc-900 placeholder:text-zinc-400 font-sans"
-                disabled={sendMessageMutation.isPending || !sessionId}
-              />
-              <div className="p-1 shrink-0">
-                <Button
-                  data-testid="button-send"
-                  size="icon"
-                  className={`w-12 h-12 rounded-2xl transition-all duration-300 ${
-                    inputValue.trim()
-                      ? "bg-zinc-900 hover:bg-zinc-800 text-white shadow-md"
-                      : "bg-zinc-100 text-zinc-400 hover:bg-zinc-200"
-                  }`}
-                  disabled={!inputValue.trim() || sendMessageMutation.isPending || !sessionId}
-                  onClick={() => handleSend(inputValue)}
-                >
-                  {sendMessageMutation.isPending ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Send className="w-5 h-5" />
-                  )}
-                </Button>
-              </div>
+          {/* Quick actions — only when no messages yet */}
+          {!messagesLoading && visibleMessages.length === 0 && quickActions && quickActions.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none snap-x snap-mandatory">
+              {quickActions.map((action) => {
+                const IconComponent = ICON_MAP[action.icon ?? ""] ?? MapPin;
+                return (
+                  <button
+                    key={action.id}
+                    data-testid={`quick-action-${action.id}`}
+                    onClick={() => handleSend(action.label)}
+                    className="shrink-0 snap-start bg-white border border-zinc-200 shadow-sm px-4 py-2.5 rounded-full text-[13px] font-medium text-zinc-600 hover:bg-zinc-50 hover:border-zinc-300 active:scale-95 transition-all whitespace-nowrap flex items-center gap-1.5"
+                  >
+                    <IconComponent className="w-3.5 h-3.5 text-zinc-400" />
+                    {action.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Chat input */}
+          <div className="flex items-end gap-3 bg-white rounded-3xl border border-zinc-200 shadow-sm focus-within:border-zinc-300 focus-within:shadow-md transition-all duration-200 px-4 py-2.5">
+            <textarea
+              ref={textareaRef}
+              data-testid="input-message"
+              value={inputValue}
+              onChange={handleInput}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask for anything…"
+              rows={1}
+              className="flex-1 max-h-[120px] bg-transparent border-0 resize-none outline-none focus:ring-0 py-2 text-[15px] text-zinc-900 placeholder:text-zinc-400 leading-relaxed font-sans"
+              disabled={sendMessageMutation.isPending || !sessionId}
+            />
+            <div className="shrink-0 pb-1">
+              <button
+                data-testid="button-send"
+                disabled={!inputValue.trim() || sendMessageMutation.isPending || !sessionId}
+                onClick={() => handleSend(inputValue)}
+                className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 ${
+                  inputValue.trim() && !sendMessageMutation.isPending
+                    ? "bg-zinc-900 text-white shadow-sm hover:bg-zinc-800"
+                    : "bg-zinc-100 text-zinc-400"
+                }`}
+              >
+                {sendMessageMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </button>
             </div>
           </div>
+
         </div>
       </div>
     </div>
