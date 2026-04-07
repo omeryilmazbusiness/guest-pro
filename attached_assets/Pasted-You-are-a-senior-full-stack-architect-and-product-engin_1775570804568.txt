@@ -1,0 +1,218 @@
+You are a senior full-stack architect and product engineer.
+
+Build a production-grade, mobile-first web application called “Guest Pro”.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase and file tree.
+- Do NOT rebuild or replace working parts unnecessarily.
+- Continue from the current project state.
+- Preserve existing good architecture and improve weak areas.
+- Use SOLID principles and clean architecture.
+- Keep the system modular so it can be white-labeled and resold to many hotels by changing branding, text, colors, and domain.
+- The app must feel premium, minimal, soft, modern, and extremely clean on mobile devices.
+
+TECH STACK TO USE:
+- Next.js App Router
+- TypeScript
+- PostgreSQL
+- Drizzle ORM
+- Auth.js
+- Tailwind CSS
+- Zod
+- Server-side Gemini integration using GEMINI_API_KEY from environment variables only
+- Do not expose Gemini API key to the client
+
+PRODUCT GOAL:
+Guest Pro is a hotel guest web app optimized for phone usage.
+Guests can log in with a guest key and instantly access a premium AI concierge/chat interface.
+The hotel manager can log in and create new guests with a generated guest key.
+
+CURRENT MVP SCOPE:
+ROLES:
+1) MANAGER
+2) GUEST
+
+MANAGER FLOW:
+- Manager logs in with secure credentials
+- Manager dashboard should be minimal for now
+- The main default action is a primary button: “Create New Guest”
+- Clicking it opens a minimal premium form/modal/drawer:
+  - First name
+  - Last name
+  - Room number
+- On submit:
+  - create guest
+  - generate unique guest key
+  - store everything in database
+  - show the key on screen with copy button
+
+GUEST FLOW:
+- Guest logs in using guest key only
+- After login show:
+  - first name
+  - last name
+  - room number
+- Then show a premium AI chat screen
+
+GUEST CHAT UI:
+- White/light theme
+- Soft rounded corners
+- Premium modern mobile UX
+- “Basic premium” feeling: simple but expensive
+- Main focus: a beautiful text bar / message input area
+- The input area should look like an AI interface:
+  - subtle colorful effect border
+  - soft edges
+  - elegant shadows
+  - premium but not overloaded
+- Under the main chat/input area show 2 quick actions only for now:
+  - Reception
+  - Activities
+
+AI BEHAVIOR:
+- Use Gemini on the server side
+- AI should behave as a hotel concierge assistant
+- It should support multilingual communication and live translation-ready architecture
+- Store original text and translated text separately
+- Prepare architecture for future human live chat takeover
+- For now the AI can answer hospitality-related questions and classify requests
+- Build with future extensibility in mind:
+  - reception requests
+  - activities information
+  - housekeeping
+  - transport
+  - wake-up calls
+  - human handoff
+Do not implement all those UIs now, but keep the architecture ready.
+
+WHITE-LABEL / MULTI-HOTEL REQUIREMENTS:
+Design the architecture so this same product can be sold to many hotels fast.
+Create a tenant-aware domain model with these concepts:
+- hotels
+- hotel_branding
+- users
+- guests
+- guest_keys
+- chat_sessions
+- messages
+- quick_actions
+- audit_logs
+
+Each hotel should be able to override:
+- app name
+- logo
+- primary/accent colors
+- welcome texts
+- quick action labels
+- soft design tokens if needed
+
+ARCHITECTURE REQUIREMENTS:
+Use modular clean architecture like:
+- domain
+- application
+- infrastructure
+- presentation
+
+Separate modules at minimum:
+- auth
+- hotels
+- guests
+- chat
+- ai
+- branding
+- shared
+
+Keep business logic out of page components.
+Pages and route handlers should stay thin.
+Use use-cases/services for application logic.
+Use repositories/adapters for data access and external APIs.
+
+AUTH REQUIREMENTS:
+- Use Auth.js
+- Secure manager authentication
+- Guest key authentication
+- Role-based route protection
+- Tenant-aware authorization
+- Session-safe implementation
+- Proper logout
+- Server-side checks for protected routes
+
+DATABASE REQUIREMENTS:
+Create Drizzle schema and migrations for:
+- hotels
+- hotel_branding
+- users
+- guests
+- guest_keys
+- chat_sessions
+- messages
+- quick_actions
+- audit_logs
+
+Seed demo data:
+- 1 demo hotel
+- 1 demo manager
+- 2 demo guests
+- quick actions: Reception, Activities
+
+MOBILE-FIRST UX REQUIREMENTS:
+- Optimize everything for phone browser usage
+- Large touch-friendly tap areas
+- Elegant spacing
+- Sticky bottom input where appropriate
+- Keyboard-safe layout
+- Smooth loading states
+- Skeletons, empty states, and success feedback
+- Premium light interface
+- Soft shadows, rounded 2xl/3xl surfaces, clean typography
+- Avoid clutter
+- Make it feel modern, premium, and easy to sell
+
+PWA REQUIREMENTS:
+Prepare the app to behave like an installable mobile web app:
+- manifest
+- icons placeholders
+- mobile metadata
+- app-like polish
+
+QUALITY REQUIREMENTS:
+- Use strict TypeScript
+- Use Zod validation
+- Add proper error handling
+- Add audit logging for important actions
+- Add rate limiting on AI/chat endpoints
+- Add reusable result/error patterns
+- Add loading.tsx / error.tsx where useful
+- Use clean naming
+- Keep code easy to extend
+- Do not leave dead code or fake architecture
+
+DELIVERY REQUIREMENTS:
+1. Inspect the existing project first
+2. Explain what already exists
+3. Create a clear implementation plan
+4. Then implement phase by phase
+5. After implementation, provide:
+   - final file map
+   - architecture summary
+   - what is completed
+   - what is prepared for future phases
+   - how to run locally in Replit
+   - demo credentials
+6. Do not stop at scaffolding only
+7. Build working pages, database schema, auth flow, and the initial AI chat MVP
+
+VISUAL DIRECTION:
+Use a premium white/light aesthetic.
+Think: hotel luxury + AI simplicity + mobile elegance.
+The design should be “simple, soft, premium, modern”.
+Do not make it dark.
+Do not make it noisy.
+Do not overdesign.
+The text bar must be the star of the screen.
+
+NOW START:
+- First inspect the project
+- Then produce a step-by-step plan
+- Then implement the MVP fully
+- Keep everything production-minded and extensible

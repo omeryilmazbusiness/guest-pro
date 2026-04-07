@@ -1,0 +1,161 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-border: hsl(var(--card-border));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover-border: hsl(var(--popover-border));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --font-sans: 'Plus Jakarta Sans', var(--app-font-sans);
+  
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --radius-3xl: 3rem;
+}
+
+:root {
+  --background: 0 0% 99%;
+  --foreground: 240 10% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 10%;
+  --card-border: 240 5% 95%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 10%;
+  --popover-border: 240 5% 95%;
+  --primary: 240 5.9% 10%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 4.8% 96%;
+  --secondary-foreground: 240 5.9% 10%;
+  --muted: 240 4.8% 96%;
+  --muted-foreground: 240 3.8% 46%;
+  --accent: 240 4.8% 96%;
+  --accent-foreground: 240 5.9% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 240 5.9% 10%;
+  
+  --radius: 1.5rem;
+
+  --app-font-sans: ui-sans-serif, system-ui, sans-serif;
+  
+  --shadow-2xs: 0 1px 2px 0 rgb(0 0 0 / 0.02);
+  --shadow-xs: 0 1px 3px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 2px 8px -2px rgb(0 0 0 / 0.05), 0 1px 4px -1px rgb(0 0 0 / 0.02);
+  --shadow: 0 4px 12px -2px rgb(0 0 0 / 0.05), 0 2px 6px -1px rgb(0 0 0 / 0.02);
+  --shadow-md: 0 8px 16px -4px rgb(0 0 0 / 0.05), 0 4px 8px -2px rgb(0 0 0 / 0.02);
+  --shadow-lg: 0 12px 24px -4px rgb(0 0 0 / 0.05), 0 6px 12px -2px rgb(0 0 0 / 0.02);
+  --shadow-xl: 0 20px 32px -4px rgb(0 0 0 / 0.05), 0 10px 16px -2px rgb(0 0 0 / 0.02);
+  --shadow-2xl: 0 24px 48px -12px rgb(0 0 0 / 0.1);
+}
+
+.dark {
+  /* Force light mode values for no dark mode */
+  --background: 0 0% 99%;
+  --foreground: 240 10% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 10%;
+  --card-border: 240 5% 95%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 10%;
+  --popover-border: 240 5% 95%;
+  --primary: 240 5.9% 10%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 4.8% 96%;
+  --secondary-foreground: 240 5.9% 10%;
+  --muted: 240 4.8% 96%;
+  --muted-foreground: 240 3.8% 46%;
+  --accent: 240 4.8% 96%;
+  --accent-foreground: 240 5.9% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 240 5.9% 10%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+@property --gradient-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes spin-gradient {
+  0% {
+    --gradient-angle: 0deg;
+  }
+  100% {
+    --gradient-angle: 360deg;
+  }
+}
+
+.premium-gradient-border {
+  position: relative;
+  background: white;
+  z-index: 1;
+}
+
+.premium-gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--gradient-angle),
+    #e2e8f0,
+    #a78bfa,
+    #fcd34d,
+    #93c5fd,
+    #e2e8f0
+  );
+  z-index: -1;
+  animation: spin-gradient 5s linear infinite;
+  opacity: 0.6;
+  transition: opacity 0.4s ease, inset 0.4s ease;
+}
+
+.premium-gradient-border:focus-within::before {
+  opacity: 1;
+  inset: -3px;
+}

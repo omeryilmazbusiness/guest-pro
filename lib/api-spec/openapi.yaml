@@ -3,13 +3,21 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Guest Pro Hotel Concierge API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: guests
+    description: Guest management
+  - name: chat
+    description: AI chat operations
+  - name: hotel
+    description: Hotel and branding
 paths:
   /healthz:
     get:
@@ -24,6 +32,254 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login (manager or guest)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current user
+      responses:
+        "200":
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current session user
+      responses:
+        "200":
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUser"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /guests:
+    get:
+      operationId: listGuests
+      tags: [guests]
+      summary: List all guests (manager only)
+      responses:
+        "200":
+          description: List of guests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Guest"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createGuest
+      tags: [guests]
+      summary: Create a new guest (manager only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGuestRequest"
+      responses:
+        "201":
+          description: Guest created with key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateGuestResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /guests/{id}:
+    get:
+      operationId: getGuest
+      tags: [guests]
+      summary: Get guest by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Guest details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Guest"
+        "404":
+          description: Guest not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /chat/sessions:
+    post:
+      operationId: createChatSession
+      tags: [chat]
+      summary: Create or retrieve active chat session for guest
+      responses:
+        "200":
+          description: Chat session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatSession"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /chat/sessions/{sessionId}/messages:
+    get:
+      operationId: getChatMessages
+      tags: [chat]
+      summary: Get all messages in a chat session
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: sendMessage
+      tags: [chat]
+      summary: Send a message and get AI response
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendMessageRequest"
+      responses:
+        "200":
+          description: AI response message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SendMessageResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /hotel/branding:
+    get:
+      operationId: getHotelBranding
+      tags: [hotel]
+      summary: Get hotel branding for current tenant
+      responses:
+        "200":
+          description: Hotel branding info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HotelBranding"
+
+  /hotel/quick-actions:
+    get:
+      operationId: listQuickActions
+      tags: [hotel]
+      summary: List quick actions for hotel
+      responses:
+        "200":
+          description: List of quick actions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QuickAction"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +290,238 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required:
+        - success
+
+    LoginRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [manager, guest]
+        email:
+          type: ["string", "null"]
+        password:
+          type: ["string", "null"]
+        guestKey:
+          type: ["string", "null"]
+      required:
+        - type
+
+    LoginResponse:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [manager, guest]
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/CurrentUser"
+      required:
+        - role
+        - token
+        - user
+
+    CurrentUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        role:
+          type: string
+          enum: [manager, guest]
+        email:
+          type: ["string", "null"]
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        roomNumber:
+          type: ["string", "null"]
+        guestId:
+          type: ["integer", "null"]
+        hotelId:
+          type: integer
+      required:
+        - id
+        - role
+        - hotelId
+
+    Guest:
+      type: object
+      properties:
+        id:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        roomNumber:
+          type: string
+        hotelId:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        guestKey:
+          type: ["string", "null"]
+      required:
+        - id
+        - firstName
+        - lastName
+        - roomNumber
+        - hotelId
+        - createdAt
+
+    CreateGuestRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        roomNumber:
+          type: string
+      required:
+        - firstName
+        - lastName
+        - roomNumber
+
+    CreateGuestResponse:
+      type: object
+      properties:
+        guest:
+          $ref: "#/components/schemas/Guest"
+        guestKey:
+          type: string
+      required:
+        - guest
+        - guestKey
+
+    ChatSession:
+      type: object
+      properties:
+        id:
+          type: integer
+        guestId:
+          type: integer
+        hotelId:
+          type: integer
+        status:
+          type: string
+          enum: [active, closed, transferred]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - guestId
+        - hotelId
+        - status
+        - createdAt
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+        sessionId:
+          type: integer
+        role:
+          type: string
+          enum: [user, assistant, system]
+        content:
+          type: string
+        originalContent:
+          type: ["string", "null"]
+        language:
+          type: ["string", "null"]
+        category:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - sessionId
+        - role
+        - content
+        - createdAt
+
+    SendMessageRequest:
+      type: object
+      properties:
+        content:
+          type: string
+        language:
+          type: ["string", "null"]
+      required:
+        - content
+
+    SendMessageResponse:
+      type: object
+      properties:
+        userMessage:
+          $ref: "#/components/schemas/Message"
+        assistantMessage:
+          $ref: "#/components/schemas/Message"
+      required:
+        - userMessage
+        - assistantMessage
+
+    HotelBranding:
+      type: object
+      properties:
+        hotelId:
+          type: integer
+        appName:
+          type: string
+        tagline:
+          type: ["string", "null"]
+        primaryColor:
+          type: ["string", "null"]
+        accentColor:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        welcomeText:
+          type: ["string", "null"]
+      required:
+        - hotelId
+        - appName
+
+    QuickAction:
+      type: object
+      properties:
+        id:
+          type: integer
+        hotelId:
+          type: integer
+        label:
+          type: string
+        icon:
+          type: ["string", "null"]
+        category:
+          type: string
+        sortOrder:
+          type: integer
+      required:
+        - id
+        - hotelId
+        - label
+        - category
+        - sortOrder
