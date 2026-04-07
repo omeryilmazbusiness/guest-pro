@@ -1,0 +1,304 @@
+You are a senior full-stack architect, security-minded product engineer, and mobile UX specialist.
+
+Your task is to inspect, fix, harden, and fully professionalize the LOGIN SCREENS of the existing project called “Guest Pro”.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, file tree, auth flow, env usage, routing, and UI components.
+- Do NOT rebuild the project from scratch if working parts already exist.
+- Preserve working logic where possible.
+- Refactor only where there is real product, architecture, UX, or security value.
+- The goal is not a demo login page. The goal is a production-ready login system and production-ready login UI.
+- Focus only on login/auth entry screens and their directly related auth flow.
+- Use SOLID principles, modular architecture, and production-grade error handling.
+- Mobile-first UX is mandatory because users mostly use the app from phones.
+
+PROJECT CONTEXT:
+Guest Pro is a premium hotel web app with 2 roles:
+1. MANAGER
+2. GUEST
+
+LOGIN REQUIREMENTS:
+- Guest logs in using a guest key
+- Manager logs in using:
+  1. email/password
+  2. Google OAuth
+- Google OAuth must be a real production-ready sign up / sign in flow for MANAGER
+- Google first-time sign in should automatically create the manager account, assign MANAGER role, auto-login, and redirect to manager dashboard
+- Guest must NEVER use Google login
+- Guest stays guest-key only
+
+PRIMARY OBJECTIVE:
+Make BOTH login screens fully production-ready:
+1. Guest login screen
+2. Manager/Staff login screen
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current file tree and auth-related structure
+2. Current guest login screen implementation
+3. Current manager/staff login screen implementation
+4. Current Google OAuth implementation and visibility conditions
+5. Current env/config handling for Google credentials
+6. Current validation logic
+7. Current route protection and redirect behavior
+8. Current loading, error, and success states
+9. Current mobile UX quality
+10. Current accessibility issues
+11. Current risks preventing the login screens from being truly production-ready
+
+Then provide:
+- concise audit of what exists
+- root-cause analysis of any remaining issues
+- exact implementation plan for upgrading the login screens
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — PROD-READY GUEST LOGIN SCREEN
+==================================================
+
+Build or improve the Guest login screen to production quality.
+
+Requirements:
+- Guest login uses guest key only
+- Input must work correctly on mobile and desktop
+- Clear focus state
+- Clear error state for invalid or expired guest key
+- Clear loading state
+- Proper success redirect
+- Proper empty/input validation
+- No broken controlled input behavior
+- No invisible overlay blocking interaction
+- No client-only fake auth
+- Professional UX copy and polished visual feedback
+- Mobile-first layout with comfortable spacing and large touch targets
+
+Guest login UI direction:
+- premium white/light theme
+- soft rounded corners
+- minimal but expensive-looking
+- clean typography
+- elegant spacing
+- premium hospitality feel
+- no clutter
+- subtle visual hierarchy
+- card/surface should feel polished and trustworthy
+
+Guest login behavior:
+- valid guest key logs in successfully
+- expired guest key is rejected clearly
+- invalid guest key is rejected clearly
+- redirect to guest dashboard after successful login
+- protected pages should not be accessible without valid auth
+
+==================================================
+PHASE 3 — PROD-READY MANAGER LOGIN SCREEN
+==================================================
+
+Build or improve the Manager/Staff login screen to production quality.
+
+Manager login must support:
+1. email/password login
+2. Continue with Google
+
+Requirements:
+- Inputs must be fully interactive
+- No frozen value state
+- No broken onChange
+- No pointer-events / z-index / overlay / blur issue blocking typing
+- Proper validation with user-friendly errors
+- Proper loading states
+- Proper redirect after success
+- Safe error messages
+- Mobile-first polished card layout
+- Production-grade form UX
+
+Manager login UI direction:
+- premium light theme
+- soft premium card
+- clean input styling
+- clear CTA hierarchy
+- elegant divider between credentials and Google login
+- Google button should look real and premium, not demo-quality
+- accessible and touch-friendly on phones
+
+==================================================
+PHASE 4 — GOOGLE OAUTH VISIBILITY AND REAL USABILITY
+==================================================
+
+Make Google OAuth truly production-ready and visible on the manager login screen.
+
+Inspect and fix all of the following:
+- whether AUTH_GOOGLE_CLIENT_ID is correctly read
+- whether AUTH_GOOGLE_CLIENT_SECRET is correctly read
+- whether the frontend is incorrectly hiding the Google button
+- whether Google button rendering is tied to a broken or overly strict condition
+- whether app restart/config bootstrap issues affect provider visibility
+- whether callback URL is correct
+- whether the Google button should appear when provider is configured
+- whether the UI should show a disabled but informative state when provider is not configured
+
+Required behavior:
+- If Google OAuth is correctly configured:
+  - show active “Continue with Google” button
+  - clicking it starts real OAuth flow
+- If Google OAuth is not configured:
+  - do not silently hide the feature without explanation
+  - show a professional disabled/hint state OR a safe config message for development
+- First-time Google login:
+  - auto-create manager
+  - assign MANAGER role
+  - attach to default hotel for MVP
+  - auto-login
+  - redirect to manager dashboard
+- Returning Google manager:
+  - direct login
+  - redirect to manager dashboard
+- Do not create duplicate manager accounts
+- Do not implement fake OAuth
+
+==================================================
+PHASE 5 — VALIDATION, UX STATES, AND ERROR HANDLING
+==================================================
+
+Professionalize all auth entry states.
+
+For both login screens, implement:
+- Zod-based validation
+- input-level feedback where appropriate
+- form-level error messaging
+- loading state
+- disabled submit while pending
+- success handling
+- clean toast or inline feedback
+- human-readable but safe error messages
+- keyboard and touch friendliness
+- no layout shift chaos
+- no broken tab order or focus behavior
+
+Also ensure:
+- pressing Enter works correctly
+- browser autofill behaves properly
+- password field behavior is correct
+- mobile tap/focus behavior is reliable
+- back button / redirect flow does not confuse the user
+
+==================================================
+PHASE 6 — AUTH FLOW CORRECTNESS
+==================================================
+
+Ensure the login screens are connected to a real production-ready auth flow.
+
+Requirements:
+- no insecure reliance on localStorage-only auth state
+- proper session/token handling
+- correct redirect after login
+- correct redirect after logout
+- route protection must work with manager and guest roles
+- unauthorized users must not access protected pages
+- stale auth state should not keep protected content visible
+- login screens should not appear broken after session expiry
+
+Inspect and improve the auth entry flow end-to-end:
+- guest login -> guest dashboard
+- manager email/password login -> manager dashboard
+- manager Google login -> manager dashboard
+
+==================================================
+PHASE 7 — ENV / CONFIG / SECRET SAFETY FOR LOGIN FLOWS
+==================================================
+
+Inspect and improve only the parts relevant to login screens and auth entry.
+
+Requirements:
+- central and clean env usage
+- no secret leakage to client
+- Google secrets remain server-only
+- login UI only reads safe provider availability state, not raw secrets
+- clearly separate configured/unconfigured provider states
+- no scattered unsafe process.env usage inside random UI code
+
+Relevant private env vars may include:
+- AUTH_SECRET
+- AUTH_GOOGLE_CLIENT_ID
+- AUTH_GOOGLE_CLIENT_SECRET
+- SESSION_SECRET
+- DATABASE_URL
+
+==================================================
+PHASE 8 — ACCESSIBILITY AND MOBILE-FIRST POLISH
+==================================================
+
+Make both login screens production-grade in accessibility and mobile UX.
+
+Requirements:
+- good color contrast
+- visible focus states
+- labels connected properly
+- inputs usable on mobile browsers
+- tap areas large enough
+- no tiny click targets
+- no overflowing layout on small screens
+- polished spacing
+- comfortable form sizing
+- safe area awareness where needed
+- premium but simple animations only if they add value
+- no noisy visuals
+
+The final result should feel like:
+luxury hospitality + modern SaaS + premium mobile web app
+
+==================================================
+PHASE 9 — TESTING AND VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Guest login input works
+2. Guest invalid key shows proper error
+3. Guest expired key shows proper error
+4. Guest successful login redirects correctly
+5. Manager email input works
+6. Manager password input works
+7. Manager email/password login works
+8. Manager Google button is visible when configured
+9. Manager Google button has proper fallback state when not configured
+10. First-time Google manager signup works
+11. Returning Google manager login works
+12. Redirects are correct after login
+13. Protected routes behave correctly
+14. Mobile layout is polished
+15. No hidden overlay blocks inputs
+16. No broken focus or pointer interaction remains
+
+==================================================
+PHASE 10 — DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+
+1. Inspection summary
+2. What was wrong with the login screens
+3. What was fixed
+4. What was improved
+5. Final login flow summary
+6. Google OAuth visibility/config summary
+7. Env/config summary relevant to login
+8. Final file map of changed login/auth files
+9. How to test guest login
+10. How to test manager email/password login
+11. How to test manager Google login
+12. Any required Google callback / redirect URI notes
+13. Any remaining future improvements
+
+IMPORTANT:
+- Do not stop at visual cleanup only
+- Do not hide Google auth silently if config is missing
+- Do not implement fake buttons
+- Do not rebuild the whole app if unnecessary
+- Start by auditing the current codebase
+- Then implement a real production-ready upgrade of both login screens
