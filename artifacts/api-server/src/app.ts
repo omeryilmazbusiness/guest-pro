@@ -7,6 +7,10 @@ import { env } from "./config/env";
 
 const app: Express = express();
 
+// Trust the first proxy hop so req.ip reflects the real client IP.
+// This is required for source-IP–based presence tracking.
+app.set("trust proxy", 1);
+
 // In production, only allow the configured frontend origin.
 // In development, allow all origins for convenience.
 const corsOptions: cors.CorsOptions =

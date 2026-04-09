@@ -39,6 +39,8 @@ import {
 import { CountryFlag } from "@/components/ui/CountryFlag";
 import type { Guest } from "@workspace/api-client-react";
 import { formatStayDate, resolveStayStatus } from "@/lib/stays";
+import { GuestTrackingBadge } from "@/components/manager/GuestTrackingBadge";
+import type { TrackingStatus } from "@/lib/tracking";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -50,6 +52,8 @@ export interface GuestCardProps {
   onEdit: (g: Guest) => void;
   onDelete: (g: Guest) => void;
   onRenew: (g: Guest) => void;
+  /** Optional tracking status — only shown when tracking is active. */
+  trackingStatus?: TrackingStatus;
 }
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
@@ -134,6 +138,7 @@ export function GuestCard({
   onEdit,
   onDelete,
   onRenew,
+  trackingStatus,
 }: GuestCardProps) {
   // Cast to access new date/extension fields (client types may lag schema)
   const raw = guest as any;
@@ -208,6 +213,9 @@ export function GuestCard({
               <CalendarArrowUp className="w-2.5 h-2.5" />
               Extended
             </span>
+          )}
+          {trackingStatus && (
+            <GuestTrackingBadge status={trackingStatus} />
           )}
         </div>
 

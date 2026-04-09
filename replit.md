@@ -230,6 +230,44 @@ All security-critical events written to `audit_logs` table:
 - **Manager**: `manager@grandhotel.com` / `manager123`
 - **Guest key**: Check manager dashboard for active guest keys
 
+## Active Tracking System
+
+Tracks whether guests are in-hotel, in-hotel but not on hotel Wi-Fi, outside the hotel, or unknown.
+
+### Architecture
+- **Domain logic**: `artifacts/api-server/src/lib/tracking-policy.ts` — pure functions: `haversineMeters`, `isInGeofence`, `matchesCidr`, `isOnAllowedNetwork`, `resolveTrackingStatus`, `extractSourceIp`, validators.
+- **Backend routes**: `artifacts/api-server/src/routes/tracking.ts` — 5 endpoints (see below).
+- **Frontend API lib**: `artifacts/guest-pro/src/lib/tracking.ts` — types + `customFetch` wrappers.
+- **Guest heartbeat hook**: `artifacts/guest-pro/src/hooks/use-tracking-heartbeat.ts` — `watchPosition`, 60 s throttle.
+- **Manager settings page**: `artifacts/guest-pro/src/pages/manager/settings.tsx` — `/manager/settings`, manager-only.
+- **Tracking badge**: `artifacts/guest-pro/src/components/manager/GuestTrackingBadge.tsx` — colour dot + label.
+
+### Tracking Statuses
+- `IN_HOTEL_AND_ON_WIFI` — inside geofence AND source IP matches allowed hotel network
+- `IN_HOTEL_NOT_ON_WIFI` — inside geofence but NOT on hotel network
+- `OUTSIDE_HOTEL` — outside geofence
+- `UNKNOWN` — no location data or tracking disabled
+
+### API Endpoints
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| GET | `/api/tracking/config` | staff | Fetch config + networks |
+| PUT | `/api/tracking/config` | manager | Upsert tracking config |
+| POST | `/api/tracking/networks` | manager | Add allowed network |
+| DELETE | `/api/tracking/networks/:id` | manager | Remove network rule |
+| POST | `/api/tracking/heartbeat` | guest | Guest presence heartbeat |
+| GET | `/api/tracking/presences` | staff | All guest presence snapshots |
+
+### Manager UX
+- Settings gear icon in dashboard header (manager only) → `/manager/settings`
+- "Active Tracking System" card: enable/disable toggle, lat/lng/radius fields
+- "Allowed Networks" card: add/remove IP or CIDR ranges with optional labels
+
+### Guest UX
+- `useTrackingHeartbeat()` runs on guest home page
+- Requests geolocation permission; sends heartbeat via `watchPosition` (throttled to 60 s)
+- Backend resolves status from location + request source IP
+
 ## Database Schema
 
 - `hotels` — hotel/tenant records
@@ -240,6 +278,9 @@ All security-critical events written to `audit_logs` table:
 - `messages` — chat message history
 - `quick_actions` — suggested prompts shown in guest chat
 - `audit_logs` — security event log
+- `hotel_tracking_configs` — geofence config per hotel (enabled, lat/lng/radius, notes)
+- `hotel_tracking_networks` — allowed IP/CIDR rules per hotel
+- `guest_presence_snapshots` — latest presence state per guest (status, last location, last IP, lastSeenAt)
 
 ## Artifacts
 

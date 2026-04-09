@@ -1,0 +1,446 @@
+You are a senior full-stack software architect, premium mobile UX designer, and production-grade engineer.
+
+Your task is to inspect, design, and implement a production-ready Active Tracking System for the existing “Guest Pro” project in a SOLID, layered, maintainable architecture.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the current codebase, file tree, auth/session flow, guest login flow, manager/staff dashboard structure, guest list implementation, settings architecture, API structure, and database schema.
+- Do NOT rebuild the app from scratch if working systems already exist.
+- Preserve working auth, manager/staff role restrictions, guest login/logout, guest dashboard/chat/voice features, route protection, and stable APIs.
+- Refactor only where there is real architectural, maintainability, UX, or production value.
+- The final result must be production-ready, SOLID, layered, mobile-friendly, and professional.
+
+PROJECT CONTEXT:
+Guest Pro is a hotel guest web app.
+We now need an Active Tracking System that allows manager to define hotel geofence and allowed hotel network IPs, then track whether guests are:
+- in hotel and on hotel wifi
+- in hotel but not on hotel wifi
+- outside hotel
+- unknown
+
+IMPORTANT PRODUCT INTERPRETATION:
+This is a WEB APP solution.
+Do NOT try to read SSID directly from browser.
+Instead, the tracking decision must be made in backend using:
+1. guest geolocation heartbeat
+2. request source public IP matching against hotel allowed network IPs/ranges
+
+PRIMARY GOALS:
+1. Add a manager settings area called “Active Tracking System”
+2. Allow manager to define and edit:
+   - hotel center latitude
+   - hotel center longitude
+   - tracking radius (default/use case: 100 meters)
+   - allowed hotel public IPs or CIDR ranges
+   - active/inactive tracking config
+3. Compute guest tracking status in backend using a clean policy
+4. Show guest tracking status in guest cards inside guest list using colored indicators
+5. Make the whole tracking system easy to update when hotel location or wifi public IP changes
+6. Keep everything SOLID and production-ready
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current manager dashboard structure
+2. Current staff/personnel dashboard structure
+3. Current settings architecture
+4. Current guest list implementation
+5. Current guest card UI
+6. Current auth/session flow
+7. Current guest-side web app capabilities for location
+8. Current API and backend structure
+9. Current DB schema
+10. Current role-aware access control
+11. What already works
+12. What should be preserved
+13. What needs redesign/refactor for a proper tracking architecture
+
+Then provide:
+- concise architecture audit
+- tracking-system gap analysis
+- settings gap analysis
+- guest-list UI gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — DESIGN THE ACTIVE TRACKING SYSTEM DOMAIN
+==================================================
+
+Implement a clean domain/application/infrastructure separation.
+
+The tracking system must not be a scattered UI hack.
+
+Create a professional model for:
+- hotel tracking config
+- allowed network IP rules
+- presence heartbeat
+- tracking status resolution
+
+Suggested domain concepts:
+- TrackingStatus
+- HotelTrackingConfig
+- AllowedNetworkRule
+- GuestPresenceSnapshot
+- PresencePolicy
+
+Statuses must include:
+- IN_HOTEL_AND_ON_WIFI
+- IN_HOTEL_NOT_ON_WIFI
+- OUTSIDE_HOTEL
+- UNKNOWN
+
+Tracking rules:
+A) Guest location inside geofence + request source IP matches allowed hotel network IP/range
+   -> IN_HOTEL_AND_ON_WIFI
+
+B) Guest location inside geofence + request source IP does not match hotel network IP/range
+   -> IN_HOTEL_NOT_ON_WIFI
+
+C) Guest location outside geofence
+   -> OUTSIDE_HOTEL
+
+D) Missing location / poor data / no recent signal
+   -> UNKNOWN
+
+Keep this logic centralized in a policy/service layer, not inside components.
+
+==================================================
+PHASE 3 — MANAGER SETTINGS: ACTIVE TRACKING SYSTEM
+==================================================
+
+Add a dedicated section in manager settings called:
+“Active Tracking System”
+
+This section must support:
+- Define tracking config
+- Edit tracking config
+- Activate/deactivate tracking
+- Update hotel location if needed
+- Update tracking radius if needed
+- Update allowed public IPs / IP ranges if hotel network changes
+
+Required fields:
+- hotel center latitude
+- hotel center longitude
+- radius in meters
+- allowed public IPs and/or CIDR ranges
+- tracking enabled flag
+- optional notes/label if useful
+
+UX REQUIREMENTS:
+- premium white/light design
+- soft rounded cards
+- professional settings form
+- mobile-friendly
+- clear validation
+- clean helper text
+- clean success/error states
+
+The manager should be able to maintain this configuration without developer help.
+
+==================================================
+PHASE 4 — DEFINE AND EDIT FLOW
+==================================================
+
+Implement clear define and edit flows for Active Tracking System.
+
+REQUIREMENTS:
+- first-time setup flow
+- edit existing config flow
+- safe form validation
+- clear save/update success feedback
+- ability to change hotel location if hotel moved or geofence must be corrected
+- ability to remove old IPs and add new ones if wifi/network changed
+
+Think through real operational cases:
+- hotel wifi public IP changed
+- hotel changed ISP
+- geofence center needs correction
+- radius needs adjustment
+- tracking needs to be temporarily disabled
+
+==================================================
+PHASE 5 — BACKEND PRESENCE / HEARTBEAT SYSTEM
+==================================================
+
+Implement a backend presence tracking pipeline.
+
+REQUIREMENTS:
+- guest web app sends heartbeat with location when appropriate
+- backend reads request source public IP
+- backend checks:
+  - is guest within hotel geofence?
+  - is request source IP in allowed hotel network list?
+- backend resolves the final tracking status
+- backend stores current presence snapshot/state
+
+IMPORTANT:
+- do not trust UI state only
+- do not let frontend compute the final status
+- backend is the source of truth
+
+Suggested application services:
+- RecordGuestPresenceHeartbeat
+- ResolveGuestTrackingStatus
+- GetGuestTrackingSnapshot
+
+Suggested infrastructure concerns:
+- Geofence distance calculation
+- Public IP extraction
+- CIDR/IP range matching
+- Repositories for tracking config and presence state
+
+==================================================
+PHASE 6 — GUEST-SIDE WEB APP TRACKING
+==================================================
+
+Implement the guest-side web app part in a realistic web-safe way.
+
+REQUIREMENTS:
+- request location permission professionally
+- use geolocation/watchPosition where appropriate
+- send heartbeat when location updates in a safe and reasonable way
+- do not over-spam the backend
+- handle denied permission cleanly
+- handle missing geolocation support cleanly
+- maintain privacy-conscious messaging
+
+IMPORTANT:
+- this is a WEB APP
+- do not pretend the browser can read SSID
+- only send location data + rely on backend request IP analysis
+
+==================================================
+PHASE 7 — GUEST LIST STATUS INDICATORS
+==================================================
+
+In manager/staff guest list cards, show tracking status visually.
+
+REQUIREMENTS:
+- each guest card must show a small status indicator near the card/header area
+- use premium subtle indicators:
+  - green dot for IN_HOTEL_AND_ON_WIFI
+  - orange/yellow or similar refined tone for IN_HOTEL_NOT_ON_WIFI
+  - red dot for OUTSIDE_HOTEL
+  - gray dot for UNKNOWN
+- status labels should also be available in text where appropriate
+- the visual treatment must feel premium and operational, not childish
+
+Display status text professionally, such as:
+- In hotel
+- In hotel / not on hotel network
+- Out of hotel
+- Unknown
+
+Keep copy concise and premium.
+
+==================================================
+PHASE 8 — TRACKING STATUS DATA IN GUEST LIST
+==================================================
+
+Enrich guest list cards with useful tracking-related metadata where appropriate.
+
+Possible useful data:
+- current tracking status
+- last seen at
+- last successful heartbeat
+- last known inside/outside state
+
+Do not overload the card.
+Keep the design operational and clean.
+
+==================================================
+PHASE 9 — DATA MODEL / STORAGE
+==================================================
+
+Extend schema professionally if needed.
+
+Possible entities/tables:
+- hotel_tracking_configs
+- hotel_tracking_allowed_networks
+- guest_presence_snapshots
+- guest_presence_events
+
+Suggested fields:
+- hotelId
+- centerLat
+- centerLng
+- radiusMeters
+- isEnabled
+- allowedIpOrCidr
+- guestId
+- currentStatus
+- lastSeenAt
+- lastLat
+- lastLng
+- lastAccuracyMeters
+- lastSourceIp
+- updatedAt
+
+Keep schema clean, maintainable, and easy to extend.
+
+==================================================
+PHASE 10 — VALIDATION / SECURITY / EDGE CASES
+==================================================
+
+Implement professionally.
+
+REQUIREMENTS:
+- validate coordinates
+- validate radius
+- validate allowed IP / CIDR input
+- handle missing location permission
+- handle weak/invalid location data
+- handle stale heartbeat
+- protect tracking endpoints with auth/session rules
+- ensure staff/manager permissions remain correct
+- keep privacy and user messaging professional
+
+Edge cases to think through:
+- hotel location changed
+- hotel network public IP changed
+- guest denies location permission
+- guest last heartbeat is too old
+- guest uses hotel area but mobile data instead of hotel wifi
+- manager disables tracking temporarily
+
+==================================================
+PHASE 11 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement the feature in a truly maintainable way.
+
+REQUIREMENTS:
+- no giant settings file
+- no scattered tracking logic inside UI
+- no duplicated geofence checks
+- no duplicated IP-range matching logic
+- no fake architecture
+- no dead code
+- clean naming
+- presentation separate from business logic
+
+Suggested structure:
+- domain:
+  - TrackingStatus
+  - HotelTrackingConfig
+  - PresencePolicy
+- application:
+  - DefineTrackingConfig
+  - EditTrackingConfig
+  - RecordPresenceHeartbeat
+  - ResolveTrackingStatus
+  - GetGuestTrackingState
+- infrastructure:
+  - TrackingConfigRepository
+  - PresenceRepository
+  - GeofenceCalculator
+  - SourceIpResolver
+  - NetworkRangeMatcher
+- presentation:
+  - ActiveTrackingSettingsCard
+  - TrackingConfigForm
+  - GuestTrackingBadge
+  - GuestPresenceMeta
+  - ManagerTrackingSection
+
+Make the architecture meaningful and actually used.
+
+==================================================
+PHASE 12 — ROLE-AWARE ACCESS
+==================================================
+
+Preserve role-aware behavior.
+
+REQUIREMENTS:
+- MANAGER can define and edit Active Tracking System settings
+- STAFF sees only what current authorization policy allows
+- if STAFF is not allowed to edit tracking config, do not show edit actions
+- do not rely only on UI hiding
+- route/API-level authorization must remain correct
+
+==================================================
+PHASE 13 — DESIGN DIRECTION
+==================================================
+
+The entire experience must feel:
+- white/light dominant
+- soft rounded corners
+- premium modern SaaS + hospitality operations feel
+- simple and expensive-looking
+- calm and trustworthy
+- clean and operational
+- mobile-friendly
+- production-ready
+
+The tracking system UI should feel like:
+- premium operations tooling
+- clean and professional
+- easy to maintain by hotel staff/manager
+- not overly technical
+
+==================================================
+PHASE 14 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- manager login
+- staff/personnel login
+- guest login/logout
+- guest dashboard/chat/voice features
+- guest CRUD
+- guest key flows
+- QR flows if present
+- route protection
+- stable APIs
+
+This task is specifically about introducing a professional Active Tracking System.
+
+==================================================
+PHASE 15 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Manager can open Active Tracking System settings
+2. Manager can define tracking config
+3. Manager can edit tracking config later
+4. Allowed public IPs / CIDR ranges can be added and updated
+5. Hotel center and radius can be updated
+6. Guest heartbeat reaches backend correctly
+7. Backend resolves tracking status correctly
+8. Guest cards show the correct colored indicator
+9. Status labels are clear and professional
+10. Guest inside geofence + matching hotel network IP becomes IN_HOTEL_AND_ON_WIFI
+11. Guest inside geofence + non-matching IP becomes IN_HOTEL_NOT_ON_WIFI
+12. Guest outside geofence becomes OUTSIDE_HOTEL
+13. Missing or weak data becomes UNKNOWN
+14. No regression in auth, dashboards, or guest flows
+15. Overall UX feels production-ready and premium
+
+==================================================
+PHASE 16 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was preserved
+3. What was redesigned
+4. How Active Tracking System works
+5. How define/edit tracking config works
+6. How backend tracking status resolution works
+7. How guest card indicators work
+8. Which files were changed
+9. Any schema/migration changes
+10. How to test the full tracking flow end-to-end
+11. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result SOLID, layered, premium, and production-ready
+- The tracking system must be easy to maintain when hotel location or network changes

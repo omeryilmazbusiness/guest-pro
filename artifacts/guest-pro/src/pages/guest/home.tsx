@@ -27,6 +27,7 @@ import { tFmt } from "@/lib/i18n";
 import { MicrophoneButton } from "@/components/chat/MicrophoneButton";
 import { useInstallPrompt } from "@/hooks/use-install-prompt";
 import { InstallSheet } from "@/components/InstallSheet";
+import { useTrackingHeartbeat } from "@/hooks/use-tracking-heartbeat";
 
 const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   "map-pin": MapPin,
@@ -41,6 +42,10 @@ export default function GuestHome() {
   const logoutMutation = useLogout();
   const install = useInstallPrompt();
   const { t, voiceLocale } = useLocale();
+
+  // Start presence heartbeat — sends location + backend IP for tracking.
+  // Only active when the user is authenticated as a guest.
+  useTrackingHeartbeat();
 
   const { data: branding } = useGetHotelBranding();
   const { data: quickActions } = useListQuickActions();

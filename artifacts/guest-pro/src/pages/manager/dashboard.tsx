@@ -31,7 +31,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useLocation } from "wouter";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Plus,
@@ -43,6 +43,7 @@ import {
   BedDouble,
   DoorOpen,
   X,
+  Settings,
 } from "lucide-react";
 import {
   useListGuests,
@@ -74,6 +75,7 @@ import { RoomCard } from "@/components/manager/RoomCard";
 import { GuestEditModal } from "@/components/manager/GuestEditModal";
 import { GuestDeleteDialog } from "@/components/manager/GuestDeleteDialog";
 import { GuestHandoffModal, type HandoffData } from "@/components/GuestHandoffModal";
+import { getGuestPresences, type TrackingStatus } from "@/lib/tracking";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -396,6 +398,25 @@ export default function ManagerDashboard() {
     query: { enabled: isAuthenticated && isStaffRole(user?.role) },
   });
 
+  // ── Presence data (tracking) — refetch every 60 s while dashboard is open.
+  const { data: presences } = useQuery({
+    queryKey: ["tracking", "presences"],
+    queryFn: getGuestPresences,
+    enabled: isAuthenticated && isStaffRole(user?.role),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+
+  // Build guestId → TrackingStatus lookup for O(1) card renders.
+  const presenceMap = useMemo<Map<number, TrackingStatus>>(() => {
+    if (!presences?.length) return new Map();
+    const map = new Map<number, TrackingStatus>();
+    for (const p of presences) {
+      map.set(p.guestId, p.status as TrackingStatus);
+    }
+    return map;
+  }, [presences]);
+
   // ── Mutations
   const updateGuestMutation = useUpdateGuest();
   const deleteGuestMutation = useDeleteGuest();
@@ -580,6 +601,17 @@ export default function ManagerDashboard() {
                 New Guest
               </Button>
             )}
+            {isManager && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setLocation("/manager/settings")}
+                className="w-8 h-8 rounded-xl text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 touch-manipulation"
+                aria-label="Settings"
+              >
+                <Settings className="w-3.5 h-3.5" />
+              </Button>
+            )}
             <Button
               data-testid="button-logout"
               variant="ghost"
@@ -732,6 +764,7 @@ export default function ManagerDashboard() {
                     onEdit={setEditingGuest}
                     onDelete={setDeletingGuest}
                     onRenew={handleRenewKey}
+                    trackingStatus={presenceMap.get(guest.id)}
                   />
                 ))
               )}
