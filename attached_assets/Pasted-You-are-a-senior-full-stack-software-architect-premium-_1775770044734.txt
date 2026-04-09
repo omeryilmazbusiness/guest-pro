@@ -1,0 +1,341 @@
+You are a senior full-stack software architect, premium mobile UX designer, and production-grade product engineer.
+
+Your task is to inspect, redesign, and harden the Rooms experience inside the manager/staff dashboards of the existing “Guest Pro” project into a premium, mobile-first, SOLID, production-ready hotel operations interface.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the current codebase, dashboard structure, rooms tab, guest list flow, room aggregation logic, auth/role system, database schema, filtering/search behavior, and current responsive/mobile behavior.
+- Do NOT rebuild the app from scratch if working systems already exist.
+- Preserve working auth, manager/staff role restrictions, guest CRUD, guest key logic, route protection, stable APIs, and existing mobile dashboard structure where it is already good.
+- Refactor only where there is real architecture, UX, maintainability, or production value.
+- The result must be mobile-first, premium, simple, soft, modern, operationally useful, SOLID, layered, and production-ready.
+
+PROJECT CONTEXT:
+Guest Pro has manager/staff dashboards with a Guests tab and a Rooms tab.
+We now need the Rooms tab to become a highly polished hotel operations view for mobile usage.
+
+PRIMARY GOALS:
+1. Flag icons must become black-and-white / monochrome themed icons, not emoji
+2. In the Rooms tab, tapping a room card should flip the card to reveal the back side
+3. On the back side of the room card, show the guests staying in that room in a clean list
+4. Show quick guest info and guest key/access-related info in the back view
+5. Room cards must include meaningful room information on the front side
+6. The Rooms filter bar and search bar must remain sticky at the top when scrolling
+7. The entire experience must feel premium, fast, mobile-first, and production-ready
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current manager dashboard structure
+2. Current staff/personnel dashboard structure
+3. Current Rooms tab implementation
+4. Current room card implementation
+5. Current room aggregation / occupancy logic
+6. Current room-to-guest data flow
+7. Current filter/search state and rendering behavior
+8. Current sticky header/filter behavior if any
+9. Current country/countryCode/flag rendering system
+10. Current mobile responsive behavior
+11. Current role-aware UI/action rendering
+12. Current weaknesses in the Rooms experience
+13. What already works
+14. What should be preserved
+15. What needs redesign or refactor for proper SOLID architecture
+
+Then provide:
+- concise architecture audit
+- Rooms UX gap analysis
+- room-card interaction gap analysis
+- filter/search/sticky behavior gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — MONOCHROME FLAG ICON SYSTEM
+==================================================
+
+Replace the current country flag display with a premium monochrome icon system.
+
+REQUIREMENTS:
+- no emoji flags
+- no colorful flag graphics
+- use black-and-white / monochrome / neutral icon-style country indicators
+- keep them subtle, elegant, and consistent with the dashboard theme
+- icons must feel premium and operational, not playful
+- icon mapping must be centralized and maintainable
+- provide a graceful fallback if an icon is missing
+
+VISUAL GOAL:
+- small refined monochrome country marker
+- consistent size and spacing
+- integrated cleanly into cards and guest rows
+- aligned with the premium hospitality operations theme
+
+ARCHITECTURE GOAL:
+- do not place flag-selection logic in random UI components
+- centralize it in a proper resolver/helper/service
+
+==================================================
+PHASE 3 — REDESIGN ROOM CARDS (FRONT SIDE)
+==================================================
+
+Professionalize the room card front side.
+
+REQUIREMENTS:
+- keep a 2-column mobile grid
+- cards should remain square or near-square
+- use a refined door-style icon
+- room cards must clearly show:
+  - room number
+  - occupancy count
+  - occupied / empty status
+  - any useful short room summary
+- room information must be easy to scan quickly
+- front side should feel calm, premium, and operational
+
+VISUAL GOAL:
+- white/light dominant
+- soft rounded corners
+- subtle premium shadow
+- strong but clean typography
+- premium hospitality operations feel
+- not cluttered
+
+==================================================
+PHASE 4 — FLIP CARD INTERACTION FOR ROOM DETAILS
+==================================================
+
+Implement a professional flip-card interaction.
+
+REQUIREMENTS:
+- when a room card is tapped, the card flips to its back side
+- the flip must feel premium, smooth, and stable
+- no laggy or heavy animation
+- the interaction must work well on mobile devices
+- only the tapped card should flip
+- state management must be clean and maintainable
+- flipping must not break layout stability
+
+IMPORTANT:
+- do not use a gimmicky or overdramatic animation
+- keep it elegant and operational
+- if a flip interaction proves unstable, use the best equivalent premium card-detail reveal pattern, but prefer a true flip if it is performant and reliable
+
+==================================================
+PHASE 5 — ROOM CARD BACK SIDE CONTENT
+==================================================
+
+Design the back side of each room card as a useful guest summary panel.
+
+REQUIREMENTS:
+- show the guests staying in that room as a clean stacked list
+- each guest entry should show useful quick info such as:
+  - full name
+  - country indicator (monochrome)
+  - guest key/access summary if useful
+  - status if relevant
+- keep the content clean and easy to scan
+- do not overcrowd the back side
+- if the room has no guests, show an elegant empty state
+- if the room has many guests, handle overflow gracefully and professionally
+
+PRODUCT GOAL:
+The card back should let staff quickly understand who is in the room and access key operational info without opening a separate page.
+
+==================================================
+PHASE 6 — STICKY FILTER BAR AND SEARCH BAR
+==================================================
+
+Make the Rooms filters/search section sticky and production-ready.
+
+REQUIREMENTS:
+- when the user scrolls downward in the Rooms tab, the top controls remain visible
+- at minimum keep sticky:
+  - All Rooms filter
+  - occupied/empty filters if present
+  - search bar
+- sticky area must not disappear when scrolling
+- sticky area must not clash with dashboard header
+- sticky positioning must be robust on mobile
+- add a subtle background/shadow/elevation when sticky if helpful for clarity
+- maintain excellent usability and visual polish
+
+UX GOAL:
+Staff should always be able to search and filter rooms without scrolling back to the top.
+
+==================================================
+PHASE 7 — ROOM FILTERING / SEARCH UX
+==================================================
+
+Professionalize the room filtering experience.
+
+REQUIREMENTS:
+- All Rooms filter
+- Occupied filter
+- Empty filter
+- search by room number
+- optional useful sorting if appropriate
+- mobile-friendly controls
+- premium segmented/chip/filter-bar design
+- fast and clear operation
+
+Do NOT:
+- use desktop-style dense filter rows
+- make the sticky area visually noisy
+- break scroll performance
+
+==================================================
+PHASE 8 — ROOM AGGREGATION / DATA LAYER
+==================================================
+
+Implement or improve the room aggregation logic in a proper application/query layer.
+
+REQUIREMENTS:
+- derive room occupancy from guest records cleanly
+- build stable room summaries
+- ensure room front-side and back-side content use a single consistent aggregation source
+- avoid duplicated aggregation logic in components
+- keep it easy to extend later for:
+  - room capacity
+  - floor grouping
+  - room type
+  - cleaning status
+  - maintenance state
+
+ARCHITECTURE GOAL:
+Use a proper service/query layer for room aggregation rather than embedding logic directly into UI components.
+
+==================================================
+PHASE 9 — ROLE-AWARE ACTIONS AND VISIBILITY
+==================================================
+
+Preserve role-aware behavior professionally.
+
+REQUIREMENTS:
+- MANAGER sees all permitted room-related actions/details
+- STAFF sees only what is allowed by current access policy
+- role restrictions must remain enforced in UI and backend/API where relevant
+- do not expose restricted actions on the card back if the role cannot use them
+- keep capability logic centralized
+
+==================================================
+PHASE 10 — MOBILE UX / DESIGN DIRECTION
+==================================================
+
+The entire Rooms experience must feel:
+
+- white/light dominant
+- soft rounded corners
+- modern premium SaaS + hospitality operations feel
+- simple and expensive-looking
+- calm and trustworthy
+- highly scannable
+- thumb-friendly
+- no clutter
+- no noisy gradients
+- no emoji-based visuals
+- no cheap effects
+
+Think:
+- premium hotel operations mobile app
+- elegant room board for staff
+- calm but highly useful operational design
+
+==================================================
+PHASE 11 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement this in a meaningful, maintainable architecture.
+
+REQUIREMENTS:
+- business logic separate from presentation
+- no giant dashboard file
+- no duplicated room aggregation logic
+- no duplicated filter/search logic
+- no scattered flag/icon logic
+- no scattered flip-state hacks across random components
+- centralize room query/filter logic
+- centralize role-aware visibility
+- no dead code
+- no fake architecture
+- clean naming
+- maintainable structure
+
+Possible clean modules/services/components:
+- RoomAggregationService
+- RoomFilterQueryService
+- CountryFlagIconResolver
+- RoomCardFlipController
+- DashboardStickyFilterBar
+- MobileRoomCard
+- RoomCardFront
+- RoomCardBack
+- RoomGuestSummaryList
+- RoleAwareRoomActions
+
+Do not create fake architecture. Make the structure meaningful and actually used.
+
+==================================================
+PHASE 12 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- manager login
+- staff/personnel login
+- guest login/logout
+- guest dashboard/chat/voice features
+- guest CRUD
+- guest key flows
+- QR flows if present
+- route protection
+- stable APIs
+- existing dashboard sections outside this scope
+
+This task is specifically about the Rooms tab and room card UX professionalization.
+
+==================================================
+PHASE 13 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Flag icons are monochrome and theme-consistent
+2. Room cards front side shows room information clearly
+3. Tapping a room card flips it correctly
+4. Flip animation is stable and premium
+5. Back side shows the guest list for that room correctly
+6. Guest quick info and key-related quick info render correctly
+7. Empty room state works correctly
+8. Sticky filter/search area remains visible while scrolling
+9. Sticky controls do not break mobile layout
+10. Room filtering works cleanly
+11. Search works cleanly
+12. Manager/staff role-aware restrictions still work
+13. No regression in auth or guest/room data flows
+14. Overall UX feels production-ready and premium on mobile
+
+==================================================
+PHASE 14 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was weak before
+3. What was redesigned
+4. How monochrome flag icons are implemented
+5. How room card flip interaction works
+6. How room guest data is aggregated for the back side
+7. How sticky filters/search work
+8. Which files were changed
+9. Any architecture refactors made
+10. How to test the Rooms tab on mobile
+11. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result mobile-first, SOLID, layered, premium, and production-ready
+- The Rooms tab must feel like a real premium hotel staff room board

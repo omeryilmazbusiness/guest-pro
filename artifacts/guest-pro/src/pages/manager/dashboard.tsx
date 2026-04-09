@@ -4,27 +4,29 @@
  * Route: /manager
  * Roles: manager (full access) | personnel (create + view + edit + renew, no delete)
  *
+ * Layout (top-to-bottom):
+ *   ┌─────────────────────────────────────┐
+ *   │ sticky header (56px)  z-20 top-0    │
+ *   ├─────────────────────────────────────┤
+ *   │ sticky rooms filter   z-10 top-14   │ ← only when rooms tab active
+ *   │ (search + All / In use / Empty)     │
+ *   ├─────────────────────────────────────┤
+ *   │ scrollable main                     │
+ *   │   stat chips (manager)              │
+ *   │   welcome card (staff)              │
+ *   │   tab switcher                      │
+ *   │   guests list  OR  rooms grid       │
+ *   └─────────────────────────────────────┘
+ *
  * Architecture — this page owns only:
- *   - layout composition
- *   - state orchestration (which tab, which modal, mutation dispatch)
+ *   - layout composition and state orchestration
  *   - role-aware rendering decisions
+ *   - mutation dispatch
  *
- * All domain logic lives in dedicated modules:
- *   - src/lib/guests.ts     — filtering, room extraction (pure functions)
- *   - src/lib/rooms.ts      — room aggregation + filtering (pure functions)
- *   - src/lib/permissions.ts — role/capability checks
- *
- * All UI components are in src/components/manager/:
- *   GuestCard, RoomCard, GuestEditModal, GuestDeleteDialog, GuestHandoffModal
- *
- * Mobile-first decisions:
- *   • 56px sticky header — brand + role + logout only
- *   • Stat chips scroll horizontally on mobile
- *   • Tabs: segmented control (Guests | Rooms) below the header/stats
- *   • Guest list: compact 2-line cards (~68px per guest)
- *   • Room grid: 2-column cards, sorted numerically
- *   • FAB: fixed bottom-right on mobile for "New Guest"
- *   • max-w-2xl — optimized for phone/tablet screens
+ * Domain logic lives in dedicated lib modules:
+ *   src/lib/guests.ts     — filterGuests, extractRoomNumbers
+ *   src/lib/rooms.ts      — aggregateRooms, filterRooms, computeRoomStats
+ *   src/lib/permissions.ts — role/capability checks
  */
 
 import { useEffect, useMemo, useState, useCallback } from "react";
@@ -72,19 +74,21 @@ import { GuestEditModal } from "@/components/manager/GuestEditModal";
 import { GuestDeleteDialog } from "@/components/manager/GuestDeleteDialog";
 import { GuestHandoffModal, type HandoffData } from "@/components/GuestHandoffModal";
 
-// ─── Tab type ─────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type DashboardTab = "guests" | "rooms";
 
-// ─── Horizontal stat chip ─────────────────────────────────────────────────────
+// ─── Stat chip ─────────────────────────────────────────────────────────────────
 
-interface StatChipProps {
+function StatChip({
+  icon,
+  label,
+  value,
+}: {
   icon: React.ReactNode;
   label: string;
   value: number | string;
-}
-
-function StatChip({ icon, label, value }: StatChipProps) {
+}) {
   return (
     <div className="flex items-center gap-3 bg-white border border-zinc-100 rounded-2xl px-4 py-3 shadow-sm shrink-0 min-w-[148px] snap-start">
       <div className="w-8 h-8 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center shrink-0">
@@ -100,14 +104,15 @@ function StatChip({ icon, label, value }: StatChipProps) {
   );
 }
 
-// ─── Staff welcome card (personnel persona) ───────────────────────────────────
+// ─── Staff welcome card ───────────────────────────────────────────────────────
 
-interface StaffWelcomeSectionProps {
+function StaffWelcomeSection({
+  firstName,
+  onCreateGuest,
+}: {
   firstName: string;
   onCreateGuest: () => void;
-}
-
-function StaffWelcomeSection({ firstName, onCreateGuest }: StaffWelcomeSectionProps) {
+}) {
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -131,77 +136,58 @@ function StaffWelcomeSection({ firstName, onCreateGuest }: StaffWelcomeSectionPr
   );
 }
 
-// ─── Premium segmented tab control ───────────────────────────────────────────
+// ─── Tab switcher ─────────────────────────────────────────────────────────────
 
-interface DashboardTabsProps {
+function DashboardTabs({
+  active,
+  onChange,
+  guestCount,
+  roomCount,
+}: {
   active: DashboardTab;
   onChange: (tab: DashboardTab) => void;
   guestCount: number;
   roomCount: number;
-}
-
-function DashboardTabs({ active, onChange, guestCount, roomCount }: DashboardTabsProps) {
+}) {
   return (
     <div className="flex bg-zinc-100 rounded-2xl p-1 gap-1">
-      <button
-        onClick={() => onChange("guests")}
-        className={`flex-1 flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-semibold transition-all touch-manipulation ${
-          active === "guests"
-            ? "bg-white text-zinc-900 shadow-sm"
-            : "text-zinc-500 hover:text-zinc-700"
-        }`}
-        aria-selected={active === "guests"}
-      >
-        <Users className="w-3.5 h-3.5" />
-        Guests
-        {guestCount > 0 && (
-          <span
-            className={`text-[11px] font-mono px-1.5 py-0.5 rounded-md ${
-              active === "guests"
-                ? "bg-zinc-100 text-zinc-600"
-                : "bg-zinc-200 text-zinc-500"
+      {(["guests", "rooms"] as const).map((tab) => {
+        const isActive = active === tab;
+        const count = tab === "guests" ? guestCount : roomCount;
+        return (
+          <button
+            key={tab}
+            onClick={() => onChange(tab)}
+            className={`flex-1 flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-semibold transition-all touch-manipulation ${
+              isActive
+                ? "bg-white text-zinc-900 shadow-sm"
+                : "text-zinc-500 hover:text-zinc-700"
             }`}
+            aria-selected={isActive}
           >
-            {guestCount}
-          </span>
-        )}
-      </button>
-      <button
-        onClick={() => onChange("rooms")}
-        className={`flex-1 flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-semibold transition-all touch-manipulation ${
-          active === "rooms"
-            ? "bg-white text-zinc-900 shadow-sm"
-            : "text-zinc-500 hover:text-zinc-700"
-        }`}
-        aria-selected={active === "rooms"}
-      >
-        <DoorOpen className="w-3.5 h-3.5" />
-        Rooms
-        {roomCount > 0 && (
-          <span
-            className={`text-[11px] font-mono px-1.5 py-0.5 rounded-md ${
-              active === "rooms"
-                ? "bg-zinc-100 text-zinc-600"
-                : "bg-zinc-200 text-zinc-500"
-            }`}
-          >
-            {roomCount}
-          </span>
-        )}
-      </button>
+            {tab === "guests" ? (
+              <Users className="w-3.5 h-3.5" />
+            ) : (
+              <DoorOpen className="w-3.5 h-3.5" />
+            )}
+            {tab === "guests" ? "Guests" : "Rooms"}
+            {count > 0 && (
+              <span
+                className={`text-[11px] font-mono px-1.5 py-0.5 rounded-md ${
+                  isActive ? "bg-zinc-100 text-zinc-600" : "bg-zinc-200 text-zinc-500"
+                }`}
+              >
+                {count}
+              </span>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
 // ─── Guest filter bar ─────────────────────────────────────────────────────────
-
-interface GuestFilterBarProps {
-  search: string;
-  onSearchChange: (v: string) => void;
-  roomFilter: string;
-  onRoomChange: (v: string) => void;
-  rooms: string[];
-}
 
 function GuestFilterBar({
   search,
@@ -209,7 +195,13 @@ function GuestFilterBar({
   roomFilter,
   onRoomChange,
   rooms,
-}: GuestFilterBarProps) {
+}: {
+  search: string;
+  onSearchChange: (v: string) => void;
+  roomFilter: string;
+  onRoomChange: (v: string) => void;
+  rooms: string[];
+}) {
   return (
     <div className="flex gap-2 items-stretch">
       <div className="relative flex-1">
@@ -231,14 +223,11 @@ function GuestFilterBar({
           </button>
         )}
       </div>
-
       {rooms.length > 0 && (
         <Select value={roomFilter} onValueChange={onRoomChange}>
-          <SelectTrigger className="h-11 w-auto min-w-[44px] rounded-2xl border-zinc-200 bg-white text-sm font-medium focus:ring-zinc-900 px-3 gap-1.5 shrink-0">
+          <SelectTrigger className="h-11 w-auto rounded-2xl border-zinc-200 bg-white text-sm font-medium focus:ring-zinc-900 px-3 gap-1.5 shrink-0">
             <DoorOpen className="w-4 h-4 text-zinc-400" />
-            <span className="hidden xs:inline">
-              <SelectValue placeholder="Room" />
-            </span>
+            <SelectValue placeholder="Room" />
           </SelectTrigger>
           <SelectContent className="rounded-2xl border-zinc-200 shadow-xl">
             <SelectItem value="__all__" className="rounded-xl text-sm font-medium">
@@ -256,51 +245,82 @@ function GuestFilterBar({
   );
 }
 
-// ─── Room filter bar ──────────────────────────────────────────────────────────
+// ─── Sticky rooms filter bar ──────────────────────────────────────────────────
+//
+// Rendered as a sibling of <main>, sticky at top-14 (below the 56px header).
+// Uses backdrop-blur and a subtle bottom border for visual separation when scrolled.
 
-interface RoomFilterBarProps {
+function StickyRoomFilterBar({
+  search,
+  onSearchChange,
+  status,
+  onStatusChange,
+  hasFilters,
+  onClearFilters,
+}: {
   search: string;
   onSearchChange: (v: string) => void;
   status: RoomStatusFilter;
   onStatusChange: (v: RoomStatusFilter) => void;
-}
+  hasFilters: boolean;
+  onClearFilters: () => void;
+}) {
+  const filters: Array<{ value: RoomStatusFilter; label: string }> = [
+    { value: "all", label: "All" },
+    { value: "occupied", label: "In use" },
+    { value: "empty", label: "Empty" },
+  ];
 
-function RoomFilterBar({ search, onSearchChange, status, onStatusChange }: RoomFilterBarProps) {
   return (
-    <div className="flex gap-2 items-stretch">
-      <div className="relative flex-1">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
-        <Input
-          placeholder="Search room…"
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-10 pr-8 h-11 rounded-2xl bg-white border-zinc-200 focus-visible:ring-zinc-900 text-sm"
-        />
-        {search && (
-          <button
-            onClick={() => onSearchChange("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 p-0.5"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        )}
-      </div>
+    <div className="sticky top-14 z-10 bg-zinc-50/95 backdrop-blur-sm border-b border-zinc-200/60">
+      <div className="max-w-2xl mx-auto px-4 py-3 space-y-2.5">
+        {/* Search input */}
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
+          <Input
+            placeholder="Search room number…"
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-10 pr-8 h-10 rounded-2xl bg-white border-zinc-200 focus-visible:ring-zinc-900 text-sm shadow-sm"
+          />
+          {search && (
+            <button
+              onClick={() => onSearchChange("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 p-0.5"
+              aria-label="Clear room search"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
 
-      {/* Occupancy status filter chips */}
-      <div className="flex gap-1.5 bg-zinc-100 rounded-2xl p-1 shrink-0">
-        {(["all", "occupied"] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => onStatusChange(s)}
-            className={`px-3 h-9 rounded-xl text-xs font-semibold capitalize transition-all touch-manipulation ${
-              status === s
-                ? "bg-white text-zinc-900 shadow-sm"
-                : "text-zinc-500 hover:text-zinc-700"
-            }`}
-          >
-            {s === "all" ? "All" : "In use"}
-          </button>
-        ))}
+        {/* Status filter chips + clear */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex gap-1.5 bg-zinc-100 rounded-xl p-1">
+            {filters.map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => onStatusChange(value)}
+                className={`px-3 h-8 rounded-lg text-xs font-semibold transition-all touch-manipulation ${
+                  status === value
+                    ? "bg-white text-zinc-900 shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-700"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {hasFilters && (
+            <button
+              onClick={onClearFilters}
+              className="text-xs text-zinc-400 hover:text-zinc-700 flex items-center gap-1 touch-manipulation shrink-0"
+            >
+              <X className="w-3 h-3" />
+              Clear
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -324,7 +344,10 @@ function GuestCardSkeleton() {
 
 function RoomCardSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-4 flex flex-col gap-3" style={{ aspectRatio: "1 / 1.05" }}>
+    <div
+      className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-4 flex flex-col gap-3"
+      style={{ aspectRatio: "1 / 1.1" }}
+    >
       <div className="flex justify-between">
         <Skeleton className="w-9 h-9 rounded-xl" />
         <Skeleton className="w-14 h-6 rounded-lg" />
@@ -355,18 +378,18 @@ export default function ManagerDashboard() {
   const deleteGuestMutation = useDeleteGuest();
   const renewKeyMutation = useRenewGuestKey();
 
-  // ── Tab state
+  // ── Tab
   const [activeTab, setActiveTab] = useState<DashboardTab>("guests");
 
-  // ── Guest filter state
+  // ── Guest filters
   const [guestSearch, setGuestSearch] = useState("");
   const [roomFilter, setRoomFilter] = useState("__all__");
 
-  // ── Room filter state
+  // ── Room filters
   const [roomSearch, setRoomSearch] = useState("");
   const [roomStatusFilter, setRoomStatusFilter] = useState<RoomStatusFilter>("all");
 
-  // ── Modal state
+  // ── Modals
   const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
   const [deletingGuest, setDeletingGuest] = useState<Guest | null>(null);
   const [handoff, setHandoff] = useState<HandoffData | null>(null);
@@ -386,7 +409,7 @@ export default function ManagerDashboard() {
   const canRenew = can(role, Permission.RENEW_GUEST_KEY);
   const canCreate = can(role, Permission.CREATE_GUEST);
 
-  // ── Derived data — all pure functions from lib modules
+  // ── Derived data (all from lib — no logic in page)
   const stats = useMemo(() => {
     if (!guests) return { total: 0, newToday: 0, roomsOccupied: 0 };
     const today = new Date().toDateString();
@@ -482,17 +505,21 @@ export default function ManagerDashboard() {
     );
   };
 
-  const clearGuestFilters = () => { setGuestSearch(""); setRoomFilter("__all__"); };
-  const clearRoomFilters = () => { setRoomSearch(""); setRoomStatusFilter("all"); };
+  const clearGuestFilters = () => {
+    setGuestSearch("");
+    setRoomFilter("__all__");
+  };
+  const clearRoomFilters = () => {
+    setRoomSearch("");
+    setRoomStatusFilter("all");
+  };
 
   if (!isAuthenticated || !isStaffRole(user?.role)) return null;
-
-  const isRenewing = renewKeyMutation.isPending;
 
   return (
     <div className="min-h-[100dvh] bg-zinc-50/60">
 
-      {/* ── Sticky header — 56px minimal ── */}
+      {/* ── Sticky header (56px) ── */}
       <header className="bg-white border-b border-zinc-100 sticky top-0 z-20">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -535,10 +562,22 @@ export default function ManagerDashboard() {
         </div>
       </header>
 
-      {/* ── Page body ── */}
+      {/* ── Sticky rooms filter — visible only in rooms tab, below header ── */}
+      {activeTab === "rooms" && (
+        <StickyRoomFilterBar
+          search={roomSearch}
+          onSearchChange={setRoomSearch}
+          status={roomStatusFilter}
+          onStatusChange={setRoomStatusFilter}
+          hasFilters={roomHasFilters}
+          onClearFilters={clearRoomFilters}
+        />
+      )}
+
+      {/* ── Scrollable main content ── */}
       <main className="max-w-2xl mx-auto px-4 py-5 pb-28 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
 
-        {/* MANAGER: horizontal stat chips row */}
+        {/* Manager stat chips */}
         {isManager && (
           <div
             className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4 snap-x snap-mandatory"
@@ -562,7 +601,7 @@ export default function ManagerDashboard() {
           </div>
         )}
 
-        {/* STAFF: purposeful welcome card */}
+        {/* Staff welcome card */}
         {!isManager && canCreate && (
           <StaffWelcomeSection
             firstName={user.firstName}
@@ -570,7 +609,7 @@ export default function ManagerDashboard() {
           />
         )}
 
-        {/* ── Tab switcher ── */}
+        {/* Tab switcher */}
         <DashboardTabs
           active={activeTab}
           onChange={setActiveTab}
@@ -578,9 +617,9 @@ export default function ManagerDashboard() {
           roomCount={allRooms.length}
         />
 
-        {/* ══════════════════════════════════════════
+        {/* ══════════════════════════════════
             GUESTS TAB
-        ══════════════════════════════════════════ */}
+        ══════════════════════════════════ */}
         {activeTab === "guests" && (
           <div className="space-y-3 animate-in fade-in duration-200">
             <GuestFilterBar
@@ -621,7 +660,9 @@ export default function ManagerDashboard() {
                   {guests && guests.length > 0 ? (
                     <>
                       <p className="text-sm font-medium text-zinc-700 mb-1">No matches</p>
-                      <p className="text-xs text-zinc-400 mb-4">Try different search or room.</p>
+                      <p className="text-xs text-zinc-400 mb-4">
+                        Try different search or room filter.
+                      </p>
                       <button
                         onClick={clearGuestFilters}
                         className="text-xs text-zinc-500 underline underline-offset-2"
@@ -665,39 +706,24 @@ export default function ManagerDashboard() {
           </div>
         )}
 
-        {/* ══════════════════════════════════════════
+        {/* ══════════════════════════════════
             ROOMS TAB
-        ══════════════════════════════════════════ */}
+            (filter bar is sticky above — not rendered here)
+        ══════════════════════════════════ */}
         {activeTab === "rooms" && (
           <div className="space-y-3 animate-in fade-in duration-200">
-            <RoomFilterBar
-              search={roomSearch}
-              onSearchChange={setRoomSearch}
-              status={roomStatusFilter}
-              onStatusChange={setRoomStatusFilter}
-            />
-
-            {/* Count + clear */}
+            {/* Result count */}
             {!isLoading && (
-              <div className="flex items-center justify-between px-1">
+              <div className="px-1">
                 <p className="text-xs text-zinc-400 font-medium">
                   {filteredRooms.length === allRooms.length
                     ? `${allRooms.length} room${allRooms.length !== 1 ? "s" : ""} occupied`
                     : `${filteredRooms.length} of ${allRooms.length} rooms`}
                 </p>
-                {roomHasFilters && (
-                  <button
-                    onClick={clearRoomFilters}
-                    className="text-xs text-zinc-400 hover:text-zinc-700 flex items-center gap-1 touch-manipulation"
-                  >
-                    <X className="w-3 h-3" />
-                    Clear
-                  </button>
-                )}
               </div>
             )}
 
-            {/* 2-column room grid */}
+            {/* 2-column grid */}
             {isLoading ? (
               <div className="grid grid-cols-2 gap-3">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -755,7 +781,7 @@ export default function ManagerDashboard() {
       )}
 
       {/* ── Renew overlay ── */}
-      {isRenewing && (
+      {renewKeyMutation.isPending && (
         <div className="fixed inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="bg-white rounded-3xl border border-zinc-100 shadow-2xl px-10 py-8 flex flex-col items-center gap-3">
             <Loader2 className="w-7 h-7 text-zinc-400 animate-spin" />
@@ -783,7 +809,10 @@ export default function ManagerDashboard() {
         <GuestHandoffModal
           open={handoffOpen}
           data={handoff}
-          onClose={() => { setHandoffOpen(false); setHandoff(null); }}
+          onClose={() => {
+            setHandoffOpen(false);
+            setHandoff(null);
+          }}
           onCreateAnother={() => {
             setHandoffOpen(false);
             setHandoff(null);
