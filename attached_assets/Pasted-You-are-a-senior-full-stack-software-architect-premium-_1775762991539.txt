@@ -1,0 +1,464 @@
+You are a senior full-stack software architect, premium mobile UX designer, and production-grade product engineer.
+
+Your task is to inspect, redesign, harden, and refactor the manager/staff dashboard area of the existing “Guest Pro” project into a fully mobile-first, SOLID, layered, production-ready hotel operations interface.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, file tree, dashboard structure, auth/role system, guest CRUD flow, guest key flow, room-number usage, country/countryCode handling, responsive behavior, and API/query architecture.
+- Do NOT rebuild the app from scratch if working systems already exist.
+- Preserve working auth, manager flow, staff/personnel flow, guest login/logout, guest dashboard/chat/voice features, QR/key flows if already present, route protection, and stable APIs.
+- Refactor only where there is real architectural, UX, maintainability, security, or production value.
+- The result must be mobile-first, premium, simple, soft, modern, role-aware, SOLID, layered, and production-ready.
+- The dashboards must feel like a real hotel staff operations app designed for phones, not a desktop admin panel squeezed into mobile.
+
+PROJECT CONTEXT:
+Guest Pro includes manager/staff operational dashboards for handling guests.
+We need the dashboard experience to become truly professional and mobile-first.
+
+BUSINESS ROLES:
+- MANAGER: full access to all manager-side capabilities
+- STAFF / PERSONNEL: restricted access according to existing policy (for example, Create Guest + Guests List only, if that is the current business rule)
+- GUEST: unchanged guest-side experience
+
+PRIMARY GOALS:
+1. Make manager and staff dashboards fully mobile-first and premium
+2. Guest list must show newest created guests first
+3. Guest cards must use proper flag icons (not emoji flags)
+4. Add tabs above the guest content:
+   - Guests
+   - Rooms
+5. Rooms tab must show rooms in a 2-column premium mobile card grid
+6. Room cards must show:
+   - room number
+   - occupancy count
+   - occupied / empty status
+7. Rooms must be filterable
+8. Guest list must be filterable/searchable
+9. Guest CRUD must feel mobile-professional
+10. Guest key renewal/regeneration must remain professional and secure
+11. The architecture must be SOLID and layered, not a UI-only hack
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current manager dashboard structure
+2. Current staff/personnel dashboard structure
+3. Current guest list flow
+4. Current guest CRUD flow
+5. Current guest key renew/regenerate flow
+6. Current room number usage in the data model
+7. Current country/countryCode storage and display
+8. Current responsive/mobile behavior
+9. Current search/filter/sort logic
+10. Current role-aware rendering and route/API protection
+11. Current query/service/repository architecture
+12. Current weak points in SOLID structure
+13. What already works
+14. What should be preserved
+15. What should be redesigned
+16. What should be refactored for proper layered architecture
+
+Then provide:
+- concise architecture audit
+- mobile UX gap analysis
+- guest list / rooms gap analysis
+- role/access gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — RESTRUCTURE THE DASHBOARD AS MOBILE-FIRST
+==================================================
+
+Redesign both MANAGER and STAFF dashboards as mobile-first operational dashboards.
+
+DESIGN GOALS:
+- phone-first
+- premium hospitality SaaS feel
+- soft and modern
+- simple but powerful
+- highly readable
+- thumb-friendly
+- calm and uncluttered
+- production-grade operational UX
+
+DO NOT:
+- keep a desktop table-heavy layout as the primary mobile experience
+- rely on tiny actions or dense controls
+- overload the screen
+- show desktop leftovers hidden badly on mobile
+
+USE:
+- stacked overview cards
+- list-card style mobile guest items
+- compact mobile tabs
+- sheets/drawers/modals where appropriate
+- large touch targets
+- elegant spacing
+- clear action hierarchy
+- premium light theme
+- subtle shadows
+- soft rounded corners
+
+==================================================
+PHASE 3 — NEWEST GUESTS FIRST
+==================================================
+
+Implement a production-ready sorting strategy.
+
+REQUIREMENTS:
+- newest created guest must appear first in the guest list
+- sorting should be based on createdAt descending or the correct equivalent field
+- implement sorting at the query/data layer, not as a fragile UI-only sort if avoidable
+- preserve pagination/query consistency if pagination already exists
+- ensure stable ordering across refreshes and repeated loads
+
+EXPECTED RESULT:
+- newly created guest appears at the top
+- the sort is deterministic and professional
+
+==================================================
+PHASE 4 — PROFESSIONAL FLAG ICONS, NOT EMOJI
+==================================================
+
+Replace emoji flags with proper themed country flag icons.
+
+REQUIREMENTS:
+- use professional SVG/icon/image-based flag assets
+- keep them visually aligned with the app’s premium design language
+- flags must be small, clean, elegant, and consistent
+- do not use emoji flags
+- country-to-flag resolution must be centralized in a clean helper/service/module
+- if a flag asset is missing, use a graceful fallback
+
+VISUAL GOAL:
+- subtle premium country indicator
+- clean placement inside guest cards
+- consistent sizing and spacing
+
+ARCHITECTURE GOAL:
+- do not put flag resolution logic directly in random UI components
+- centralize it properly
+
+==================================================
+PHASE 5 — GUESTS TAB / PREMIUM MOBILE LIST-CARD VIEW
+==================================================
+
+Professionalize the Guests view into a premium mobile list-card experience.
+
+REQUIREMENTS:
+- use elegant mobile guest cards instead of dense desktop-style tables for the main mobile UX
+- each guest card should clearly show:
+  - full name
+  - room number
+  - country with proper flag icon
+  - relevant guest/access status if available
+  - created date if useful
+  - contextual actions if role permits
+- cards must be easy to scan and operate on a phone
+- use refined spacing, typography, and action hierarchy
+
+If role rules differ:
+- MANAGER sees full permitted actions
+- STAFF sees only permitted actions
+- restricted actions must not appear in UI
+- server/API enforcement must remain intact
+
+==================================================
+PHASE 6 — ADD TABS ABOVE CONTENT: GUESTS / ROOMS
+==================================================
+
+Add a premium mobile-friendly tab switcher.
+
+REQUIREMENTS:
+- tabs:
+  - Guests
+  - Rooms
+- tabs should be elegant, stable, responsive, and touch-friendly
+- preserve clean dashboard hierarchy
+- tab state must be maintainable
+- use a professional segmented/tab control pattern suitable for mobile
+
+BEHAVIOR:
+- Guests tab shows guest list/cards
+- Rooms tab shows room cards/grid
+
+==================================================
+PHASE 7 — ROOMS TAB WITH 2-COLUMN PREMIUM ROOM CARDS
+==================================================
+
+Implement a professional Rooms view.
+
+REQUIREMENTS:
+- show rooms in a 2-column grid on mobile
+- use square or near-square premium room cards
+- each room card should include a refined door-style icon
+- cards should stack downward cleanly
+- no cramped layout
+- no cheap tile design
+
+Each room card must show:
+- room number
+- occupancy count (how many guests assigned)
+- room status:
+  - occupied
+  - empty
+- optional subtle supporting info if genuinely useful
+
+VISUAL GOAL:
+- premium hotel operations feel
+- highly scannable
+- modern, calm, soft, polished
+
+==================================================
+PHASE 8 — ROOM OCCUPANCY / AGGREGATION LAYER
+==================================================
+
+Implement proper room aggregation logic.
+
+REQUIREMENTS:
+- derive room occupancy from guest records cleanly
+- calculate how many guests belong to each room
+- determine occupied vs empty state
+- if there is no dedicated room entity, build a proper derived room view from guest data
+- if a room entity already exists, preserve and use it cleanly
+- do not duplicate aggregation logic in UI components
+
+ARCHITECTURE GOAL:
+- create a maintainable room aggregation/query service
+- easy to extend later to:
+  - room capacity
+  - occupancy limits
+  - floor grouping
+  - room status color coding
+  - room type filters
+
+==================================================
+PHASE 9 — MOBILE FILTERING / SEARCH FOR BOTH TABS
+==================================================
+
+Implement premium mobile-friendly filtering/search.
+
+GUESTS VIEW:
+- search by guest name
+- filter by room number
+- preserve newest-first sorting
+- keep controls elegant and mobile-friendly
+
+ROOMS VIEW:
+- filter occupied rooms
+- filter empty rooms
+- search by room number
+- allow useful sorting if appropriate
+
+UX REQUIREMENTS:
+- do not use crowded desktop filter bars
+- use premium mobile patterns such as:
+  - chips
+  - segmented controls
+  - bottom sheet filters
+  - compact dropdowns
+- must feel fast, touch-friendly, and operational
+
+==================================================
+PHASE 10 — GUEST CRUD FLOWS MUST FEEL MOBILE-PROFESSIONAL
+==================================================
+
+Professionalize guest CRUD UX.
+
+REQUIREMENTS:
+- create guest flow must be clean and mobile-friendly
+- edit guest flow must be clean and mobile-friendly
+- delete flow must be safe and polished with confirmation
+- guest key renew/regenerate flow must remain secure and professional
+- forms must use proper spacing, validation, loading, and success/error feedback
+- avoid ugly long unmanaged forms
+- use sheets/modals/drawers/cards where appropriate
+
+==================================================
+PHASE 11 — OVERVIEW CARDS FOR MOBILE DASHBOARDS
+==================================================
+
+Add or refine premium mobile overview cards.
+
+REQUIREMENTS:
+- use real data only
+- examples may include:
+  - total guests
+  - active guests
+  - occupied rooms
+  - empty rooms
+  - recent guests
+  - recent key renewals if real
+- cards must be stacked or arranged beautifully on mobile
+- not cramped
+- not decorative-only
+- strong readability and operational value
+
+MANAGER DASHBOARD:
+- fuller overview is acceptable
+
+STAFF DASHBOARD:
+- overview should remain focused and intentional for allowed tasks
+
+==================================================
+PHASE 12 — ROLE-AWARE DASHBOARD DESIGN
+==================================================
+
+Keep the dashboard intentionally role-aware.
+
+REQUIREMENTS:
+- MANAGER sees the full dashboard structure and all permitted actions
+- STAFF sees a focused mobile dashboard tailored only to allowed tasks
+- do not leave dead sections or broken placeholders for staff
+- do not simply hide half a manager screen badly
+- create a proper staff experience that feels purpose-built
+
+ACCESS CONTROL RULE:
+- role restrictions must remain enforced in UI, route checks, and API layer
+- do not rely only on client-side hiding
+
+==================================================
+PHASE 13 — DESIGN DIRECTION
+==================================================
+
+The visual direction must be:
+
+- white/light dominant
+- soft rounded corners
+- premium modern SaaS + hospitality operations feel
+- simple and expensive-looking
+- calm and trustworthy
+- elegant spacing
+- strong typography
+- subtle shadows
+- clean cards and controls
+- no clutter
+- no cheap gradients
+- no noisy visuals
+- no emoji-based shortcuts
+
+Think:
+- premium hotel operations mobile app
+- elegant hospitality tooling
+- real staff workflow clarity
+- modern enterprise calmness
+
+==================================================
+PHASE 14 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement this in a truly maintainable architecture.
+
+REQUIREMENTS:
+- business logic separate from presentation
+- no giant dashboard/page component
+- no scattered sorting/filtering logic
+- no duplicated room aggregation logic
+- no duplicated flag logic
+- centralize role/capability visibility
+- centralize guest query logic
+- centralize room aggregation logic
+- centralize key renewal logic
+- no dead code
+- no fake architecture
+- clean naming
+- maintainable modules
+
+Recommended architectural shape:
+- domain:
+  - role definitions
+  - guest entity rules
+  - room occupancy rules
+- application:
+  - GuestListQueryService
+  - RoomAggregationService
+  - GuestCrudService
+  - GuestKeyRenewalService
+  - DashboardOverviewService
+- infrastructure:
+  - guest repository
+  - room query/repository
+  - auth/session adapters
+  - country flag asset resolver
+- presentation:
+  - ManagerDashboardMobile
+  - StaffDashboardMobile
+  - DashboardOverviewCards
+  - MobileGuestCard
+  - MobileRoomCard
+  - GuestFilterPanel
+  - RoomFilterPanel
+  - DashboardTabs
+  - RoleAwareDashboardContent
+
+Do not create fake architecture. Make the structure meaningful and actually used.
+
+==================================================
+PHASE 15 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- manager login
+- staff/personnel login
+- guest login/logout
+- guest dashboard/chat/voice features
+- guest key flows
+- QR flows if present
+- guest CRUD APIs
+- route protection
+- stable APIs
+
+This task is specifically about dashboard professionalization and mobile-first guest/room operations.
+
+==================================================
+PHASE 16 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Guest list shows newest guests first
+2. Flag icons are proper themed icons, not emoji
+3. Guests tab works correctly
+4. Rooms tab works correctly
+5. Rooms display in a 2-column premium card grid
+6. Room cards show room number correctly
+7. Room cards show occupancy count correctly
+8. Room cards correctly indicate occupied vs empty
+9. Guest search/filter works on mobile
+10. Room search/filter works on mobile
+11. Create/edit/delete flows remain correct
+12. Guest key renewal remains correct
+13. Manager role sees full intended access
+14. Staff role sees only intended access
+15. No regression in auth or route protection
+16. No regression in guest-facing flows
+17. Overall mobile UX feels production-ready and premium
+
+==================================================
+PHASE 17 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was weak before
+3. What was redesigned
+4. How newest-first sorting is implemented
+5. How flag icons are implemented
+6. How the Guests / Rooms tab system works
+7. How room aggregation/occupancy logic works
+8. How role-aware dashboard behavior works
+9. Which files were changed
+10. Any architecture refactors made
+11. Any DB/query changes made
+12. How to test the new dashboard on mobile
+13. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result mobile-first, SOLID, layered, premium, and production-ready
+- The manager/staff operations experience must feel like a real premium hotel staff app

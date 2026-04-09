@@ -1,15 +1,16 @@
 /**
  * GuestCard
  *
- * Premium mobile-first guest list item. Replaces the verbose flex-col row
- * with a compact 2-line horizontal card (~68px) that is highly scannable
- * at 375px and scales gracefully to wider screens.
+ * Premium mobile-first guest list item.
+ * Compact 2-line horizontal card (~68px) — highly scannable on 375px phones.
  *
  * Layout:
- *   [Avatar] | [Name + flag] [Room badge]   [Copy] [⋯]
- *            | [Key snippet]
+ *   [Avatar] | [Name] [Flag] [Room badge]   [Copy] [⋯]
+ *            | [Masked key snippet]
  *
- * Actions are role-aware — callers pass boolean flags + handlers.
+ * Flag display uses CountryFlag (SVG-based, flag-icons library) — never emoji.
+ * All country-to-flag resolution is centralized in CountryFlag.tsx.
+ * Actions are role-aware — callers pass permission booleans + handlers.
  */
 
 import { useState, useCallback } from "react";
@@ -31,7 +32,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { countryFlag } from "@/lib/locale";
+import { CountryFlag } from "@/components/ui/CountryFlag";
 import type { Guest } from "@workspace/api-client-react";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -59,7 +60,7 @@ function GuestAvatar({ firstName, lastName }: { firstName: string; lastName: str
   );
 }
 
-// ─── Copy button (inline, small) ─────────────────────────────────────────────
+// ─── Inline copy button ───────────────────────────────────────────────────────
 
 function CopyKeyButton({ guestKey }: { guestKey: string }) {
   const [copied, setCopied] = useState(false);
@@ -94,7 +95,7 @@ function CopyKeyButton({ guestKey }: { guestKey: string }) {
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Main card ────────────────────────────────────────────────────────────────
 
 export function GuestCard({
   guest,
@@ -107,12 +108,13 @@ export function GuestCard({
 }: GuestCardProps) {
   const hasKey = !!guest.guestKey;
 
-  // Compact key display: "ABC123-••••••" — shows first segment, masks rest
+  // Display first two key segments, mask the third: "ABC123-DEF456-••••••"
   const keyDisplay = guest.guestKey
     ? (() => {
         const parts = guest.guestKey.split("-");
-        if (parts.length === 3) return `${parts[0]}-${parts[1]}-••••••`;
-        return guest.guestKey.slice(0, 8) + "…";
+        return parts.length === 3
+          ? `${parts[0]}-${parts[1]}-••••••`
+          : guest.guestKey.slice(0, 10) + "…";
       })()
     : "No active key";
 
@@ -126,30 +128,28 @@ export function GuestCard({
       {/* Avatar */}
       <GuestAvatar firstName={guest.firstName} lastName={guest.lastName} />
 
-      {/* Identity — takes all available space */}
+      {/* Identity */}
       <div className="flex-1 min-w-0">
-        {/* Line 1: name + flag + room */}
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Line 1: name + flag + room badge */}
+        <div className="flex items-center gap-1.5 flex-wrap leading-none">
           <span className="font-medium text-[15px] text-zinc-900 leading-tight truncate">
             {guest.firstName} {guest.lastName}
           </span>
           {guest.countryCode && (
-            <span className="text-base leading-none shrink-0" title={guest.countryCode}>
-              {countryFlag(guest.countryCode)}
-            </span>
+            <CountryFlag code={guest.countryCode} size="sm" />
           )}
           <Badge
             variant="secondary"
-            className="bg-zinc-100 text-zinc-600 text-[11px] font-mono font-semibold px-2 py-0 h-5 rounded-md border-0 shrink-0"
+            className="bg-zinc-100 text-zinc-600 text-[11px] font-mono font-semibold px-2 py-0 h-5 rounded-md border-0 shrink-0 leading-none"
           >
             {guest.roomNumber}
           </Badge>
         </div>
 
         {/* Line 2: key snippet */}
-        <div className="mt-0.5">
+        <div className="mt-1">
           <span
-            className={`font-mono text-xs tracking-wider ${
+            className={`font-mono text-xs tracking-wider leading-none ${
               hasKey ? "text-zinc-400" : "text-zinc-300"
             }`}
           >
@@ -160,10 +160,8 @@ export function GuestCard({
 
       {/* Actions */}
       <div className="flex items-center gap-1.5 shrink-0">
-        {/* Quick copy button — only if key exists */}
         {hasKey && <CopyKeyButton guestKey={guest.guestKey!} />}
 
-        {/* Action menu */}
         {hasAnyAction && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

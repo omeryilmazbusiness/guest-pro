@@ -97,6 +97,22 @@ When a guest is created, a **single-use 24-hour QR auto-login token** is issued 
 | Manager | Horizontal stat chips (scrollable) | All: Edit, Renew, Copy, Delete |
 | Personnel | Dark welcome card + CTA | Edit, Renew, Copy (no Delete) |
 
+### Tabs System
+- `Guests` tab: compact guest card list, newest-first, searchable + room-filterable
+- `Rooms` tab: 2-column card grid, occupancy aggregated from guest records, filterable by status + name
+- Tab switcher: custom segmented control with badge counts (not Radix Tabs — avoids dep weight)
+
+### Flag Icons
+- Package: `flag-icons` (CSS library, self-contained SVG flags, no CDN requests)
+- Component: `src/components/ui/CountryFlag.tsx` — centralized, used in GuestCard
+- Never emoji in guest list/cards; emoji only retained in create/edit combobox trigger button
+
+### Domain Lib Architecture
+- `src/lib/guests.ts` — `filterGuests()`, `extractRoomNumbers()` — pure functions
+- `src/lib/rooms.ts` — `aggregateRooms()`, `filterRooms()`, `computeRoomStats()` — pure functions
+- `src/lib/permissions.ts` — `can()`, `isStaffRole()`, `roleLabel()`
+- Dashboard imports from these libs — no logic in page components
+
 ### Mobile-First UX Decisions
 - Stat chips: horizontal scroll row (`overflow-x-auto snap-x`) — no tall stacked cards on mobile
 - Guest card: compact 2-line ~68px item (vs old ~160px flex-col)

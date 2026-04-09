@@ -77,6 +77,7 @@
   },
   "dependencies": {
     "@types/qrcode": "^1.5.6",
+    "flag-icons": "^7.5.0",
     "qrcode": "^1.5.4",
     "react-markdown": "^10.1.0"
   }
