@@ -355,7 +355,7 @@ components:
       properties:
         type:
           type: string
-          enum: [manager, guest]
+          enum: [manager, personnel, guest]
         email:
           type: ["string", "null"]
         password:
@@ -370,7 +370,7 @@ components:
       properties:
         role:
           type: string
-          enum: [manager, guest]
+          enum: [manager, personnel, guest]
         token:
           type: string
         user:
@@ -403,7 +403,7 @@ components:
           type: integer
         role:
           type: string
-          enum: [manager, guest]
+          enum: [manager, personnel, guest]
         email:
           type: ["string", "null"]
         firstName:

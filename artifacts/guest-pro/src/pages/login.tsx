@@ -195,7 +195,7 @@ export default function Login() {
   // Redirect already-authenticated users
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (user.role === "manager") setLocation("/manager");
+      if (user.role === "manager" || user.role === "personnel") setLocation("/manager");
       else setLocation("/guest");
     }
   }, [isAuthenticated, user, setLocation]);

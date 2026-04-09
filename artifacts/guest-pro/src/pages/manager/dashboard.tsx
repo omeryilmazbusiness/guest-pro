@@ -5,6 +5,7 @@ import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { Plus, LogOut, Users, Search, DoorClosed, Loader2, Eye, EyeOff, Hash, KeyRound } from "lucide-react";
 import { GuestProLogo } from "@/components/GuestProLogo";
+import { isStaffRole, roleLabel } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,7 +27,8 @@ export default function ManagerDashboard() {
   useEffect(() => {
     if (!isAuthenticated) {
       setLocation("/");
-    } else if (user?.role !== "manager") {
+    } else if (user && !isStaffRole(user.role)) {
+      // Guests should go to the guest interface, not the staff dashboard
       setLocation("/guest");
     }
   }, [isAuthenticated, user, setLocation]);
@@ -47,7 +49,7 @@ export default function ManagerDashboard() {
     g.roomNumber.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (!isAuthenticated || user?.role !== "manager") return null;
+  if (!isAuthenticated || !isStaffRole(user?.role)) return null;
 
   return (
     <div className="min-h-[100dvh] bg-zinc-50/50 pb-20">
@@ -58,8 +60,12 @@ export default function ManagerDashboard() {
               <GuestProLogo variant="header" className="w-[22px] h-[22px]" />
             </div>
             <div>
-              <h1 className="font-serif text-xl font-medium text-zinc-900">Manager Dashboard</h1>
-              <p className="text-xs text-zinc-500 font-medium">Guest Pro • {user.firstName} {user.lastName}</p>
+              <h1 className="font-serif text-xl font-medium text-zinc-900">
+                {user.role === "manager" ? "Manager Dashboard" : "Staff Dashboard"}
+              </h1>
+              <p className="text-xs text-zinc-500 font-medium">
+                {roleLabel(user.role)} · {user.firstName} {user.lastName}
+              </p>
             </div>
           </div>
           <Button 

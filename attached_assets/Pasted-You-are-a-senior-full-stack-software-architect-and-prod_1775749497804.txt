@@ -1,0 +1,325 @@
+You are a senior full-stack software architect and production-grade engineer.
+
+Your task is to inspect the existing “Guest Pro” project and extend it with a new role-based access architecture in a clean SOLID way.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the entire existing codebase, file tree, auth system, role handling, route protection, menu/navigation structure, API authorization, database schema, and manager dashboard.
+- Do NOT rebuild the app from scratch if working systems already exist.
+- Preserve working auth, guest flow, manager flow, AI/chat flow, quota logic, and stable APIs.
+- Refactor only where there is real architectural, security, or maintainability value.
+- The result must be production-ready, SOLID, maintainable, and easy to extend later with more roles and permissions.
+
+PROJECT CONTEXT:
+Guest Pro currently has manager and guest flows.
+We now need to add a new role:
+
+ROLES:
+1. MANAGER
+2. PERSONNEL
+3. GUEST
+
+BUSINESS REQUIREMENTS:
+- MANAGER must have full access to all manager-side features
+- PERSONNEL must have access ONLY to:
+  - Create Guest
+  - Guests List
+- PERSONNEL must NOT have access to:
+  - full settings/admin capabilities
+  - sensitive management features
+  - any feature outside create guest + guests list
+- GUEST flow should remain unchanged
+
+PRIMARY GOAL:
+Implement a professional RBAC (role-based access control) architecture in a SOLID way.
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current auth architecture
+2. Current role model
+3. Current user/session model
+4. Current manager dashboard structure
+5. Current route protection
+6. Current menu/sidebar/tab rendering
+7. Current API authorization checks
+8. Current database schema for users/roles
+9. Current guest creation flow
+10. Current guests list flow
+11. What is already good
+12. What should be preserved
+13. What is too hardcoded or not SOLID
+14. What must be refactored to support PERSONNEL professionally
+
+Then provide:
+- concise architecture audit
+- role/auth gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — DESIGN A SOLID ROLE / PERMISSION ARCHITECTURE
+==================================================
+
+Do NOT implement role checks as scattered if/else blocks across random components.
+
+Implement a professional, maintainable authorization design.
+
+ARCHITECTURE GOAL:
+- central role definitions
+- central permission policy
+- reusable authorization helpers
+- route-level protection
+- API-level protection
+- UI-level capability rendering
+- future-ready for more roles and permissions
+
+Use a clean architecture approach such as:
+- domain
+- application
+- infrastructure
+- presentation
+
+Recommended concepts:
+- Role enum/type
+- Permission enum/type
+- Access policy / authorization matrix
+- Auth context/session role propagation
+- Reusable requireRole / requirePermission helpers
+- UI capability guards
+- API authorization guards
+
+IMPORTANT:
+- Keep business rules centralized
+- Avoid duplicated access logic
+- Avoid fragile UI-only authorization
+- Backend/API authorization must also enforce permissions
+
+==================================================
+PHASE 3 — ADD THE PERSONNEL ROLE
+==================================================
+
+Introduce the PERSONNEL role professionally.
+
+REQUIREMENTS:
+- add PERSONNEL role in all relevant places
+- database / schema if needed
+- auth/session typing
+- role propagation into session/JWT/token/cookies as currently used
+- dashboard logic
+- route protection
+- menu/navigation rendering
+- API authorization
+- validation / seed data if needed
+
+Make sure the role is fully integrated, not partially hacked in.
+
+==================================================
+PHASE 4 — ACCESS RULES
+==================================================
+
+Implement the following exact access rules:
+
+MANAGER:
+- full access to all manager-side features
+
+PERSONNEL:
+- access allowed ONLY to:
+  1. Create Guest
+  2. Guests List
+
+PERSONNEL must be blocked from:
+- settings
+- billing
+- admin controls
+- advanced configuration
+- hotel branding/config if present
+- sensitive management areas
+- any future manager-only feature by default unless explicitly allowed
+
+GUEST:
+- existing guest experience remains unchanged
+- guest must never access manager/personnel interfaces
+
+IMPORTANT SECURITY RULE:
+Even if the UI hides restricted sections, direct URL/API access must still be blocked server-side.
+
+==================================================
+PHASE 5 — DASHBOARD / NAVIGATION / MENU RESTRICTIONS
+==================================================
+
+Update the manager-side UI so access is role-aware.
+
+REQUIREMENTS:
+- MANAGER sees the full dashboard/navigation
+- PERSONNEL sees a reduced navigation focused only on:
+  - Create Guest
+  - Guests List
+- no broken empty dashboard feeling
+- PERSONNEL dashboard should still feel polished and intentional
+- do not show inaccessible options and then fail on click
+- use clean conditional rendering based on centralized permission logic
+
+UX GOAL:
+PERSONNEL should feel like a legitimate restricted staff role, not a broken manager account.
+
+==================================================
+PHASE 6 — ROUTE PROTECTION
+==================================================
+
+Implement or improve professional route-level authorization.
+
+REQUIREMENTS:
+- manager-only pages require MANAGER role
+- personnel-allowed pages accept MANAGER and PERSONNEL where appropriate
+- guest routes remain guest-protected
+- unauthorized access redirects cleanly or shows an appropriate forbidden state
+- no client-only protection
+- ensure server-side checks where applicable
+
+Implement reusable helpers such as:
+- requireManager()
+- requirePersonnelOrManager()
+- requireGuest()
+or a similarly professional abstraction
+
+==================================================
+PHASE 7 — API AUTHORIZATION
+==================================================
+
+Harden backend/API authorization.
+
+REQUIREMENTS:
+- Create Guest API:
+  - allowed for MANAGER and PERSONNEL
+- Guests List API:
+  - allowed for MANAGER and PERSONNEL
+- all other sensitive manager APIs:
+  - MANAGER only unless explicitly allowed
+
+IMPORTANT:
+- do not rely on front-end restrictions only
+- enforce authorization on server/API layer
+- return appropriate HTTP status codes
+- keep error responses safe and clean
+
+==================================================
+PHASE 8 — DATABASE / USER MODEL / SEEDING
+==================================================
+
+Inspect and update the database schema if necessary.
+
+REQUIREMENTS:
+- user role must support MANAGER / PERSONNEL / GUEST as appropriate to the current model
+- migrations must be clean
+- update validation schemas
+- update repositories/services/use-cases
+- preserve data integrity
+- if demo/seed data exists, add a demo PERSONNEL user for testing
+
+If there is already a good role field, preserve it and extend it cleanly.
+
+==================================================
+PHASE 9 — AUTH / SESSION / TOKEN PROPAGATION
+==================================================
+
+Make sure the new role is carried correctly through auth/session mechanisms.
+
+REQUIREMENTS:
+- role available in session/auth context
+- role available in server authorization checks
+- role available in client UI state only as needed
+- avoid insecure client-only trust
+- type-safe session/user models
+- no broken login/logout behavior
+
+Preserve existing working auth structure if already professional.
+
+==================================================
+PHASE 10 — CODE QUALITY / SOLID / MAINTAINABILITY
+==================================================
+
+This must be implemented in a truly SOLID way.
+
+REQUIREMENTS:
+- no giant messy auth file
+- no duplicated role checks everywhere
+- no scattered magic strings
+- use clean naming
+- use centralized policy definitions
+- keep components focused
+- keep access control maintainable and extensible
+- no fake architecture
+- no dead code
+
+Possible clean structure:
+- Role enum / role types
+- Permission definitions
+- AccessPolicy / AuthorizationPolicy
+- AuthGuard helpers
+- Route guard helpers
+- API permission middleware
+- Navigation visibility resolver
+- Dashboard capability resolver
+
+==================================================
+PHASE 11 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- guest login/logout
+- guest dashboard/chat/voice flows
+- manager login
+- Google OAuth manager flow if already implemented
+- guest creation flow
+- guests list flow
+- stable APIs
+- route protection for existing roles
+
+This task is specifically about adding PERSONNEL correctly and hardening authorization.
+
+==================================================
+PHASE 12 — TESTING / VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. MANAGER can still access everything
+2. PERSONNEL can log in successfully
+3. PERSONNEL can access Create Guest
+4. PERSONNEL can access Guests List
+5. PERSONNEL cannot access restricted manager-only pages
+6. PERSONNEL cannot call restricted manager-only APIs
+7. GUEST cannot access personnel/manager interfaces
+8. Navigation renders correctly for MANAGER
+9. Navigation renders correctly for PERSONNEL
+10. Direct URL access to restricted pages is blocked
+11. Existing guest flow remains intact
+12. Existing manager flow remains intact
+
+==================================================
+PHASE 13 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was preserved
+3. What was refactored
+4. How the new role architecture works
+5. How permissions are modeled
+6. Which routes/features are MANAGER-only
+7. Which routes/features PERSONNEL can access
+8. Which files were changed
+9. Any DB/schema changes
+10. Any seed/demo users created
+11. How to test MANAGER vs PERSONNEL access
+12. Any future-ready extension points for more roles/permissions
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result production-ready, SOLID, and maintainable
+- PERSONNEL must feel like a proper restricted staff role, not a hack

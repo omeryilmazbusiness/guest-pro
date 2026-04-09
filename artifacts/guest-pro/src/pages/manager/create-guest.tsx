@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useCreateGuest } from "@workspace/api-client-react";
+import { isStaffRole } from "@/lib/permissions";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import {
@@ -72,7 +73,7 @@ export default function CreateGuest() {
   useEffect(() => {
     if (!isAuthenticated) {
       setLocation("/");
-    } else if (user?.role !== "manager") {
+    } else if (user && !isStaffRole(user.role)) {
       setLocation("/guest");
     }
   }, [isAuthenticated, user, setLocation]);
@@ -102,7 +103,7 @@ export default function CreateGuest() {
     }
   };
 
-  if (!isAuthenticated || user?.role !== "manager") return null;
+  if (!isAuthenticated || !isStaffRole(user?.role)) return null;
 
   return (
     <div className="min-h-[100dvh] bg-zinc-50/50 pb-20">

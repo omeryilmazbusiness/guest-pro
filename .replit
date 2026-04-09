@@ -1,4 +1,4 @@
-modules = ["nodejs-24"]
+modules = ["nodejs-24", "postgresql-16"]
 
 [[artifacts]]
 id = "artifacts/api-server"
@@ -29,3 +29,6 @@ timeoutMs = 20000
 
 [userenv.shared]
 AUTH_GOOGLE_REDIRECT_URI = "https://0e04b30e-59ee-419c-8c04-46df692d0250-00-293phdtk46kni.janeway.replit.dev/api/auth/google/callback"
+
+[nix]
+channel = "stable-25_05"

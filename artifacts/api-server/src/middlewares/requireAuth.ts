@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { verifyToken } from "../lib/auth";
+import { isStaffRole } from "../lib/roles";
 
 declare global {
   namespace Express {
@@ -14,6 +15,7 @@ declare global {
   }
 }
 
+/** Verifies the Bearer token and attaches the decoded session to req.session. */
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -30,6 +32,10 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   next();
 }
 
+/**
+ * Requires an authenticated manager (role === "manager").
+ * Use this for sensitive hotel management operations.
+ */
 export function requireManager(req: Request, res: Response, next: NextFunction): void {
   requireAuth(req, res, () => {
     if (req.session?.role !== "manager") {
@@ -40,6 +46,21 @@ export function requireManager(req: Request, res: Response, next: NextFunction):
   });
 }
 
+/**
+ * Requires any authenticated staff member (manager or personnel).
+ * Use this for operations both roles are permitted to perform (e.g. guest creation, guest list).
+ */
+export function requireStaff(req: Request, res: Response, next: NextFunction): void {
+  requireAuth(req, res, () => {
+    if (!isStaffRole(req.session?.role ?? "")) {
+      res.status(403).json({ error: "Staff access required" });
+      return;
+    }
+    next();
+  });
+}
+
+/** Requires an authenticated hotel guest. */
 export function requireGuest(req: Request, res: Response, next: NextFunction): void {
   requireAuth(req, res, () => {
     if (req.session?.role !== "guest") {
@@ -51,16 +72,15 @@ export function requireGuest(req: Request, res: Response, next: NextFunction): v
 }
 
 /**
- * Ensures the authenticated user belongs to the hotel in the route param
- * or query param `:hotelId`. Use after requireManager or requireGuest.
- * Example:  router.get("/hotels/:hotelId/data", requireManager, requireHotelScope, handler)
+ * Ensures the authenticated user belongs to the hotel in the route param `:hotelId`.
+ * Use after requireManager, requireStaff, or requireGuest.
  */
 export function requireHotelScope(req: Request, res: Response, next: NextFunction): void {
   const paramHotelId = req.params.hotelId
     ? parseInt(req.params.hotelId, 10)
     : NaN;
   if (isNaN(paramHotelId)) {
-    next(); // No hotelId param — nothing to enforce
+    next();
     return;
   }
   if (req.session?.hotelId !== paramHotelId) {

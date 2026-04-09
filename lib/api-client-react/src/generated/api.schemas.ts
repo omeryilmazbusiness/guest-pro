@@ -22,6 +22,7 @@ export type LoginRequestType =
 
 export const LoginRequestType = {
   manager: "manager",
+  personnel: "personnel",
   guest: "guest",
 } as const;
 
@@ -40,6 +41,7 @@ export type LoginResponseRole =
 
 export const LoginResponseRole = {
   manager: "manager",
+  personnel: "personnel",
   guest: "guest",
 } as const;
 
@@ -48,6 +50,7 @@ export type CurrentUserRole =
 
 export const CurrentUserRole = {
   manager: "manager",
+  personnel: "personnel",
   guest: "guest",
 } as const;
 

@@ -2,13 +2,13 @@ import { Router } from "express";
 import type { IRouter } from "express";
 import { db, guestsTable, guestKeysTable, auditLogsTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
-import { requireManager } from "../middlewares/requireAuth";
+import { requireStaff } from "../middlewares/requireAuth";
 import { generateGuestKey } from "../lib/auth";
 import { deriveLocaleFromCountry } from "../lib/locale";
 
 const router: IRouter = Router();
 
-router.get("/guests", requireManager, async (req, res): Promise<void> => {
+router.get("/guests", requireStaff, async (req, res): Promise<void> => {
   const hotelId = req.session!.hotelId;
   const guests = await db
     .select({
@@ -30,7 +30,7 @@ router.get("/guests", requireManager, async (req, res): Promise<void> => {
   res.json(guests);
 });
 
-router.post("/guests", requireManager, async (req, res): Promise<void> => {
+router.post("/guests", requireStaff, async (req, res): Promise<void> => {
   const { firstName, lastName, roomNumber, countryCode } = req.body;
   const hotelId = req.session!.hotelId;
   const actorId = req.session!.userId;
@@ -85,7 +85,7 @@ router.post("/guests", requireManager, async (req, res): Promise<void> => {
   });
 });
 
-router.get("/guests/:id", requireManager, async (req, res): Promise<void> => {
+router.get("/guests/:id", requireStaff, async (req, res): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const id = parseInt(rawId, 10);
   if (isNaN(id)) {

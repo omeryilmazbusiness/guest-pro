@@ -17,6 +17,7 @@ import {
   clearFailedLogins,
 } from "../lib/auth";
 import { requireAuth } from "../middlewares/requireAuth";
+import { isStaffRole } from "../lib/roles";
 import { env } from "../config/env";
 import { logger } from "../lib/logger";
 
@@ -118,26 +119,28 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     }
 
     clearFailedLogins(rateLimitKey);
-    const token = generateToken(user.id, "manager", user.hotelId);
+    // Use the user's actual DB role (manager or personnel) — never hardcode "manager"
+    const staffRole = user.role;
+    const token = generateToken(user.id, staffRole, user.hotelId);
 
     db.insert(auditLogsTable)
       .values({
         hotelId: user.hotelId,
         actorId: user.id,
-        actorType: "manager",
+        actorType: staffRole,
         action: "login_success",
         targetType: "user",
         targetId: user.id,
-        metadata: { email: user.email, provider: "local", ip: getClientIp(req) },
+        metadata: { email: user.email, provider: "local", role: staffRole, ip: getClientIp(req) },
       })
       .catch(() => {});
 
     res.json({
-      role: "manager",
+      role: staffRole,
       token,
       user: {
         id: user.id,
-        role: "manager",
+        role: staffRole,
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
@@ -200,15 +203,17 @@ router.post("/auth/logout", (_req, res): void => {
 router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
   const session = req.session!;
 
-  if (session.role === "manager") {
+  // Handle all staff roles (manager, personnel) the same way
+  if (isStaffRole(session.role)) {
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, session.userId));
     if (!user) {
       res.status(401).json({ error: "User not found" });
       return;
     }
+    // Return the DB role, not the session role, so a permission change takes effect on next /auth/me call
     res.json({
       id: user.id,
-      role: "manager",
+      role: user.role,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
@@ -313,7 +318,8 @@ router.get("/auth/google/callback", async (req, res): Promise<void> => {
     }
 
     const user = await findOrCreateGoogleManager(profile, hotel.id);
-    const token = generateToken(user.id, "manager", user.hotelId);
+    // Google OAuth creates/finds users always with manager role
+    const token = generateToken(user.id, user.role, user.hotelId);
 
     // Issue a short-lived exchange code (60 s) — keeps the real token out of
     // browser history and server access logs.

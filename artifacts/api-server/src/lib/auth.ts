@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { db, usersTable, guestKeysTable, guestsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { env } from "../config/env";
+import { TOKEN_TTL_BY_ROLE } from "./roles";
 
 // ---------------------------------------------------------------------------
 // Password hashing — per-user random salt, PBKDF2 (v3)
@@ -60,13 +61,9 @@ export function generateGuestKey(): { key: string; keyHash: string } {
 
 // ---------------------------------------------------------------------------
 // Token — HMAC-signed, with expiry
-//   Manager tokens expire in 12 hours
+//   Staff tokens (manager, personnel) expire in 12 hours
 //   Guest tokens expire in 7 days
 // ---------------------------------------------------------------------------
-const TOKEN_TTL_MS: Record<string, number> = {
-  manager: 12 * 60 * 60 * 1000,
-  guest: 7 * 24 * 60 * 60 * 1000,
-};
 
 export function generateToken(
   userId: number,
@@ -75,7 +72,7 @@ export function generateToken(
   guestId?: number
 ): string {
   const now = Date.now();
-  const exp = now + (TOKEN_TTL_MS[role] ?? TOKEN_TTL_MS.manager);
+  const exp = now + (TOKEN_TTL_BY_ROLE[role] ?? TOKEN_TTL_BY_ROLE.manager);
   const payload = JSON.stringify({ userId, role, hotelId, guestId, iat: now, exp });
   const sig = crypto
     .createHmac("sha256", env.SESSION_SECRET!)
