@@ -1,0 +1,174 @@
+You are working on an EXISTING application.
+
+Your task is to professionally integrate the newly provided Guest Pro logo into the app branding in the cleanest, safest, most professional, SOLID-compliant, production-ready way.
+
+IMPORTANT RULES
+- Do NOT rebuild the app from scratch
+- Do NOT break existing login, header, navigation, or layout flows
+- First inspect the current branding structure deeply
+- Then directly implement the logo integration
+- Preserve good architecture where possible
+- Refactor only where needed for maintainability, consistency, correctness, or production readiness
+- Keep TypeScript strict
+- No `any`
+- No fragile hacks
+- Do NOT randomly paste the image into screens
+- The logo must be integrated intentionally and professionally
+- The result must feel premium, minimal, modern, and production-ready
+
+PRIMARY GOALS
+
+1) LOGIN SCREEN BRANDING
+On the Guest Pro login screen:
+- place the provided new logo ABOVE the “Guest Pro” text
+- keep the Guest Pro title text visible
+- make the composition feel premium and balanced
+- the logo must not look stretched, blurry, oversized, cramped, or awkward
+- spacing between logo, title, subtitle, and form must be visually refined
+
+2) APP HEADER BRANDING AFTER LOGIN
+Once logged in:
+- the logo must appear in the header in the correct places
+- integrate it professionally into the top header / top-left brand area where appropriate
+- ensure it works across the relevant logged-in screens/layouts
+- keep header layout clean, balanced, and premium
+- do not crowd titles, actions, badges, language selectors, or logout/profile icons
+
+3) SHARED, MAINTAINABLE LOGO INTEGRATION
+- use the provided image as the official Guest Pro logo asset
+- centralize usage via a reusable branding/logo component if appropriate
+- allow different size variants (login hero vs header brand)
+- do not duplicate messy inline image styling across multiple files
+
+LOGO SOURCE
+Use the newly provided logo image file as the Guest Pro logo asset.
+
+FIRST TASK — ANALYZE BEFORE IMPLEMENTING
+Before changing anything, inspect and understand all of the following:
+
+1. CURRENT LOGIN SCREEN
+- where “Guest Pro” text is rendered
+- whether there is already an icon/brand element above it
+- how the login hero/branding area is structured
+- what spacing and visual hierarchy currently exist
+
+2. CURRENT HEADER STRUCTURE
+- which layouts/screens use shared headers
+- where top-left brand/title area is defined
+- whether guest, manager, admin, or other role-based headers differ
+- which logged-in surfaces should show the logo
+- whether there is already a shared header brand component
+
+3. CURRENT ASSET / BRANDING STRUCTURE
+- where image assets are stored
+- how existing brand assets are loaded
+- whether a shared branding component already exists
+- the best place to store and reference the new logo
+
+4. DESIGN / VISUAL CONTEXT
+- current theme
+- current spacing system
+- current typography hierarchy
+- how to make the new logo feel native to the app instead of pasted in
+
+Then directly implement the requested branding update.
+
+IMPLEMENTATION PRIORITY
+
+PHASE 1 — LOGIN SCREEN LOGO INTEGRATION
+1. Add the new logo above the “Guest Pro” title on the login screen
+2. Size it correctly
+3. Keep aspect ratio correct
+4. Tune spacing and visual hierarchy carefully
+5. Make the login branding feel premium and intentional
+6. Ensure it looks excellent on Android and iOS
+
+Acceptance criteria:
+- logo is clearly visible above “Guest Pro”
+- layout looks premium and balanced
+- no stretching, clipping, or poor alignment
+- title and subtitle still remain readable and elegant
+
+PHASE 2 — HEADER LOGO INTEGRATION
+1. Add the logo into the header on logged-in screens where branding belongs
+2. Use the top-left header area professionally
+3. Adjust:
+   - logo size
+   - padding
+   - title alignment
+   - spacing with actions/icons
+4. Ensure the header remains clean and not overcrowded
+5. Reuse shared header logic if appropriate
+
+Acceptance criteria:
+- logged-in header shows the logo in the correct brand position
+- header remains visually clean and premium
+- no overlap with icons, titles, badges, or safe area
+
+PHASE 3 — CREATE / UPDATE SHARED BRAND COMPONENT
+1. If appropriate, create or update a reusable logo/brand component
+2. Support at least:
+   - login size variant
+   - header size variant
+3. Centralize the asset reference
+4. Avoid duplicated styling logic
+5. Keep future logo changes easy
+
+Acceptance criteria:
+- branding is maintainable
+- no scattered logo code
+- clear shared usage pattern exists
+
+PHASE 4 — POLISH / HARDENING
+1. Verify crisp rendering on Android and iOS
+2. Verify the logo scales well on smaller screens
+3. Verify no layout regressions in login and header
+4. Ensure transparent/edge rendering looks clean on all backgrounds
+5. Leave the codebase cleaner than before
+
+DESIGN EXPECTATIONS
+The final result must feel:
+- premium
+- minimal
+- modern
+- balanced
+- branded
+- trustworthy
+- production-ready
+
+The logo should not dominate the UI.
+It should elevate the brand identity.
+
+YOU MUST CHECK FOR THESE RISKS
+- login screen and header may use different branding structures
+- logo may appear too heavy in header if not resized properly
+- safe area and top padding may shift the header layout
+- some screens may use different header variants
+- current title alignment may break if logo is inserted incorrectly
+- the logo may still need different treatment for dark vs light header surfaces
+
+OUTPUT FORMAT WHILE WORKING
+As you implement, report:
+1. What you found in the current branding structure
+2. Exact files changed
+3. Why each change was made
+4. Manual test steps
+
+FINAL DELIVERABLE
+When finished, provide:
+1. Summary of login screen logo integration
+2. Summary of header logo integration
+3. Exact files changed
+4. Manual QA checklist for Android and iOS
+5. Remaining future improvements if any
+
+FINAL STRICT RULE
+This task is NOT complete unless:
+- the provided logo is professionally placed above “Guest Pro” on the login screen
+- the logo appears in the correct logged-in header branding areas
+- the result looks premium, balanced, and production-ready
+- layouts remain stable on Android and iOS
+
+START NOW
+First inspect the current login branding structure and logged-in header structure deeply.
+Then integrate the provided logo end-to-end professionally.

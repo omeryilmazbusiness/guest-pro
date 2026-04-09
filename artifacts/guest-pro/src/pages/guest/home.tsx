@@ -20,6 +20,7 @@ import {
   ArrowRight,
   MessageSquare,
 } from "lucide-react";
+import { GuestProLogo } from "@/components/GuestProLogo";
 import { toast } from "sonner";
 import { useVoice } from "@/hooks/use-voice";
 import { tFmt } from "@/lib/i18n";
@@ -104,9 +105,7 @@ export default function GuestHome() {
       <header className="bg-white/95 backdrop-blur-sm border-b border-zinc-100/80 sticky top-0 z-20">
         <div className="max-w-2xl mx-auto px-5 h-[64px] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-zinc-900 flex items-center justify-center shrink-0">
-              <Sparkles className="w-3.5 h-3.5 text-white" />
-            </div>
+            <GuestProLogo variant="header" />
             <span className="font-serif text-[17px] font-medium text-zinc-900 tracking-tight">
               {branding?.appName || "Guest Pro"}
             </span>

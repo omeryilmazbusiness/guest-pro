@@ -4,6 +4,7 @@ import { useListGuests, useLogout } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { Plus, LogOut, Users, Search, DoorClosed, Loader2, Eye, EyeOff, Hash, KeyRound } from "lucide-react";
+import { GuestProLogo } from "@/components/GuestProLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -53,8 +54,8 @@ export default function ManagerDashboard() {
       <header className="bg-white border-b border-zinc-100 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 md:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center">
-              <Users className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-2xl bg-white border border-zinc-100 shadow-sm flex items-center justify-center shrink-0">
+              <GuestProLogo variant="header" className="w-[22px] h-[22px]" />
             </div>
             <div>
               <h1 className="font-serif text-xl font-medium text-zinc-900">Manager Dashboard</h1>

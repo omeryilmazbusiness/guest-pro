@@ -12,6 +12,7 @@ import {
   EyeOff,
   Info,
 } from "lucide-react";
+import { GuestProLogo } from "@/components/GuestProLogo";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -278,19 +279,20 @@ export default function Login() {
       <div className="w-full max-w-sm mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
         {/* Brand header */}
-        <header className="text-center space-y-3">
-          <div
-            aria-hidden="true"
-            className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white shadow-sm border border-zinc-100 mb-3"
-          >
-            <div className="w-7 h-7 rounded-full bg-zinc-900" />
+        <header className="text-center space-y-4">
+          <div className="flex flex-col items-center gap-5">
+            <div className="inline-flex items-center justify-center w-[88px] h-[88px] rounded-[28px] bg-white shadow-md shadow-zinc-200/60 border border-zinc-100/80">
+              <GuestProLogo variant="login" />
+            </div>
+            <div className="space-y-1.5">
+              <h1 className="text-3xl font-serif tracking-tight text-zinc-900">
+                Guest Pro
+              </h1>
+              <p className="text-zinc-500 text-sm font-medium">
+                A premium stay experience
+              </p>
+            </div>
           </div>
-          <h1 className="text-3xl font-serif tracking-tight text-zinc-900">
-            Guest Pro
-          </h1>
-          <p className="text-zinc-500 text-sm font-medium">
-            A premium stay experience
-          </p>
         </header>
 
         {/* Card */}
