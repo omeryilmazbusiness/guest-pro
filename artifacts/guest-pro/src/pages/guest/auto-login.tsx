@@ -27,6 +27,10 @@ const ERROR_TITLES: Record<string, string> = {
   qr_invalid: "QR Code Expired",
   guest_not_found: "Account Not Found",
   invalid_token: "Invalid QR Code",
+  // Stay-window specific codes (returned instead of generic stay_access_denied)
+  stay_upcoming: "Access Not Yet Active",
+  stay_expired: "Stay Has Expired",
+  // Legacy generic code — kept for backward-compatibility
   stay_access_denied: "Access Unavailable",
 };
 
@@ -34,6 +38,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   qr_invalid: "This QR code has expired or was already used.",
   guest_not_found: "The guest account linked to this QR code no longer exists.",
   invalid_token: "The QR code appears to be corrupted or incomplete.",
+  // For stay_upcoming and stay_expired the API message is used directly (see below)
 };
 
 export default function GuestAutoLogin() {
@@ -82,10 +87,15 @@ export default function GuestAutoLogin() {
         setErrorTitle(
           code && ERROR_TITLES[code] ? ERROR_TITLES[code] : "QR Code Expired"
         );
-        // Prefer the API's own professional message (e.g., stay denial),
-        // then the code-specific fallback, then the generic fallback.
+        // Stay-window denials carry a professional guest-facing message from the
+        // server — always use it directly so the message matches the code exactly.
+        // For other errors, use the hard-coded fallback or the generic message.
+        const isStayDenial =
+          code === "stay_upcoming" ||
+          code === "stay_expired" ||
+          code === "stay_access_denied";
         setErrorMessage(
-          apiMessage && code === "stay_access_denied"
+          isStayDenial && apiMessage
             ? apiMessage
             : code && ERROR_MESSAGES[code]
               ? ERROR_MESSAGES[code]

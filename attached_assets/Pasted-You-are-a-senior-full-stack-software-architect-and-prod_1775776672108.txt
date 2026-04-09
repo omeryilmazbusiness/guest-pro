@@ -1,0 +1,264 @@
+You are a senior full-stack software architect and production-grade debugging engineer.
+
+Your task is to inspect, diagnose, and fix a production issue in the existing “Guest Pro” project related to QR auto-login and stay-window validation.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, auth flow, guest login flow, QR auto-login flow, guest stay validation logic, date/time handling, and database schema.
+- Do NOT rebuild the project from scratch if working parts already exist.
+- Preserve working guest key login, manager/staff flows, QR architecture, route protection, and stable APIs.
+- Refactor only where there is real architectural, maintainability, or production value.
+- The fix must be production-ready, SOLID, layered, and safe.
+
+BUG CONTEXT:
+When a guest tries to log in using the QR login system, the system incorrectly returns:
+“Your access is not active yet.”
+
+This happens even when the guest actually satisfies the valid stay conditions:
+- check-in and check-out should allow access
+- the stay is active
+- QR login should succeed
+
+PRIMARY GOALS:
+1. Find the real root cause of why QR login fails the stay-window validation
+2. Fix the issue professionally
+3. Ensure QR login and normal guest login use the same correct stay-access policy
+4. Ensure check-in / check-out / extension logic is interpreted correctly
+5. Keep the architecture clean and centralized
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current normal guest login flow
+2. Current QR auto-login flow
+3. Current guest access validation logic
+4. Current check-in / check-out data model
+5. Current originalCheckOutDate / currentCheckOutDate / extension logic if present
+6. Current timezone/date parsing strategy
+7. Current session creation order in QR login
+8. Current route protection / login gating
+9. Current guest lookup logic in QR login
+10. What already works
+11. What should be preserved
+12. Where the validation mismatch might be happening
+
+Then provide:
+- concise architecture audit
+- root-cause analysis candidates
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — FIND THE REAL ROOT CAUSE
+==================================================
+
+Diagnose the issue deeply.
+
+Check all likely causes:
+
+1. QR login flow and normal guest login use different validation paths
+2. QR login reads the wrong stay fields
+3. Validation uses originalCheckOutDate instead of currentCheckOutDate
+4. Validation ignores extension state
+5. Validation runs before guest data is fully resolved
+6. Timezone mismatch:
+   - server timezone
+   - database timezone
+   - browser timezone
+   - hotel timezone
+7. Date normalization bug:
+   - start of day vs exact datetime
+   - end of day vs exact datetime
+8. check-in/check-out stored as date-only but validated as datetime incorrectly
+9. QR token resolves the wrong guest or stale guest state
+10. Guest stay is active but validator says “not active yet” due to reversed condition logic
+11. QR login path bypasses the correct guest access validator and uses outdated legacy logic
+12. Extension edit flow updates UI/data partially but QR validator still checks old values
+
+Do not guess.
+Find the actual technical root cause.
+
+==================================================
+PHASE 3 — CENTRALIZE THE GUEST ACCESS POLICY
+==================================================
+
+Refactor the stay-access validation so there is one real source of truth.
+
+REQUIREMENTS:
+- normal guest key login and QR login must use the same centralized access validator
+- avoid duplicated or inconsistent stay validation logic
+- create or improve a clean policy/service layer such as:
+  - GuestStayPolicy
+  - GuestAccessValidator
+  - GuestLoginEligibilityService
+- UI and controller/route layers must not contain business date logic
+
+The validator must correctly support:
+- active stay
+- upcoming stay
+- expired stay
+- extended stay
+- original vs current checkout tracking
+- hotel/system timezone consistency
+
+==================================================
+PHASE 4 — FIX STAY WINDOW VALIDATION CORRECTLY
+==================================================
+
+Implement the correct access rules professionally.
+
+EXPECTED RULES:
+- access is allowed only if current time is within the valid stay window
+- if stay was extended, currentCheckOutDate must be the active checkout boundary
+- originalCheckOutDate must be preserved for history but not used as the active access boundary after extension
+- if guest is upcoming, show a “not active yet” message
+- if guest is expired, show an “expired” message
+- if guest is active, QR login and normal login must succeed
+
+IMPORTANT:
+- define exact behavior for date-only vs datetime values
+- normalize dates correctly
+- do not leave ambiguous timezone handling
+- use the hotel/system timezone intentionally and consistently
+
+==================================================
+PHASE 5 — PROFESSIONAL TIMEZONE / DATE HANDLING
+==================================================
+
+Harden the date/time implementation.
+
+REQUIREMENTS:
+- inspect how dates are stored in DB
+- inspect whether they are date-only or datetime
+- inspect timezone assumptions in server and client
+- choose a clear production-ready rule
+- make comparison logic deterministic and centralized
+- avoid silent browser-local timezone dependency for auth decisions
+
+If useful, define:
+- check-in effective start time
+- check-out effective end time
+- extension update semantics
+- hotel timezone or system default timezone
+
+==================================================
+PHASE 6 — FIX QR LOGIN FLOW END-TO-END
+==================================================
+
+Ensure the QR login flow is clean and correct.
+
+REQUIREMENTS:
+- QR token resolves the correct guest
+- guest access validation uses the centralized validator
+- if guest is active, auto-login succeeds
+- session is created correctly
+- redirect to guest dashboard works
+- if invalid, expired, or not-yet-active, return the correct message
+- do not break existing secure QR token architecture
+
+==================================================
+PHASE 7 — ERROR MESSAGE CORRECTNESS
+==================================================
+
+Make sure the system shows the right message for the right reason.
+
+REQUIREMENTS:
+- do not show “Your access is not active yet” when the stay is actually active
+- if upcoming stay:
+  show correct “not active yet” message
+- if expired stay:
+  show correct “expired” message
+- if QR token invalid:
+  show correct invalid/expired QR message
+- guest-facing messaging must remain clear, calm, and premium
+
+==================================================
+PHASE 8 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement this fix in a clean maintainable architecture.
+
+REQUIREMENTS:
+- no scattered date logic in routes/pages/components
+- no duplicated validation in QR and normal login paths
+- centralize stay eligibility rules
+- centralize QR login resolution flow
+- no dead code
+- no fake architecture
+- clean naming
+- maintainable modules only
+
+Possible clean structure:
+- GuestStayPolicy
+- GuestAccessValidator
+- GuestLoginEligibilityService
+- QrAutoLoginService
+- StayWindowResolver
+- GuestSessionLoginUseCase
+
+==================================================
+PHASE 9 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- manager login
+- staff/personnel login
+- normal guest key login
+- QR secure token flow
+- guest dashboard/chat/voice features
+- route protection
+- stay extension functionality
+- stable APIs
+
+This task is specifically about fixing QR auto-login vs stay-window validation inconsistency.
+
+==================================================
+PHASE 10 — TESTING / VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Normal guest login works for active stay
+2. QR guest login works for active stay
+3. Upcoming stay correctly shows “not active yet”
+4. Expired stay correctly shows “expired”
+5. Extended stay uses currentCheckOutDate correctly
+6. originalCheckOutDate is preserved correctly
+7. QR token resolves the correct guest
+8. Session creation and redirect work correctly
+9. No timezone bug remains
+10. No regression in auth or guest flows
+
+Add or improve tests for:
+- active stay
+- upcoming stay
+- expired stay
+- extended stay
+- QR login with active stay
+- QR login with upcoming stay
+- QR login with expired stay
+
+==================================================
+PHASE 11 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. Exact root cause of the QR login validation bug
+3. What was fixed
+4. What was centralized/refactored
+5. How the stay-access policy now works
+6. How QR login now works
+7. How timezone/date handling now works
+8. Which files were changed
+9. Any schema/data handling changes
+10. How to test the fix end-to-end
+
+IMPORTANT:
+- Start with inspection first
+- Then fix the bug professionally
+- Keep the result SOLID, layered, production-ready, and safe
+- Do not apply a superficial patch; solve the real validation mismatch

@@ -42,9 +42,24 @@ When a guest is created, a **single-use 24-hour QR auto-login token** is issued 
 2. `GuestHandoffModal` opens with QR code (rendered via `qrcode` canvas), key display, copy button
 3. Guest scans QR → lands on `/guest/auto-login?token=...` page
 4. Page calls `GET /api/auth/guest/qr-login?token=...` (no auth required)
-5. Server validates token hash, marks `usedAt`, issues guest JWT, returns session
+5. Server validates token (read-only) → loads guest → checks stay window → if OK, marks `usedAt`, issues guest JWT
 6. Frontend stores token → redirects to `/guest`
 7. Invalid/expired/used tokens show a clean dark error page with "Sign in with Guest Key" fallback
+
+### Validate-then-Consume Pattern (critical)
+The QR login route uses a two-step validation:
+1. `lookupValidQrToken()` — validates cryptographically, no DB write
+2. Stay-window check via `evaluateStayAccess()` — uses `guest-stay-policy.ts`
+3. `consumeValidQrToken()` — only called AFTER all checks pass
+
+If the stay window check fails (upcoming or expired), the token is **NOT consumed**.
+This allows the guest to scan the same QR code when their check-in date arrives, without needing staff to issue a new one.
+
+### Stay-Window Error Codes
+Both guest key login and QR login return specific machine-readable codes:
+- `stay_upcoming` — check-in date is in the future
+- `stay_expired` — checkout date has passed
+The legacy `stay_access_denied` code is no longer emitted but is handled in the frontend for backward-compatibility.
 
 ### Key Files
 - `lib/db/src/schema/guests.ts` — `guestQrTokensTable` (new)

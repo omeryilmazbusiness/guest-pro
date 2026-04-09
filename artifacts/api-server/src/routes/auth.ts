@@ -19,9 +19,9 @@ import { requireAuth } from "../middlewares/requireAuth";
 import { isStaffRole } from "../lib/roles";
 import { env } from "../config/env";
 import { logger } from "../lib/logger";
-import { consumeQrToken } from "../lib/qr-token";
+import { lookupValidQrToken, consumeValidQrToken } from "../lib/qr-token";
 import { deriveLocaleFromCountry } from "../lib/locale";
-import { getAccessDenialReason } from "../lib/guest-stay-policy";
+import { evaluateStayAccess } from "../lib/guest-stay-policy";
 
 const router: IRouter = Router();
 
@@ -165,13 +165,13 @@ router.post("/auth/login", async (req, res): Promise<void> => {
 
     // ── Stay-window policy ────────────────────────────────────────────────────
     // Credentials are valid — now enforce the stay access window.
-    // This is the authoritative server-side check; UI messages are intentionally
-    // guest-facing and hospitality-appropriate.
-    const denialReason = getAccessDenialReason({
+    // evaluateStayAccess returns a specific code (stay_upcoming / stay_expired)
+    // and a guest-facing message, or null when access is permitted.
+    const stayDenial = evaluateStayAccess({
       checkInDate: guest.checkInDate,
       checkOutDate: guest.checkOutDate,
     });
-    if (denialReason) {
+    if (stayDenial) {
       db.insert(auditLogsTable)
         .values({
           hotelId: guest.hotelId,
@@ -181,14 +181,14 @@ router.post("/auth/login", async (req, res): Promise<void> => {
           targetType: "guest",
           targetId: guest.id,
           metadata: {
-            reason: denialReason,
+            code: stayDenial.code,
             checkInDate: guest.checkInDate,
             checkOutDate: guest.checkOutDate,
             ip: getClientIp(req),
           },
         })
         .catch(() => {});
-      res.status(403).json({ error: denialReason, code: "stay_access_denied" });
+      res.status(403).json({ error: stayDenial.message, code: stayDenial.code });
       return;
     }
     // ─────────────────────────────────────────────────────────────────────────
@@ -269,15 +269,15 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
     // This ensures that when a stay expires the guest is logged out on the next
     // poll, and when a manager extends the stay the guest regains access
     // immediately on the next poll — without requiring a new login.
-    const denialReason = getAccessDenialReason({
+    const sessionDenial = evaluateStayAccess({
       checkInDate: guest.checkInDate,
       checkOutDate: guest.checkOutDate,
     });
-    if (denialReason) {
+    if (sessionDenial) {
       // Return 401 so the frontend treats the session as expired and redirects
       // the guest to the login page, where they will see the specific message
       // upon their next login attempt.
-      res.status(401).json({ error: denialReason, code: "stay_access_denied" });
+      res.status(401).json({ error: sessionDenial.message, code: sessionDenial.code });
       return;
     }
     // ─────────────────────────────────────────────────────────────────────────
@@ -432,8 +432,21 @@ router.get("/auth/google/status", (_req, res): void => {
 
 // ---------------------------------------------------------------------------
 // GET /auth/guest/qr-login?token=<rawToken>
-//   Validates a single-use QR auto-login token, creates a guest session.
-//   Rate-limited: same in-memory mechanism used for guest key login.
+//   Validates a single-use QR auto-login token and creates a guest session.
+//
+//   IMPORTANT — validate-then-consume pattern:
+//   We intentionally separate token validation from token consumption so that
+//   a stay-window denial does NOT burn the QR code.  This allows a guest to:
+//     • Receive their QR at any time before check-in
+//     • Scan it on their actual check-in date and succeed
+//     • Not need staff intervention just because they scanned too early
+//
+//   Order of operations:
+//     1. Validate QR token (cryptographic check only, no DB mutation)
+//     2. Load fresh guest record
+//     3. Evaluate stay-window policy
+//     4. If denied → return error with specific code; token remains valid
+//     5. If allowed → consume token (single-use enforcement), issue session JWT
 // ---------------------------------------------------------------------------
 router.get("/auth/guest/qr-login", async (req, res): Promise<void> => {
   const rawToken = req.query.token as string | undefined;
@@ -444,10 +457,12 @@ router.get("/auth/guest/qr-login", async (req, res): Promise<void> => {
 
   const ip = getClientIp(req);
   const userAgent = req.headers["user-agent"] ?? undefined;
+  const meta = { ip, userAgent };
 
-  const result = await consumeQrToken(rawToken, { ip, userAgent });
-  if (!result) {
-    // Don't reveal whether token was expired, used, or never existed
+  // ── Step 1: Validate the QR token (read-only — no DB mutations yet) ────────
+  const validation = await lookupValidQrToken(rawToken, meta);
+  if (!validation) {
+    // Don't reveal whether the token was expired, used, or never existed
     res.status(401).json({
       error: "This QR code is no longer valid. Please ask hotel staff for a new one.",
       code: "qr_invalid",
@@ -455,31 +470,55 @@ router.get("/auth/guest/qr-login", async (req, res): Promise<void> => {
     return;
   }
 
-  const { guestId, hotelId } = result;
+  // ── Step 2: Load the fresh guest record ────────────────────────────────────
+  const [guest] = await db
+    .select()
+    .from(guestsTable)
+    .where(eq(guestsTable.id, validation.guestId));
 
-  // Load guest to build the auth session response
-  const [guest] = await db.select().from(guestsTable).where(eq(guestsTable.id, guestId));
   if (!guest) {
     res.status(404).json({ error: "Guest account not found", code: "guest_not_found" });
     return;
   }
 
-  // ── Stay-window policy ──────────────────────────────────────────────────────
-  // QR tokens are single-use and valid; enforce the stay window before issuing
-  // an auth token. If denied, the QR code has already been consumed to prevent
-  // replay, so the guest must request a new one after their stay is extended.
-  const qrDenialReason = getAccessDenialReason({
+  // ── Step 3: Evaluate stay-window policy ─────────────────────────────────────
+  // Enforce the stay window BEFORE consuming the token so that a denial (e.g.,
+  // "upcoming stay") does not permanently invalidate the QR.  The guest can
+  // scan the same QR code when their check-in date arrives.
+  const stayDenial = evaluateStayAccess({
     checkInDate: guest.checkInDate,
     checkOutDate: guest.checkOutDate,
   });
-  if (qrDenialReason) {
-    res.status(403).json({ error: qrDenialReason, code: "stay_access_denied" });
+
+  if (stayDenial) {
+    // Token is NOT consumed — guest can retry on their check-in date.
+    db.insert(auditLogsTable)
+      .values({
+        hotelId: guest.hotelId,
+        actorId: null,
+        actorType: "guest",
+        action: "qr_login_denied_stay_window",
+        targetType: "guest",
+        targetId: guest.id,
+        metadata: {
+          code: stayDenial.code,
+          checkInDate: guest.checkInDate,
+          checkOutDate: guest.checkOutDate,
+          ip,
+        },
+      })
+      .catch(() => {});
+
+    res.status(403).json({ error: stayDenial.message, code: stayDenial.code });
     return;
   }
-  // ─────────────────────────────────────────────────────────────────────────
 
+  // ── Step 4: All checks passed — consume the token (single-use enforcement) ─
+  await consumeValidQrToken(validation.rowId, meta);
+
+  // ── Step 5: Issue the guest session JWT ────────────────────────────────────
   const syntheticUserId = guest.id * -1;
-  const token = generateToken(syntheticUserId, "guest", hotelId, guest.id);
+  const token = generateToken(syntheticUserId, "guest", validation.hotelId, guest.id);
 
   const { voiceLocale } = deriveLocaleFromCountry(guest.countryCode ?? "TR");
   const resolvedLanguage = guest.language || voiceLocale;
