@@ -17,24 +17,38 @@ function getAppBase(req: Request): string {
   return `${proto}://${host}`;
 }
 
+/** Validate a date string is in YYYY-MM-DD format. */
+function isValidDate(s: unknown): s is string {
+  if (typeof s !== "string") return false;
+  return /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
+
+// Guest fields projected in all SELECT operations.
+const GUEST_SELECT = {
+  id: guestsTable.id,
+  firstName: guestsTable.firstName,
+  lastName: guestsTable.lastName,
+  roomNumber: guestsTable.roomNumber,
+  countryCode: guestsTable.countryCode,
+  language: guestsTable.language,
+  hotelId: guestsTable.hotelId,
+  isActive: guestsTable.isActive,
+  checkInDate: guestsTable.checkInDate,
+  checkOutDate: guestsTable.checkOutDate,
+  originalCheckOutDate: guestsTable.originalCheckOutDate,
+  isExtended: guestsTable.isExtended,
+  extensionCount: guestsTable.extensionCount,
+  createdAt: guestsTable.createdAt,
+  guestKey: guestKeysTable.keyDisplay,
+} as const;
+
 // ---------------------------------------------------------------------------
 // GET /guests — list all guests for this hotel
 // ---------------------------------------------------------------------------
 router.get("/guests", requireStaff, async (req, res): Promise<void> => {
   const hotelId = req.session!.hotelId;
   const guests = await db
-    .select({
-      id: guestsTable.id,
-      firstName: guestsTable.firstName,
-      lastName: guestsTable.lastName,
-      roomNumber: guestsTable.roomNumber,
-      countryCode: guestsTable.countryCode,
-      language: guestsTable.language,
-      hotelId: guestsTable.hotelId,
-      isActive: guestsTable.isActive,
-      createdAt: guestsTable.createdAt,
-      guestKey: guestKeysTable.keyDisplay,
-    })
+    .select(GUEST_SELECT)
     .from(guestsTable)
     .leftJoin(guestKeysTable, and(eq(guestKeysTable.guestId, guestsTable.id), eq(guestKeysTable.isActive, true)))
     .where(and(eq(guestsTable.hotelId, hotelId), eq(guestsTable.isActive, true)))
@@ -47,7 +61,7 @@ router.get("/guests", requireStaff, async (req, res): Promise<void> => {
 // POST /guests — create a new guest
 // ---------------------------------------------------------------------------
 router.post("/guests", requireStaff, async (req, res): Promise<void> => {
-  const { firstName, lastName, roomNumber, countryCode } = req.body;
+  const { firstName, lastName, roomNumber, countryCode, checkInDate, checkOutDate } = req.body;
   const hotelId = req.session!.hotelId;
   const actorId = req.session!.userId;
 
@@ -61,12 +75,32 @@ router.post("/guests", requireStaff, async (req, res): Promise<void> => {
     return;
   }
 
+  // Stay date validation — optional fields, must be valid format if provided.
+  const validCheckIn = isValidDate(checkInDate) ? checkInDate : null;
+  const validCheckOut = isValidDate(checkOutDate) ? checkOutDate : null;
+
+  if (validCheckIn && validCheckOut && validCheckOut <= validCheckIn) {
+    res.status(400).json({ error: "checkOutDate must be after checkInDate" });
+    return;
+  }
+
   const normalizedCountry = countryCode.trim().toUpperCase();
   const { voiceLocale } = deriveLocaleFromCountry(normalizedCountry);
 
   const [guest] = await db
     .insert(guestsTable)
-    .values({ firstName, lastName, roomNumber, hotelId, countryCode: normalizedCountry, language: voiceLocale })
+    .values({
+      firstName,
+      lastName,
+      roomNumber,
+      hotelId,
+      countryCode: normalizedCountry,
+      language: voiceLocale,
+      checkInDate: validCheckIn,
+      checkOutDate: validCheckOut,
+      // originalCheckOutDate mirrors checkOutDate at creation — never overwritten.
+      originalCheckOutDate: validCheckOut,
+    })
     .returning();
 
   const { key, keyHash } = generateGuestKey();
@@ -82,7 +116,15 @@ router.post("/guests", requireStaff, async (req, res): Promise<void> => {
     action: "create_guest",
     targetType: "guest",
     targetId: guest.id,
-    metadata: { roomNumber, firstName, lastName, countryCode: normalizedCountry, language: voiceLocale },
+    metadata: {
+      roomNumber,
+      firstName,
+      lastName,
+      countryCode: normalizedCountry,
+      language: voiceLocale,
+      checkInDate: validCheckIn,
+      checkOutDate: validCheckOut,
+    },
   });
 
   const { rawToken, expiresAt } = await issueQrToken(guest.id, hotelId, actorId);
@@ -99,6 +141,11 @@ router.post("/guests", requireStaff, async (req, res): Promise<void> => {
       language: guest.language,
       hotelId: guest.hotelId,
       isActive: guest.isActive,
+      checkInDate: guest.checkInDate,
+      checkOutDate: guest.checkOutDate,
+      originalCheckOutDate: guest.originalCheckOutDate,
+      isExtended: guest.isExtended,
+      extensionCount: guest.extensionCount,
       createdAt: guest.createdAt,
       guestKey: guestKey.keyDisplay,
     },
@@ -121,18 +168,7 @@ router.get("/guests/:id", requireStaff, async (req, res): Promise<void> => {
 
   const hotelId = req.session!.hotelId;
   const [guest] = await db
-    .select({
-      id: guestsTable.id,
-      firstName: guestsTable.firstName,
-      lastName: guestsTable.lastName,
-      roomNumber: guestsTable.roomNumber,
-      countryCode: guestsTable.countryCode,
-      language: guestsTable.language,
-      hotelId: guestsTable.hotelId,
-      isActive: guestsTable.isActive,
-      createdAt: guestsTable.createdAt,
-      guestKey: guestKeysTable.keyDisplay,
-    })
+    .select(GUEST_SELECT)
     .from(guestsTable)
     .leftJoin(guestKeysTable, and(eq(guestKeysTable.guestId, guestsTable.id), eq(guestKeysTable.isActive, true)))
     .where(and(eq(guestsTable.id, id), eq(guestsTable.hotelId, hotelId)));
@@ -146,7 +182,7 @@ router.get("/guests/:id", requireStaff, async (req, res): Promise<void> => {
 });
 
 // ---------------------------------------------------------------------------
-// PATCH /guests/:id — update guest details (name, room, country)
+// PATCH /guests/:id — update guest details + optionally extend stay
 // ---------------------------------------------------------------------------
 router.patch("/guests/:id", requireStaff, async (req, res): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
@@ -158,7 +194,7 @@ router.patch("/guests/:id", requireStaff, async (req, res): Promise<void> => {
 
   const hotelId = req.session!.hotelId;
   const actorId = req.session!.userId;
-  const { firstName, lastName, roomNumber, countryCode } = req.body;
+  const { firstName, lastName, roomNumber, countryCode, checkInDate, checkOutDate } = req.body;
 
   const [existing] = await db
     .select()
@@ -171,6 +207,8 @@ router.patch("/guests/:id", requireStaff, async (req, res): Promise<void> => {
   }
 
   const updates: Record<string, unknown> = {};
+
+  // ── Standard fields ──
   if (firstName && typeof firstName === "string") updates.firstName = firstName.trim();
   if (lastName && typeof lastName === "string") updates.lastName = lastName.trim();
   if (roomNumber && typeof roomNumber === "string") updates.roomNumber = roomNumber.trim();
@@ -178,6 +216,51 @@ router.patch("/guests/:id", requireStaff, async (req, res): Promise<void> => {
     const normalized = countryCode.trim().toUpperCase();
     updates.countryCode = normalized;
     updates.language = deriveLocaleFromCountry(normalized).voiceLocale;
+  }
+
+  // ── Check-in date ──
+  if (isValidDate(checkInDate)) {
+    updates.checkInDate = checkInDate;
+  }
+
+  // ── Check-out / extension logic ─────────────────────────────────────────
+  // If a new checkOutDate is provided and is strictly later than the existing
+  // one, this is a stay extension. We capture the original checkout on first
+  // extension and increment the extension counter.
+  if (isValidDate(checkOutDate)) {
+    const newOut = checkOutDate as string;
+    const currentOut = existing.checkOutDate;
+
+    if (currentOut && newOut > currentOut) {
+      // Stay extension detected
+      updates.checkOutDate = newOut;
+      // Preserve original checkout on the first extension
+      if (!existing.originalCheckOutDate) {
+        updates.originalCheckOutDate = currentOut;
+      }
+      updates.isExtended = true;
+      updates.extensionCount = (existing.extensionCount ?? 0) + 1;
+
+      await db.insert(auditLogsTable).values({
+        hotelId,
+        actorId,
+        actorType: "manager",
+        action: "extend_stay",
+        targetType: "guest",
+        targetId: id,
+        metadata: {
+          previousCheckOut: currentOut,
+          newCheckOut: newOut,
+          extensionCount: (existing.extensionCount ?? 0) + 1,
+          firstName: existing.firstName,
+          lastName: existing.lastName,
+          roomNumber: existing.roomNumber,
+        },
+      });
+    } else {
+      // Setting or correcting checkout (not an extension)
+      updates.checkOutDate = newOut;
+    }
   }
 
   if (Object.keys(updates).length === 0) {
@@ -199,7 +282,12 @@ router.patch("/guests/:id", requireStaff, async (req, res): Promise<void> => {
     targetType: "guest",
     targetId: id,
     metadata: {
-      before: { firstName: existing.firstName, lastName: existing.lastName, roomNumber: existing.roomNumber },
+      before: {
+        firstName: existing.firstName,
+        lastName: existing.lastName,
+        roomNumber: existing.roomNumber,
+        checkOutDate: existing.checkOutDate,
+      },
       after: updates,
     },
   });
@@ -257,7 +345,7 @@ router.delete("/guests/:id", requireManager, async (req, res): Promise<void> => 
 });
 
 // ---------------------------------------------------------------------------
-// POST /guests/:id/renew-key — deactivate old key, issue new key + QR
+// POST /guests/:id/renew-key
 // ---------------------------------------------------------------------------
 router.post("/guests/:id/renew-key", requireStaff, async (req, res): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
@@ -315,6 +403,11 @@ router.post("/guests/:id/renew-key", requireStaff, async (req, res): Promise<voi
       language: existing.language,
       hotelId: existing.hotelId,
       isActive: existing.isActive,
+      checkInDate: existing.checkInDate,
+      checkOutDate: existing.checkOutDate,
+      originalCheckOutDate: existing.originalCheckOutDate,
+      isExtended: existing.isExtended,
+      extensionCount: existing.extensionCount,
       createdAt: existing.createdAt,
       guestKey: newKey.keyDisplay,
     },

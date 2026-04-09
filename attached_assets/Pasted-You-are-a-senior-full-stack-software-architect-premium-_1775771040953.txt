@@ -1,0 +1,456 @@
+You are a senior full-stack software architect, premium mobile UX designer, and production-grade product engineer.
+
+Your task is to inspect, redesign, and harden the MANAGER and STAFF guest management experience of the existing “Guest Pro” project into a fully mobile-first, SOLID, layered, production-ready hotel operations interface.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the current codebase, file tree, guest list flow, room view flow, auth/role system, guest CRUD flow, guest key logic, database schema, responsive behavior, and current UI structure.
+- Do NOT rebuild the app from scratch if working systems already exist.
+- Preserve working auth, manager/staff role restrictions, guest login/logout, guest dashboard/chat/voice features, QR/key flows if already present, route protection, and stable APIs.
+- Refactor only where there is real architectural, UX, maintainability, or production value.
+- The final result must be mobile-first, premium, simple, soft, modern, role-aware, SOLID, layered, and production-ready.
+
+PROJECT CONTEXT:
+Guest Pro has manager/staff dashboards for handling guests and room operations.
+
+PRIMARY GOALS:
+1. Make the Guests list experience extremely professional and mobile-friendly
+2. Guest cards must have premium monochrome black-and-white flag icons next to names (not emoji flags)
+3. Rooms tab must show only rooms that are currently in use
+4. Room cards must flip to the back side and allow guest key copy actions there
+5. Guest creation must now include:
+   - check-in date
+   - check-out date
+6. Edit Guest must support extending check-out date
+7. The system must store extension-related data professionally:
+   - whether the stay was extended
+   - how much it was extended
+   - original vs current checkout date
+8. Everything must be implemented with a proper SOLID and layered architecture
+
+ROLE RULES:
+- MANAGER has full access to all manager-side capabilities
+- STAFF / PERSONNEL only sees allowed actions based on the current authorization policy
+- GUEST flow remains unchanged
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current manager dashboard structure
+2. Current staff/personnel dashboard structure
+3. Current guests list implementation
+4. Current rooms tab implementation
+5. Current guest CRUD flow
+6. Current guest key generation / renew / copy flow
+7. Current guest data model
+8. Current room number usage in the data model
+9. Current country/countryCode storage and display
+10. Current responsive/mobile behavior
+11. Current role-aware rendering and route/API protection
+12. Current edit guest flow
+13. Whether check-in / check-out already exist or not
+14. What already works
+15. What should be preserved
+16. What is weak in UX or architecture
+17. What needs redesign or refactor for a proper production-ready layered architecture
+
+Then provide:
+- concise architecture audit
+- mobile UX gap analysis
+- guest management gap analysis
+- stay dates / extension tracking gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — REDESIGN THE GUESTS LIST AS A PREMIUM MOBILE EXPERIENCE
+==================================================
+
+Professionalize the Guests list in both manager and staff dashboards.
+
+REQUIREMENTS:
+- mobile-first premium guest list
+- use elegant list-card design rather than dense desktop-table behavior for the main mobile UX
+- excellent readability and scanability
+- clean hierarchy
+- thumb-friendly actions
+- premium light theme
+- subtle shadows
+- soft rounded corners
+- modern hospitality operations feel
+- no clutter
+
+Each guest card should clearly support, where role permits:
+- full name
+- room number
+- country icon
+- check-in date
+- check-out date
+- extension status if relevant
+- quick actions:
+  - view
+  - edit
+  - delete if allowed
+  - copy guest key if allowed
+  - key renew/regenerate if allowed
+  - QR/access actions if already supported
+
+The guest list must feel like a real hotel staff operations app, not a demo list.
+
+==================================================
+PHASE 3 — MONOCHROME FLAG ICONS NEXT TO GUEST NAMES
+==================================================
+
+Replace any current country/flag treatment with premium monochrome icons.
+
+REQUIREMENTS:
+- no emoji flags
+- no colorful flags
+- use black-and-white / monochrome / neutral icon-style flag indicators
+- keep them elegant, small, and theme-consistent
+- show them next to guest names in guest cards and wherever relevant
+- use a centralized resolver/helper/service for countryCode -> icon mapping
+- provide graceful fallback if an icon is missing
+
+VISUAL GOAL:
+- subtle, premium, operational
+- not playful
+- consistent sizing and spacing
+- aligns with the overall dashboard theme
+
+ARCHITECTURE GOAL:
+- do not scatter icon selection logic inside random UI files
+- centralize it properly
+
+==================================================
+PHASE 4 — ROOMS TAB: SHOW ONLY IN-USE ROOMS
+==================================================
+
+Refine the Rooms tab so it shows only rooms currently in use.
+
+REQUIREMENTS:
+- do NOT show empty rooms
+- remove the “empty / in use” dual-state concept from the visible room card UI
+- Rooms tab should display only rooms that currently have active guests
+- if there are no occupied rooms, show a polished empty state
+- keep a premium 2-column mobile grid
+- room cards should remain square or near-square
+- use a refined door-style icon
+- show concise room information clearly on the front side
+
+Each room card front side should show:
+- room number
+- occupancy count
+- useful short room summary if appropriate
+
+ARCHITECTURE GOAL:
+- derive “in use rooms” from a clean room aggregation/query layer
+- do not duplicate room filtering logic inside UI components
+
+==================================================
+PHASE 5 — FLIP ROOM CARD BACK SIDE WITH GUEST DETAILS
+==================================================
+
+Make room cards flip to reveal useful operational data.
+
+REQUIREMENTS:
+- tapping a room card flips it to the back side
+- the flip must feel premium, smooth, and stable
+- no laggy or gimmicky motion
+- mobile performance must remain good
+- only the tapped card should flip
+- state management must be clean
+
+BACK SIDE CONTENT:
+- show the guests staying in that room as a clean list
+- each guest row may include:
+  - full name
+  - monochrome country icon
+  - quick stay info if useful
+  - guest key quick action if allowed
+- guest key copy must be available from the back side
+- copy UX must feel polished and safe
+- if multiple guests are in the room, handle layout gracefully
+- if overflow exists, do it cleanly and maintain readability
+
+==================================================
+PHASE 6 — STICKY SEARCH / FILTER BAR
+==================================================
+
+Keep the guest/room search and filters visible while scrolling.
+
+REQUIREMENTS:
+- sticky search/filter area for relevant tabs
+- when user scrolls downward, the key controls remain visible at the top
+- sticky controls must not clash with the dashboard header
+- sticky area must have a polished background/elevation treatment when pinned
+- mobile layout must remain clean and stable
+- no jitter or overlap issues
+
+Use a premium mobile-friendly pattern such as:
+- sticky segmented/tab row
+- sticky search input
+- sticky chips/filter controls
+- compact but polished controls
+
+==================================================
+PHASE 7 — ADD CHECK-IN / CHECK-OUT TO GUEST CREATION
+==================================================
+
+Extend guest creation to include stay dates.
+
+REQUIREMENTS:
+- create guest form must include:
+  - check-in date
+  - check-out date
+- form UX must remain clean and mobile-friendly
+- validation must be robust
+- check-out must not be before check-in
+- save these dates properly in the guest record or related domain model
+- preserve any existing guest creation logic that is already good
+
+UX REQUIREMENTS:
+- premium mobile form design
+- strong labels and validation states
+- no messy long form
+- good date input UX
+- clean success/error handling
+
+==================================================
+PHASE 8 — EDIT GUEST: EXTEND CHECK-OUT DATE
+==================================================
+
+Implement a professional check-out extension capability in Edit Guest.
+
+REQUIREMENTS:
+- in edit guest, manager/staff (where allowed) can extend the check-out date
+- extension flow must be explicit and clean
+- do not silently overwrite stay history
+- preserve original stay data and make extension tracking professional
+
+STORE EXTENSION DATA PROFESSIONALLY:
+At minimum, support:
+- originalCheckOutDate
+- currentCheckOutDate
+- isExtended
+- totalExtensionDays
+
+Strongly recommended if appropriate:
+- extensionCount
+- extensionHistory records or audit entries
+
+BEHAVIOR:
+- when checkout is extended:
+  - current checkout date updates
+  - isExtended becomes true
+  - extension amount is stored or derivable
+- if edited without extension, logic must remain correct
+- avoid messy fragile derived-only logic hidden in the UI
+
+PRODUCT GOAL:
+Staff should be able to see clearly:
+- was this stay extended?
+- by how much?
+
+==================================================
+PHASE 9 — DOMAIN MODEL / DATA MODEL HARDENING
+==================================================
+
+Refactor the stay-date model professionally.
+
+REQUIREMENTS:
+- represent guest stay dates cleanly in the domain
+- avoid burying extension logic in UI state
+- if necessary, update schema and migrations cleanly
+- update validation schemas
+- update repositories/services/use-cases
+- preserve backward compatibility where practical
+
+ARCHITECTURE GOAL:
+Create a clean stay model that can support:
+- initial stay dates
+- extensions
+- extension visibility in UI
+- future analytics/reporting
+
+==================================================
+PHASE 10 — FILTERS / SEARCH / STAY CONTEXT
+==================================================
+
+Professionalize searching/filtering where useful.
+
+GUESTS VIEW:
+- search by guest name
+- search/filter by room number
+- newest guests first
+- optionally highlight extended stays in a tasteful operational way
+
+ROOMS VIEW:
+- only in-use rooms shown
+- search by room number
+- keep controls clean and mobile-first
+
+Do not overload the UI.
+Keep the filters practical and premium.
+
+==================================================
+PHASE 11 — ROLE-AWARE ACCESS
+==================================================
+
+Preserve and improve role-aware behavior.
+
+REQUIREMENTS:
+- MANAGER sees all allowed actions
+- STAFF sees only permitted actions
+- if STAFF is not allowed to delete or extend checkout, those actions must not appear
+- do not rely only on UI hiding
+- route/API-level authorization must remain correct
+- centralize permission logic
+- no scattered if role === ... checks everywhere
+
+==================================================
+PHASE 12 — DESIGN DIRECTION
+==================================================
+
+The whole experience must feel:
+
+- white/light dominant
+- soft rounded corners
+- premium modern SaaS + hospitality operations feel
+- simple and expensive-looking
+- calm and trustworthy
+- highly readable
+- operationally useful
+- no clutter
+- no cheap gradients
+- no emoji-style visuals
+- no noisy admin panel look
+
+Think:
+- premium hotel staff mobile app
+- elegant operational interface
+- modern enterprise calmness
+- hospitality-quality detail
+
+==================================================
+PHASE 13 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement this in a truly maintainable architecture.
+
+REQUIREMENTS:
+- business logic separate from presentation
+- no giant dashboard file
+- no duplicated room aggregation logic
+- no scattered stay-extension logic
+- no duplicated guest key copy logic
+- no scattered flag/icon mapping logic
+- centralize role/capability visibility
+- centralize guest query logic
+- centralize room aggregation logic
+- centralize stay date / extension logic
+- no dead code
+- no fake architecture
+- clean naming
+- meaningful modules only
+
+Recommended layered shape:
+- domain:
+  - role definitions
+  - guest stay rules
+  - room occupancy rules
+- application:
+  - GuestListQueryService
+  - RoomAggregationService
+  - GuestCrudService
+  - StayExtensionService
+  - GuestKeyActionService
+- infrastructure:
+  - guest repository
+  - room query/repository
+  - auth/session adapters
+  - country icon resolver
+- presentation:
+  - ManagerDashboardMobile
+  - StaffDashboardMobile
+  - MobileGuestCard
+  - MobileRoomCard
+  - RoomCardFront
+  - RoomCardBack
+  - GuestFilterBar
+  - RoomFilterBar
+  - GuestEditSheet
+  - GuestCreateSheet
+  - GuestKeyCopyAction
+
+Do not create fake architecture. Make the structure meaningful and actually used.
+
+==================================================
+PHASE 14 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- manager login
+- staff/personnel login
+- guest login/logout
+- guest dashboard/chat/voice features
+- guest key flows
+- QR flows if present
+- existing CRUD APIs
+- route protection
+- stable APIs
+
+This task is specifically about professionalizing guest operations, room operations, and stay-date management.
+
+==================================================
+PHASE 15 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Guests list feels premium and mobile-first
+2. Guest cards show monochrome country icons next to names
+3. Guests list remains operationally clear
+4. Rooms tab shows only in-use rooms
+5. Room cards front side shows room info clearly
+6. Room cards flip correctly and smoothly
+7. Back side shows room guests correctly
+8. Guest key copy works from the room card back side
+9. Guest creation now supports check-in and check-out
+10. Edit guest supports extending check-out
+11. Extension tracking correctly stores:
+   - original checkout
+   - current checkout
+   - whether extended
+   - how much extended
+12. Role-aware restrictions still work
+13. No regression in auth or guest-facing flows
+14. No regression in guest key / QR / CRUD flows
+15. Overall UX feels production-ready and premium
+
+==================================================
+PHASE 16 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was weak before
+3. What was redesigned
+4. How monochrome country icons are implemented
+5. How the in-use-only Rooms tab works
+6. How room-card flip and guest-key copy works
+7. How check-in / check-out is now modeled
+8. How extension tracking works
+9. Which files were changed
+10. Any schema/migration changes
+11. How to test Guests and Rooms end-to-end on mobile
+12. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result mobile-first, SOLID, layered, premium, and production-ready
+- The manager/staff guest operations experience must feel like a real premium hotel staff app

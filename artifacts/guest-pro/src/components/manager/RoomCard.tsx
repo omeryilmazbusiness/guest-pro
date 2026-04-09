@@ -3,36 +3,26 @@
  *
  * Premium mobile room card for the Rooms tab.
  * Two sides:
- *   Front — room number, occupancy count, status badge
- *   Back  — guest list with monochrome country indicators and key info
+ *   Front — room number, guest count. All rooms shown are occupied (no empty state).
+ *   Back  — guest list: monochrome flag, name, dates, copy-key action.
  *
  * Interaction:
- *   Tap the card to flip it. Tap again (or tap ✕) to flip back.
+ *   Tap the card to flip it. Tap ↺ to flip back.
  *   CSS 3D flip — 420ms cubic-bezier, GPU-accelerated, stable on mobile.
- *   Flip state is self-contained (isFlipped: boolean in component) —
- *   dashboard does not track which card is flipped.
- *
- * Visual direction:
- *   Front  — white dominant, door icon, clean typography
- *   Back   — zinc-900 dark, guest rows with monochrome flags
- *   Both   — soft rounded corners, premium hospitality operations feel
- *
- * Layout:
- *   2-column mobile grid (rendered by the parent grid)
- *   Square / near-square aspect ratio
- *   Both faces position: absolute, filling the same container
- *   → layout is perfectly stable; nothing reflows on flip
+ *   Flip state is self-contained — dashboard does not track which card is flipped.
  *
  * Architecture:
- *   Receives RoomSummary from aggregateRooms() — single aggregation source
- *   CountryFlag(monochrome) for B&W country indicators
- *   No logic — pure presentational component
+ *   Receives RoomSummary from aggregateRooms() — single aggregation source.
+ *   CountryFlag(monochrome) for B&W country indicators in ops context.
+ *   Pure presentational component — no business logic.
  */
 
-import { useState } from "react";
-import { DoorOpen, DoorClosed, Users, RotateCcw, KeyRound } from "lucide-react";
+import { useState, useCallback } from "react";
+import { DoorOpen, Users, RotateCcw, KeyRound, Copy, Check } from "lucide-react";
+import { toast } from "sonner";
 import { CountryFlag } from "@/components/ui/CountryFlag";
 import type { RoomSummary, RoomGuestSnapshot } from "@/lib/rooms";
+import { formatStayDate } from "@/lib/stays";
 
 // ─── Flip CSS constants ───────────────────────────────────────────────────────
 
@@ -61,17 +51,13 @@ const backFaceStyle: React.CSSProperties = {
   transform: "rotateY(180deg)",
 };
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Front face ───────────────────────────────────────────────────────────────
 
-/**
- * Front face — room summary with status and guest count.
- */
 function RoomCardFront({
   roomNumber,
   guestCount,
-  isOccupied,
   guests,
-}: Pick<RoomSummary, "roomNumber" | "guestCount" | "isOccupied" | "guests">) {
+}: Pick<RoomSummary, "roomNumber" | "guestCount" | "guests">) {
   const namePreview =
     guests.length === 0
       ? null
@@ -80,33 +66,14 @@ function RoomCardFront({
       : `${guests[0].firstName}, ${guests[1].firstName} +${guests.length - 2}`;
 
   return (
-    <div
-      className={`
-        flex flex-col justify-between p-4 h-full
-        border rounded-2xl transition-shadow duration-150
-        ${isOccupied
-          ? "bg-white border-zinc-200 shadow-sm"
-          : "bg-zinc-50/80 border-zinc-100"
-        }
-      `}
-    >
+    <div className="flex flex-col justify-between p-4 h-full bg-white border border-zinc-200 shadow-sm rounded-2xl">
       {/* Top row */}
       <div className="flex items-start justify-between">
         <div className="w-9 h-9 rounded-xl bg-zinc-100 flex items-center justify-center shrink-0">
-          {isOccupied ? (
-            <DoorOpen style={{ width: 17, height: 17 }} className="text-zinc-700" />
-          ) : (
-            <DoorClosed style={{ width: 17, height: 17 }} className="text-zinc-400" />
-          )}
+          <DoorOpen style={{ width: 17, height: 17 }} className="text-zinc-700" />
         </div>
-        <span
-          className={`text-[10px] font-semibold uppercase tracking-widest px-2 py-1 rounded-lg leading-none ${
-            isOccupied
-              ? "bg-zinc-900 text-white"
-              : "bg-zinc-100 text-zinc-400"
-          }`}
-        >
-          {isOccupied ? "In use" : "Empty"}
+        <span className="text-[10px] font-semibold uppercase tracking-widest px-2 py-1 rounded-lg leading-none bg-zinc-900 text-white">
+          In use
         </span>
       </div>
 
@@ -122,39 +89,68 @@ function RoomCardFront({
 
       {/* Footer */}
       <div className="pt-3 border-t border-zinc-100 mt-auto">
-        {isOccupied ? (
-          <>
-            <div className="flex items-center gap-1.5 mb-0.5">
-              <Users className="w-3 h-3 text-zinc-400" />
-              <span className="text-[11px] font-semibold text-zinc-600">
-                {guestCount} {guestCount === 1 ? "guest" : "guests"}
-              </span>
-            </div>
-            {namePreview && (
-              <p className="text-[11px] text-zinc-400 leading-snug truncate">{namePreview}</p>
-            )}
-          </>
-        ) : (
-          <span className="text-[11px] text-zinc-300 font-medium">No guests assigned</span>
+        <div className="flex items-center gap-1.5 mb-0.5">
+          <Users className="w-3 h-3 text-zinc-400" />
+          <span className="text-[11px] font-semibold text-zinc-600">
+            {guestCount} {guestCount === 1 ? "guest" : "guests"}
+          </span>
+        </div>
+        {namePreview && (
+          <p className="text-[11px] text-zinc-400 leading-snug truncate">{namePreview}</p>
         )}
       </div>
 
-      {/* Tap hint — only on occupied cards */}
-      {isOccupied && (
-        <div className="absolute bottom-2 right-2.5 opacity-30">
-          <RotateCcw className="w-3 h-3 text-zinc-500" />
-        </div>
-      )}
+      {/* Tap hint */}
+      <div className="absolute bottom-2 right-2.5 opacity-25">
+        <RotateCcw className="w-3 h-3 text-zinc-500" />
+      </div>
     </div>
+  );
+}
+
+// ─── Copy key button (back face) ──────────────────────────────────────────────
+
+function BackCopyKeyButton({ fullKey }: { fullKey: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      try {
+        await navigator.clipboard.writeText(fullKey);
+        setCopied(true);
+        toast.success("Key copied");
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        toast.error("Copy failed");
+      }
+    },
+    [fullKey]
+  );
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="w-6 h-6 rounded-md bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-90 transition-all touch-manipulation shrink-0"
+      aria-label="Copy guest key"
+    >
+      {copied ? (
+        <Check className="w-3 h-3 text-green-400" />
+      ) : (
+        <Copy className="w-3 h-3 text-white/50" />
+      )}
+    </button>
   );
 }
 
 // ─── Guest row on back face ───────────────────────────────────────────────────
 
 function BackGuestRow({ guest }: { guest: RoomGuestSnapshot }) {
+  const hasDates = !!(guest.checkInDate || guest.checkOutDate);
+
   return (
-    <div className="flex items-center gap-2.5 py-2 border-b border-white/10 last:border-0">
-      {/* Monochrome country indicator */}
+    <div className="flex items-center gap-2 py-2 border-b border-white/10 last:border-0">
+      {/* Monochrome flag */}
       <div className="shrink-0">
         {guest.countryCode ? (
           <CountryFlag code={guest.countryCode} size="sm" monochrome />
@@ -168,13 +164,19 @@ function BackGuestRow({ guest }: { guest: RoomGuestSnapshot }) {
         )}
       </div>
 
-      {/* Name */}
+      {/* Name + stay info */}
       <div className="flex-1 min-w-0">
         <p className="text-[12px] font-medium text-white leading-tight truncate">
           {guest.firstName} {guest.lastName}
         </p>
-        {/* Key indicator */}
-        {guest.hasKey && guest.maskedKey ? (
+        {hasDates ? (
+          <p className="text-[9px] text-white/40 leading-none mt-0.5 font-medium">
+            {formatStayDate(guest.checkInDate)} – {formatStayDate(guest.checkOutDate)}
+            {guest.isExtended && (
+              <span className="ml-1.5 text-amber-400">+ext</span>
+            )}
+          </p>
+        ) : guest.hasKey && guest.maskedKey ? (
           <div className="flex items-center gap-1 mt-0.5">
             <KeyRound className="w-2.5 h-2.5 text-white/30 shrink-0" />
             <span className="font-mono text-[9px] text-white/30 tracking-widest truncate leading-none">
@@ -185,13 +187,17 @@ function BackGuestRow({ guest }: { guest: RoomGuestSnapshot }) {
           <span className="text-[9px] text-white/25 font-medium mt-0.5 block">No active key</span>
         )}
       </div>
+
+      {/* Copy key action */}
+      {guest.hasKey && guest.fullKey && (
+        <BackCopyKeyButton fullKey={guest.fullKey} />
+      )}
     </div>
   );
 }
 
-/**
- * Back face — guest list for this room.
- */
+// ─── Back face ────────────────────────────────────────────────────────────────
+
 function RoomCardBack({
   roomNumber,
   guests,
@@ -225,23 +231,15 @@ function RoomCardBack({
 
       {/* Guest list */}
       <div className="flex-1 overflow-hidden">
-        {guests.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full gap-2 py-2">
-            <DoorClosed className="w-6 h-6 text-white/15" />
-            <p className="text-[10px] text-white/25 font-medium text-center">
-              No guests assigned
-            </p>
-          </div>
-        ) : (
-          <div
-            className="overflow-y-auto h-full"
-            style={{ scrollbarWidth: "none" }}
-          >
-            {guests.map((g) => (
-              <BackGuestRow key={g.id} guest={g} />
-            ))}
-          </div>
-        )}
+        <div
+          className="overflow-y-auto h-full"
+          style={{ scrollbarWidth: "none" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {guests.map((g) => (
+            <BackGuestRow key={g.id} guest={g} />
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -255,12 +253,9 @@ interface RoomCardProps {
 
 export function RoomCard({ room }: RoomCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
-  const { roomNumber, guestCount, isOccupied, guests } = room;
+  const { roomNumber, guestCount, guests } = room;
 
-  const handleFlip = () => {
-    if (!isOccupied) return; // Empty rooms don't flip
-    setIsFlipped((f) => !f);
-  };
+  const handleFlip = () => setIsFlipped((f) => !f);
 
   const handleFlipBack = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -270,17 +265,13 @@ export function RoomCard({ room }: RoomCardProps) {
   return (
     <div
       role="button"
-      tabIndex={isOccupied ? 0 : -1}
-      aria-label={
-        isOccupied
-          ? `Room ${roomNumber}, ${guestCount} guest${guestCount !== 1 ? "s" : ""} — tap to see details`
-          : `Room ${roomNumber}, empty`
-      }
+      tabIndex={0}
+      aria-label={`Room ${roomNumber}, ${guestCount} guest${guestCount !== 1 ? "s" : ""} — tap to see details`}
       onClick={handleFlip}
       onKeyDown={(e) => e.key === "Enter" && handleFlip()}
       data-testid={`card-room-${roomNumber}`}
       style={{ perspective: "900px", aspectRatio: "1 / 1.1" }}
-      className={`relative select-none ${isOccupied ? "cursor-pointer" : "cursor-default"}`}
+      className="relative select-none cursor-pointer"
     >
       {/* 3D rotating inner */}
       <div style={innerStyle(isFlipped)}>
@@ -289,7 +280,6 @@ export function RoomCard({ room }: RoomCardProps) {
           <RoomCardFront
             roomNumber={roomNumber}
             guestCount={guestCount}
-            isOccupied={isOccupied}
             guests={guests}
           />
         </div>

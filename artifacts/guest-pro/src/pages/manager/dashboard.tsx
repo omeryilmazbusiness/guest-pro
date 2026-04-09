@@ -56,7 +56,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { isStaffRole, can, Permission, roleLabel } from "@/lib/permissions";
 import { filterGuests, extractRoomNumbers } from "@/lib/guests";
-import { aggregateRooms, filterRooms, type RoomStatusFilter } from "@/lib/rooms";
+import { aggregateRooms, filterRooms } from "@/lib/rooms";
 import { GuestProLogo } from "@/components/GuestProLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -249,32 +249,18 @@ function GuestFilterBar({
 //
 // Rendered as a sibling of <main>, sticky at top-14 (below the 56px header).
 // Uses backdrop-blur and a subtle bottom border for visual separation when scrolled.
+// Only shows room number search — all derived rooms are occupied (no status filter needed).
 
 function StickyRoomFilterBar({
   search,
   onSearchChange,
-  status,
-  onStatusChange,
-  hasFilters,
-  onClearFilters,
 }: {
   search: string;
   onSearchChange: (v: string) => void;
-  status: RoomStatusFilter;
-  onStatusChange: (v: RoomStatusFilter) => void;
-  hasFilters: boolean;
-  onClearFilters: () => void;
 }) {
-  const filters: Array<{ value: RoomStatusFilter; label: string }> = [
-    { value: "all", label: "All" },
-    { value: "occupied", label: "In use" },
-    { value: "empty", label: "Empty" },
-  ];
-
   return (
     <div className="sticky top-14 z-10 bg-zinc-50/95 backdrop-blur-sm border-b border-zinc-200/60">
-      <div className="max-w-2xl mx-auto px-4 py-3 space-y-2.5">
-        {/* Search input */}
+      <div className="max-w-2xl mx-auto px-4 py-3">
         <div className="relative">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
           <Input
@@ -290,34 +276,6 @@ function StickyRoomFilterBar({
               aria-label="Clear room search"
             >
               <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-
-        {/* Status filter chips + clear */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex gap-1.5 bg-zinc-100 rounded-xl p-1">
-            {filters.map(({ value, label }) => (
-              <button
-                key={value}
-                onClick={() => onStatusChange(value)}
-                className={`px-3 h-8 rounded-lg text-xs font-semibold transition-all touch-manipulation ${
-                  status === value
-                    ? "bg-white text-zinc-900 shadow-sm"
-                    : "text-zinc-500 hover:text-zinc-700"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          {hasFilters && (
-            <button
-              onClick={onClearFilters}
-              className="text-xs text-zinc-400 hover:text-zinc-700 flex items-center gap-1 touch-manipulation shrink-0"
-            >
-              <X className="w-3 h-3" />
-              Clear
             </button>
           )}
         </div>
@@ -387,7 +345,6 @@ export default function ManagerDashboard() {
 
   // ── Room filters
   const [roomSearch, setRoomSearch] = useState("");
-  const [roomStatusFilter, setRoomStatusFilter] = useState<RoomStatusFilter>("all");
 
   // ── Modals
   const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
@@ -431,12 +388,12 @@ export default function ManagerDashboard() {
   const allRooms = useMemo(() => aggregateRooms(guests ?? []), [guests]);
 
   const filteredRooms = useMemo(
-    () => filterRooms(allRooms, { search: roomSearch, status: roomStatusFilter }),
-    [allRooms, roomSearch, roomStatusFilter]
+    () => filterRooms(allRooms, roomSearch),
+    [allRooms, roomSearch]
   );
 
   const guestHasFilters = guestSearch.length > 0 || roomFilter !== "__all__";
-  const roomHasFilters = roomSearch.length > 0 || roomStatusFilter !== "all";
+  const roomHasFilters = roomSearch.length > 0;
 
   // ── Handlers
   const invalidateGuests = useCallback(
@@ -454,7 +411,14 @@ export default function ManagerDashboard() {
 
   const handleEdit = async (
     id: number,
-    data: { firstName: string; lastName: string; roomNumber: string; countryCode: string }
+    data: {
+      firstName: string;
+      lastName: string;
+      roomNumber: string;
+      countryCode: string;
+      checkInDate?: string;
+      checkOutDate?: string;
+    }
   ) => {
     await updateGuestMutation.mutateAsync(
       { id, data },
@@ -511,7 +475,6 @@ export default function ManagerDashboard() {
   };
   const clearRoomFilters = () => {
     setRoomSearch("");
-    setRoomStatusFilter("all");
   };
 
   if (!isAuthenticated || !isStaffRole(user?.role)) return null;
@@ -567,10 +530,6 @@ export default function ManagerDashboard() {
         <StickyRoomFilterBar
           search={roomSearch}
           onSearchChange={setRoomSearch}
-          status={roomStatusFilter}
-          onStatusChange={setRoomStatusFilter}
-          hasFilters={roomHasFilters}
-          onClearFilters={clearRoomFilters}
         />
       )}
 

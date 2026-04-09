@@ -98,27 +98,37 @@ When a guest is created, a **single-use 24-hour QR auto-login token** is issued 
 | Personnel | Dark welcome card + CTA | Edit, Renew, Copy (no Delete) |
 
 ### Tabs System
-- `Guests` tab: compact guest card list, newest-first, searchable + room-filterable
-- `Rooms` tab: 2-column card grid, occupancy aggregated from guest records, filterable by status + name
-- Tab switcher: custom segmented control with badge counts (not Radix Tabs — avoids dep weight)
+- `Guests` tab: compact 3-line guest card list, newest-first, searchable + room-filterable
+- `Rooms` tab: 2-column card grid, occupancy aggregated from guest records, search-only filter (all shown rooms are occupied)
+- Tab switcher: custom segmented control with badge counts
 
 ### Flag Icons
 - Package: `flag-icons` (CSS library, self-contained SVG flags, no CDN requests)
-- Component: `src/components/ui/CountryFlag.tsx` — centralized, used in GuestCard
-- Never emoji in guest list/cards; emoji only retained in create/edit combobox trigger button
+- Component: `src/components/ui/CountryFlag.tsx` — centralized
+- `monochrome` prop: applies grayscale filter for ops/staff contexts (GuestCard, RoomCard back)
+- Emoji flags only in create/edit country combobox trigger (not in cards)
+
+### Stay Dates & Extension Tracking
+- `guestsTable` columns: `checkInDate`, `checkOutDate`, `originalCheckOutDate`, `isExtended`, `extensionCount`
+- `src/lib/stays.ts` — pure domain helpers: `formatStayDate()`, `stayNights()`, `extensionDays()`, `todayIso()`, `minCheckOutDate()`
+- Create form: native `<input type="date">` pickers (check-in defaults today, checkout must be > checkin)
+- Edit modal: extension-aware — live `+{N}d` preview, extension message, "Extended ×N" badge
+- API PATCH: detects extension when newCheckOut > storedCheckOut; auto-sets isExtended, increments extensionCount, preserves originalCheckOutDate on first extension; writes separate audit log
 
 ### Domain Lib Architecture
 - `src/lib/guests.ts` — `filterGuests()`, `extractRoomNumbers()` — pure functions
-- `src/lib/rooms.ts` — `aggregateRooms()`, `filterRooms()`, `computeRoomStats()` — pure functions
+- `src/lib/rooms.ts` — `aggregateRooms()`, `filterRooms(rooms, search?)`, `computeRoomStats()` — pure functions; `RoomGuestSnapshot` includes `fullKey`, `checkInDate`, `checkOutDate`, `isExtended`
+- `src/lib/stays.ts` — date formatting, night counting, extension derivation
 - `src/lib/permissions.ts` — `can()`, `isStaffRole()`, `roleLabel()`
 - Dashboard imports from these libs — no logic in page components
 
 ### Mobile-First UX Decisions
 - Stat chips: horizontal scroll row (`overflow-x-auto snap-x`) — no tall stacked cards on mobile
-- Guest card: compact 2-line ~68px item (vs old ~160px flex-col)
+- Guest card: 3-line ~90px item (name+flag / room+dates+extension badge / masked key)
+- Room card back: guest row shows dates + copy-key button; back face stops click propagation
 - FAB: fixed bottom-right `+ New Guest` button (mobile only, sm:hidden)
 - Header: 56px sticky, minimal — brand + role identity + logout only
-- Filter bar: search full-width + room Select side-by-side (both fit on 375px)
+- Rooms sticky filter: search-only bar (no status chips — all rooms shown are occupied by design)
 - Container: `max-w-2xl` — tighter centering optimized for phone/tablet
 
 ## Personnel Role (Staff Tier 2)

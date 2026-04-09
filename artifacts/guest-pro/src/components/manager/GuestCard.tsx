@@ -2,15 +2,16 @@
  * GuestCard
  *
  * Premium mobile-first guest list item.
- * Compact 2-line horizontal card (~68px) — highly scannable on 375px phones.
+ * 3-line horizontal card — highly scannable on 375px phones.
  *
  * Layout:
- *   [Avatar] | [Name] [Flag] [Room badge]   [Copy] [⋯]
+ *   [Avatar] | [Name] [Monochrome flag]          [Copy] [⋯]
+ *            | [Room badge] · [CheckIn → CheckOut] [Extended?]
  *            | [Masked key snippet]
  *
- * Flag display uses CountryFlag (SVG-based, flag-icons library) — never emoji.
- * All country-to-flag resolution is centralized in CountryFlag.tsx.
- * Actions are role-aware — callers pass permission booleans + handlers.
+ * Flag: monochrome for ops context (never emoji, no color).
+ * Dates: shown if present; extension badge if isExtended.
+ * Actions: role-aware via permission booleans from caller.
  */
 
 import { useState, useCallback } from "react";
@@ -21,6 +22,7 @@ import {
   Pencil,
   Trash2,
   RefreshCcw,
+  CalendarArrowUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +36,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CountryFlag } from "@/components/ui/CountryFlag";
 import type { Guest } from "@workspace/api-client-react";
+import { formatStayDate } from "@/lib/stays";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -52,7 +55,7 @@ export interface GuestCardProps {
 function GuestAvatar({ firstName, lastName }: { firstName: string; lastName: string }) {
   const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase();
   return (
-    <div className="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center shrink-0">
+    <div className="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center shrink-0 self-start mt-0.5">
       <span className="text-[13px] font-semibold text-white font-serif tracking-wide">
         {initials}
       </span>
@@ -106,9 +109,10 @@ export function GuestCard({
   onDelete,
   onRenew,
 }: GuestCardProps) {
+  // Cast to access new date/extension fields (client types may lag schema)
+  const raw = guest as any;
   const hasKey = !!guest.guestKey;
 
-  // Display first two key segments, mask the third: "ABC123-DEF456-••••••"
   const keyDisplay = guest.guestKey
     ? (() => {
         const parts = guest.guestKey.split("-");
@@ -118,35 +122,59 @@ export function GuestCard({
       })()
     : "No active key";
 
+  const checkInDate: string | null = raw.checkInDate ?? null;
+  const checkOutDate: string | null = raw.checkOutDate ?? null;
+  const isExtended: boolean = raw.isExtended ?? false;
+
+  const hasStayDates = !!(checkInDate || checkOutDate);
+
   const hasAnyAction = canEdit || canRenew || hasKey || canDelete;
 
   return (
     <div
       data-testid={`card-guest-${guest.id}`}
-      className="bg-white rounded-2xl border border-zinc-100 shadow-sm hover:shadow-md hover:border-zinc-200 active:scale-[0.99] transition-all duration-150 px-4 py-3.5 flex items-center gap-3 touch-manipulation"
+      className="bg-white rounded-2xl border border-zinc-100 shadow-sm hover:shadow-md hover:border-zinc-200 active:scale-[0.99] transition-all duration-150 px-4 py-3.5 flex items-start gap-3 touch-manipulation"
     >
       {/* Avatar */}
       <GuestAvatar firstName={guest.firstName} lastName={guest.lastName} />
 
       {/* Identity */}
       <div className="flex-1 min-w-0">
-        {/* Line 1: name + flag + room badge */}
-        <div className="flex items-center gap-1.5 flex-wrap leading-none">
+
+        {/* Line 1: name + monochrome flag */}
+        <div className="flex items-center gap-1.5 leading-none">
           <span className="font-medium text-[15px] text-zinc-900 leading-tight truncate">
             {guest.firstName} {guest.lastName}
           </span>
           {guest.countryCode && (
-            <CountryFlag code={guest.countryCode} size="sm" />
+            <CountryFlag code={guest.countryCode} size="sm" monochrome />
           )}
+        </div>
+
+        {/* Line 2: room badge + stay dates + extension badge */}
+        <div className="mt-1.5 flex items-center gap-2 flex-wrap">
           <Badge
             variant="secondary"
             className="bg-zinc-100 text-zinc-600 text-[11px] font-mono font-semibold px-2 py-0 h-5 rounded-md border-0 shrink-0 leading-none"
           >
             {guest.roomNumber}
           </Badge>
+          {hasStayDates && (
+            <span className="text-[11px] text-zinc-500 font-medium leading-none">
+              {formatStayDate(checkInDate)}
+              {" · "}
+              {formatStayDate(checkOutDate)}
+            </span>
+          )}
+          {isExtended && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md leading-none">
+              <CalendarArrowUp className="w-2.5 h-2.5" />
+              Extended
+            </span>
+          )}
         </div>
 
-        {/* Line 2: key snippet */}
+        {/* Line 3: masked key */}
         <div className="mt-1">
           <span
             className={`font-mono text-xs tracking-wider leading-none ${

@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, integer, boolean, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { hotelsTable } from "./hotels";
@@ -12,6 +12,22 @@ export const guestsTable = pgTable("guests", {
   countryCode: text("country_code").notNull().default("TR"),
   language: text("language").default("tr-TR"),
   isActive: boolean("is_active").notNull().default(true),
+
+  // ── Stay dates ────────────────────────────────────────────────────────────
+  // Stored as Postgres DATE (YYYY-MM-DD); drizzle serializes as string.
+  // Nullable for backward-compatibility with guests created before this schema.
+  checkInDate: date("check_in_date"),
+  checkOutDate: date("check_out_date"),
+
+  // ── Extension tracking ────────────────────────────────────────────────────
+  // originalCheckOutDate: the checkout agreed at check-in, never modified.
+  // Populated on the first extension (= previous checkOutDate).
+  // isExtended / extensionCount: derived operational state stored explicitly
+  // so staff can see "extended" status without re-deriving it from history.
+  originalCheckOutDate: date("original_check_out_date"),
+  isExtended: boolean("is_extended").notNull().default(false),
+  extensionCount: integer("extension_count").notNull().default(0),
+
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
@@ -37,17 +53,11 @@ export type GuestKey = typeof guestKeysTable.$inferSelect;
 
 // ---------------------------------------------------------------------------
 // Guest QR auto-login tokens
-//   - Raw token is 32 random bytes (hex) — never stored in DB
-//   - DB only stores SHA-256(rawToken) so a DB breach doesn't expose usable tokens
-//   - Single-use: usedAt is set when consumed; subsequent attempts are rejected
-//   - 24-hour expiry from issuance
-//   - Revoked by staff when they regenerate a QR for the same guest
 // ---------------------------------------------------------------------------
 export const guestQrTokensTable = pgTable("guest_qr_tokens", {
   id: serial("id").primaryKey(),
   guestId: integer("guest_id").references(() => guestsTable.id).notNull(),
   hotelId: integer("hotel_id").references(() => hotelsTable.id).notNull(),
-  /** SHA-256 hash of the raw token — raw token never stored */
   tokenHash: text("token_hash").notNull().unique(),
   issuedByUserId: integer("issued_by_user_id"),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),

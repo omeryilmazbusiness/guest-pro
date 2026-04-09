@@ -10,6 +10,7 @@ import {
   ChevronsUpDown,
   Check,
   Globe,
+  CalendarDays,
 } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -43,13 +44,26 @@ import { getListGuestsQueryKey } from "@workspace/api-client-react";
 import { COUNTRIES, countryFlag } from "@/lib/locale";
 import { GuestHandoffModal } from "@/components/GuestHandoffModal";
 import type { HandoffData } from "@/components/GuestHandoffModal";
+import { todayIso, minCheckOutDate } from "@/lib/stays";
 
-const guestSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  roomNumber: z.string().min(1, "Room number is required"),
-  countryCode: z.string().min(2, "Country is required"),
-});
+const guestSchema = z
+  .object({
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
+    roomNumber: z.string().min(1, "Room number is required"),
+    countryCode: z.string().min(2, "Country is required"),
+    checkInDate: z.string().optional(),
+    checkOutDate: z.string().optional(),
+  })
+  .refine(
+    (d) => {
+      if (d.checkInDate && d.checkOutDate) {
+        return d.checkOutDate > d.checkInDate;
+      }
+      return true;
+    },
+    { message: "Check-out must be after check-in", path: ["checkOutDate"] }
+  );
 
 type GuestForm = z.infer<typeof guestSchema>;
 
@@ -63,12 +77,22 @@ export default function CreateGuest() {
   const [modalOpen, setModalOpen] = useState(false);
   const [countryOpen, setCountryOpen] = useState(false);
 
+  const today = todayIso();
+
   const form = useForm<GuestForm>({
     resolver: zodResolver(guestSchema),
-    defaultValues: { firstName: "", lastName: "", roomNumber: "", countryCode: "" },
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      roomNumber: "",
+      countryCode: "",
+      checkInDate: today,
+      checkOutDate: "",
+    },
   });
 
   const selectedCountry = form.watch("countryCode");
+  const watchedCheckIn = form.watch("checkInDate");
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -85,7 +109,6 @@ export default function CreateGuest() {
         onSuccess: (res) => {
           queryClient.invalidateQueries({ queryKey: getListGuestsQueryKey() });
           toast.success("Guest created successfully");
-          // Open the premium handoff modal with all data
           setHandoff({
             firstName: res.guest.firstName,
             lastName: res.guest.lastName,
@@ -111,7 +134,7 @@ export default function CreateGuest() {
   const handleCreateAnother = () => {
     setModalOpen(false);
     setHandoff(null);
-    form.reset();
+    form.reset({ firstName: "", lastName: "", roomNumber: "", countryCode: "", checkInDate: today, checkOutDate: "" });
   };
 
   if (!isAuthenticated || !isStaffRole(user?.role)) return null;
@@ -141,6 +164,7 @@ export default function CreateGuest() {
           <CardContent className="p-6 md:p-8">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+
                 {/* Name row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
@@ -148,9 +172,7 @@ export default function CreateGuest() {
                     name="firstName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-zinc-700 font-medium ml-1">
-                          First name
-                        </FormLabel>
+                        <FormLabel className="text-zinc-700 font-medium ml-1">First name</FormLabel>
                         <FormControl>
                           <Input
                             data-testid="input-first-name"
@@ -168,9 +190,7 @@ export default function CreateGuest() {
                     name="lastName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-zinc-700 font-medium ml-1">
-                          Last name
-                        </FormLabel>
+                        <FormLabel className="text-zinc-700 font-medium ml-1">Last name</FormLabel>
                         <FormControl>
                           <Input
                             data-testid="input-last-name"
@@ -191,9 +211,7 @@ export default function CreateGuest() {
                   name="roomNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-zinc-700 font-medium ml-1">
-                        Room number
-                      </FormLabel>
+                      <FormLabel className="text-zinc-700 font-medium ml-1">Room number</FormLabel>
                       <FormControl>
                         <Input
                           data-testid="input-room-number"
@@ -213,9 +231,7 @@ export default function CreateGuest() {
                   name="countryCode"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-zinc-700 font-medium ml-1">
-                        Guest country
-                      </FormLabel>
+                      <FormLabel className="text-zinc-700 font-medium ml-1">Guest country</FormLabel>
                       <Popover open={countryOpen} onOpenChange={setCountryOpen}>
                         <PopoverTrigger asChild>
                           <FormControl>
@@ -225,16 +241,12 @@ export default function CreateGuest() {
                               role="combobox"
                               aria-expanded={countryOpen}
                               className={`w-full h-14 rounded-2xl border text-base px-4 flex items-center gap-3 transition-all bg-zinc-50/50 hover:bg-zinc-100/50 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-0 ${
-                                field.value
-                                  ? "border-zinc-200 text-zinc-900"
-                                  : "border-zinc-200 text-zinc-400"
+                                field.value ? "border-zinc-200 text-zinc-900" : "border-zinc-200 text-zinc-400"
                               }`}
                             >
                               {field.value ? (
                                 <>
-                                  <span className="text-xl leading-none">
-                                    {countryFlag(field.value)}
-                                  </span>
+                                  <span className="text-xl leading-none">{countryFlag(field.value)}</span>
                                   <span className="flex-1 text-left font-medium">
                                     {COUNTRIES.find((c) => c.code === field.value)?.name ?? field.value}
                                   </span>
@@ -269,19 +281,13 @@ export default function CreateGuest() {
                                     key={country.code}
                                     value={country.name}
                                     onSelect={() => {
-                                      form.setValue("countryCode", country.code, {
-                                        shouldValidate: true,
-                                      });
+                                      form.setValue("countryCode", country.code, { shouldValidate: true });
                                       setCountryOpen(false);
                                     }}
                                     className="flex items-center gap-3 px-4 py-3 cursor-pointer"
                                   >
-                                    <span className="text-xl leading-none w-7 shrink-0">
-                                      {countryFlag(country.code)}
-                                    </span>
-                                    <span className="flex-1 text-[15px]">
-                                      {country.name}
-                                    </span>
+                                    <span className="text-xl leading-none w-7 shrink-0">{countryFlag(country.code)}</span>
+                                    <span className="flex-1 text-[15px]">{country.name}</span>
                                     {selectedCountry === country.code && (
                                       <Check className="w-4 h-4 text-zinc-900 shrink-0" />
                                     )}
@@ -302,7 +308,53 @@ export default function CreateGuest() {
                   )}
                 />
 
-                <div className="pt-4 flex justify-end">
+                {/* Stay dates */}
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <CalendarDays className="w-4 h-4 text-zinc-400" />
+                    <span className="text-sm font-medium text-zinc-700">Stay dates</span>
+                    <span className="text-xs text-zinc-400">(optional)</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="checkInDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-zinc-700 font-medium ml-1">Check-in</FormLabel>
+                          <FormControl>
+                            <input
+                              type="date"
+                              className="w-full h-14 rounded-2xl bg-zinc-50/50 border border-zinc-200 focus:ring-2 focus:ring-zinc-900 focus:outline-none text-base px-4 text-zinc-900 cursor-pointer"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="checkOutDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-zinc-700 font-medium ml-1">Check-out</FormLabel>
+                          <FormControl>
+                            <input
+                              type="date"
+                              min={minCheckOutDate(watchedCheckIn)}
+                              className="w-full h-14 rounded-2xl bg-zinc-50/50 border border-zinc-200 focus:ring-2 focus:ring-zinc-900 focus:outline-none text-base px-4 text-zinc-900 cursor-pointer"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end">
                   <Button
                     data-testid="button-submit-guest"
                     type="submit"
@@ -321,7 +373,6 @@ export default function CreateGuest() {
         </Card>
       </main>
 
-      {/* Premium guest handoff modal */}
       {handoff && (
         <GuestHandoffModal
           open={modalOpen}

@@ -1,27 +1,20 @@
 /**
- * Room aggregation domain logic.
+ * rooms.ts — Room aggregation domain logic.
  *
  * Pure functions — no React, no hooks, no side effects.
  * Derives room occupancy summaries from guest records since there is no
  * dedicated rooms database table. All components/hooks import from here.
  *
  * Single aggregation source:
- *   Both the room card front side (occupancy count, status) and the back side
- *   (guest list, key info) read from the same `RoomSummary` shape —
- *   no duplication, no separate aggregation in components.
- *
- * Extension points:
- *   When a rooms entity is added to the database:
- *   - Swap `aggregateRooms()` to join against a rooms table
- *   - Add capacity, floor, roomType, cleaningStatus to `RoomSummary`
- *   - UI components don't change — they already consume `RoomSummary`
+ *   Both the room card front side (occupancy count) and the back side
+ *   (guest list, key info, dates) read from the same `RoomSummary` shape.
  */
 
 import type { Guest } from "@workspace/api-client-react";
 
 // ─── Domain types ─────────────────────────────────────────────────────────────
 
-/** Snapshot of a single guest, projected from the full Guest record. */
+/** Snapshot of a single guest, projected for the room card back face. */
 export interface RoomGuestSnapshot {
   id: number;
   firstName: string;
@@ -29,8 +22,16 @@ export interface RoomGuestSnapshot {
   countryCode: string;
   /** Masked key for display: "ABC123-DEF456-••••••" or null if no key. */
   maskedKey: string | null;
+  /** Full display key (guest_keys.key_display) — used for copy actions. */
+  fullKey: string | null;
   /** Whether this guest has an active key. */
   hasKey: boolean;
+  /** Check-in date in YYYY-MM-DD format or null. */
+  checkInDate: string | null;
+  /** Check-out date in YYYY-MM-DD format or null. */
+  checkOutDate: string | null;
+  /** Whether the stay has been extended at least once. */
+  isExtended: boolean;
 }
 
 /** Aggregated occupancy summary for a single room. */
@@ -45,15 +46,13 @@ export interface RoomSummary {
   guests: RoomGuestSnapshot[];
 }
 
-export type RoomStatusFilter = "all" | "occupied" | "empty";
-
 // ─── Key masking ──────────────────────────────────────────────────────────────
 
 /**
  * Masks the third segment of a guest key for display.
  * "ABC123-DEF456-GHIJKL" → "ABC123-DEF456-••••••"
  */
-function maskKey(key: string | null | undefined): string | null {
+export function maskKey(key: string | null | undefined): string | null {
   if (!key) return null;
   const parts = key.split("-");
   if (parts.length === 3) return `${parts[0]}-${parts[1]}-••••••`;
@@ -65,22 +64,27 @@ function maskKey(key: string | null | undefined): string | null {
 /**
  * Derives a sorted list of RoomSummary records from a flat guest list.
  *
- * Single source of truth — both the room card front and back read from
- * the `RoomSummary.guests[]` list. No secondary aggregation needed.
- *
- * Sorts rooms numerically (Room 2 before Room 10 before Room 101).
+ * Since all guests in the list are active (isActive=true from API), every
+ * derived room is occupied. No empty rooms are ever returned.
  */
 export function aggregateRooms(guests: Guest[]): RoomSummary[] {
   const map = new Map<string, RoomSummary>();
 
   for (const g of guests) {
+    // The API now returns date + extension fields. Cast via any for compat with
+    // generated client types that may not yet include the new properties.
+    const raw = g as any;
     const snapshot: RoomGuestSnapshot = {
       id: g.id,
       firstName: g.firstName,
       lastName: g.lastName,
       countryCode: g.countryCode,
       maskedKey: maskKey(g.guestKey),
+      fullKey: g.guestKey ?? null,
       hasKey: !!g.guestKey,
+      checkInDate: raw.checkInDate ?? null,
+      checkOutDate: raw.checkOutDate ?? null,
+      isExtended: raw.isExtended ?? false,
     };
 
     const existing = map.get(g.roomNumber);
@@ -104,33 +108,15 @@ export function aggregateRooms(guests: Guest[]): RoomSummary[] {
 
 // ─── Filtering ────────────────────────────────────────────────────────────────
 
-export interface RoomFilterOptions {
-  search?: string;
-  status?: RoomStatusFilter;
-}
-
 /**
- * Filters a room list by search term and/or occupancy status.
- * Input is never mutated.
+ * Filters a room list by search term.
+ * Since the API only returns active guests, all derived rooms are occupied —
+ * no status filter is needed.
  */
-export function filterRooms(
-  rooms: RoomSummary[],
-  options: RoomFilterOptions
-): RoomSummary[] {
-  let result = rooms;
-
-  if (options.search) {
-    const q = options.search.toLowerCase();
-    result = result.filter((r) => r.roomNumber.toLowerCase().includes(q));
-  }
-
-  if (options.status === "occupied") {
-    result = result.filter((r) => r.isOccupied);
-  } else if (options.status === "empty") {
-    result = result.filter((r) => !r.isOccupied);
-  }
-
-  return result;
+export function filterRooms(rooms: RoomSummary[], search?: string): RoomSummary[] {
+  if (!search) return rooms;
+  const q = search.toLowerCase();
+  return rooms.filter((r) => r.roomNumber.toLowerCase().includes(q));
 }
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
@@ -138,14 +124,11 @@ export function filterRooms(
 export interface RoomStats {
   totalRooms: number;
   occupiedRooms: number;
-  emptyRooms: number;
 }
 
 export function computeRoomStats(rooms: RoomSummary[]): RoomStats {
-  const occupied = rooms.filter((r) => r.isOccupied).length;
   return {
     totalRooms: rooms.length,
-    occupiedRooms: occupied,
-    emptyRooms: rooms.length - occupied,
+    occupiedRooms: rooms.length,
   };
 }
