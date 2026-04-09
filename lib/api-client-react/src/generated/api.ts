@@ -26,11 +26,14 @@ import type {
   GoogleAuthStatus,
   GoogleExchangeResponse,
   Guest,
+  GuestQrLoginParams,
   HealthStatus,
   HotelBranding,
   LoginRequest,
   LoginResponse,
   Message,
+  QrLoginErrorResponse,
+  QrLoginResponse,
   QuickAction,
   SendMessageRequest,
   SendMessageResponse,
@@ -459,6 +462,98 @@ export function useExchangeGoogleCode<
   };
 
   return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Consume a single-use QR auto-login token and create a guest session
+ */
+export const getGuestQrLoginUrl = (params: GuestQrLoginParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/auth/guest/qr-login?${stringifiedParams}`
+    : `/api/auth/guest/qr-login`;
+};
+
+export const guestQrLogin = async (
+  params: GuestQrLoginParams,
+  options?: RequestInit,
+): Promise<QrLoginResponse> => {
+  return customFetch<QrLoginResponse>(getGuestQrLoginUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGuestQrLoginQueryKey = (params?: GuestQrLoginParams) => {
+  return [`/api/auth/guest/qr-login`, ...(params ? [params] : [])] as const;
+};
+
+export const getGuestQrLoginQueryOptions = <
+  TData = Awaited<ReturnType<typeof guestQrLogin>>,
+  TError = ErrorType<QrLoginErrorResponse>,
+>(
+  params: GuestQrLoginParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof guestQrLogin>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGuestQrLoginQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof guestQrLogin>>> = ({
+    signal,
+  }) => guestQrLogin(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof guestQrLogin>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GuestQrLoginQueryResult = NonNullable<
+  Awaited<ReturnType<typeof guestQrLogin>>
+>;
+export type GuestQrLoginQueryError = ErrorType<QrLoginErrorResponse>;
+
+export function useGuestQrLogin<
+  TData = Awaited<ReturnType<typeof guestQrLogin>>,
+  TError = ErrorType<QrLoginErrorResponse>,
+>(
+  params: GuestQrLoginParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof guestQrLogin>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGuestQrLoginQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
 }
 
 /**

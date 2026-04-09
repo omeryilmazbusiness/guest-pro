@@ -1,12 +1,21 @@
 import { Router } from "express";
-import type { IRouter } from "express";
+import type { IRouter, Request } from "express";
 import { db, guestsTable, guestKeysTable, auditLogsTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
 import { requireStaff } from "../middlewares/requireAuth";
 import { generateGuestKey } from "../lib/auth";
 import { deriveLocaleFromCountry } from "../lib/locale";
+import { issueQrToken } from "../lib/qr-token";
+import { env } from "../config/env";
 
 const router: IRouter = Router();
+
+function getAppBase(req: Request): string {
+  if (env.APP_BASE_URL) return env.APP_BASE_URL;
+  const proto = (req.headers["x-forwarded-proto"] as string) ?? req.protocol;
+  const host = (req.headers["x-forwarded-host"] as string) ?? req.headers.host;
+  return `${proto}://${host}`;
+}
 
 router.get("/guests", requireStaff, async (req, res): Promise<void> => {
   const hotelId = req.session!.hotelId;
@@ -69,6 +78,13 @@ router.post("/guests", requireStaff, async (req, res): Promise<void> => {
     metadata: { roomNumber, firstName, lastName, countryCode: normalizedCountry, language: voiceLocale },
   });
 
+  // Issue a secure single-use QR auto-login token (24h, single-use, SHA-256 hashed in DB)
+  const { rawToken, expiresAt } = await issueQrToken(guest.id, hotelId, actorId);
+
+  // Build the auto-login URL — path must match the frontend route
+  const appBase = getAppBase(req);
+  const qrLoginUrl = `${appBase}/guest/auto-login?token=${rawToken}`;
+
   res.status(201).json({
     guest: {
       id: guest.id,
@@ -82,6 +98,8 @@ router.post("/guests", requireStaff, async (req, res): Promise<void> => {
       guestKey: guestKey.keyDisplay,
     },
     guestKey: key,
+    qrLoginUrl,
+    qrTokenExpiresAt: expiresAt.toISOString(),
   });
 });
 

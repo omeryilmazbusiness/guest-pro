@@ -1,0 +1,335 @@
+You are a senior full-stack software architect and production-grade security-minded engineer.
+
+Your task is to inspect the existing “Guest Pro” project and implement a professional, secure, SOLID, production-ready guest QR auto-login architecture.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the current codebase, guest creation flow, guest key flow, auth system, routing, database schema, session/token handling, popup/modal system, and dashboard redirects.
+- Do NOT rebuild the project from scratch if working systems already exist.
+- Preserve working manager login, guest login, guest key auth, guest dashboard, AI/chat flow, route protection, and stable APIs.
+- Refactor only where there is real architecture, security, UX, or maintainability value.
+- The result must be highly professional, secure, layered, production-ready, and easy to extend.
+
+PROJECT CONTEXT:
+Guest Pro is a hotel guest web app.
+
+CURRENT GOAL:
+When a new guest is created, a popup must appear that includes:
+- QR code
+- Guest full name
+- Room number
+- Guest key
+- Copyable guest key action
+
+The QR code must allow the guest to scan it with a phone camera and automatically log into that guest account securely, then open the guest dashboard.
+
+CRITICAL SECURITY REQUIREMENT:
+Do NOT implement QR login by embedding the raw guest key directly in the QR code if a more secure production-grade design is possible.
+
+Instead, implement the most secure practical architecture.
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current guest creation flow
+2. Current manager-side create guest UI
+3. Current guest key generation flow
+4. Current guest login/auth architecture
+5. Current token/session design
+6. Current DB schema for guests / guest keys / auth records
+7. Current popup/modal infrastructure
+8. Current route protection
+9. Current audit logging if any
+10. What already works
+11. What should be preserved
+12. What is weak from a security or architecture point of view
+
+Then provide:
+- concise architecture audit
+- guest creation/auth gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — DESIGN THE MOST SECURE QR AUTO-LOGIN FLOW
+==================================================
+
+Implement a production-grade QR login architecture.
+
+SECURITY GOAL:
+The QR code must not simply expose a raw reusable guest key if a more secure design is possible.
+
+PREFERRED ARCHITECTURE:
+- when guest is created, generate a secure auto-login token or magic-link token
+- the QR code should contain a URL such as:
+  /guest/auto-login?token=...
+- the token should be:
+  - signed or securely random
+  - short-lived and/or single-use
+  - mapped to the correct guest
+  - validated server-side
+- after successful use:
+  - create the guest session securely
+  - redirect to guest dashboard
+  - revoke or invalidate token if using single-use strategy
+
+SECURITY REQUIREMENTS:
+- choose the strongest practical design for this app
+- prefer:
+  - short-lived token
+  - single-use token
+  - hashed token storage in DB
+  - expiry checks
+  - audit logging
+- do NOT store sensitive reusable secrets in QR if avoidable
+- do NOT trust client-only checks
+
+You may choose a strong pattern such as:
+- guest auto-login token table
+- hashed token stored server-side
+- token family / issuance record
+- revoke after first successful login
+- explicit expiry time
+- optional reissue/refresh flow
+
+==================================================
+PHASE 3 — POPUP AFTER GUEST CREATION
+==================================================
+
+After a manager creates a guest, show a premium popup/modal/sheet.
+
+POPUP CONTENT REQUIREMENTS:
+- QR code prominently displayed
+- Guest full name
+- Room number
+- Guest key
+- Copy button for guest key
+- Optional: regenerate QR action if architecture supports it
+- Optional: download/share QR card if already appropriate and secure
+
+UX REQUIREMENTS:
+- premium white/light design
+- soft rounded corners
+- elegant spacing
+- mobile-friendly if modal is viewed on smaller screens
+- clean hierarchy
+- highly professional and polished
+- the popup should feel like a premium guest handoff card
+
+COPY / UX GOAL:
+The popup should make it easy for hotel staff to:
+- hand the QR to the guest
+- copy the guest key
+- quickly understand what was created
+
+IMPORTANT:
+- keep the popup secure and clean
+- do not expose unnecessary sensitive data
+- keep the information useful and operational
+
+==================================================
+PHASE 4 — QR CODE CONTENT AND LOGIN URL
+==================================================
+
+Implement QR generation professionally.
+
+REQUIREMENTS:
+- QR should encode the secure auto-login URL, not a naive raw secret if avoidable
+- URL must point to a dedicated secure auto-login route
+- route must validate token server-side
+- if valid, create guest auth session and redirect to guest dashboard
+- if invalid/expired/already used, show a clean guest-facing error/fallback page
+
+GUEST-FACING FAILURE STATES:
+- expired QR
+- already used QR (if single-use)
+- invalid QR
+- guest disabled / guest not found
+
+These states must look professional and safe.
+
+==================================================
+PHASE 5 — GUEST KEY DISPLAY AND COPY ACTION
+==================================================
+
+The popup must still show the guest key and make it copyable.
+
+REQUIREMENTS:
+- copy-to-clipboard action
+- polished success feedback when copied
+- clear label
+- avoid ugly raw UI
+- keep this operationally useful for staff
+
+IMPORTANT:
+- the visible guest key is a separate operational convenience
+- QR login should still use the more secure tokenized flow if possible
+- do not couple the QR directly to a permanently reusable plaintext guest key unless truly necessary
+
+==================================================
+PHASE 6 — DATABASE / DOMAIN MODEL EXTENSION
+==================================================
+
+Extend the data model professionally if needed.
+
+Possible required entities or fields:
+- guest auto login token table / issuance table
+- token hash
+- token expiresAt
+- token usedAt
+- token revokedAt
+- token createdBy
+- token guestId
+- token metadata (optional)
+- audit logs for issuance and consumption
+
+REQUIREMENTS:
+- clean migration(s)
+- clean repository/service updates
+- maintainable schema
+- preserve existing guest auth model
+- do not create messy overlapping auth logic
+
+==================================================
+PHASE 7 — SESSION / AUTH INTEGRATION
+==================================================
+
+The QR auto-login flow must integrate cleanly with the existing guest auth/session system.
+
+REQUIREMENTS:
+- after QR validation, guest must be logged in properly
+- use the app’s real auth/session mechanism
+- do not fake login with UI-only state
+- preserve route protection
+- ensure guest lands on guest dashboard
+- ensure logout still works
+- ensure protected routes respect the created session
+
+==================================================
+PHASE 8 — AUDIT LOGGING / SECURITY OBSERVABILITY
+==================================================
+
+Implement auditability professionally.
+
+Log important events such as:
+- guest created
+- QR token issued
+- QR token used successfully
+- QR token invalid/expired/rejected
+- guest key copied if appropriate
+- QR reissued/revoked if supported
+
+Keep logs safe and production-minded.
+
+==================================================
+PHASE 9 — OPTIONAL BUT STRONGLY RECOMMENDED HARDENING
+==================================================
+
+If appropriate for the current architecture, add or prepare:
+- one-time-use tokens
+- short expiry windows
+- QR regenerate action
+- invalidate old QR when new QR is generated
+- rate limit auto-login endpoint
+- user-agent / IP logging
+- safe error responses
+- optional secondary confirmation screen only if necessary
+- future device-binding readiness
+
+Do not overcomplicate the MVP, but design it professionally.
+
+==================================================
+PHASE 10 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement in a clean, layered, production-ready architecture.
+
+REQUIREMENTS:
+- business logic must not live in UI components
+- QR issuance logic should be in service/use-case layer
+- token validation logic should be centralized
+- no giant messy files
+- no duplicated auth logic
+- no magic strings scattered everywhere
+- use clean naming
+- no fake architecture
+- no dead code
+
+Possible clean structure:
+- GuestCreationService
+- GuestQrLoginTokenService
+- GuestQrLoginValidator
+- GuestAutoLoginController / route
+- GuestAutoLoginRepository
+- GuestHandoffPopup
+- GuestQrCard
+- CopyGuestKeyAction
+- AuditLogService
+
+==================================================
+PHASE 11 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- manager login
+- guest key login
+- guest dashboard
+- guest logout
+- guest chat / AI flow
+- route protection
+- manager guest list
+- create guest flow
+- stable APIs
+
+This task is specifically about secure QR-based guest onboarding and premium post-create UX.
+
+==================================================
+PHASE 12 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Manager can create a guest successfully
+2. After guest creation, the popup appears
+3. Popup shows:
+   - QR code
+   - guest full name
+   - room number
+   - guest key
+   - copy action
+4. Copy guest key works correctly
+5. QR code scans successfully
+6. QR opens a secure auto-login URL
+7. Token is validated server-side
+8. Guest is automatically logged in
+9. Guest lands on guest dashboard
+10. Invalid/expired/used tokens are handled safely
+11. Existing guest key login still works
+12. Existing guest logout still works
+13. Route protection remains correct
+14. Security design is production-grade and not naive
+
+==================================================
+PHASE 13 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was preserved
+3. What security design was chosen for QR login and why
+4. How the QR auto-login flow works
+5. How guest key display/copy works
+6. Any DB/schema changes
+7. Which files were changed
+8. How token expiry / single-use / revocation works
+9. How to test manager create guest -> popup -> QR scan -> auto login end-to-end
+10. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Use the strongest practical secure design
+- Keep the result SOLID, layered, production-ready, and polished

@@ -114,6 +114,34 @@ export interface CreateGuestRequest {
 export interface CreateGuestResponse {
   guest: Guest;
   guestKey: string;
+  /** Secure single-use auto-login URL for QR code (24h expiry) */
+  qrLoginUrl: string;
+  /** ISO timestamp when the QR auto-login token expires */
+  qrTokenExpiresAt: string;
+}
+
+export type QrLoginErrorResponseCode =
+  (typeof QrLoginErrorResponseCode)[keyof typeof QrLoginErrorResponseCode];
+
+export const QrLoginErrorResponseCode = {
+  qr_invalid: "qr_invalid",
+  guest_not_found: "guest_not_found",
+  invalid_token: "invalid_token",
+} as const;
+
+export interface QrLoginErrorResponse {
+  error: string;
+  code: QrLoginErrorResponseCode;
+}
+
+export interface QrLoginResponse {
+  role: "guest";
+  token: string;
+  user: CurrentUser;
+}
+
+export interface GuestQrLoginParams {
+  token: string;
 }
 
 export type ChatSessionStatus =

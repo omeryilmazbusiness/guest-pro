@@ -34,3 +34,26 @@ export type Guest = typeof guestsTable.$inferSelect;
 export const insertGuestKeySchema = createInsertSchema(guestKeysTable).omit({ id: true, createdAt: true });
 export type InsertGuestKey = z.infer<typeof insertGuestKeySchema>;
 export type GuestKey = typeof guestKeysTable.$inferSelect;
+
+// ---------------------------------------------------------------------------
+// Guest QR auto-login tokens
+//   - Raw token is 32 random bytes (hex) — never stored in DB
+//   - DB only stores SHA-256(rawToken) so a DB breach doesn't expose usable tokens
+//   - Single-use: usedAt is set when consumed; subsequent attempts are rejected
+//   - 24-hour expiry from issuance
+//   - Revoked by staff when they regenerate a QR for the same guest
+// ---------------------------------------------------------------------------
+export const guestQrTokensTable = pgTable("guest_qr_tokens", {
+  id: serial("id").primaryKey(),
+  guestId: integer("guest_id").references(() => guestsTable.id).notNull(),
+  hotelId: integer("hotel_id").references(() => hotelsTable.id).notNull(),
+  /** SHA-256 hash of the raw token — raw token never stored */
+  tokenHash: text("token_hash").notNull().unique(),
+  issuedByUserId: integer("issued_by_user_id"),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type GuestQrToken = typeof guestQrTokensTable.$inferSelect;

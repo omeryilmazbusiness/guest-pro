@@ -8,6 +8,7 @@ import ManagerDashboard from "@/pages/manager/dashboard";
 import CreateGuest from "@/pages/manager/create-guest";
 import GuestHome from "@/pages/guest/home";
 import GuestChat from "@/pages/guest/chat";
+import GuestAutoLogin from "@/pages/guest/auto-login";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/manager/guests/new" component={CreateGuest} />
       <Route path="/guest" component={GuestHome} />
       <Route path="/guest/chat" component={GuestChat} />
+      <Route path="/guest/auto-login" component={GuestAutoLogin} />
       <Route component={NotFound} />
     </Switch>
   );

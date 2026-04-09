@@ -84,6 +84,44 @@ paths:
               schema:
                 $ref: "#/components/schemas/GoogleAuthStatus"
 
+  /auth/guest/qr-login:
+    get:
+      operationId: guestQrLogin
+      tags: [auth]
+      summary: Consume a single-use QR auto-login token and create a guest session
+      parameters:
+        - in: query
+          name: token
+          required: true
+          schema:
+            type: string
+          description: Raw QR token (64-char hex)
+      responses:
+        "200":
+          description: Guest session created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QrLoginResponse"
+        "400":
+          description: Missing or malformed token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QrLoginErrorResponse"
+        "401":
+          description: Token invalid, expired, or already used
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QrLoginErrorResponse"
+        "404":
+          description: Guest not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QrLoginErrorResponse"
+
   /auth/google/exchange:
     get:
       operationId: exchangeGoogleCode
@@ -482,9 +520,45 @@ components:
           $ref: "#/components/schemas/Guest"
         guestKey:
           type: string
+        qrLoginUrl:
+          type: string
+          description: Secure single-use auto-login URL for QR code (24h expiry)
+        qrTokenExpiresAt:
+          type: string
+          format: date-time
+          description: ISO timestamp when the QR auto-login token expires
       required:
         - guest
         - guestKey
+        - qrLoginUrl
+        - qrTokenExpiresAt
+
+    QrLoginResponse:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [guest]
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/CurrentUser"
+      required:
+        - role
+        - token
+        - user
+
+    QrLoginErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+          enum: [qr_invalid, guest_not_found, invalid_token]
+      required:
+        - error
+        - code
 
     ChatSession:
       type: object

@@ -26,6 +26,53 @@ The main product is **Guest Pro** — a premium mobile-first hotel guest web app
 ### Country Selector (Manager)
 `create-guest.tsx` uses a shadcn Command + Popover combobox to pick country. Validation requires country selection.
 
+## Guest QR Auto-Login Architecture
+
+### Security Design
+When a guest is created, a **single-use 24-hour QR auto-login token** is issued alongside the guest key:
+- Raw token = 32 cryptographically-random bytes (hex). **Never stored in DB.**
+- DB stores only `SHA-256(rawToken)` — a breach yields no usable tokens.
+- QR code encodes: `https://<domain>/guest/auto-login?token=<rawToken>`
+- Token is **single-use**: `usedAt` is set on first consumption; replay attempts are rejected.
+- Previous tokens for a guest are **revoked** when a new QR is issued.
+- All issuance and consumption events are audit-logged.
+
+### Flow
+1. Staff creates guest → API returns `{ guestKey, qrLoginUrl, qrTokenExpiresAt }`
+2. `GuestHandoffModal` opens with QR code (rendered via `qrcode` canvas), key display, copy button
+3. Guest scans QR → lands on `/guest/auto-login?token=...` page
+4. Page calls `GET /api/auth/guest/qr-login?token=...` (no auth required)
+5. Server validates token hash, marks `usedAt`, issues guest JWT, returns session
+6. Frontend stores token → redirects to `/guest`
+7. Invalid/expired/used tokens show a clean dark error page with "Sign in with Guest Key" fallback
+
+### Key Files
+- `lib/db/src/schema/guests.ts` — `guestQrTokensTable` (new)
+- `artifacts/api-server/src/lib/qr-token.ts` — `issueQrToken`, `consumeQrToken`, `revokeAllGuestQrTokens`
+- `artifacts/api-server/src/routes/auth.ts` — `GET /auth/guest/qr-login` endpoint
+- `artifacts/api-server/src/routes/guests.ts` — `POST /guests` now returns `qrLoginUrl` + `qrTokenExpiresAt`
+- `artifacts/guest-pro/src/components/GuestHandoffModal.tsx` — premium post-create modal with QR
+- `artifacts/guest-pro/src/pages/guest/auto-login.tsx` — landing page for QR scans
+
+## Personnel Role (Staff Tier 2)
+
+### Access Policy
+- `manager` — full access: view guests, create guests, manage hotel settings
+- `personnel` — limited access: view guests, create guests (no hotel management)
+- Defined in `artifacts/api-server/src/lib/roles.ts` and mirrored in `artifacts/guest-pro/src/lib/permissions.ts`
+
+### Key Files
+- `artifacts/api-server/src/lib/roles.ts` — `STAFF_ROLES`, `Permission`, `ROLE_PERMISSIONS`, `isStaffRole()`, `can()`
+- `artifacts/api-server/src/middlewares/requireAuth.ts` — `requireStaff` (manager|personnel), `requireManager`, `requireGuest`
+- `artifacts/guest-pro/src/lib/permissions.ts` — client-side permission mirror
+
+### Demo Credentials
+| Role | Email | Password |
+|------|-------|----------|
+| Manager | `manager@grandhotel.com` | `manager123` |
+| Personnel | `staff@grandhotel.com` | `staff123` |
+| Guest | key: `5FC43C-AA40F4-3170FA` | — |
+
 ## Stack
 
 - **Monorepo tool**: pnpm workspaces

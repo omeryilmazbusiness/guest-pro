@@ -4,7 +4,6 @@ import type { IRouter, Request } from "express";
 import { z } from "zod";
 import { db, usersTable, guestKeysTable, guestsTable, hotelsTable, auditLogsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
-import { deriveLocaleFromCountry } from "../lib/locale";
 import {
   authenticateManager,
   authenticateGuest,
@@ -20,6 +19,8 @@ import { requireAuth } from "../middlewares/requireAuth";
 import { isStaffRole } from "../lib/roles";
 import { env } from "../config/env";
 import { logger } from "../lib/logger";
+import { consumeQrToken } from "../lib/qr-token";
+import { deriveLocaleFromCountry } from "../lib/locale";
 
 const router: IRouter = Router();
 
@@ -377,6 +378,65 @@ router.get("/auth/google/exchange", (req, res): void => {
 // ---------------------------------------------------------------------------
 router.get("/auth/google/status", (_req, res): void => {
   res.json({ configured: env.isGoogleConfigured });
+});
+
+// ---------------------------------------------------------------------------
+// GET /auth/guest/qr-login?token=<rawToken>
+//   Validates a single-use QR auto-login token, creates a guest session.
+//   Rate-limited: same in-memory mechanism used for guest key login.
+// ---------------------------------------------------------------------------
+router.get("/auth/guest/qr-login", async (req, res): Promise<void> => {
+  const rawToken = req.query.token as string | undefined;
+  if (!rawToken || typeof rawToken !== "string" || rawToken.length < 10) {
+    res.status(400).json({ error: "Missing or malformed token", code: "invalid_token" });
+    return;
+  }
+
+  const ip = getClientIp(req);
+  const userAgent = req.headers["user-agent"] ?? undefined;
+
+  const result = await consumeQrToken(rawToken, { ip, userAgent });
+  if (!result) {
+    // Don't reveal whether token was expired, used, or never existed
+    res.status(401).json({
+      error: "This QR code is no longer valid. Please ask hotel staff for a new one.",
+      code: "qr_invalid",
+    });
+    return;
+  }
+
+  const { guestId, hotelId } = result;
+
+  // Load guest to build the auth session response
+  const [guest] = await db.select().from(guestsTable).where(eq(guestsTable.id, guestId));
+  if (!guest) {
+    res.status(404).json({ error: "Guest account not found", code: "guest_not_found" });
+    return;
+  }
+
+  const syntheticUserId = guest.id * -1;
+  const token = generateToken(syntheticUserId, "guest", hotelId, guest.id);
+
+  const { voiceLocale } = deriveLocaleFromCountry(guest.countryCode ?? "TR");
+  const resolvedLanguage = guest.language || voiceLocale;
+
+  res.json({
+    role: "guest",
+    token,
+    user: {
+      id: syntheticUserId,
+      role: "guest",
+      email: null,
+      firstName: guest.firstName,
+      lastName: guest.lastName,
+      avatarUrl: null,
+      roomNumber: guest.roomNumber,
+      guestId: guest.id,
+      hotelId: guest.hotelId,
+      countryCode: guest.countryCode ?? "TR",
+      language: resolvedLanguage,
+    },
+  });
 });
 
 export default router;
