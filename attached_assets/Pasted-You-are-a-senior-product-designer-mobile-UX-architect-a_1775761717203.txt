@@ -1,0 +1,388 @@
+You are a senior product designer, mobile UX architect, and production-grade full-stack engineer.
+
+Your task is to inspect, redesign, and professionalize the STAFF and MANAGER dashboards of the existing “Guest Pro” project with a strong mobile-first admin UX.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the current codebase, dashboard structure, auth/role system, existing manager/personnel access rules, navigation, guest list screens, overview widgets, and responsive behavior.
+- Do NOT rebuild the app from scratch if working parts already exist.
+- Preserve working auth, guest flows, role restrictions, CRUD flows, route protection, and stable APIs.
+- Refactor only where there is real UX, architecture, maintainability, or production value.
+- The result must be fully mobile-focused, premium, simple, soft, modern, and production-ready.
+- The dashboards must feel like a real hospitality operations app designed for phones first, not a desktop admin panel squeezed into mobile.
+
+PROJECT CONTEXT:
+Guest Pro includes manager-side operations and a staff/personnel role.
+We need both STAFF and MANAGER dashboards to have a truly professional mobile UX.
+
+PRIMARY OBJECTIVE:
+Redesign both STAFF and MANAGER dashboards as mobile-first operational dashboards with:
+- premium mobile layout
+- overview cards
+- list-card guest views
+- polished mobile navigation
+- excellent touch ergonomics
+- clear visual hierarchy
+- role-aware dashboard structure
+
+BUSINESS ROLE RULES:
+- MANAGER has full access to all manager-side capabilities
+- STAFF / PERSONNEL has restricted access and should only see allowed features based on current role rules
+- The dashboard UX must feel intentional for each role, not like hidden broken leftovers
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current manager dashboard structure
+2. Current staff/personnel dashboard structure
+3. Current responsive/mobile behavior
+4. Current guest list/table/card implementation
+5. Current overview/KPI widgets
+6. Current navigation/sidebar/tab structure
+7. Current auth/session/role-aware rendering
+8. Current route protection
+9. Current CRUD entry points
+10. Current visual/design weaknesses on mobile
+11. What already works
+12. What should be preserved
+13. What feels desktop-first and not mobile-first
+14. What needs redesign
+
+Then provide:
+- concise architecture and UX audit
+- mobile UX gap analysis
+- role-based dashboard gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — REDEFINE THE DASHBOARD UX AS MOBILE-FIRST
+==================================================
+
+Redesign both dashboards with a true mobile-first approach.
+
+DESIGN GOALS:
+- phone-first layout
+- premium hospitality SaaS feel
+- simple
+- soft
+- modern
+- operationally efficient
+- clean and calm
+- strong readability
+- excellent touch interaction
+
+DO NOT:
+- keep desktop table-heavy layouts as the primary pattern on mobile
+- rely on tiny controls
+- use cluttered admin UI
+- overload the screen
+
+USE:
+- stacked overview cards
+- list-card guest items
+- drawer/sheet/modal patterns where appropriate
+- compact but premium headers
+- sticky mobile actions where useful
+- large tap targets
+- clean filters/search surfaces
+- soft shadows and rounded surfaces
+- clear section spacing
+
+==================================================
+PHASE 3 — MANAGER DASHBOARD MOBILE UX
+==================================================
+
+Make the MANAGER dashboard feel like a premium mobile operations console.
+
+MANAGER DASHBOARD SHOULD INCLUDE:
+- overview cards at the top
+- recent / important operational actions
+- guest management access
+- create guest CTA
+- guest list section
+- room-based filtering/grouping tools
+- guest key actions if already supported
+- quick operational entry points
+
+MOBILE DESIGN REQUIREMENTS:
+- overview section must use mobile-optimized cards
+- no tiny dense KPI blocks
+- guest list should use elegant list-card design on mobile
+- actions must be thumb-friendly
+- filters/search must feel premium and usable on smaller screens
+- forms/sheets must be clean and mobile-optimized
+
+MANAGER OVERVIEW CARDS MAY INCLUDE ONLY REAL DATA:
+- total guests
+- active guests
+- recent guests
+- room-based summary if meaningful
+- recent key renewal activity if real
+Do not fabricate fake metrics.
+
+==================================================
+PHASE 4 — STAFF / PERSONNEL DASHBOARD MOBILE UX
+==================================================
+
+Make the STAFF / PERSONNEL dashboard feel intentional and professional.
+
+IMPORTANT:
+Do not simply show a broken reduced manager dashboard.
+Design a focused mobile dashboard for staff.
+
+STAFF DASHBOARD SHOULD FEEL LIKE:
+- a clean operational workspace
+- focused only on allowed tasks
+- simple and fast
+- optimized for guest handling
+
+If current role rules say staff can only access:
+- Create Guest
+- Guests List
+
+Then the staff dashboard should emphasize exactly these tasks:
+- top overview relevant to staff
+- strong Create Guest CTA
+- clear Guests List access
+- polished mobile guest cards
+- simple quick filters/search
+
+UX GOAL:
+Staff should feel like they have a purpose-built interface, not a restricted leftover manager panel.
+
+==================================================
+PHASE 5 — LIST-CARD GUEST VIEW FOR MOBILE
+==================================================
+
+Replace or augment dense desktop-style tables with a premium mobile list-card system.
+
+REQUIREMENTS:
+- each guest displayed as a polished mobile card/list item
+- visually clear and easy to scan
+- include essential guest data such as:
+  - full name
+  - room number
+  - country if relevant
+  - guest key status if relevant
+  - created date if useful
+- each card should support contextual actions:
+  - view
+  - edit
+  - delete if allowed
+  - renew key if allowed
+  - copy key if allowed
+  - QR / access actions if supported
+
+DESIGN GOAL:
+The list-card structure must feel premium, fast, and operational on phones.
+
+==================================================
+PHASE 6 — OVERVIEW CARDS / KPI CARDS FOR MOBILE
+==================================================
+
+Create polished mobile-first overview cards.
+
+REQUIREMENTS:
+- cards should be stacked or arranged in a way that works beautifully on mobile
+- no cramped multi-column chaos
+- elegant typography
+- meaningful iconography if appropriate
+- concise labels
+- easy scanability
+- premium spacing
+- touch-friendly if cards are actionable
+
+Overview cards must feel:
+- modern
+- premium
+- calm
+- useful
+- not decorative-only
+
+==================================================
+PHASE 7 — MOBILE NAVIGATION / ACTION HIERARCHY
+==================================================
+
+Professionalize the dashboard navigation for mobile.
+
+REQUIREMENTS:
+- remove desktop-heavy sidebar dependency if it hurts mobile UX
+- use a clean mobile navigation pattern suitable for the current app:
+  - top bar + segmented areas
+  - bottom navigation
+  - sheet/drawer menu
+  - tab navigation
+  - or a hybrid if justified
+- keep role-aware navigation clean
+- manager and staff should only see relevant sections
+- no dead-end navigation
+- no hidden clutter
+
+NAVIGATION MUST FEEL:
+- premium
+- obvious
+- thumb-friendly
+- role-aware
+- not overloaded
+
+==================================================
+PHASE 8 — MOBILE FILTERS / SEARCH / ROOM CLASSIFICATION
+==================================================
+
+Make filtering and room-based management feel excellent on mobile.
+
+REQUIREMENTS:
+- search guest by name
+- search/filter by room number
+- room grouping if already implemented or appropriate
+- mobile-friendly filter UI
+- avoid crowded desktop filter bars
+- use chips, dropdown sheets, accordions, segmented controls, or similar professional mobile patterns
+- maintain fast scanning and filtering workflow
+
+==================================================
+PHASE 9 — MOBILE CRUD UX
+==================================================
+
+All CRUD flows must feel mobile professional.
+
+REQUIREMENTS:
+- create guest form optimized for phone screens
+- edit guest flow optimized for phone screens
+- delete confirmation polished and safe
+- key renewal flow polished and clear
+- use sheets/modals/drawers/cards as appropriate
+- no ugly long forms
+- strong spacing, labels, and validation states
+- excellent success/error feedback
+
+==================================================
+PHASE 10 — ROLE-AWARE UI / ACCESS CONTROL
+==================================================
+
+Preserve and improve role-aware rendering.
+
+REQUIREMENTS:
+- MANAGER sees the full dashboard and all permitted actions
+- STAFF sees only allowed sections/actions
+- restricted actions must not appear in the UI
+- route and API protection must remain correct
+- do not implement authorization only in UI
+- keep role capability logic centralized and maintainable
+
+==================================================
+PHASE 11 — DESIGN DIRECTION
+==================================================
+
+The visual direction must be:
+
+- white/light dominant
+- soft rounded corners
+- modern premium SaaS + hospitality operations feel
+- simple and expensive-looking
+- calm and trustworthy
+- strong visual hierarchy
+- no clutter
+- no cheap gradients
+- no noisy admin visuals
+- professional shadows and surfaces
+- refined typography
+
+Think:
+- premium hotel operations mobile app
+- luxury hospitality calmness
+- modern enterprise clarity
+- operational speed with elegance
+
+==================================================
+PHASE 12 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement in a meaningful, maintainable architecture.
+
+REQUIREMENTS:
+- business logic separate from presentation
+- avoid giant dashboard files
+- avoid duplicate list/filter/action logic
+- keep role/capability logic centralized
+- create reusable mobile dashboard components where appropriate
+- no dead code
+- no fake architecture
+- clean naming
+- maintainable folder/component structure
+
+Possible clean structure:
+- ManagerDashboardMobile
+- StaffDashboardMobile
+- DashboardOverviewCards
+- GuestListCard
+- GuestListSection
+- RoomFilterPanel
+- MobileActionSheet
+- DashboardHeader
+- RoleAwareNav
+- GuestKeyActions
+- GuestCrudSheet
+
+==================================================
+PHASE 13 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- manager login
+- staff/personnel login
+- guest login/logout
+- guest dashboard/chat/voice flows
+- existing CRUD logic
+- existing role restrictions
+- existing QR/key flows if present
+- stable APIs
+- route protection
+
+This task is specifically about mobile-first dashboard UX redesign and professionalization.
+
+==================================================
+PHASE 14 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Manager dashboard is mobile-first and polished
+2. Staff dashboard is mobile-first and polished
+3. Overview cards render beautifully on phones
+4. Guest list uses premium list-card design on mobile
+5. Search works cleanly on mobile
+6. Room filtering works cleanly on mobile
+7. Create guest flow feels mobile professional
+8. Edit/delete/key actions feel mobile professional
+9. Role-aware dashboard access still works correctly
+10. No regression in auth/route protection
+11. No regression in existing guest flows
+12. Overall UX feels production-ready on mobile
+
+==================================================
+PHASE 15 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was weak before
+3. What was redesigned
+4. How manager mobile dashboard now works
+5. How staff mobile dashboard now works
+6. How overview cards were improved
+7. How guest list cards were improved
+8. Which files were changed
+9. Any architecture refactors made
+10. How to test manager/staff dashboards on mobile
+11. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then redesign professionally
+- Keep the result production-ready, mobile-first, SOLID, layered, and polished
+- Both manager and staff dashboards must feel intentionally designed for mobile

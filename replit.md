@@ -86,9 +86,24 @@ When a guest is created, a **single-use 24-hour QR auto-login token** is issued 
 - Key renewal: triggers GuestHandoffModal reuse with new key + QR
 
 ### Key Files (Frontend)
-- `artifacts/guest-pro/src/pages/manager/dashboard.tsx` — main console
-- `artifacts/guest-pro/src/components/manager/GuestEditModal.tsx` — edit form
+- `artifacts/guest-pro/src/pages/manager/dashboard.tsx` — main console, role-aware, mobile-first
+- `artifacts/guest-pro/src/components/manager/GuestCard.tsx` — compact 2-line mobile guest card
+- `artifacts/guest-pro/src/components/manager/GuestEditModal.tsx` — edit dialog
 - `artifacts/guest-pro/src/components/manager/GuestDeleteDialog.tsx` — delete confirmation
+
+### Role Personas (same route `/manager`, different UX)
+| Persona | Header section | Actions visible |
+|---------|----------------|-----------------|
+| Manager | Horizontal stat chips (scrollable) | All: Edit, Renew, Copy, Delete |
+| Personnel | Dark welcome card + CTA | Edit, Renew, Copy (no Delete) |
+
+### Mobile-First UX Decisions
+- Stat chips: horizontal scroll row (`overflow-x-auto snap-x`) — no tall stacked cards on mobile
+- Guest card: compact 2-line ~68px item (vs old ~160px flex-col)
+- FAB: fixed bottom-right `+ New Guest` button (mobile only, sm:hidden)
+- Header: 56px sticky, minimal — brand + role identity + logout only
+- Filter bar: search full-width + room Select side-by-side (both fit on 375px)
+- Container: `max-w-2xl` — tighter centering optimized for phone/tablet
 
 ## Personnel Role (Staff Tier 2)
 
