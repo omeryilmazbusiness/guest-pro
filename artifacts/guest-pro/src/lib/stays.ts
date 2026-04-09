@@ -2,8 +2,40 @@
  * stays.ts — Domain helpers for guest stay dates and extension tracking.
  *
  * Pure functions only. No UI imports. Centralizes all date formatting,
- * night counting, and extension derivation so nothing leaks into components.
+ * night counting, extension derivation, and stay-status resolution so
+ * nothing leaks into components.
  */
+
+// ---------------------------------------------------------------------------
+// Stay status
+// ---------------------------------------------------------------------------
+
+/**
+ * The resolved access state of a guest's stay.
+ *   active    — today is within the stay window (check-in ≤ today ≤ check-out)
+ *   upcoming  — check-in is in the future (guest has not arrived yet)
+ *   expired   — check-out day has passed (stay window is closed)
+ *   no_dates  — no dates stored (backward-compat guests created before date schema)
+ */
+export type StayStatus = "active" | "upcoming" | "expired" | "no_dates";
+
+/**
+ * Resolve the stay status for a guest using local browser time.
+ * (Matches the server's UTC-based `resolveStayStatus` for the same-day case
+ * under reasonable timezone assumptions; close enough for UI presentation.)
+ *
+ * Checkout day is included in the active window.
+ */
+export function resolveStayStatus(
+  checkInDate: string | null | undefined,
+  checkOutDate: string | null | undefined
+): StayStatus {
+  if (!checkInDate && !checkOutDate) return "no_dates";
+  const today = todayIso();
+  if (checkInDate && today < checkInDate) return "upcoming";
+  if (checkOutDate && today > checkOutDate) return "expired";
+  return "active";
+}
 
 /**
  * Format a YYYY-MM-DD date string into a human-readable short form.

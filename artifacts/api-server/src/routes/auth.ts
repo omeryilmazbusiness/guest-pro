@@ -21,6 +21,7 @@ import { env } from "../config/env";
 import { logger } from "../lib/logger";
 import { consumeQrToken } from "../lib/qr-token";
 import { deriveLocaleFromCountry } from "../lib/locale";
+import { getAccessDenialReason } from "../lib/guest-stay-policy";
 
 const router: IRouter = Router();
 
@@ -161,6 +162,37 @@ router.post("/auth/login", async (req, res): Promise<void> => {
       return;
     }
     const { guest } = result;
+
+    // ── Stay-window policy ────────────────────────────────────────────────────
+    // Credentials are valid — now enforce the stay access window.
+    // This is the authoritative server-side check; UI messages are intentionally
+    // guest-facing and hospitality-appropriate.
+    const denialReason = getAccessDenialReason({
+      checkInDate: guest.checkInDate,
+      checkOutDate: guest.checkOutDate,
+    });
+    if (denialReason) {
+      db.insert(auditLogsTable)
+        .values({
+          hotelId: guest.hotelId,
+          actorId: null,
+          actorType: "guest",
+          action: "login_denied_stay_window",
+          targetType: "guest",
+          targetId: guest.id,
+          metadata: {
+            reason: denialReason,
+            checkInDate: guest.checkInDate,
+            checkOutDate: guest.checkOutDate,
+            ip: getClientIp(req),
+          },
+        })
+        .catch(() => {});
+      res.status(403).json({ error: denialReason, code: "stay_access_denied" });
+      return;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     const syntheticUserId = guest.id * -1;
     const token = generateToken(syntheticUserId, "guest", guest.hotelId, guest.id);
     // Derive voice locale from stored language (stored at creation) or countryCode as fallback
@@ -232,6 +264,24 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
       res.status(401).json({ error: "Guest not found" });
       return;
     }
+
+    // ── Re-validate stay window on every /auth/me call ────────────────────────
+    // This ensures that when a stay expires the guest is logged out on the next
+    // poll, and when a manager extends the stay the guest regains access
+    // immediately on the next poll — without requiring a new login.
+    const denialReason = getAccessDenialReason({
+      checkInDate: guest.checkInDate,
+      checkOutDate: guest.checkOutDate,
+    });
+    if (denialReason) {
+      // Return 401 so the frontend treats the session as expired and redirects
+      // the guest to the login page, where they will see the specific message
+      // upon their next login attempt.
+      res.status(401).json({ error: denialReason, code: "stay_access_denied" });
+      return;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     const { voiceLocale } = deriveLocaleFromCountry(guest.countryCode ?? "TR");
     const resolvedLanguage = guest.language || voiceLocale;
     res.json({
@@ -413,6 +463,20 @@ router.get("/auth/guest/qr-login", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Guest account not found", code: "guest_not_found" });
     return;
   }
+
+  // ── Stay-window policy ──────────────────────────────────────────────────────
+  // QR tokens are single-use and valid; enforce the stay window before issuing
+  // an auth token. If denied, the QR code has already been consumed to prevent
+  // replay, so the guest must request a new one after their stay is extended.
+  const qrDenialReason = getAccessDenialReason({
+    checkInDate: guest.checkInDate,
+    checkOutDate: guest.checkOutDate,
+  });
+  if (qrDenialReason) {
+    res.status(403).json({ error: qrDenialReason, code: "stay_access_denied" });
+    return;
+  }
+  // ─────────────────────────────────────────────────────────────────────────
 
   const syntheticUserId = guest.id * -1;
   const token = generateToken(syntheticUserId, "guest", hotelId, guest.id);

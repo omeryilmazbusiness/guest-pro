@@ -55,8 +55,9 @@ import {
 } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
 import { isStaffRole, can, Permission, roleLabel } from "@/lib/permissions";
-import { filterGuests, extractRoomNumbers } from "@/lib/guests";
+import { filterGuests, extractRoomNumbers, countByStatus } from "@/lib/guests";
 import { aggregateRooms, filterRooms } from "@/lib/rooms";
+import { type StayStatus } from "@/lib/stays";
 import { GuestProLogo } from "@/components/GuestProLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -187,60 +188,125 @@ function DashboardTabs({
   );
 }
 
-// ─── Guest filter bar ─────────────────────────────────────────────────────────
+// ─── Sticky guest filter bar ──────────────────────────────────────────────────
+//
+// Rendered as a sibling of <main>, sticky at top-14 (below the 56px header).
+// Contains search, room dropdown, and stay-status filter chips.
+// backdrop-blur + border-b provide visual elevation when scrolled.
 
-function GuestFilterBar({
+function StickyGuestFilterBar({
   search,
   onSearchChange,
   roomFilter,
   onRoomChange,
   rooms,
+  statusFilter,
+  onStatusChange,
+  statusCounts,
 }: {
   search: string;
   onSearchChange: (v: string) => void;
   roomFilter: string;
   onRoomChange: (v: string) => void;
   rooms: string[];
+  statusFilter: StayStatus | "all";
+  onStatusChange: (v: StayStatus | "all") => void;
+  statusCounts: Record<"active" | "upcoming" | "expired" | "no_dates", number>;
 }) {
+  const STATUS_OPTIONS: { value: StayStatus | "all"; label: string; count?: number }[] = [
+    { value: "all", label: "All" },
+    { value: "active", label: "Active", count: statusCounts.active },
+    { value: "upcoming", label: "Upcoming", count: statusCounts.upcoming },
+    { value: "expired", label: "Expired", count: statusCounts.expired },
+  ];
+
+  const hasAnyStatusFilter = statusCounts.upcoming > 0 || statusCounts.expired > 0;
+
   return (
-    <div className="flex gap-2 items-stretch">
-      <div className="relative flex-1">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
-        <Input
-          data-testid="input-search"
-          placeholder="Name, room, or key…"
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-10 pr-8 h-11 rounded-2xl bg-white border-zinc-200 focus-visible:ring-zinc-900 text-sm"
-        />
-        {search && (
-          <button
-            onClick={() => onSearchChange("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 p-0.5"
-            aria-label="Clear search"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
+    <div className="sticky top-14 z-10 bg-zinc-50/95 backdrop-blur-sm border-b border-zinc-200/60">
+      <div className="max-w-2xl mx-auto px-4 pt-3 pb-2 space-y-2">
+        {/* Search + room dropdown row */}
+        <div className="flex gap-2 items-stretch">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
+            <Input
+              data-testid="input-search"
+              placeholder="Name, room, or key…"
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="pl-10 pr-8 h-10 rounded-2xl bg-white border-zinc-200 focus-visible:ring-zinc-900 text-sm shadow-sm"
+            />
+            {search && (
+              <button
+                onClick={() => onSearchChange("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 p-0.5"
+                aria-label="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          {rooms.length > 0 && (
+            <Select value={roomFilter} onValueChange={onRoomChange}>
+              <SelectTrigger className="h-10 w-auto rounded-2xl border-zinc-200 bg-white text-sm font-medium focus:ring-zinc-900 px-3 gap-1.5 shrink-0 shadow-sm">
+                <DoorOpen className="w-4 h-4 text-zinc-400" />
+                <SelectValue placeholder="Room" />
+              </SelectTrigger>
+              <SelectContent className="rounded-2xl border-zinc-200 shadow-xl">
+                <SelectItem value="__all__" className="rounded-xl text-sm font-medium">
+                  All Rooms
+                </SelectItem>
+                {rooms.map((r) => (
+                  <SelectItem key={r} value={r} className="rounded-xl text-sm font-mono font-medium">
+                    Room {r}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+
+        {/* Status chip row — only shown when non-default statuses exist */}
+        {hasAnyStatusFilter && (
+          <div className="flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+            {STATUS_OPTIONS.filter(
+              (o) =>
+                o.value === "all" ||
+                o.value === "active" ||
+                (o.value === "upcoming" && statusCounts.upcoming > 0) ||
+                (o.value === "expired" && statusCounts.expired > 0)
+            ).map((opt) => {
+              const isActive = statusFilter === opt.value;
+              const chipStyle =
+                isActive
+                  ? opt.value === "expired"
+                    ? "bg-red-700 text-white border-red-700"
+                    : opt.value === "upcoming"
+                      ? "bg-sky-700 text-white border-sky-700"
+                      : "bg-zinc-900 text-white border-zinc-900"
+                  : "bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300";
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => onStatusChange(opt.value)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold border transition-all touch-manipulation shrink-0 ${chipStyle}`}
+                >
+                  {opt.label}
+                  {opt.count !== undefined && opt.count > 0 && (
+                    <span
+                      className={`text-[10px] font-mono px-1 py-0 rounded ${
+                        isActive ? "bg-white/20 text-inherit" : "bg-zinc-100 text-zinc-500"
+                      }`}
+                    >
+                      {opt.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         )}
       </div>
-      {rooms.length > 0 && (
-        <Select value={roomFilter} onValueChange={onRoomChange}>
-          <SelectTrigger className="h-11 w-auto rounded-2xl border-zinc-200 bg-white text-sm font-medium focus:ring-zinc-900 px-3 gap-1.5 shrink-0">
-            <DoorOpen className="w-4 h-4 text-zinc-400" />
-            <SelectValue placeholder="Room" />
-          </SelectTrigger>
-          <SelectContent className="rounded-2xl border-zinc-200 shadow-xl">
-            <SelectItem value="__all__" className="rounded-xl text-sm font-medium">
-              All Rooms
-            </SelectItem>
-            {rooms.map((r) => (
-              <SelectItem key={r} value={r} className="rounded-xl text-sm font-mono font-medium">
-                Room {r}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      )}
     </div>
   );
 }
@@ -248,7 +314,6 @@ function GuestFilterBar({
 // ─── Sticky rooms filter bar ──────────────────────────────────────────────────
 //
 // Rendered as a sibling of <main>, sticky at top-14 (below the 56px header).
-// Uses backdrop-blur and a subtle bottom border for visual separation when scrolled.
 // Only shows room number search — all derived rooms are occupied (no status filter needed).
 
 function StickyRoomFilterBar({
@@ -342,6 +407,7 @@ export default function ManagerDashboard() {
   // ── Guest filters
   const [guestSearch, setGuestSearch] = useState("");
   const [roomFilter, setRoomFilter] = useState("__all__");
+  const [statusFilter, setStatusFilter] = useState<StayStatus | "all">("all");
 
   // ── Room filters
   const [roomSearch, setRoomSearch] = useState("");
@@ -380,9 +446,11 @@ export default function ManagerDashboard() {
 
   const roomNumbers = useMemo(() => extractRoomNumbers(guests ?? []), [guests]);
 
+  const statusCounts = useMemo(() => countByStatus(guests ?? []), [guests]);
+
   const filteredGuests = useMemo(
-    () => filterGuests(guests ?? [], { search: guestSearch, roomNumber: roomFilter }),
-    [guests, guestSearch, roomFilter]
+    () => filterGuests(guests ?? [], { search: guestSearch, roomNumber: roomFilter, status: statusFilter }),
+    [guests, guestSearch, roomFilter, statusFilter]
   );
 
   const allRooms = useMemo(() => aggregateRooms(guests ?? []), [guests]);
@@ -392,7 +460,7 @@ export default function ManagerDashboard() {
     [allRooms, roomSearch]
   );
 
-  const guestHasFilters = guestSearch.length > 0 || roomFilter !== "__all__";
+  const guestHasFilters = guestSearch.length > 0 || roomFilter !== "__all__" || statusFilter !== "all";
   const roomHasFilters = roomSearch.length > 0;
 
   // ── Handlers
@@ -472,6 +540,7 @@ export default function ManagerDashboard() {
   const clearGuestFilters = () => {
     setGuestSearch("");
     setRoomFilter("__all__");
+    setStatusFilter("all");
   };
   const clearRoomFilters = () => {
     setRoomSearch("");
@@ -525,7 +594,19 @@ export default function ManagerDashboard() {
         </div>
       </header>
 
-      {/* ── Sticky rooms filter — visible only in rooms tab, below header ── */}
+      {/* ── Sticky filter bars — below header, tab-conditional ── */}
+      {activeTab === "guests" && (
+        <StickyGuestFilterBar
+          search={guestSearch}
+          onSearchChange={setGuestSearch}
+          roomFilter={roomFilter}
+          onRoomChange={setRoomFilter}
+          rooms={roomNumbers}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          statusCounts={statusCounts}
+        />
+      )}
       {activeTab === "rooms" && (
         <StickyRoomFilterBar
           search={roomSearch}
@@ -581,13 +662,6 @@ export default function ManagerDashboard() {
         ══════════════════════════════════ */}
         {activeTab === "guests" && (
           <div className="space-y-3 animate-in fade-in duration-200">
-            <GuestFilterBar
-              search={guestSearch}
-              onSearchChange={setGuestSearch}
-              roomFilter={roomFilter}
-              onRoomChange={setRoomFilter}
-              rooms={roomNumbers}
-            />
 
             {/* Count + clear */}
             {!isLoading && guests && (guestHasFilters || guests.length > 0) && (

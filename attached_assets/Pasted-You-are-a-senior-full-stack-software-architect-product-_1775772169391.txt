@@ -1,0 +1,369 @@
+You are a senior full-stack software architect, product engineer, and production-grade mobile UX designer.
+
+Your task is to inspect, understand, redesign, and harden the guest access control and manager/staff guest list experience of the existing “Guest Pro” project in a SOLID, layered, production-ready way.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the current codebase, file tree, auth flow, guest login flow, guest key flow, guest CRUD flow, stay-date model, extension model if any, dashboard/mobile UI, filter/search behavior, and role-aware structure.
+- Do NOT rebuild the project from scratch if working systems already exist.
+- Preserve working manager/staff auth, guest dashboard/chat/voice features, route protection, stable APIs, and current good architecture where it exists.
+- Refactor only where there is real architecture, maintainability, security, or UX value.
+- The final result must be mobile-first, premium, SOLID, layered, validated, and production-ready.
+
+PROJECT CONTEXT:
+Guest Pro has manager/staff dashboards and a guest login flow.
+Guests already have check-in and check-out dates or are about to have them added.
+We now need real stay-window access control.
+
+PRIMARY GOALS:
+1. Guests must be able to log in and access the system ONLY between check-in and check-out
+2. Add proper validation for expired stays and not-yet-started stays
+3. If a guest stay has expired, manager/staff must be able to extend the stay professionally
+4. Extended stays must be clearly tracked and visible
+5. Guest list screen must keep filter/search controls sticky at the top while scrolling
+6. All of this must be done in a clean SOLID architecture
+7. Start with inspection and understanding first before implementation
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current guest login/auth flow
+2. Current guest key validation flow
+3. Current guest data model
+4. Current check-in / check-out implementation if any
+5. Current guest edit flow
+6. Current stay extension logic if any
+7. Current route/session protection for guest access
+8. Current manager/staff guest list implementation
+9. Current guest search/filter bar implementation
+10. Current mobile sticky header/filter behavior if any
+11. Current role-aware access for manager/staff
+12. What already works
+13. What should be preserved
+14. What is architecturally weak
+15. What needs redesign/refactor to support proper stay-based access control
+
+Then provide:
+- concise architecture audit
+- guest access-control gap analysis
+- stay extension gap analysis
+- guest list sticky UX gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — ENFORCE GUEST ACCESS WINDOW
+==================================================
+
+Implement a real production-grade access policy:
+
+A guest can log in and access the system ONLY during the valid stay window:
+- from check-in date/time
+- until check-out date/time
+
+REQUIREMENTS:
+- guest login must be blocked if the stay has not started yet
+- guest login must be blocked if the stay has expired
+- guest login must be allowed only if current time is within the allowed stay window
+- validation must happen in the real auth/login flow, not only in UI
+- route/session protection must remain correct after login
+
+IMPORTANT:
+- do not trust client-side date logic only
+- enforce validation on server/auth side
+- use a clean access policy/service layer, not scattered date checks in random files
+
+==================================================
+PHASE 3 — PROFESSIONAL VALIDATION MESSAGES
+==================================================
+
+If guest tries to log in outside the valid stay period, return clear, professional, guest-facing messages.
+
+REQUIREMENTS:
+Use polished, user-friendly messages such as:
+
+CASE A — Stay not started yet:
+"Your access is not active yet. Please use the system starting from your check-in date."
+
+CASE B — Stay expired:
+"Your stay access has expired. Please contact reception if you need an extension."
+
+These messages should:
+- be clear
+- be professional
+- not expose sensitive technical details
+- be suitable for guest-facing UX
+- fit the premium hospitality product tone
+
+If localization already exists or is being implemented, ensure these messages are localizable.
+
+==================================================
+PHASE 4 — STAY EXTENSION MODEL (PROFESSIONAL)
+==================================================
+
+Implement a professional stay extension model.
+
+REQUIREMENTS:
+- if a guest stay is expired, manager/staff (where allowed) must be able to extend the stay
+- extension must not be a hidden overwrite with no trace
+- it must be obvious that the stay was extended
+- extension information must be stored cleanly and made visible in the guest management experience
+
+STORE EXTENSION DATA PROFESSIONALLY:
+At minimum, support:
+- checkInDate
+- originalCheckOutDate
+- currentCheckOutDate
+- isExtended
+- totalExtensionDays
+
+Strongly recommended if appropriate:
+- extensionCount
+- lastExtendedAt
+- extensionHistory/audit record
+
+IMPORTANT:
+- keep original checkout date preserved
+- current checkout date must reflect the active access window
+- extension amount should be easy to calculate and display
+- avoid fragile UI-only derived logic
+
+==================================================
+PHASE 5 — EDIT GUEST: EXTEND EXPIRED OR ACTIVE STAY
+==================================================
+
+Update the Edit Guest flow professionally.
+
+REQUIREMENTS:
+- manager/staff (where allowed) can open Edit Guest
+- stay can be extended whether currently active or already expired
+- extension UI must be explicit and professional
+- allow extending checkout date safely
+- clearly show:
+  - original checkout
+  - current checkout
+  - whether extended
+  - extension amount
+- validation must remain correct
+- changing dates must update access behavior correctly
+
+UX REQUIREMENTS:
+- clean mobile-friendly edit sheet/modal/form
+- excellent date field UX
+- clear extension section
+- polished success/error feedback
+- no messy long form
+
+==================================================
+PHASE 6 — GUEST LOGIN VALIDATION + EXPIRED GUEST EXTENSION CONSISTENCY
+==================================================
+
+Ensure the system behaves correctly end-to-end.
+
+REQUIREMENTS:
+- if guest is expired, login must fail with the proper message
+- if manager/staff extends the stay, the guest must be able to log in again within the new valid period
+- extension must immediately affect access logic correctly
+- avoid stale auth/session edge cases
+- ensure no old cached logic still treats the guest as expired after extension
+
+==================================================
+PHASE 7 — GUEST LIST PROFESSIONALIZATION FOR STAY STATUS
+==================================================
+
+Improve guest list presentation to make stay/access status clear.
+
+REQUIREMENTS:
+- guest cards/list items should clearly communicate stay state where useful:
+  - active
+  - upcoming
+  - expired
+  - extended
+- extended guests should be visibly recognizable in a subtle premium way
+- do not make the UI noisy
+- use tasteful status indicators or supporting metadata
+- keep the mobile list premium and highly readable
+
+If the architecture already has guest cards:
+- preserve them
+- extend them professionally
+
+==================================================
+PHASE 8 — STICKY FILTER + SEARCH BAR IN GUEST LIST
+==================================================
+
+Make the Guest tab filter/search controls sticky.
+
+REQUIREMENTS:
+- when scrolling down the guest list, the filter area and guest search bar must remain visible at the top
+- they must not disappear while the list scrolls
+- sticky controls must not clash with the dashboard header
+- sticky layout must be stable on mobile
+- no jitter, overlap, or clipping
+- add subtle background/elevation/shadow treatment when sticky if helpful
+- keep the sticky area premium, clean, and compact
+
+At minimum keep sticky:
+- guest search bar
+- key guest filters
+- any segmented/tab/filter controls relevant to the guest list
+
+==================================================
+PHASE 9 — ACCESS POLICY / DOMAIN MODEL / SOLID DESIGN
+==================================================
+
+Implement this with a proper layered architecture.
+
+IMPORTANT:
+Do NOT scatter stay-window logic across controllers, pages, and UI components.
+
+ARCHITECTURE GOAL:
+- central guest access policy
+- central stay-extension service
+- central validation rules
+- clean repositories / query services
+- presentation only renders state, not business policy
+
+Possible clean domain/application structure:
+- GuestStayPolicy
+- GuestAccessValidator
+- StayExtensionService
+- GuestLoginEligibilityService
+- GuestListQueryService
+- GuestStatusResolver
+- GuestEditUseCase
+- StickyGuestFilterBar
+- MobileGuestCard
+
+RULES:
+- business rules must be centralized
+- no duplicated date logic
+- no magic conditions in UI components
+- no fake architecture
+- no dead code
+- clean naming
+- maintainable structure
+
+==================================================
+PHASE 10 — DATABASE / SCHEMA / VALIDATION HARDENING
+==================================================
+
+Inspect and update schema if necessary.
+
+REQUIREMENTS:
+- store stay dates cleanly
+- preserve original vs current checkout
+- support extension tracking professionally
+- add migrations cleanly if needed
+- update validation schemas
+- update repositories/services/use-cases
+- preserve backward compatibility where practical
+
+Also add robust validation:
+- check-out must not be before check-in
+- extension date must not reduce current valid range incorrectly
+- expired/upcoming/active states must be derived consistently
+
+==================================================
+PHASE 11 — ROLE-AWARE ACCESS
+==================================================
+
+Preserve role-aware behavior.
+
+REQUIREMENTS:
+- MANAGER can perform all allowed stay-related actions
+- STAFF/PERSONNEL can only perform stay-related actions if current business rules allow it
+- if STAFF is not allowed to extend stays, do not show that action
+- do not rely only on UI hiding
+- route/API-level authorization must remain correct
+- centralize capability logic
+
+==================================================
+PHASE 12 — DESIGN DIRECTION
+==================================================
+
+The UX must feel:
+
+- white/light dominant
+- soft rounded corners
+- premium modern hospitality operations feel
+- simple and expensive-looking
+- calm and trustworthy
+- highly readable
+- operationally useful
+- clean and uncluttered
+- mobile-first
+- production-ready
+
+Stay-related states should feel:
+- clear
+- premium
+- professional
+- never noisy or alarmist
+
+==================================================
+PHASE 13 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- manager login
+- staff/personnel login
+- guest login flow beyond the new stay-window validation
+- guest dashboard/chat/voice features
+- guest key flows
+- QR flows if present
+- existing CRUD APIs
+- route protection
+- stable APIs
+
+This task is specifically about guest access validation by stay window, extension modeling, and sticky guest-list controls.
+
+==================================================
+PHASE 14 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Guest can log in only within valid stay window
+2. Guest with future check-in is blocked correctly
+3. Guest with expired checkout is blocked correctly
+4. Validation messages are clear and professional
+5. Manager/staff can extend an expired stay where allowed
+6. Extended guest can log in correctly afterward
+7. Original checkout date is preserved
+8. Current checkout date is updated correctly
+9. Extended state is visible and professional
+10. Extension amount is stored/displayed correctly
+11. Guest list search/filter bar stays sticky while scrolling
+12. Sticky controls do not break mobile layout
+13. No regression in auth/session/route protection
+14. No regression in guest-facing flows
+15. Overall UX feels premium and production-ready
+
+==================================================
+PHASE 15 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was preserved
+3. What was weak before
+4. What was redesigned
+5. How guest access validation now works
+6. How expired/upcoming/active guest states are modeled
+7. How stay extension now works
+8. How original vs current checkout is tracked
+9. How sticky guest filters/search work
+10. Which files were changed
+11. Any schema/migration changes
+12. How to test guest access and extension end-to-end
+13. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result mobile-first, SOLID, layered, premium, validated, and production-ready
+- Guest stay access must feel like a real hotel-grade access policy, not a UI trick

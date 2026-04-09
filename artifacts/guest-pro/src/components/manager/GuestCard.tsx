@@ -6,11 +6,11 @@
  *
  * Layout:
  *   [Avatar] | [Name] [Monochrome flag]          [Copy] [⋯]
- *            | [Room badge] · [CheckIn → CheckOut] [Extended?]
+ *            | [Room badge] · [CheckIn → CheckOut] [Status badge?] [Extended?]
  *            | [Masked key snippet]
  *
  * Flag: monochrome for ops context (never emoji, no color).
- * Dates: shown if present; extension badge if isExtended.
+ * Dates: shown if present; stay status badge for non-active states; extension badge if isExtended.
  * Actions: role-aware via permission booleans from caller.
  */
 
@@ -23,6 +23,8 @@ import {
   Trash2,
   RefreshCcw,
   CalendarArrowUp,
+  Clock,
+  CalendarX,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -36,7 +38,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CountryFlag } from "@/components/ui/CountryFlag";
 import type { Guest } from "@workspace/api-client-react";
-import { formatStayDate } from "@/lib/stays";
+import { formatStayDate, resolveStayStatus } from "@/lib/stays";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -98,6 +100,30 @@ function CopyKeyButton({ guestKey }: { guestKey: string }) {
   );
 }
 
+// ─── Stay status badge ────────────────────────────────────────────────────────
+// Only rendered for non-normal states (upcoming, expired).
+// Active guests have no badge — silence is the default state, reducing noise.
+
+function StayStatusBadge({ status }: { status: ReturnType<typeof resolveStayStatus> }) {
+  if (status === "upcoming") {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-md leading-none shrink-0">
+        <Clock className="w-2.5 h-2.5" />
+        Upcoming
+      </span>
+    );
+  }
+  if (status === "expired") {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-md leading-none shrink-0">
+        <CalendarX className="w-2.5 h-2.5" />
+        Expired
+      </span>
+    );
+  }
+  return null;
+}
+
 // ─── Main card ────────────────────────────────────────────────────────────────
 
 export function GuestCard({
@@ -127,13 +153,23 @@ export function GuestCard({
   const isExtended: boolean = raw.isExtended ?? false;
 
   const hasStayDates = !!(checkInDate || checkOutDate);
+  const stayStatus = resolveStayStatus(checkInDate, checkOutDate);
 
   const hasAnyAction = canEdit || canRenew || hasKey || canDelete;
+
+  // Expired guests get a muted left-border accent so they're visually distinct
+  // at a glance without being alarmist.
+  const cardAccent =
+    stayStatus === "expired"
+      ? "border-l-2 border-l-red-200"
+      : stayStatus === "upcoming"
+        ? "border-l-2 border-l-sky-200"
+        : "";
 
   return (
     <div
       data-testid={`card-guest-${guest.id}`}
-      className="bg-white rounded-2xl border border-zinc-100 shadow-sm hover:shadow-md hover:border-zinc-200 active:scale-[0.99] transition-all duration-150 px-4 py-3.5 flex items-start gap-3 touch-manipulation"
+      className={`bg-white rounded-2xl border border-zinc-100 shadow-sm hover:shadow-md hover:border-zinc-200 active:scale-[0.99] transition-all duration-150 px-4 py-3.5 flex items-start gap-3 touch-manipulation ${cardAccent}`}
     >
       {/* Avatar */}
       <GuestAvatar firstName={guest.firstName} lastName={guest.lastName} />
@@ -151,7 +187,7 @@ export function GuestCard({
           )}
         </div>
 
-        {/* Line 2: room badge + stay dates + extension badge */}
+        {/* Line 2: room badge + stay dates + status badges */}
         <div className="mt-1.5 flex items-center gap-2 flex-wrap">
           <Badge
             variant="secondary"
@@ -166,6 +202,7 @@ export function GuestCard({
               {formatStayDate(checkOutDate)}
             </span>
           )}
+          <StayStatusBadge status={stayStatus} />
           {isExtended && (
             <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md leading-none">
               <CalendarArrowUp className="w-2.5 h-2.5" />
@@ -212,7 +249,7 @@ export function GuestCard({
                   className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 cursor-pointer text-[13px] touch-manipulation"
                 >
                   <Pencil className="w-3.5 h-3.5 text-zinc-500" />
-                  Edit Guest
+                  {stayStatus === "expired" ? "Extend Stay" : "Edit Guest"}
                 </DropdownMenuItem>
               )}
               {canRenew && (

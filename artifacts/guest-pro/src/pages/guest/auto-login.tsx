@@ -23,6 +23,13 @@ import { Button } from "@/components/ui/button";
 
 type Status = "loading" | "success" | "error";
 
+const ERROR_TITLES: Record<string, string> = {
+  qr_invalid: "QR Code Expired",
+  guest_not_found: "Account Not Found",
+  invalid_token: "Invalid QR Code",
+  stay_access_denied: "Access Unavailable",
+};
+
 const ERROR_MESSAGES: Record<string, string> = {
   qr_invalid: "This QR code has expired or was already used.",
   guest_not_found: "The guest account linked to this QR code no longer exists.",
@@ -34,6 +41,7 @@ export default function GuestAutoLogin() {
   const [, setLocation] = useLocation();
   const { setToken } = useAuth();
   const [status, setStatus] = useState<Status>("loading");
+  const [errorTitle, setErrorTitle] = useState<string>("QR Code Expired");
   const [errorMessage, setErrorMessage] = useState<string>(
     "This QR code is no longer valid."
   );
@@ -47,6 +55,7 @@ export default function GuestAutoLogin() {
     const rawToken = params.get("token");
 
     if (!rawToken || rawToken.length < 10) {
+      setErrorTitle("Invalid QR Code");
       setErrorMessage("The QR code is missing a valid login token.");
       setStatus("error");
       return;
@@ -61,16 +70,26 @@ export default function GuestAutoLogin() {
       })
       .catch((err: unknown) => {
         let code: string | undefined;
+        let apiMessage: string | undefined;
         try {
-          const body = (err as { data?: { code?: string } }).data;
+          const body = (err as { data?: { code?: string; error?: string } }).data;
           code = body?.code;
+          apiMessage = body?.error;
         } catch {
           /* ignore */
         }
+        // Use the code-specific title, or a generic one
+        setErrorTitle(
+          code && ERROR_TITLES[code] ? ERROR_TITLES[code] : "QR Code Expired"
+        );
+        // Prefer the API's own professional message (e.g., stay denial),
+        // then the code-specific fallback, then the generic fallback.
         setErrorMessage(
-          code && ERROR_MESSAGES[code]
-            ? ERROR_MESSAGES[code]
-            : "This QR code is no longer valid. Please ask hotel staff for assistance."
+          apiMessage && code === "stay_access_denied"
+            ? apiMessage
+            : code && ERROR_MESSAGES[code]
+              ? ERROR_MESSAGES[code]
+              : "This QR code is no longer valid. Please ask hotel staff for assistance."
         );
         setStatus("error");
       });
@@ -111,7 +130,7 @@ export default function GuestAutoLogin() {
           </div>
           <div className="text-center">
             <h1 className="text-white text-xl font-serif font-medium mb-3">
-              QR Code Expired
+              {errorTitle}
             </h1>
             <p className="text-zinc-400 text-sm leading-relaxed">
               {errorMessage}
