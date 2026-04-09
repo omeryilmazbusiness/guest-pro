@@ -99,10 +99,37 @@ export interface Guest {
   /** @nullable */
   language?: string | null;
   hotelId: number;
+  isActive?: boolean;
   createdAt: string;
   /** @nullable */
   guestKey?: string | null;
 }
+
+export interface UpdateGuestRequest {
+  firstName?: string;
+  lastName?: string;
+  roomNumber?: string;
+  countryCode?: string;
+}
+
+export interface UpdateGuestResponse {
+  id: number;
+  firstName: string;
+  lastName: string;
+  roomNumber: string;
+  countryCode: string;
+  language?: string | null;
+  hotelId: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface DeleteGuestResponse {
+  success: boolean;
+}
+
+/** Same shape as CreateGuestResponse — new key + new QR token */
+export type RenewGuestKeyResponse = CreateGuestResponse;
 
 export interface CreateGuestRequest {
   firstName: string;

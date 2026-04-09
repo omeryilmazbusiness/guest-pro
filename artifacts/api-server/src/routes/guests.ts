@@ -2,10 +2,10 @@ import { Router } from "express";
 import type { IRouter, Request } from "express";
 import { db, guestsTable, guestKeysTable, auditLogsTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
-import { requireStaff } from "../middlewares/requireAuth";
+import { requireStaff, requireManager } from "../middlewares/requireAuth";
 import { generateGuestKey } from "../lib/auth";
 import { deriveLocaleFromCountry } from "../lib/locale";
-import { issueQrToken } from "../lib/qr-token";
+import { issueQrToken, revokeAllGuestQrTokens } from "../lib/qr-token";
 import { env } from "../config/env";
 
 const router: IRouter = Router();
@@ -17,6 +17,9 @@ function getAppBase(req: Request): string {
   return `${proto}://${host}`;
 }
 
+// ---------------------------------------------------------------------------
+// GET /guests — list all guests for this hotel
+// ---------------------------------------------------------------------------
 router.get("/guests", requireStaff, async (req, res): Promise<void> => {
   const hotelId = req.session!.hotelId;
   const guests = await db
@@ -28,17 +31,21 @@ router.get("/guests", requireStaff, async (req, res): Promise<void> => {
       countryCode: guestsTable.countryCode,
       language: guestsTable.language,
       hotelId: guestsTable.hotelId,
+      isActive: guestsTable.isActive,
       createdAt: guestsTable.createdAt,
       guestKey: guestKeysTable.keyDisplay,
     })
     .from(guestsTable)
     .leftJoin(guestKeysTable, and(eq(guestKeysTable.guestId, guestsTable.id), eq(guestKeysTable.isActive, true)))
-    .where(eq(guestsTable.hotelId, hotelId))
+    .where(and(eq(guestsTable.hotelId, hotelId), eq(guestsTable.isActive, true)))
     .orderBy(desc(guestsTable.createdAt));
 
   res.json(guests);
 });
 
+// ---------------------------------------------------------------------------
+// POST /guests — create a new guest
+// ---------------------------------------------------------------------------
 router.post("/guests", requireStaff, async (req, res): Promise<void> => {
   const { firstName, lastName, roomNumber, countryCode } = req.body;
   const hotelId = req.session!.hotelId;
@@ -78,10 +85,7 @@ router.post("/guests", requireStaff, async (req, res): Promise<void> => {
     metadata: { roomNumber, firstName, lastName, countryCode: normalizedCountry, language: voiceLocale },
   });
 
-  // Issue a secure single-use QR auto-login token (24h, single-use, SHA-256 hashed in DB)
   const { rawToken, expiresAt } = await issueQrToken(guest.id, hotelId, actorId);
-
-  // Build the auto-login URL — path must match the frontend route
   const appBase = getAppBase(req);
   const qrLoginUrl = `${appBase}/guest/auto-login?token=${rawToken}`;
 
@@ -94,6 +98,7 @@ router.post("/guests", requireStaff, async (req, res): Promise<void> => {
       countryCode: guest.countryCode,
       language: guest.language,
       hotelId: guest.hotelId,
+      isActive: guest.isActive,
       createdAt: guest.createdAt,
       guestKey: guestKey.keyDisplay,
     },
@@ -103,6 +108,9 @@ router.post("/guests", requireStaff, async (req, res): Promise<void> => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// GET /guests/:id — get one guest
+// ---------------------------------------------------------------------------
 router.get("/guests/:id", requireStaff, async (req, res): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const id = parseInt(rawId, 10);
@@ -111,6 +119,7 @@ router.get("/guests/:id", requireStaff, async (req, res): Promise<void> => {
     return;
   }
 
+  const hotelId = req.session!.hotelId;
   const [guest] = await db
     .select({
       id: guestsTable.id,
@@ -120,12 +129,13 @@ router.get("/guests/:id", requireStaff, async (req, res): Promise<void> => {
       countryCode: guestsTable.countryCode,
       language: guestsTable.language,
       hotelId: guestsTable.hotelId,
+      isActive: guestsTable.isActive,
       createdAt: guestsTable.createdAt,
       guestKey: guestKeysTable.keyDisplay,
     })
     .from(guestsTable)
     .leftJoin(guestKeysTable, and(eq(guestKeysTable.guestId, guestsTable.id), eq(guestKeysTable.isActive, true)))
-    .where(eq(guestsTable.id, id));
+    .where(and(eq(guestsTable.id, id), eq(guestsTable.hotelId, hotelId)));
 
   if (!guest) {
     res.status(404).json({ error: "Guest not found" });
@@ -133,6 +143,185 @@ router.get("/guests/:id", requireStaff, async (req, res): Promise<void> => {
   }
 
   res.json(guest);
+});
+
+// ---------------------------------------------------------------------------
+// PATCH /guests/:id — update guest details (name, room, country)
+// ---------------------------------------------------------------------------
+router.patch("/guests/:id", requireStaff, async (req, res): Promise<void> => {
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const id = parseInt(rawId, 10);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid guest ID" });
+    return;
+  }
+
+  const hotelId = req.session!.hotelId;
+  const actorId = req.session!.userId;
+  const { firstName, lastName, roomNumber, countryCode } = req.body;
+
+  const [existing] = await db
+    .select()
+    .from(guestsTable)
+    .where(and(eq(guestsTable.id, id), eq(guestsTable.hotelId, hotelId), eq(guestsTable.isActive, true)));
+
+  if (!existing) {
+    res.status(404).json({ error: "Guest not found" });
+    return;
+  }
+
+  const updates: Record<string, unknown> = {};
+  if (firstName && typeof firstName === "string") updates.firstName = firstName.trim();
+  if (lastName && typeof lastName === "string") updates.lastName = lastName.trim();
+  if (roomNumber && typeof roomNumber === "string") updates.roomNumber = roomNumber.trim();
+  if (countryCode && typeof countryCode === "string") {
+    const normalized = countryCode.trim().toUpperCase();
+    updates.countryCode = normalized;
+    updates.language = deriveLocaleFromCountry(normalized).voiceLocale;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ error: "No valid fields to update" });
+    return;
+  }
+
+  const [updated] = await db
+    .update(guestsTable)
+    .set(updates)
+    .where(and(eq(guestsTable.id, id), eq(guestsTable.hotelId, hotelId)))
+    .returning();
+
+  await db.insert(auditLogsTable).values({
+    hotelId,
+    actorId,
+    actorType: "manager",
+    action: "update_guest",
+    targetType: "guest",
+    targetId: id,
+    metadata: {
+      before: { firstName: existing.firstName, lastName: existing.lastName, roomNumber: existing.roomNumber },
+      after: updates,
+    },
+  });
+
+  res.json(updated);
+});
+
+// ---------------------------------------------------------------------------
+// DELETE /guests/:id — soft-delete (manager only)
+// ---------------------------------------------------------------------------
+router.delete("/guests/:id", requireManager, async (req, res): Promise<void> => {
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const id = parseInt(rawId, 10);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid guest ID" });
+    return;
+  }
+
+  const hotelId = req.session!.hotelId;
+  const actorId = req.session!.userId;
+
+  const [existing] = await db
+    .select()
+    .from(guestsTable)
+    .where(and(eq(guestsTable.id, id), eq(guestsTable.hotelId, hotelId)));
+
+  if (!existing) {
+    res.status(404).json({ error: "Guest not found" });
+    return;
+  }
+
+  await db
+    .update(guestsTable)
+    .set({ isActive: false })
+    .where(and(eq(guestsTable.id, id), eq(guestsTable.hotelId, hotelId)));
+
+  await db
+    .update(guestKeysTable)
+    .set({ isActive: false })
+    .where(eq(guestKeysTable.guestId, id));
+
+  await revokeAllGuestQrTokens(id);
+
+  await db.insert(auditLogsTable).values({
+    hotelId,
+    actorId,
+    actorType: "manager",
+    action: "delete_guest",
+    targetType: "guest",
+    targetId: id,
+    metadata: { firstName: existing.firstName, lastName: existing.lastName, roomNumber: existing.roomNumber },
+  });
+
+  res.json({ success: true });
+});
+
+// ---------------------------------------------------------------------------
+// POST /guests/:id/renew-key — deactivate old key, issue new key + QR
+// ---------------------------------------------------------------------------
+router.post("/guests/:id/renew-key", requireStaff, async (req, res): Promise<void> => {
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const id = parseInt(rawId, 10);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid guest ID" });
+    return;
+  }
+
+  const hotelId = req.session!.hotelId;
+  const actorId = req.session!.userId;
+
+  const [existing] = await db
+    .select()
+    .from(guestsTable)
+    .where(and(eq(guestsTable.id, id), eq(guestsTable.hotelId, hotelId), eq(guestsTable.isActive, true)));
+
+  if (!existing) {
+    res.status(404).json({ error: "Guest not found" });
+    return;
+  }
+
+  await db
+    .update(guestKeysTable)
+    .set({ isActive: false })
+    .where(and(eq(guestKeysTable.guestId, id), eq(guestKeysTable.isActive, true)));
+
+  const { key, keyHash } = generateGuestKey();
+  const [newKey] = await db
+    .insert(guestKeysTable)
+    .values({ guestId: id, hotelId, keyHash, keyDisplay: key })
+    .returning();
+
+  await db.insert(auditLogsTable).values({
+    hotelId,
+    actorId,
+    actorType: "manager",
+    action: "renew_guest_key",
+    targetType: "guest",
+    targetId: id,
+    metadata: { firstName: existing.firstName, lastName: existing.lastName, roomNumber: existing.roomNumber },
+  });
+
+  const { rawToken, expiresAt } = await issueQrToken(id, hotelId, actorId);
+  const appBase = getAppBase(req);
+  const qrLoginUrl = `${appBase}/guest/auto-login?token=${rawToken}`;
+
+  res.json({
+    guest: {
+      id: existing.id,
+      firstName: existing.firstName,
+      lastName: existing.lastName,
+      roomNumber: existing.roomNumber,
+      countryCode: existing.countryCode,
+      language: existing.language,
+      hotelId: existing.hotelId,
+      isActive: existing.isActive,
+      createdAt: existing.createdAt,
+      guestKey: newKey.keyDisplay,
+    },
+    guestKey: key,
+    qrLoginUrl,
+    qrTokenExpiresAt: expiresAt.toISOString(),
+  });
 });
 
 export default router;

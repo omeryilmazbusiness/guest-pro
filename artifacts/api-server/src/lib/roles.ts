@@ -30,6 +30,12 @@ export const Permission = {
   VIEW_GUESTS: "view_guests",
   /** Create a new hotel guest */
   CREATE_GUEST: "create_guest",
+  /** Edit an existing guest's details */
+  EDIT_GUEST: "edit_guest",
+  /** Delete a guest (soft-delete) */
+  DELETE_GUEST: "delete_guest",
+  /** Renew a guest's access key and QR token */
+  RENEW_GUEST_KEY: "renew_guest_key",
   /** Configure hotel branding and settings */
   MANAGE_HOTEL: "manage_hotel",
 } as const;
@@ -44,11 +50,17 @@ const ROLE_PERMISSIONS: Record<StaffRole, ReadonlyArray<Permission>> = {
   manager: [
     Permission.VIEW_GUESTS,
     Permission.CREATE_GUEST,
+    Permission.EDIT_GUEST,
+    Permission.DELETE_GUEST,
+    Permission.RENEW_GUEST_KEY,
     Permission.MANAGE_HOTEL,
   ],
   personnel: [
     Permission.VIEW_GUESTS,
     Permission.CREATE_GUEST,
+    Permission.EDIT_GUEST,
+    Permission.RENEW_GUEST_KEY,
+    // DELETE_GUEST is NOT included — personnel cannot delete guests
     // MANAGE_HOTEL is NOT included — personnel cannot configure the hotel
   ],
 };

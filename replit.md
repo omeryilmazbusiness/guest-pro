@@ -54,6 +54,42 @@ When a guest is created, a **single-use 24-hour QR auto-login token** is issued 
 - `artifacts/guest-pro/src/components/GuestHandoffModal.tsx` — premium post-create modal with QR
 - `artifacts/guest-pro/src/pages/guest/auto-login.tsx` — landing page for QR scans
 
+## Manager Dashboard — Guest CRUD
+
+### Operations
+| Action | Who | Endpoint | Notes |
+|--------|-----|----------|-------|
+| List guests | Staff | `GET /api/guests` | Excludes soft-deleted; active key joined |
+| Create guest | Staff | `POST /api/guests` | Returns key + QR token |
+| Edit guest | Staff | `PATCH /api/guests/:id` | Updates name/room/country; audit logged |
+| Delete guest | Manager only | `DELETE /api/guests/:id` | Soft delete; deactivates keys + QR tokens |
+| Renew key | Staff | `POST /api/guests/:id/renew-key` | Old key deactivated; new key + QR issued |
+
+### Permissions Matrix
+| Permission | Manager | Personnel |
+|------------|---------|-----------|
+| VIEW_GUESTS | ✓ | ✓ |
+| CREATE_GUEST | ✓ | ✓ |
+| EDIT_GUEST | ✓ | ✓ |
+| DELETE_GUEST | ✓ | ✗ |
+| RENEW_GUEST_KEY | ✓ | ✓ |
+| MANAGE_HOTEL | ✓ | ✗ |
+
+### Dashboard Features
+- KPI cards: Total Guests, Checked In Today, Rooms Occupied
+- Live search: name, room number, or guest key
+- Room filter dropdown: filter by specific room, sorted numerically
+- Result count + "Clear filters" shortcut
+- Per-guest action menu (⋯): Edit, Renew Key, Copy Key, Remove Guest (manager only)
+- Edit modal: inline form with country selector
+- Delete dialog: safety confirmation with guest name in copy
+- Key renewal: triggers GuestHandoffModal reuse with new key + QR
+
+### Key Files (Frontend)
+- `artifacts/guest-pro/src/pages/manager/dashboard.tsx` — main console
+- `artifacts/guest-pro/src/components/manager/GuestEditModal.tsx` — edit form
+- `artifacts/guest-pro/src/components/manager/GuestDeleteDialog.tsx` — delete confirmation
+
 ## Personnel Role (Staff Tier 2)
 
 ### Access Policy

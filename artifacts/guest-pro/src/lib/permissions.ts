@@ -4,10 +4,6 @@
  * This mirrors the server-side roles.ts policy and is the single source of
  * truth for UI-level capability checks. It NEVER replaces server-side
  * authorization — the server always enforces access independently.
- *
- * Usage:
- *   const { user } = useAuth();
- *   if (can(user?.role, Permission.MANAGE_HOTEL)) { ... }
  */
 
 // ---------------------------------------------------------------------------
@@ -35,6 +31,12 @@ export const Permission = {
   VIEW_GUESTS: "view_guests",
   /** Create a new hotel guest and generate their key */
   CREATE_GUEST: "create_guest",
+  /** Edit an existing guest's details */
+  EDIT_GUEST: "edit_guest",
+  /** Delete a guest (soft-delete; manager only) */
+  DELETE_GUEST: "delete_guest",
+  /** Renew a guest's access key and QR token */
+  RENEW_GUEST_KEY: "renew_guest_key",
   /** Access hotel branding, settings, and admin controls */
   MANAGE_HOTEL: "manage_hotel",
 } as const;
@@ -49,12 +51,18 @@ const ROLE_PERMISSIONS: Record<StaffRole, ReadonlyArray<Permission>> = {
   manager: [
     Permission.VIEW_GUESTS,
     Permission.CREATE_GUEST,
+    Permission.EDIT_GUEST,
+    Permission.DELETE_GUEST,
+    Permission.RENEW_GUEST_KEY,
     Permission.MANAGE_HOTEL,
   ],
   personnel: [
     Permission.VIEW_GUESTS,
     Permission.CREATE_GUEST,
-    // MANAGE_HOTEL is excluded — personnel cannot configure the hotel
+    Permission.EDIT_GUEST,
+    Permission.RENEW_GUEST_KEY,
+    // DELETE_GUEST excluded — personnel cannot delete guests
+    // MANAGE_HOTEL excluded — personnel cannot configure the hotel
   ],
 };
 
@@ -64,21 +72,14 @@ const ROLE_PERMISSIONS: Record<StaffRole, ReadonlyArray<Permission>> = {
 
 /**
  * Returns true if the user with the given role has the requested permission.
- *
- * This is intentionally a pure function — no hooks, no React context —
- * so it can be called in components, route guards, or render logic.
+ * Pure function — no hooks, no React context.
  */
-export function can(
-  role: string | undefined,
-  permission: Permission
-): boolean {
+export function can(role: string | undefined, permission: Permission): boolean {
   if (!role || !isStaffRole(role)) return false;
   return (ROLE_PERMISSIONS[role] as ReadonlyArray<Permission>).includes(permission);
 }
 
-/**
- * Returns the display label for a staff role.
- */
+/** Returns the display label for a staff role. */
 export function roleLabel(role: string | undefined): string {
   if (role === "manager") return "Manager";
   if (role === "personnel") return "Staff";

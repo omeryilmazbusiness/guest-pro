@@ -1,0 +1,376 @@
+You are a senior full-stack software architect, product designer, and production-grade engineer.
+
+Your task is to inspect, redesign, and harden the MANAGER DASHBOARD of the existing “Guest Pro” project into a comprehensive, production-ready management console.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, file tree, dashboard structure, guest management flow, auth/role system, database schema, UI components, and API structure.
+- Do NOT rebuild the app from scratch if working systems already exist.
+- Preserve working auth, manager flow, personnel restrictions if already implemented, guest login flow, guest dashboard, AI/chat flow, route protection, and stable APIs.
+- Refactor only where there is real architecture, UX, maintainability, or product value.
+- The result must be production-ready, SOLID, layered, secure, and visually polished.
+- The dashboard must feel premium, modern, operationally powerful, and easy to use.
+
+PROJECT CONTEXT:
+Guest Pro is a premium hotel guest web app.
+We now need a highly professional MANAGER DASHBOARD.
+
+PRIMARY GOAL:
+Turn the manager dashboard into a real production-grade hotel operations dashboard with guest management capabilities.
+
+MAIN PRODUCT REQUIREMENTS:
+1. Professional manager dashboard design
+2. Guest CRUD operations
+3. Guest key renewal / regenerate flow
+4. Filterable and searchable guest list
+5. Room-number-based grouping/classification/filtering
+6. Operationally useful dashboard layout
+7. Clean role-aware architecture
+8. Premium modern dashboard UX
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current manager dashboard structure
+2. Current guest create flow
+3. Current guest list flow
+4. Current guest edit/delete capabilities
+5. Current guest key generation logic
+6. Current QR/popup logic if present
+7. Current auth/session/role protection
+8. Current DB schema for guests, guest keys, rooms, tokens, audit logs
+9. Current filtering/search capabilities
+10. Current manager navigation / layout / components
+11. Current weaknesses in UX and architecture
+12. What should be preserved
+13. What should be refactored
+
+Then provide:
+- concise architecture audit
+- dashboard UX gap analysis
+- guest management gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — REDESIGN THE MANAGER DASHBOARD INFORMATION ARCHITECTURE
+==================================================
+
+Redesign the manager dashboard into a comprehensive and polished control panel.
+
+TARGET FEEL:
+- premium
+- modern
+- clean
+- operationally powerful
+- soft but professional
+- not cluttered
+- easy to scan
+- suitable for real hotel staff usage
+
+DASHBOARD STRUCTURE SHOULD INCLUDE:
+- top summary area / KPI cards
+- primary actions area
+- guests management table/list
+- room-based filtering/grouping tools
+- quick operational actions
+- clean side navigation / top navigation depending on current app structure
+- responsive desktop-first admin layout with mobile/tablet compatibility
+
+Suggested high-level sections:
+1. Dashboard Overview
+2. Guests
+3. Create Guest
+4. Room View / Room Filters
+5. Guest Keys / Access Control
+6. Optional quick actions area
+
+If the current project already has some of this, preserve and professionalize it.
+
+==================================================
+PHASE 3 — GUEST CRUD OPERATIONS
+==================================================
+
+Implement or harden full professional guest CRUD.
+
+REQUIREMENTS:
+- Create guest
+- Read/list guests
+- Update guest details
+- Delete guest safely
+
+Guest data should include, where relevant in the current product:
+- first name
+- last name
+- room number
+- country
+- guest key
+- status
+- created date
+- optional locale/language context if already present
+
+UX REQUIREMENTS:
+- polished create guest form
+- polished edit guest form
+- safe delete flow with confirmation
+- clean success/error states
+- no messy raw forms
+- mobile-friendly but primarily optimized for management usage
+
+ARCHITECTURE REQUIREMENTS:
+- business logic must not live inside giant page components
+- use clean service/use-case patterns
+- keep repositories/adapters clean
+- validation must be centralized
+- no scattered API hacks
+
+==================================================
+PHASE 4 — GUEST LIST / TABLE / PROFESSIONAL OPERATIONS VIEW
+==================================================
+
+Build a highly polished and useful guests list.
+
+REQUIREMENTS:
+- professional table or card-table hybrid depending on current UI system
+- searchable by:
+  - guest name
+  - room number
+  - guest key where appropriate
+- sortable where useful
+- filterable where useful
+- visually easy to scan
+- clean empty/loading/error states
+- premium polished action menu per guest row
+
+Each guest row/card should professionally support:
+- view details
+- edit
+- delete
+- renew/regenerate guest key
+- copy guest key
+- optional QR access if already present in product
+
+Design goal:
+This should feel like a real hotel operations dashboard, not a demo admin table.
+
+==================================================
+PHASE 5 — GUEST KEY RENEWAL / REGENERATE FLOW
+==================================================
+
+Implement a professional guest key renewal/regeneration flow.
+
+REQUIREMENTS:
+- manager can renew/regenerate guest key for a guest
+- old key invalidation behavior must be explicit and safe
+- if QR auto-login exists, integrate renewal cleanly
+- renewing a key should update all necessary security/auth records
+- provide clear confirmation UX
+- provide copy/new-key access after regeneration
+- add audit logging if the system already supports audits or if it is appropriate
+
+SECURITY / PRODUCT EXPECTATIONS:
+- do not leave stale keys active unintentionally
+- define clear policy for old key revocation
+- keep auth/session implications clean
+- preserve route protection and existing guest login integrity
+
+==================================================
+PHASE 6 — ROOM-NUMBER-BASED FILTERING / CLASSIFICATION
+==================================================
+
+Implement room-based classification and filtering professionally.
+
+REQUIREMENTS:
+- guests should be filterable by room number
+- room numbers should be easy to scan and query
+- add a professional room filter UI
+- support:
+  - exact room search
+  - room grouping
+  - sorted room view
+- if useful, create a room-based grouping mode where guests are visually organized by room number
+
+UX GOAL:
+Hotel staff should quickly find guests by room and understand room distribution without friction.
+
+Possible useful views:
+- standard list/table view
+- grouped-by-room view
+- filter chips/dropdowns/search controls
+
+Do not overcomplicate, but make it genuinely useful and polished.
+
+==================================================
+PHASE 7 — DASHBOARD OVERVIEW / KPI / OPERATIONAL SUMMARY
+==================================================
+
+Create a meaningful manager overview section.
+
+REQUIREMENTS:
+Add useful dashboard summary cards/widgets such as:
+- total guests
+- active guests
+- guests by room occupancy context if meaningful
+- recent guest creations
+- recent key renewals
+- pending operational items if relevant from the current system
+
+IMPORTANT:
+- do not invent fake metrics disconnected from real data
+- if some metrics are not yet available, use only clean, meaningful ones derived from real existing data
+- keep the dashboard useful, not decorative
+
+==================================================
+PHASE 8 — ROLE-AWARE ACCESS (MANAGER / PERSONNEL)
+==================================================
+
+If the project already includes or is intended to include PERSONNEL role support, preserve and harden role-aware access.
+
+REQUIREMENTS:
+- MANAGER sees full dashboard and full guest management capabilities
+- PERSONNEL, if already present, should only see what is allowed by the project’s access rules
+- guest-related allowed operations must remain properly restricted
+- do not expose forbidden actions in UI
+- do not rely only on UI hiding; server/API authorization must also enforce access
+
+This must remain clean and SOLID, not a scattered role-check mess.
+
+==================================================
+PHASE 9 — DASHBOARD DESIGN DIRECTION
+==================================================
+
+Design the manager dashboard as a production-grade premium admin experience.
+
+VISUAL REQUIREMENTS:
+- light/white dominant theme
+- soft rounded corners
+- premium modern SaaS feel
+- elegant spacing
+- subtle shadows
+- clean typography
+- strong visual hierarchy
+- professional cards/tables/forms
+- excellent readability
+- no clutter
+- no cheap gradients
+- no noisy visuals
+
+The result should feel:
+- premium
+- calm
+- reliable
+- enterprise-grade
+- hospitality-oriented
+
+==================================================
+PHASE 10 — RESPONSIVENESS / UX QUALITY
+==================================================
+
+Make the dashboard production-ready across screen sizes.
+
+REQUIREMENTS:
+- desktop-first management UX
+- tablet compatibility
+- mobile fallback must remain usable
+- no broken overflow
+- no cramped forms
+- no unreadable tables
+- responsive filters/search/actions
+- action menus must remain usable on smaller screens
+
+==================================================
+PHASE 11 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement this in a truly maintainable architecture.
+
+REQUIREMENTS:
+- separate presentation from business logic
+- do not put CRUD, key regeneration, filters, and table logic in one giant file
+- use meaningful modules/services/use-cases
+- centralize validation
+- centralize access policy
+- centralize guest key renewal logic
+- no dead code
+- no fake architecture
+- clean naming
+- easy to extend later
+
+Possible clean structure:
+- GuestManagementService
+- GuestKeyRenewalService
+- GuestListQueryService
+- RoomFilterService
+- GuestCrudController / routes
+- ManagerDashboardOverviewService
+- GuestTable
+- GuestDetailsDrawer
+- GuestEditModal
+- GuestKeyActions
+- RoomFilterPanel
+
+==================================================
+PHASE 12 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- manager login
+- personnel login/role restrictions if already present
+- guest login
+- guest logout
+- guest dashboard/chat/voice features
+- AI integrations
+- request quota logic
+- QR guest flow if already present
+- stable APIs
+- route protection
+
+This task is primarily about manager dashboard redesign and guest management hardening.
+
+==================================================
+PHASE 13 — TESTING / VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Manager dashboard loads correctly
+2. Dashboard overview metrics render correctly
+3. Guest create works
+4. Guest list works
+5. Guest edit works
+6. Guest delete works safely
+7. Guest key renewal works correctly
+8. Old key invalidation behavior is correct
+9. Search by guest name works
+10. Search/filter by room number works
+11. Grouping/filtering by room number works cleanly
+12. UI is polished and production-ready
+13. No regression in auth/route protection
+14. No regression in guest flows
+15. Role-based restrictions still work correctly if personnel exists
+
+==================================================
+PHASE 14 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was weak before
+3. What was redesigned
+4. What CRUD capabilities were added or improved
+5. How guest key renewal now works
+6. How room-number filtering/grouping works
+7. How role-aware access works
+8. Which files were changed
+9. Any DB/schema changes
+10. How to test the manager dashboard end-to-end
+11. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result production-ready, SOLID, layered, secure, and polished
+- The manager dashboard must feel like a real premium hotel operations console

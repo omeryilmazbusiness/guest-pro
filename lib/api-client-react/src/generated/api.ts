@@ -1268,3 +1268,109 @@ export function useListQuickActions<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+// ---------------------------------------------------------------------------
+// updateGuest — PATCH /api/guests/:id
+// ---------------------------------------------------------------------------
+
+export const getUpdateGuestUrl = (id: number) => `/api/guests/${id}`;
+
+export const updateGuest = async (
+  id: number,
+  data: UpdateGuestRequest,
+  options?: RequestInit,
+): Promise<UpdateGuestResponse> => {
+  return customFetch<UpdateGuestResponse>(getUpdateGuestUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(data),
+  });
+};
+
+export const useUpdateGuest = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    UpdateGuestResponse,
+    TError,
+    { id: number; data: UpdateGuestRequest },
+    TContext
+  >;
+}) => {
+  const mutationKey = ["updateGuest"];
+  const mutationOptions = options?.mutation ?? {};
+  return useMutation<
+    UpdateGuestResponse,
+    TError,
+    { id: number; data: UpdateGuestRequest },
+    TContext
+  >({
+    mutationKey,
+    mutationFn: ({ id, data }) => updateGuest(id, data),
+    ...mutationOptions,
+  });
+};
+
+// ---------------------------------------------------------------------------
+// deleteGuest — DELETE /api/guests/:id
+// ---------------------------------------------------------------------------
+
+export const getDeleteGuestUrl = (id: number) => `/api/guests/${id}`;
+
+export const deleteGuest = async (
+  id: number,
+  options?: RequestInit,
+): Promise<DeleteGuestResponse> => {
+  return customFetch<DeleteGuestResponse>(getDeleteGuestUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const useDeleteGuest = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<DeleteGuestResponse, TError, { id: number }, TContext>;
+}) => {
+  const mutationKey = ["deleteGuest"];
+  const mutationOptions = options?.mutation ?? {};
+  return useMutation<DeleteGuestResponse, TError, { id: number }, TContext>({
+    mutationKey,
+    mutationFn: ({ id }) => deleteGuest(id),
+    ...mutationOptions,
+  });
+};
+
+// ---------------------------------------------------------------------------
+// renewGuestKey — POST /api/guests/:id/renew-key
+// ---------------------------------------------------------------------------
+
+export const getRenewGuestKeyUrl = (id: number) => `/api/guests/${id}/renew-key`;
+
+export const renewGuestKey = async (
+  id: number,
+  options?: RequestInit,
+): Promise<RenewGuestKeyResponse> => {
+  return customFetch<RenewGuestKeyResponse>(getRenewGuestKeyUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const useRenewGuestKey = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<RenewGuestKeyResponse, TError, { id: number }, TContext>;
+}) => {
+  const mutationKey = ["renewGuestKey"];
+  const mutationOptions = options?.mutation ?? {};
+  return useMutation<RenewGuestKeyResponse, TError, { id: number }, TContext>({
+    mutationKey,
+    mutationFn: ({ id }) => renewGuestKey(id),
+    ...mutationOptions,
+  });
+};
