@@ -1,27 +1,32 @@
 /**
  * GuestHandoffModal
  *
- * Displayed immediately after a new guest is created. Shows the staff:
- *   - QR code encoding the secure auto-login URL (single-use, 24h token)
- *   - Guest full name and room number
- *   - Copyable guest key (operational fallback if QR is lost)
- *   - Expiry info so staff know how long the QR is valid
+ * Shown immediately after a new guest is created. Presents the handoff
+ * card to staff so they can pass credentials to the guest physically.
  *
- * The QR code auto-login URL contains a 32-byte random token whose SHA-256
- * hash is stored server-side. The raw token is never stored on disk.
+ * Architecture:
+ *   - useQrDataUrl hook handles all QR generation (SVG data URL, async, no DOM ref)
+ *   - GuestQrCard renders the QR display (pure presentational)
+ *   - GuestKeyRow renders the copyable key (pure presentational)
+ *   - This modal owns layout, actions, and open/close lifecycle only
+ *
+ * QR Security:
+ *   The QR encodes a secure single-use 24-hour auto-login URL issued
+ *   server-side. The raw token is never stored in the DB — only SHA-256(token).
  */
 
-import { useEffect, useRef, useState } from "react";
-import QRCode from "qrcode";
-import { Copy, Check, X, QrCode, KeyRound, Clock, UserCheck } from "lucide-react";
+import { useState } from "react";
+import { Copy, Check, QrCode, KeyRound, Clock, UserCheck, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useQrDataUrl } from "@/hooks/use-qr-data-url";
+
+// ─── Domain types ────────────────────────────────────────────────────────────
 
 export interface HandoffData {
   firstName: string;
@@ -29,8 +34,111 @@ export interface HandoffData {
   roomNumber: string;
   guestKey: string;
   qrLoginUrl: string;
-  qrTokenExpiresAt: string; // ISO string
+  qrTokenExpiresAt: string; // ISO 8601
 }
+
+// ─── Sub-components (presentational) ─────────────────────────────────────────
+
+interface GuestQrCardProps {
+  dataUrl: string | null;
+  generating: boolean;
+  error: string | null;
+  expiresLabel: string;
+}
+
+function GuestQrCard({ dataUrl, generating, error, expiresLabel }: GuestQrCardProps) {
+  return (
+    <div className="flex flex-col items-center gap-3">
+      {/* QR frame */}
+      <div className="p-4 bg-white rounded-2xl shadow-lg shadow-zinc-200/60 border border-zinc-100 flex items-center justify-center"
+        style={{ width: 220, height: 220 }}>
+        {generating && (
+          <Loader2 className="w-8 h-8 text-zinc-300 animate-spin" />
+        )}
+        {!generating && error && (
+          <div className="flex flex-col items-center gap-2 text-center">
+            <AlertCircle className="w-8 h-8 text-red-400" />
+            <span className="text-xs text-zinc-400 max-w-[140px] leading-relaxed">{error}</span>
+          </div>
+        )}
+        {!generating && !error && dataUrl && (
+          <img
+            src={dataUrl}
+            alt="Guest QR code for auto-login"
+            width={188}
+            height={188}
+            className="block rounded-xl"
+            draggable={false}
+          />
+        )}
+      </div>
+
+      {/* Caption row */}
+      <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+        <QrCode className="w-3.5 h-3.5 shrink-0" />
+        <span>Scan to log in instantly</span>
+      </div>
+      <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+        <Clock className="w-3.5 h-3.5 shrink-0" />
+        <span>Expires {expiresLabel} · single-use</span>
+      </div>
+    </div>
+  );
+}
+
+interface GuestKeyRowProps {
+  guestKey: string;
+}
+
+function GuestKeyRow({ guestKey }: GuestKeyRowProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(guestKey);
+      setCopied(true);
+      toast.success("Guest key copied");
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      toast.error("Copy failed — please select and copy manually");
+    }
+  };
+
+  return (
+    <div className="w-full">
+      <div className="flex items-center gap-2 mb-1.5">
+        <KeyRound className="w-3.5 h-3.5 text-zinc-400" />
+        <span className="text-xs font-medium text-zinc-400 uppercase tracking-widest">
+          Guest Key
+        </span>
+      </div>
+      <div className="flex items-center justify-between gap-3 bg-zinc-50 border border-zinc-100 rounded-2xl px-5 py-4">
+        <span className="font-mono text-xl tracking-widest font-semibold text-zinc-800 select-all">
+          {guestKey}
+        </span>
+        <Button
+          data-testid="button-copy-guest-key"
+          variant="outline"
+          size="icon"
+          onClick={handleCopy}
+          className="w-10 h-10 shrink-0 rounded-xl bg-white shadow-sm border-zinc-200 hover:bg-zinc-50 transition-colors"
+          aria-label="Copy guest key"
+        >
+          {copied ? (
+            <Check className="w-4 h-4 text-green-600" />
+          ) : (
+            <Copy className="w-4 h-4 text-zinc-500" />
+          )}
+        </Button>
+      </div>
+      <p className="text-xs text-zinc-400 mt-1.5 ml-1">
+        Share this key if the guest cannot scan the QR.
+      </p>
+    </div>
+  );
+}
+
+// ─── Modal (presentation + lifecycle only) ────────────────────────────────────
 
 interface GuestHandoffModalProps {
   open: boolean;
@@ -45,29 +153,12 @@ export function GuestHandoffModal({
   onCreateAnother,
   data,
 }: GuestHandoffModalProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [keyCopied, setKeyCopied] = useState(false);
-
-  // Render QR code to canvas whenever the URL changes
-  useEffect(() => {
-    if (!open || !canvasRef.current || !data.qrLoginUrl) return;
-    QRCode.toCanvas(canvasRef.current, data.qrLoginUrl, {
-      width: 220,
-      margin: 2,
-      color: { dark: "#18181b", light: "#ffffff" },
-    });
-  }, [open, data.qrLoginUrl]);
-
-  const handleCopyKey = async () => {
-    try {
-      await navigator.clipboard.writeText(data.guestKey);
-      setKeyCopied(true);
-      toast.success("Guest key copied");
-      setTimeout(() => setKeyCopied(false), 2500);
-    } catch {
-      toast.error("Copy failed — please select and copy manually");
-    }
-  };
+  // QR generation is entirely state-driven — no canvas ref, no DOM timing issue.
+  // useQrDataUrl generates an SVG data URL whenever qrLoginUrl changes.
+  // Works correctly inside Radix UI portals and animated dialogs.
+  const { dataUrl, generating, error } = useQrDataUrl(
+    open ? data.qrLoginUrl : null
+  );
 
   const expiresAt = new Date(data.qrTokenExpiresAt);
   const expiresLabel = expiresAt.toLocaleString(undefined, {
@@ -83,7 +174,7 @@ export function GuestHandoffModal({
         className="sm:max-w-md rounded-3xl border-0 shadow-2xl shadow-zinc-900/20 bg-white p-0 overflow-hidden"
         aria-describedby="handoff-desc"
       >
-        {/* Top strip — room + name badge */}
+        {/* ── Top strip — identity badge ── */}
         <div className="bg-zinc-900 px-8 pt-8 pb-6 text-white text-center">
           <div className="flex items-center justify-center gap-2 mb-3">
             <UserCheck className="w-4 h-4 text-zinc-400" />
@@ -94,69 +185,37 @@ export function GuestHandoffModal({
           <DialogTitle className="text-2xl font-serif font-medium text-white leading-tight">
             {data.firstName} {data.lastName}
           </DialogTitle>
-          <p className="text-zinc-400 text-sm mt-1 font-medium">Room {data.roomNumber}</p>
+          <p className="text-zinc-400 text-sm mt-1 font-medium">
+            Room {data.roomNumber}
+          </p>
         </div>
 
+        {/* ── Body ── */}
         <div className="px-8 py-6 flex flex-col items-center gap-6">
           <p id="handoff-desc" className="sr-only">
-            Guest handoff card for {data.firstName} {data.lastName} in room {data.roomNumber}.
+            Guest handoff card for {data.firstName} {data.lastName} in room{" "}
+            {data.roomNumber}.
           </p>
 
-          {/* QR code */}
-          <div className="flex flex-col items-center gap-3">
-            <div className="p-4 bg-white rounded-2xl shadow-lg shadow-zinc-200/60 border border-zinc-100">
-              <canvas ref={canvasRef} className="block rounded-xl" />
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-              <QrCode className="w-3.5 h-3.5" />
-              <span>Scan to log in instantly</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-              <Clock className="w-3.5 h-3.5" />
-              <span>Expires {expiresLabel} · single-use</span>
-            </div>
-          </div>
+          {/* QR section */}
+          <GuestQrCard
+            dataUrl={dataUrl}
+            generating={generating}
+            error={error}
+            expiresLabel={expiresLabel}
+          />
 
-          {/* Divider with label */}
+          {/* Divider */}
           <div className="w-full flex items-center gap-3">
             <div className="flex-1 h-px bg-zinc-100" />
             <span className="text-xs text-zinc-400 font-medium">or use the key</span>
             <div className="flex-1 h-px bg-zinc-100" />
           </div>
 
-          {/* Guest key */}
-          <div className="w-full">
-            <div className="flex items-center gap-2 mb-1.5">
-              <KeyRound className="w-3.5 h-3.5 text-zinc-400" />
-              <span className="text-xs font-medium text-zinc-400 uppercase tracking-widest">
-                Guest Key
-              </span>
-            </div>
-            <div className="flex items-center justify-between gap-3 bg-zinc-50 border border-zinc-100 rounded-2xl px-5 py-4">
-              <span className="font-mono text-xl tracking-widest font-semibold text-zinc-800 select-all">
-                {data.guestKey}
-              </span>
-              <Button
-                data-testid="button-copy-guest-key"
-                variant="outline"
-                size="icon"
-                onClick={handleCopyKey}
-                className="w-10 h-10 shrink-0 rounded-xl bg-white shadow-sm border-zinc-200 hover:bg-zinc-50 transition-colors"
-                aria-label="Copy guest key"
-              >
-                {keyCopied ? (
-                  <Check className="w-4 h-4 text-green-600" />
-                ) : (
-                  <Copy className="w-4 h-4 text-zinc-500" />
-                )}
-              </Button>
-            </div>
-            <p className="text-xs text-zinc-400 mt-1.5 ml-1">
-              Share this key if the guest cannot scan the QR.
-            </p>
-          </div>
+          {/* Key section */}
+          <GuestKeyRow guestKey={data.guestKey} />
 
-          {/* Action buttons */}
+          {/* Actions */}
           <div className="w-full flex flex-col sm:flex-row gap-3 pt-1">
             <Button
               data-testid="button-create-another"

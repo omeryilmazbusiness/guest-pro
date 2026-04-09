@@ -1,0 +1,281 @@
+You are a senior full-stack software architect and production-grade engineer.
+
+Your task is to inspect, diagnose, and fix the QR code generation/rendering problem in the existing “Guest Pro” project, then implement a SOLID, production-ready, secure QR creation architecture.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the current codebase, file tree, QR generation flow, guest creation flow, popup/modal flow, auth flow, build setup, and rendering path.
+- Do NOT rebuild the app from scratch if working parts already exist.
+- Preserve working guest creation, guest key logic, popup behavior, auth, route protection, and existing stable APIs.
+- Refactor only where there is real architecture, security, maintainability, or production value.
+- The result must be production-ready, SOLID, secure, and maintainable.
+
+PROJECT CONTEXT:
+Guest Pro creates guests from the manager side.
+After a new guest is created, a popup should display:
+- QR code
+- Guest full name
+- Room number
+- Guest key
+- Copyable guest key action
+
+CURRENT PROBLEM:
+The QR code image/visual is not being generated or displayed correctly.
+
+PRIMARY GOALS:
+1. Diagnose the exact root cause of why the QR code visual is not appearing
+2. Fix the issue without breaking working flows
+3. Implement a clean, layered, production-ready QR creation architecture
+4. Keep the QR login flow secure and maintainable
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current guest creation flow
+2. Current popup/modal flow after guest creation
+3. Current QR generation implementation
+4. Whether QR is generated client-side, server-side, or both
+5. Which library/package is used for QR generation/rendering
+6. Whether the QR data string/url is being created correctly
+7. Whether the popup receives the QR payload correctly
+8. Whether rendering fails because of:
+   - wrong import
+   - wrong component usage
+   - SSR/client mismatch
+   - canvas/svg rendering issue
+   - missing package
+   - broken state flow
+   - popup lifecycle issue
+   - styling/display issue
+   - hydration issue
+   - invalid QR payload
+   - async timing issue
+9. Whether the secure auto-login URL/token is created correctly
+10. Whether the QR value is empty/null/undefined at render time
+11. What already works
+12. What should be preserved
+13. What is architecturally weak or messy
+
+Then provide:
+- concise architecture audit
+- root cause analysis of why QR visual is not appearing
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — DIAGNOSE THE ROOT CAUSE DEEPLY
+==================================================
+
+Find the REAL cause of the QR visual problem.
+
+You must verify all likely failure points:
+- QR library not installed correctly
+- incompatible QR package for the current framework/runtime
+- component imported incorrectly
+- rendering happening on server when it must happen on client
+- popup opens before QR data is ready
+- QR value is malformed or missing
+- state resets on modal open
+- style/layout hides the QR visually
+- image/canvas/svg size is zero
+- parent container overflow/clipping issue
+- conditional rendering bug
+- token URL generation bug
+- build/runtime error swallowed silently
+- browser-only API used in SSR context
+- hydration mismatch in React/Next/Replit environment
+- data race after guest creation response
+
+Do not guess.
+Inspect and identify the real technical root cause.
+
+==================================================
+PHASE 3 — FIX THE CURRENT BUG FIRST
+==================================================
+
+Fix the QR visual issue without breaking existing flows.
+
+REQUIREMENTS:
+- After guest creation, popup must reliably show a visible QR code
+- QR must render consistently
+- Popup must still show:
+  - guest full name
+  - room number
+  - guest key
+  - copy action
+- Do not create flaky timing-dependent behavior
+- Ensure the QR appears correctly on refreshes/reopens where relevant
+- Ensure the implementation works well in the current runtime/framework
+
+==================================================
+PHASE 4 — IMPLEMENT A SOLID QR GENERATION ARCHITECTURE
+==================================================
+
+After fixing the bug, refactor or improve the QR creation flow into a clean layered architecture.
+
+IMPORTANT:
+Do NOT leave QR logic scattered in the popup component.
+
+ARCHITECTURE GOAL:
+- popup/presentation layer only displays data
+- QR data generation is handled in a service/use-case layer
+- secure login URL/token generation is centralized
+- rendering stays clean and stable
+- easy to extend later for regenerate/download/share functionality
+
+Use a meaningful layered structure such as:
+- domain
+- application
+- infrastructure
+- presentation
+
+Possible clean structure:
+- GuestCreationService
+- GuestQrPayloadService
+- GuestQrLoginTokenService
+- GuestHandoffPresenter / mapper
+- GuestHandoffPopup
+- GuestQrCard
+- CopyGuestKeyAction
+
+RULES:
+- business logic must not be buried in UI components
+- no giant messy modal component
+- no duplicated QR string generation logic
+- no fake architecture
+- keep the structure meaningful and actually used
+
+==================================================
+PHASE 5 — SECURE QR CONTENT DESIGN
+==================================================
+
+If the QR is intended for auto-login, implement the most secure practical approach.
+
+SECURITY REQUIREMENTS:
+- prefer QR content to be a secure auto-login URL or tokenized link, not a naive permanent raw reusable guest key if avoidable
+- token must be validated server-side
+- token should be short-lived and/or single-use if appropriate
+- keep the architecture ready for expiry/revocation
+- preserve existing guest key flow separately if it already exists
+- do not weaken existing auth just to make QR work
+
+If the secure QR login flow already exists:
+- preserve it
+- fix only what is broken
+- centralize it more cleanly if necessary
+
+==================================================
+PHASE 6 — POPUP UX POLISH
+==================================================
+
+Make the popup production-ready.
+
+REQUIREMENTS:
+- premium white/light design
+- soft rounded corners
+- elegant spacing
+- clear hierarchy
+- QR prominently visible
+- guest full name clearly readable
+- room number clearly readable
+- guest key clearly readable
+- copy action polished
+- if useful, add a subtle success feedback on copy
+- layout must work cleanly on typical screen sizes
+- QR must not be clipped, blurry, or too small
+
+==================================================
+PHASE 7 — ROBUST RENDERING STRATEGY
+==================================================
+
+Choose the best practical QR rendering strategy for the current stack.
+
+REQUIREMENTS:
+- use a stable QR rendering method
+- handle client/server rendering correctly
+- avoid hydration mismatches
+- avoid zero-size render bugs
+- avoid race conditions
+- keep the QR crisp and scannable
+- use sensible size, padding, error correction, and contrast
+- ensure camera scanning works in real use
+
+If needed:
+- prefer SVG rendering for clarity
+- or use a stable canvas/image approach if more reliable in the current stack
+- choose the best option based on actual project constraints
+
+==================================================
+PHASE 8 — DO NOT BREAK EXISTING FLOWS
+==================================================
+
+Preserve and do not break:
+- manager login
+- personnel/manager guest creation flow if already present
+- guest key creation
+- popup open/close behavior
+- guest dashboard access
+- existing auth/session logic
+- route protection
+- stable APIs
+- QR auto-login security flow if it already exists
+
+==================================================
+PHASE 9 — CODE QUALITY / SOLID / MAINTAINABILITY
+==================================================
+
+Implement professionally.
+
+REQUIREMENTS:
+- no giant messy component
+- no scattered string concatenation for QR payloads
+- no duplicate token/url generation logic
+- meaningful reusable services/helpers only
+- clean naming
+- no dead code
+- no fake architecture
+- keep it easy to test
+- keep it easy to extend later
+
+==================================================
+PHASE 10 — TESTING / VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Guest creation works
+2. Popup appears after guest creation
+3. QR code is visibly rendered
+4. QR code is scannable
+5. QR payload contains the correct secure URL/data
+6. Guest full name is displayed correctly
+7. Room number is displayed correctly
+8. Guest key is displayed correctly
+9. Copy guest key works
+10. No hydration/rendering bug remains
+11. No regression in existing auth/guest flows
+12. QR rendering remains stable after repeated guest creation
+
+==================================================
+PHASE 11 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. Exact root cause of why QR visual was not appearing
+3. What was fixed
+4. What was refactored
+5. How the QR generation architecture now works
+6. Which files were changed
+7. Any security decisions made for QR content
+8. How to test the popup and QR end-to-end
+9. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then fix the bug
+- Then strengthen the architecture
+- Keep the result SOLID, layered, secure, and production-ready
