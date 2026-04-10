@@ -12,8 +12,7 @@
  *   │ (search + All / In use / Empty)     │
  *   ├─────────────────────────────────────┤
  *   │ scrollable main                     │
- *   │   stat chips (manager)              │
- *   │   welcome card (staff)              │
+ *   │   GuestsOverviewCard (both roles)   │ ← presence donut + stats
  *   │   tab switcher                      │
  *   │   guests list  OR  rooms grid       │
  *   └─────────────────────────────────────┘
@@ -24,9 +23,10 @@
  *   - mutation dispatch
  *
  * Domain logic lives in dedicated lib modules:
- *   src/lib/guests.ts     — filterGuests, extractRoomNumbers
- *   src/lib/rooms.ts      — aggregateRooms, filterRooms, computeRoomStats
- *   src/lib/permissions.ts — role/capability checks
+ *   src/lib/guests.ts           — filterGuests, extractRoomNumbers
+ *   src/lib/rooms.ts            — aggregateRooms, filterRooms
+ *   src/lib/tracking-summary.ts — computeTrackingSummary
+ *   src/lib/permissions.ts      — role/capability checks
  */
 
 import { useEffect, useMemo, useState, useCallback } from "react";
@@ -39,8 +39,6 @@ import {
   Search,
   Loader2,
   Users,
-  CalendarPlus,
-  BedDouble,
   DoorOpen,
   X,
   Settings,
@@ -76,68 +74,12 @@ import { GuestEditModal } from "@/components/manager/GuestEditModal";
 import { GuestDeleteDialog } from "@/components/manager/GuestDeleteDialog";
 import { GuestHandoffModal, type HandoffData } from "@/components/GuestHandoffModal";
 import { getGuestPresences, type TrackingStatus } from "@/lib/tracking";
+import { computeTrackingSummary } from "@/lib/tracking-summary";
+import { GuestsOverviewCard } from "@/components/manager/GuestsOverviewCard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type DashboardTab = "guests" | "rooms";
-
-// ─── Stat chip ─────────────────────────────────────────────────────────────────
-
-function StatChip({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number | string;
-}) {
-  return (
-    <div className="flex items-center gap-3 bg-white border border-zinc-100 rounded-2xl px-4 py-3 shadow-sm shrink-0 min-w-[148px] snap-start">
-      <div className="w-8 h-8 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center shrink-0">
-        {icon}
-      </div>
-      <div className="min-w-0">
-        <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest leading-none mb-1">
-          {label}
-        </p>
-        <p className="text-xl font-semibold text-zinc-900 leading-none">{value}</p>
-      </div>
-    </div>
-  );
-}
-
-// ─── Staff welcome card ───────────────────────────────────────────────────────
-
-function StaffWelcomeSection({
-  firstName,
-  onCreateGuest,
-}: {
-  firstName: string;
-  onCreateGuest: () => void;
-}) {
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-
-  return (
-    <div className="bg-zinc-900 rounded-3xl px-5 py-4 flex items-center justify-between gap-4">
-      <div>
-        <p className="text-zinc-400 text-xs font-medium mb-0.5">{greeting}</p>
-        <h2 className="text-white font-serif text-lg font-medium leading-tight">{firstName}</h2>
-        <p className="text-zinc-500 text-xs mt-0.5">Ready for check-ins</p>
-      </div>
-      <button
-        data-testid="button-create-guest"
-        onClick={onCreateGuest}
-        className="flex items-center gap-2 bg-white text-zinc-900 rounded-2xl px-4 py-3 text-sm font-semibold shadow-lg active:scale-95 transition-transform touch-manipulation shrink-0"
-      >
-        <Plus className="w-4 h-4" />
-        Check In
-      </button>
-    </div>
-  );
-}
 
 // ─── Tab switcher ─────────────────────────────────────────────────────────────
 
@@ -399,7 +341,7 @@ export default function ManagerDashboard() {
   });
 
   // ── Presence data (tracking) — refetch every 60 s while dashboard is open.
-  const { data: presences } = useQuery({
+  const { data: presences, isFetching: presencesFetching } = useQuery({
     queryKey: ["tracking", "presences"],
     queryFn: getGuestPresences,
     enabled: isAuthenticated && isStaffRole(user?.role),
@@ -416,6 +358,12 @@ export default function ManagerDashboard() {
     }
     return map;
   }, [presences]);
+
+  // Compute tracking summary — source of truth for the overview card.
+  const trackingSummary = useMemo(
+    () => computeTrackingSummary(guests?.map((g) => g.id) ?? [], presenceMap),
+    [guests, presenceMap]
+  );
 
   // ── Mutations
   const updateGuestMutation = useUpdateGuest();
@@ -487,6 +435,11 @@ export default function ManagerDashboard() {
   // ── Handlers
   const invalidateGuests = useCallback(
     () => queryClient.invalidateQueries({ queryKey: getListGuestsQueryKey() }),
+    [queryClient]
+  );
+
+  const handleRefreshTracking = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: ["tracking", "presences"] }),
     [queryClient]
   );
 
@@ -649,35 +602,21 @@ export default function ManagerDashboard() {
       {/* ── Scrollable main content ── */}
       <main className="max-w-2xl mx-auto px-4 py-5 pb-28 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
 
-        {/* Manager stat chips */}
-        {isManager && (
-          <div
-            className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4 snap-x snap-mandatory"
-            style={{ scrollbarWidth: "none" }}
-          >
-            <StatChip
-              icon={<Users className="w-4 h-4 text-zinc-500" />}
-              label="Total"
-              value={isLoading ? "–" : stats.total}
-            />
-            <StatChip
-              icon={<CalendarPlus className="w-4 h-4 text-zinc-500" />}
-              label="Today"
-              value={isLoading ? "–" : stats.newToday}
-            />
-            <StatChip
-              icon={<BedDouble className="w-4 h-4 text-zinc-500" />}
-              label="Rooms"
-              value={isLoading ? "–" : stats.roomsOccupied}
-            />
-          </div>
-        )}
-
-        {/* Staff welcome card */}
-        {!isManager && canCreate && (
-          <StaffWelcomeSection
-            firstName={user.firstName}
-            onCreateGuest={handleNavigateCreate}
+        {/* ─── Premium presence overview card (both roles) ─── */}
+        {!isLoading && (
+          <GuestsOverviewCard
+            summary={trackingSummary}
+            isRefreshing={presencesFetching}
+            onRefresh={handleRefreshTracking}
+            managerStats={
+              isManager
+                ? {
+                    total: stats.total,
+                    newToday: stats.newToday,
+                    roomsOccupied: stats.roomsOccupied,
+                  }
+                : undefined
+            }
           />
         )}
 

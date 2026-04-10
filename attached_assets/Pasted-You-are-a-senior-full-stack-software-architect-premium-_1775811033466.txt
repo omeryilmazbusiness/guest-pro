@@ -1,0 +1,323 @@
+You are a senior full-stack software architect, premium mobile UX designer, data-visualization designer, and production-grade product engineer.
+
+Your task is to inspect, redesign, and harden the Guests List overview area inside the existing “Guest Pro” manager/staff dashboard into a premium, mobile-first, SOLID, production-ready operational overview.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the current codebase, guest list dashboard structure, tracking status model, overview widgets, chart/rendering setup, role-aware structure, mobile responsiveness, and data flow.
+- Do NOT rebuild the app from scratch if working parts already exist.
+- Preserve working auth, manager/staff role restrictions, guest list flows, tracking system, route protection, and stable APIs.
+- Refactor only where there is real architecture, maintainability, UX, or production value.
+- The final result must be mobile-first, premium, clean, operational, SOLID, layered, and production-ready.
+
+PROJECT CONTEXT:
+Guest Pro already has a Guests list screen and a guest tracking system with statuses such as:
+- IN_HOTEL / inside hotel
+- OUTSIDE_HOTEL / not in hotel
+- UNKNOWN
+
+We now need the Guests overview area to become significantly more professional and useful.
+
+PRIMARY GOALS:
+1. Redesign the overview area of the Guests list screen
+2. Use a premium filled-circle / donut / pie-style visual
+3. Show rate-based ratios of:
+   - guests in hotel
+   - guests not in hotel
+   - unknown
+4. Use colors:
+   - green = in hotel
+   - red = not in hotel
+   - gray = unknown
+5. Add a refresh icon/button next to the overview
+6. When refresh is tapped, recalculate who is in hotel / not in hotel / unknown
+7. Make the whole section feel highly polished and mobile-first
+8. Keep the architecture SOLID and centralized
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current guests list screen structure
+2. Current overview section implementation
+3. Current guest tracking status data flow
+4. Current source of truth for guest presence/tracking state
+5. Current manager/staff role-aware rendering
+6. Current chart or visualization libraries already present, if any
+7. Current mobile responsiveness
+8. Current refresh/recalculation behavior, if any
+9. What already works
+10. What should be preserved
+11. What is weak in UX
+12. What is weak in architecture
+13. What should be redesigned or centralized
+
+Then provide:
+- concise architecture audit
+- overview UX gap analysis
+- tracking-summary data gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — REDESIGN THE GUESTS OVERVIEW AREA
+==================================================
+
+Redesign the overview area at the top of the Guests list screen into a premium operational summary.
+
+UX GOALS:
+- immediately understandable
+- calm and professional
+- highly readable on mobile
+- visually premium
+- useful for hotel operations
+- not cluttered
+- modern hospitality SaaS feel
+
+The overview should include:
+- a large premium circular chart (donut or filled pie style)
+- total guests count
+- breakdown by status
+- refresh action
+- optional supporting labels/legend if useful
+
+Do NOT:
+- make it look like a generic analytics dashboard
+- overload it with too many KPIs
+- use noisy colors or cluttered layout
+
+==================================================
+PHASE 3 — PIE / DONUT RATE VISUALIZATION
+==================================================
+
+Implement a professional chart-like visualization for the guest tracking ratios.
+
+REQUIREMENTS:
+- use a premium circular rate-based graphic
+- chart must visually show proportions of:
+  - in hotel
+  - not in hotel
+  - unknown
+- use colors:
+  - green for in hotel
+  - red for not in hotel
+  - gray for unknown
+- the chart must feel elegant and not like a cheap admin chart
+- it must render beautifully on mobile
+- proportions must be accurate and derived from real current data
+
+PREFERRED VISUAL DIRECTION:
+- soft premium ring or filled circular chart
+- clean legend or labels
+- elegant spacing
+- strong readability
+- no crowded labels inside tiny slices unless it is truly clean
+- keep a premium modern feel
+
+If there is already a chart library in the project:
+- inspect whether it is appropriate
+- preserve it if good
+- replace/refactor only if necessary
+
+==================================================
+PHASE 4 — ADD REFRESH / RECALCULATE ACTION
+==================================================
+
+Add a premium refresh icon/button next to the overview area.
+
+REQUIREMENTS:
+- clearly visible but elegant
+- touch-friendly on mobile
+- when tapped:
+  - triggers a recalculation / refresh of tracking statuses
+  - updates the overview data
+  - updates guest list status indicators if needed
+- provide polished loading feedback
+- prevent double-spam clicking while refreshing
+- if recalculation is expensive, handle it safely and professionally
+
+UX GOALS:
+- the user should feel they are refreshing live operational state
+- no ugly reload behavior
+- no awkward full-page flicker
+- smooth and intentional update flow
+
+==================================================
+PHASE 5 — DEFINE THE DATA SOURCE OF TRUTH
+==================================================
+
+Do not calculate overview ratios in a fragile UI-only way.
+
+REQUIREMENTS:
+- use a proper data source for current guest tracking states
+- centralize the summary calculation
+- ensure the counts are consistent with the guest list statuses
+- avoid duplicated counting logic in multiple components
+- define a proper application/query service or selector
+
+Possible summary fields:
+- totalGuests
+- inHotelCount
+- outOfHotelCount
+- unknownCount
+- inHotelRate
+- outOfHotelRate
+- unknownRate
+- lastCalculatedAt
+
+ARCHITECTURE GOAL:
+The chart and legend should consume a single reliable summary structure.
+
+==================================================
+PHASE 6 — MOBILE-FIRST DESIGN
+==================================================
+
+The overview must be designed specifically for phones first.
+
+REQUIREMENTS:
+- excellent spacing on mobile screens
+- clear hierarchy
+- no cramped chart
+- legend/labels remain readable
+- refresh button remains easy to tap
+- the overview should sit naturally above the guest list
+- stacked card layout is preferred if appropriate
+- premium card surface with soft shadow and rounded corners
+- responsive behavior must remain clean on tablet and desktop too
+
+The mobile result must feel:
+- premium
+- calm
+- operational
+- modern
+- expensive-looking
+- trustworthy
+
+==================================================
+PHASE 7 — ROLE-AWARE DASHBOARD CONSISTENCY
+==================================================
+
+Preserve role-aware behavior.
+
+REQUIREMENTS:
+- MANAGER sees the full intended overview functionality
+- STAFF sees the overview if allowed by current business rules
+- if recalculation/refresh action is role-restricted, enforce it properly
+- do not rely on UI-only hiding
+- route/API authorization must remain correct where relevant
+
+==================================================
+PHASE 8 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement this in a meaningful, maintainable architecture.
+
+REQUIREMENTS:
+- chart rendering stays in presentation layer
+- summary calculation stays out of UI components
+- refresh/recalculation logic is centralized
+- no duplicated tracking summary logic
+- no giant dashboard file
+- no fake architecture
+- no dead code
+- clean naming
+- meaningful modules only
+
+Suggested architecture shape:
+- domain:
+  - TrackingStatus
+  - GuestTrackingSummary
+- application:
+  - GetGuestTrackingSummary
+  - RefreshGuestTrackingSummary
+  - ResolveGuestTrackingRates
+- infrastructure:
+  - GuestTrackingRepository
+  - TrackingRefreshAdapter
+- presentation:
+  - GuestsOverviewCard
+  - GuestTrackingDonutChart
+  - GuestTrackingLegend
+  - RefreshTrackingButton
+
+Make the architecture actually used and meaningful.
+
+==================================================
+PHASE 9 — VISUAL DIRECTION
+==================================================
+
+The visual direction must be:
+
+- white/light dominant
+- soft rounded corners
+- premium modern SaaS + hospitality operations feel
+- calm and elegant
+- simple and expensive-looking
+- not cluttered
+- not overly analytical
+- subtle shadows
+- strong typography
+- refined iconography
+- smooth micro-interactions
+
+The refresh icon/button should feel:
+- premium
+- subtle
+- actionable
+- not like a harsh admin control
+
+==================================================
+PHASE 10 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- manager login
+- staff/personnel login
+- guest login/logout
+- guest tracking system
+- guest list cards
+- route protection
+- stable APIs
+- existing mobile dashboard structure where it already works
+
+This task is specifically about professionalizing the Guests overview section.
+
+==================================================
+PHASE 11 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Overview section looks premium and mobile-first
+2. Circular chart renders correctly
+3. Green/red/gray status ratios are correct
+4. Guest counts match the real data
+5. Refresh button works correctly
+6. Recalculation updates the overview correctly
+7. Guest list statuses remain consistent with the summary
+8. Mobile layout remains polished and readable
+9. No regression in auth or dashboard behavior
+10. Overall UX feels production-ready
+
+==================================================
+PHASE 12 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was weak before
+3. What was redesigned
+4. How the chart summary is calculated
+5. How the refresh/recalculate action works
+6. Which files were changed
+7. Any architecture refactors made
+8. How to test the overview on mobile
+9. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result mobile-first, SOLID, layered, premium, and production-ready
+- The Guests overview must feel like a real premium hotel operations summary
