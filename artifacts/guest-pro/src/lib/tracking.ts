@@ -3,9 +3,6 @@
  *
  * All tracking-related data fetching is centralised here.
  * No fetch calls are scattered in components or hooks.
- *
- * These functions use the same customFetch as the generated API client
- * (auth token is attached automatically via the global setAuthTokenGetter).
  */
 
 import { customFetch } from "@workspace/api-client-react";
@@ -50,6 +47,7 @@ export interface GuestPresence {
   status: TrackingStatus;
   lastLat: number | null;
   lastLng: number | null;
+  lastAccuracyMeters: number | null;
   lastSourceIp: string | null;
   lastSeenAt: string | null;
 }
@@ -60,9 +58,34 @@ export interface HeartbeatPayload {
   accuracy: number | null;
 }
 
+/** Debug diagnostics returned by the heartbeat endpoint. */
+export interface HeartbeatDebug {
+  guestId: number;
+  hotelId: number;
+  browserLat: number | null;
+  browserLng: number | null;
+  browserAccuracyMeters: number | null;
+  resolvedSourceIp: string;
+  reqIp: string | null;
+  reqIps: string[];
+  xForwardedFor: string | string[] | null;
+  socketRemoteAddress: string | null;
+  hotelCenterLat: number;
+  hotelCenterLng: number;
+  hotelRadiusMeters: number;
+  trackingEnabled: boolean;
+  allowedNetworks: string[];
+  distanceMeters: number | null;
+  isInGeofence: boolean | null;
+  isOnAllowedNetwork: boolean | null;
+  unknownReason: string | null;
+  resolvedStatus: TrackingStatus;
+}
+
 export interface HeartbeatResponse {
   status: TrackingStatus;
   sourceIp: string;
+  debug: HeartbeatDebug;
 }
 
 // ---------------------------------------------------------------------------
@@ -70,17 +93,17 @@ export interface HeartbeatResponse {
 // ---------------------------------------------------------------------------
 
 export const TRACKING_STATUS_LABEL: Record<TrackingStatus, string> = {
-  IN_HOTEL_AND_ON_WIFI: "In hotel",
-  IN_HOTEL_NOT_ON_WIFI: "In hotel · not on hotel network",
-  OUTSIDE_HOTEL: "Out of hotel",
-  UNKNOWN: "Unknown",
+  IN_HOTEL_AND_ON_WIFI:   "In hotel",
+  IN_HOTEL_NOT_ON_WIFI:   "In hotel · not on hotel network",
+  OUTSIDE_HOTEL:          "Out of hotel",
+  UNKNOWN:                "Unknown",
 };
 
 export const TRACKING_STATUS_SHORT: Record<TrackingStatus, string> = {
-  IN_HOTEL_AND_ON_WIFI: "In hotel",
-  IN_HOTEL_NOT_ON_WIFI: "In hotel",
-  OUTSIDE_HOTEL: "Out of hotel",
-  UNKNOWN: "Unknown",
+  IN_HOTEL_AND_ON_WIFI:   "In hotel",
+  IN_HOTEL_NOT_ON_WIFI:   "In hotel",
+  OUTSIDE_HOTEL:          "Out of hotel",
+  UNKNOWN:                "Unknown",
 };
 
 // ---------------------------------------------------------------------------
@@ -89,12 +112,10 @@ export const TRACKING_STATUS_SHORT: Record<TrackingStatus, string> = {
 
 const BASE = "/api";
 
-/** Fetch the hotel's tracking config and allowed network rules. */
 export async function getTrackingConfig(): Promise<TrackingConfigResponse> {
   return customFetch<TrackingConfigResponse>(`${BASE}/tracking/config`);
 }
 
-/** Create or update the hotel tracking configuration. */
 export async function saveTrackingConfig(data: {
   isEnabled: boolean;
   centerLat: number;
@@ -108,7 +129,6 @@ export async function saveTrackingConfig(data: {
   });
 }
 
-/** Add a new allowed network IP or CIDR range. */
 export async function addTrackingNetwork(data: {
   ipOrCidr: string;
   label: string;
@@ -119,14 +139,12 @@ export async function addTrackingNetwork(data: {
   });
 }
 
-/** Remove an allowed network rule by ID. */
 export async function deleteTrackingNetwork(id: number): Promise<void> {
   await customFetch<void>(`${BASE}/tracking/networks/${id}`, {
     method: "DELETE",
   });
 }
 
-/** Send a guest presence heartbeat to the backend. */
 export async function sendPresenceHeartbeat(
   payload: HeartbeatPayload
 ): Promise<HeartbeatResponse> {
@@ -136,7 +154,19 @@ export async function sendPresenceHeartbeat(
   });
 }
 
-/** Get all guest presence snapshots for this hotel (staff/manager). */
 export async function getGuestPresences(): Promise<GuestPresence[]> {
   return customFetch<GuestPresence[]>(`${BASE}/tracking/presences`);
+}
+
+export interface MyIpResponse {
+  sourceIp: string;
+  reqIp: string | null;
+  reqIps: string[];
+  xForwardedFor: string | string[] | null;
+  socketRemoteAddress: string | null;
+}
+
+/** Returns the IP address the server resolves from the current request. */
+export async function getMyIp(): Promise<MyIpResponse> {
+  return customFetch<MyIpResponse>(`${BASE}/tracking/my-ip`);
 }

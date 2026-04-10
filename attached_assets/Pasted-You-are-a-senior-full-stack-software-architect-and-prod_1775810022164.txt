@@ -1,0 +1,268 @@
+You are a senior full-stack software architect and production-grade debugging engineer.
+
+Your task is to inspect, diagnose, and fix a production issue in the existing “Guest Pro” project related to the Active Tracking System.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the current codebase, tracking config flow, guest heartbeat flow, geolocation collection logic, backend IP resolution logic, guest list status rendering, and database/state model.
+- Do NOT rebuild the project from scratch if working parts already exist.
+- Preserve working auth, guest flows, manager/staff dashboards, route protection, and stable APIs.
+- Refactor only where there is real architectural, maintainability, or production value.
+- The fix must be production-ready, SOLID, layered, and safe.
+
+BUG CONTEXT:
+The system should compute guest tracking status using:
+1. hotel geofence (lat/lng + radius)
+2. backend request source IP matching against allowed hotel public IPs / CIDR ranges
+
+The expected statuses are:
+- IN_HOTEL_AND_ON_WIFI
+- IN_HOTEL_NOT_ON_WIFI
+- OUTSIDE_HOTEL
+- UNKNOWN
+
+But currently, even when I am physically inside the defined hotel coordinates and on the same hotel wifi/public IP, the guest still shows UNKNOWN.
+
+PRIMARY GOALS:
+1. Find the real root cause of why tracking resolves to UNKNOWN
+2. Fix the issue professionally
+3. Add proper debug visibility for backend-seen IP, browser coordinates, accuracy, computed distance, and final status
+4. Ensure the tracking system becomes a reliable, centralized, production-ready policy
+5. Keep the architecture SOLID and layered
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current Active Tracking System settings structure
+2. Current tracking config model
+3. Current guest-side geolocation collection flow
+4. Current heartbeat API flow
+5. Current backend request IP resolution logic
+6. Current proxy / trust-proxy configuration
+7. Current geofence calculation logic
+8. Current status resolver logic
+9. Current guest-list status badge rendering
+10. Current persistence/state model for presence snapshots
+11. What already works
+12. What should be preserved
+13. What is likely causing UNKNOWN
+
+Then provide:
+- concise architecture audit
+- UNKNOWN root-cause candidates
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — FIND THE REAL ROOT CAUSE OF UNKNOWN
+==================================================
+
+Diagnose deeply.
+
+Check all likely causes:
+
+1. Browser geolocation never reaches backend
+2. Browser sends lat/lng but not accuracy/timestamp
+3. Geolocation permission or secure-context issue causes missing data
+4. getCurrentPosition/watchPosition is returning low-quality position and resolver treats it as UNKNOWN
+5. Heartbeat payload is malformed or missing fields
+6. Geofence calculation is wrong
+7. Radius comparison is wrong
+8. Backend uses wrong coordinates
+9. Frontend and backend use different tracking config
+10. Backend sees wrong client IP
+11. req.ip is incorrect because trust proxy is not configured properly
+12. Allowed hotel IP matching logic is wrong
+13. CIDR/IP range parsing is wrong
+14. Status resolver is too strict and incorrectly returns UNKNOWN
+15. Presence state is stale and not refreshed
+16. Guest list reads old cached snapshot instead of latest resolved status
+
+Do not guess.
+Find the actual technical root cause.
+
+==================================================
+PHASE 3 — ADD A PROFESSIONAL DEBUG MODE FOR TRACKING
+==================================================
+
+Temporarily add a safe debug view/logging system for tracking diagnostics.
+
+At minimum, expose/log the following on heartbeat processing:
+- guest id
+- browser latitude
+- browser longitude
+- browser accuracy
+- browser timestamp
+- backend-seen request IP
+- req.ip
+- req.ips
+- x-forwarded-for header
+- socket remote address
+- hotel tracking center lat/lng
+- radius
+- computed distance from hotel center
+- whether source IP matched allowed network list
+- final resolved status
+- reason for UNKNOWN if UNKNOWN is returned
+
+Also add a temporary manager-side diagnostic view if helpful:
+- latest guest tracking snapshot
+- last heartbeat timestamp
+- distance meters
+- source IP
+- status resolution reason
+
+This debug mode must be easy to remove or hide later.
+
+==================================================
+PHASE 4 — FIX BACKEND CLIENT IP RESOLUTION CORRECTLY
+==================================================
+
+Make backend IP resolution production-safe.
+
+REQUIREMENTS:
+- inspect whether the app is behind a reverse proxy/platform proxy
+- configure trust proxy correctly if required
+- ensure req.ip resolves the real client public IP safely
+- use req.ips / x-forwarded-for only in a controlled and correct way
+- avoid trusting spoofable headers incorrectly
+- centralize source IP resolution in a reusable infrastructure helper/service
+
+The tracking system must compare the correct backend-seen public IP against allowed hotel public IPs / CIDR ranges.
+
+==================================================
+PHASE 5 — FIX BROWSER GEOLOCATION COLLECTION
+==================================================
+
+Make browser-side geolocation collection production-ready.
+
+REQUIREMENTS:
+- verify geolocation permission flow
+- verify secure context requirements
+- verify watchPosition/getCurrentPosition usage
+- ensure latitude, longitude, accuracy, and timestamp are captured
+- improve options if needed:
+  - enableHighAccuracy where appropriate
+  - timeout handling
+  - maximumAge handling
+- do not spam heartbeat calls unnecessarily
+- ensure heartbeat only sends valid payloads
+
+==================================================
+PHASE 6 — FIX GEOFENCE STATUS RESOLUTION
+==================================================
+
+Refactor the tracking status resolver into a centralized policy/service.
+
+Statuses:
+- IN_HOTEL_AND_ON_WIFI
+- IN_HOTEL_NOT_ON_WIFI
+- OUTSIDE_HOTEL
+- UNKNOWN
+
+Implement clear and deterministic rules:
+- inside geofence + IP match -> IN_HOTEL_AND_ON_WIFI
+- inside geofence + IP mismatch -> IN_HOTEL_NOT_ON_WIFI
+- outside geofence -> OUTSIDE_HOTEL
+- missing/weak/stale data -> UNKNOWN
+
+Also:
+- define a professional accuracy threshold policy
+- define stale heartbeat policy
+- make UNKNOWN explicit and explainable
+- avoid silent ambiguous fallbacks
+
+==================================================
+PHASE 7 — KEEP THE ARCHITECTURE SOLID
+==================================================
+
+Refactor or preserve the feature in a meaningful layered architecture.
+
+REQUIREMENTS:
+- no geofence logic inside UI components
+- no scattered request IP parsing
+- no duplicated status rules
+- no fake architecture
+- no dead code
+- clean naming
+- maintainable structure
+
+Possible clean modules:
+- TrackingStatusPolicy
+- GuestTrackingResolver
+- GeofenceCalculator
+- SourceIpResolver
+- NetworkRangeMatcher
+- PresenceHeartbeatService
+- GuestTrackingSnapshotRepository
+- GuestTrackingBadge
+- TrackingDiagnosticsPanel
+
+==================================================
+PHASE 8 — GUEST LIST STATUS ACCURACY
+==================================================
+
+Ensure guest list cards show the correct status after the fix.
+
+REQUIREMENTS:
+- guest card badge must reflect the latest resolved tracking snapshot
+- avoid stale cache issues
+- manager/staff list should show correct:
+  - green
+  - orange/yellow
+  - red
+  - gray
+  indicator
+- optional text labels should also be correct
+
+==================================================
+PHASE 9 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- manager login
+- staff/personnel login
+- guest login/logout
+- guest dashboard/chat/voice features
+- existing dashboards
+- route protection
+- stable APIs
+
+This task is specifically about diagnosing and fixing UNKNOWN tracking status.
+
+==================================================
+PHASE 10 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Browser geolocation is captured correctly
+2. Heartbeat payload contains valid lat/lng/accuracy/timestamp
+3. Backend sees the correct client IP
+4. Allowed hotel network IP matching works
+5. Distance calculation is correct
+6. Inside geofence + matching IP resolves to IN_HOTEL_AND_ON_WIFI
+7. Inside geofence + non-matching IP resolves to IN_HOTEL_NOT_ON_WIFI
+8. Outside geofence resolves to OUTSIDE_HOTEL
+9. Missing/weak/stale data resolves to UNKNOWN only for the correct reason
+10. Guest list cards show the right status
+11. No regression in auth or dashboard behavior
+
+==================================================
+PHASE 11 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. Exact root cause of UNKNOWN
+3. What was fixed
+4. What was centralized/refactored
+5. How backend IP resolution now works
+6. How geolocation collection now works
+7. How tracking status resolution now works
+8. Which files were changed
+9. How to test the fix end-to-end
+10. Any remaining recommendations

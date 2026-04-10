@@ -8,6 +8,7 @@
  *   DELETE /tracking/networks/:id  requireManager — remove network rule
  *   POST /tracking/heartbeat       requireGuest   — guest presence heartbeat
  *   GET  /tracking/presences       requireStaff   — all presence snapshots for hotel
+ *   GET  /tracking/presences/:id   requireStaff   — single guest snapshot (with debug)
  */
 
 import { Router } from "express";
@@ -27,6 +28,9 @@ import {
   isValidLongitude,
   isValidRadius,
   isValidIpOrCidr,
+  haversineMeters,
+  isOnAllowedNetwork,
+  isInGeofence,
 } from "../lib/tracking-policy";
 
 const router: IRouter = Router();
@@ -62,7 +66,6 @@ router.put("/tracking/config", requireManager, async (req, res): Promise<void> =
   const hotelId = req.session!.hotelId;
   const { isEnabled, centerLat, centerLng, radiusMeters, notes } = req.body;
 
-  // Validate coordinates and radius
   const lat = typeof centerLat === "string" ? parseFloat(centerLat) : centerLat;
   const lng = typeof centerLng === "string" ? parseFloat(centerLng) : centerLng;
   const radius =
@@ -196,9 +199,14 @@ router.post("/tracking/heartbeat", requireGuest, async (req, res): Promise<void>
   const validLng = parsedLng !== null && isFinite(parsedLng) ? parsedLng : null;
   const validAcc = parsedAcc !== null && isFinite(parsedAcc) ? parsedAcc : null;
 
+  // ── Source IP resolution (multi-layer for diagnostics) ────────────────────
   const sourceIp = extractSourceIp(req);
+  const rawXff   = req.headers["x-forwarded-for"] ?? null;
+  const reqIp    = req.ip ?? null;
+  const reqIps   = req.ips ?? [];
+  const socketIp = req.socket?.remoteAddress ?? null;
 
-  // Load hotel tracking config + networks
+  // ── Load hotel tracking config + networks ─────────────────────────────────
   const [config] = await db
     .select()
     .from(hotelTrackingConfigsTable)
@@ -212,16 +220,44 @@ router.post("/tracking/heartbeat", requireGuest, async (req, res): Promise<void>
         .where(eq(hotelTrackingNetworksTable.hotelId, hotelId))
     : [];
 
-  // Resolve tracking status
+  // ── Resolve tracking status ───────────────────────────────────────────────
+  const effectiveConfig = config ?? {
+    isEnabled: false,
+    centerLat: 0,
+    centerLng: 0,
+    radiusMeters: 100,
+  };
+
   const status = resolveTrackingStatus({
-    config: config ?? { isEnabled: false, centerLat: 0, centerLng: 0, radiusMeters: 100 },
+    config: effectiveConfig,
     networks,
     lat: validLat,
     lng: validLng,
     sourceIp,
   });
 
-  // Upsert presence snapshot
+  // ── Compute diagnostic values ─────────────────────────────────────────────
+  let distanceMeters: number | null = null;
+  let geofenceResult: boolean | null = null;
+  let networkResult: boolean | null  = null;
+  let unknownReason: string | null   = null;
+
+  if (!effectiveConfig.isEnabled) {
+    unknownReason = "Tracking is disabled in hotel configuration";
+  } else if (validLat == null || validLng == null) {
+    unknownReason = "No valid coordinates received from browser";
+  } else {
+    distanceMeters = haversineMeters(
+      validLat,
+      validLng,
+      effectiveConfig.centerLat,
+      effectiveConfig.centerLng
+    );
+    geofenceResult = isInGeofence(validLat, validLng, effectiveConfig);
+    networkResult  = isOnAllowedNetwork(sourceIp, networks);
+  }
+
+  // ── Upsert presence snapshot ──────────────────────────────────────────────
   const [existing] = await db
     .select({ id: guestPresenceSnapshotsTable.id })
     .from(guestPresenceSnapshotsTable)
@@ -249,7 +285,56 @@ router.post("/tracking/heartbeat", requireGuest, async (req, res): Promise<void>
     await db.insert(guestPresenceSnapshotsTable).values(snapshotPayload);
   }
 
-  res.json({ status, sourceIp });
+  // ── Response — includes a debug block for diagnostics ────────────────────
+  // The debug block is always included (auth-protected endpoint, guest-only).
+  // It helps the manager and guest understand why a status was assigned.
+  res.json({
+    status,
+    sourceIp,
+    debug: {
+      guestId,
+      hotelId,
+      // Browser-reported position
+      browserLat: validLat,
+      browserLng: validLng,
+      browserAccuracyMeters: validAcc,
+      // IP resolution layers
+      resolvedSourceIp: sourceIp,
+      reqIp,
+      reqIps,
+      xForwardedFor: rawXff,
+      socketRemoteAddress: socketIp,
+      // Hotel configuration
+      hotelCenterLat: effectiveConfig.centerLat,
+      hotelCenterLng: effectiveConfig.centerLng,
+      hotelRadiusMeters: effectiveConfig.radiusMeters,
+      trackingEnabled: effectiveConfig.isEnabled,
+      allowedNetworks: networks.map((n) => n.ipOrCidr),
+      // Computed
+      distanceMeters: distanceMeters != null ? Math.round(distanceMeters) : null,
+      isInGeofence: geofenceResult,
+      isOnAllowedNetwork: networkResult,
+      unknownReason,
+      // Final
+      resolvedStatus: status,
+    },
+  });
+});
+
+// ---------------------------------------------------------------------------
+// GET /tracking/my-ip — returns the server-seen IP for the current request
+// Used by the settings page so managers can quickly add their IP to the
+// allowed networks list without needing to look it up externally.
+// ---------------------------------------------------------------------------
+router.get("/tracking/my-ip", requireStaff, (req, res): void => {
+  const sourceIp = extractSourceIp(req);
+  res.json({
+    sourceIp,
+    reqIp: req.ip ?? null,
+    reqIps: req.ips ?? [],
+    xForwardedFor: req.headers["x-forwarded-for"] ?? null,
+    socketRemoteAddress: req.socket?.remoteAddress ?? null,
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -264,6 +349,7 @@ router.get("/tracking/presences", requireStaff, async (req, res): Promise<void> 
       status: guestPresenceSnapshotsTable.status,
       lastLat: guestPresenceSnapshotsTable.lastLat,
       lastLng: guestPresenceSnapshotsTable.lastLng,
+      lastAccuracyMeters: guestPresenceSnapshotsTable.lastAccuracyMeters,
       lastSourceIp: guestPresenceSnapshotsTable.lastSourceIp,
       lastSeenAt: guestPresenceSnapshotsTable.lastSeenAt,
     })

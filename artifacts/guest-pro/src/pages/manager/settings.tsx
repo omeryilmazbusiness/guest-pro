@@ -24,8 +24,10 @@ import {
   saveTrackingConfig,
   addTrackingNetwork,
   deleteTrackingNetwork,
+  getMyIp,
   type TrackingConfig,
   type TrackingNetwork,
+  type MyIpResponse,
 } from "@/lib/tracking";
 import { GuestProLogo } from "@/components/GuestProLogo";
 import { Button } from "@/components/ui/button";
@@ -41,6 +43,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Radio,
+  Eye,
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -167,6 +171,23 @@ export default function ManagerSettings() {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  // ── My IP diagnostics ─────────────────────────────────────────────────────
+
+  const [myIpData, setMyIpData] = useState<MyIpResponse | null>(null);
+  const [myIpLoading, setMyIpLoading] = useState(false);
+
+  const loadMyIp = useCallback(async () => {
+    setMyIpLoading(true);
+    try {
+      const data = await getMyIp();
+      setMyIpData(data);
+    } catch {
+      toast.error("Failed to detect server-seen IP.");
+    } finally {
+      setMyIpLoading(false);
+    }
+  }, []);
 
   // Add network form
   const [newIpOrCidr, setNewIpOrCidr] = useState("");
@@ -443,6 +464,74 @@ export default function ManagerSettings() {
                   )}
                 </Button>
               </form>
+            </SectionCard>
+
+            {/* ─── My IP diagnostics card ─── */}
+            <SectionCard
+              icon={<Eye className="w-4 h-4 text-zinc-500" />}
+              title="Your Current IP"
+              subtitle="Find out what IP the server sees from your connection — useful when adding your hotel network."
+            >
+              {myIpData ? (
+                <div className="space-y-3">
+                  <div className="bg-zinc-50 rounded-2xl px-4 py-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                        Server-seen IP
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(myIpData.sourceIp).then(() =>
+                            toast.success("IP copied to clipboard")
+                          );
+                        }}
+                        className="w-6 h-6 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
+                        aria-label="Copy IP"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <p className="text-base font-mono font-semibold text-zinc-900">
+                      {myIpData.sourceIp}
+                    </p>
+                  </div>
+                  {myIpData.reqIps.length > 1 && (
+                    <p className="text-[11px] text-zinc-400 leading-snug">
+                      All hops: {myIpData.reqIps.join(" → ")}
+                    </p>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setNewIpOrCidr(myIpData.sourceIp);
+                      toast.success("IP pre-filled in the Add Network form below.");
+                    }}
+                    className="w-full h-9 rounded-xl border-zinc-200 text-zinc-700 text-xs font-medium hover:bg-zinc-50"
+                  >
+                    Use this IP in Allowed Networks
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={loadMyIp}
+                  disabled={myIpLoading}
+                  variant="outline"
+                  className="w-full h-10 rounded-2xl border-zinc-200 text-zinc-700 text-sm font-medium hover:bg-zinc-50 disabled:opacity-60"
+                >
+                  {myIpLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Eye className="w-4 h-4 mr-1.5" />
+                      Detect my IP
+                    </>
+                  )}
+                </Button>
+              )}
             </SectionCard>
 
             {/* ─── Allowed Networks card ─── */}

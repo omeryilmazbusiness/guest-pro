@@ -270,17 +270,49 @@ Tracks whether guests are in-hotel, in-hotel but not on hotel Wi-Fi, outside the
 | PUT | `/api/tracking/config` | manager | Upsert tracking config |
 | POST | `/api/tracking/networks` | manager | Add allowed network |
 | DELETE | `/api/tracking/networks/:id` | manager | Remove network rule |
-| POST | `/api/tracking/heartbeat` | guest | Guest presence heartbeat |
+| POST | `/api/tracking/heartbeat` | guest | Guest presence heartbeat (returns debug block) |
 | GET | `/api/tracking/presences` | staff | All guest presence snapshots |
+| GET | `/api/tracking/my-ip` | staff | Returns the server-seen IP for the manager's request |
+
+### Heartbeat Debug Block
+Every `POST /api/tracking/heartbeat` response includes a `debug` object:
+```json
+{
+  "status": "IN_HOTEL_AND_ON_WIFI",
+  "sourceIp": "5.27.39.187",
+  "debug": {
+    "browserLat": 41.19, "browserLng": 28.72, "browserAccuracyMeters": 12,
+    "resolvedSourceIp": "5.27.39.187",
+    "reqIp": "5.27.39.187", "reqIps": ["5.27.39.187"],
+    "xForwardedFor": "5.27.39.187", "socketRemoteAddress": "::1",
+    "hotelCenterLat": 41.1952, "hotelCenterLng": 28.7252, "hotelRadiusMeters": 150,
+    "trackingEnabled": true, "allowedNetworks": ["5.27.39.187"],
+    "distanceMeters": 0, "isInGeofence": true, "isOnAllowedNetwork": true,
+    "unknownReason": null, "resolvedStatus": "IN_HOTEL_AND_ON_WIFI"
+  }
+}
+```
+
+### UNKNOWN Root Cause Fix (critical — Apr 2026)
+**Bug**: The heartbeat hook sent a null heartbeat on mount, setting `lastSentAt`. When `watchPosition` fired 1-5s later with real GPS, the 60s rate limiter blocked it. Result: first snapshot was always UNKNOWN.
+
+**Fix in `use-tracking-heartbeat.ts`**:
+- Removed the immediate null heartbeat on mount
+- First real position always bypasses the rate limiter (`hasSentFirst` flag)
+- Added 12s fallback timer — only sends null if no GPS position arrives (denied/unsupported)
+- Added accuracy threshold: positions coarser than 500m are skipped (sends null instead)
+- Changed to `enableHighAccuracy: true` for indoor-grade geofencing
+- Rate limit still applies to all subsequent heartbeats (60s minimum)
 
 ### Manager UX
 - Settings gear icon in dashboard header (manager only) → `/manager/settings`
 - "Active Tracking System" card: enable/disable toggle, lat/lng/radius fields
 - "Allowed Networks" card: add/remove IP or CIDR ranges with optional labels
+- **"Your Current IP" card**: click "Detect my IP" to see the server-seen IP, with one-click copy and pre-fill into the Add Network form
 
 ### Guest UX
 - `useTrackingHeartbeat()` runs on guest home page
-- Requests geolocation permission; sends heartbeat via `watchPosition` (throttled to 60 s)
+- First real GPS fix is sent immediately; subsequent ones are rate-limited to 60s
 - Backend resolves status from location + request source IP
 
 ## Database Schema
