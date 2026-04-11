@@ -31,21 +31,20 @@ export interface CreateServiceRequestPayload {
   sourceSessionId?: number;
 }
 
+/**
+ * Create a service request for the authenticated guest.
+ *
+ * NOTE: customFetch already parses the JSON body on success and throws an
+ * ApiError on HTTP error — never treat its return value as a Response object.
+ */
 export async function createServiceRequest(
   payload: CreateServiceRequestPayload
 ): Promise<ServiceRequest> {
-  const response = await customFetch("/api/requests", {
+  return customFetch<ServiceRequest>("/api/requests", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-
-  if (!response.ok) {
-    const data = await response.json().catch(() => ({}));
-    throw new Error(data.error || "Failed to create service request");
-  }
-
-  return response.json();
 }
 
 export async function listServiceRequests(params?: {
@@ -55,28 +54,18 @@ export async function listServiceRequests(params?: {
   const url = new URL("/api/requests", window.location.origin);
   if (params?.type) url.searchParams.set("type", params.type);
   if (params?.status) url.searchParams.set("status", params.status);
-
-  const response = await customFetch(url.pathname + url.search);
-  if (!response.ok) throw new Error("Failed to fetch service requests");
-  return response.json();
+  return customFetch<ServiceRequest[]>(url.pathname + url.search);
 }
 
 export async function updateServiceRequestStatus(
   id: number,
   status: ServiceRequestStatus
 ): Promise<ServiceRequest> {
-  const response = await customFetch(`/api/requests/${id}/status`, {
+  return customFetch<ServiceRequest>(`/api/requests/${id}/status`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status }),
   });
-
-  if (!response.ok) {
-    const data = await response.json().catch(() => ({}));
-    throw new Error(data.error || "Failed to update status");
-  }
-
-  return response.json();
 }
 
 export const REQUEST_TYPE_LABELS: Record<ServiceRequestType, string> = {

@@ -1,0 +1,414 @@
+You are a senior full-stack software architect, conversation-flow designer, premium mobile UX designer, and production-grade debugging engineer.
+
+Your task is to inspect, diagnose, redesign, and fix the quick-action AI workflows in the existing “Guest Pro” project so they become truly production-ready, button-first, structured, and reliable.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the current codebase, guest quick-action flows, AI prompt routing, chat UI, request/task creation flow, staff dashboard request rendering, backend APIs, validation, and database schema.
+- Do NOT rebuild the app from scratch if working systems already exist.
+- Preserve working auth, guest login/logout, staff login, guest dashboard structure, route protection, and stable APIs.
+- Preserve the existing “Konuş benimle” main concept unless a serious stability issue requires adjustment.
+- Refactor only where there is real architecture, maintainability, UX, or production value.
+- The final result must be mobile-first, premium, simple, structured, SOLID, layered, and production-ready.
+
+BUG CONTEXT:
+In the guest quick actions:
+- Acıktım
+- Destek Talep
+- Care about me
+
+requests are NOT being created properly.
+The system says something like:
+“Destek oluşturulurken hata oluştu.”
+
+Also, the current UX is too chat-input dependent.
+We want a button-first guided flow with minimal or zero typing.
+
+PRIMARY GOALS:
+1. Find the real root cause of why support/food/care requests are not being created
+2. Fix the bug professionally
+3. Redesign quick-action conversations so the guest can proceed mostly by pressing buttons only
+4. Add selectable option buttons next to AI-provided options
+5. Add a final confirmation step:
+   - Onaylıyorum
+   - Düzenlemeye devam et
+6. When the guest presses Onaylıyorum, the structured request must be created successfully
+7. Keep the architecture SOLID and production-ready
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current guest quick-action cards:
+   - Acıktım
+   - Destek Talep
+   - Care about me
+2. Current chat/AI orchestration flow
+3. Current request creation flow
+4. Current structured request/task model
+5. Current staff dashboard request rendering
+6. Current backend endpoints used for request creation
+7. Current validation logic
+8. Current request types / enums / mappings
+9. Current frontend state management for guided chat
+10. Current error handling
+11. Current DB schema for requests/orders/care entries
+12. What already works
+13. What should be preserved
+14. What is broken
+15. Where request creation likely fails
+
+Then provide:
+- concise architecture audit
+- quick-action workflow gap analysis
+- request-creation bug root-cause candidates
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — FIND THE REAL ROOT CAUSE OF REQUEST CREATION FAILURE
+==================================================
+
+Diagnose the actual bug deeply.
+
+Check all likely causes:
+
+1. Frontend selections are not persisted correctly
+2. AI response is shown but not transformed into a structured request payload
+3. Backend request endpoint receives malformed payload
+4. Request type mapping is wrong:
+   - FOOD_ORDER
+   - SUPPORT_REQUEST
+   - CARE_PROFILE_UPDATE
+   - GENERAL_SERVICE_REQUEST
+5. Validation schema rejects the payload
+6. Required fields are missing:
+   - guestId
+   - roomNumber
+   - requestType
+   - content summary
+   - structured fields
+7. Auth/session context is missing on request creation
+8. Conversation completion state never triggers create-request mutation
+9. DB insert fails
+10. Backend returns generic error instead of useful diagnostic
+11. Staff dashboard reads from wrong source or wrong query
+12. Request is created but not displayed due to rendering/query mismatch
+
+Do not guess.
+Find the actual technical root cause.
+
+==================================================
+PHASE 3 — REDESIGN QUICK ACTIONS AS BUTTON-FIRST GUIDED FLOWS
+==================================================
+
+Redesign the quick-action chat UX so the guest can continue without typing.
+
+IMPORTANT PRODUCT RULE:
+The guest should not need to type in normal cases.
+The flow should be driven by buttons, selections, and confirmations.
+
+REQUIREMENTS:
+- when AI presents options, each option should have a selectable button such as:
+  - Seç
+  - Choose
+  - Select
+- the guest should be able to continue by tapping options only
+- avoid free typing unless optional note is needed at the end
+- the flow must feel extremely fast, practical, and guided
+- the result should feel like a modern AI-assisted service wizard inside chat
+
+==================================================
+PHASE 4 — BUTTON-BASED OPTION SELECTION UI
+==================================================
+
+Implement professional selectable option UI inside the chat flow.
+
+REQUIREMENTS:
+- when AI lists choices, render them as tappable option rows/cards/buttons
+- each option must be clear and highly tappable on mobile
+- selection state must be visually obvious
+- allow single-select or multi-select where appropriate
+- preserve a premium, calm, hospitality-style design
+- avoid messy generic chat bubbles with raw text lists only
+
+EXAMPLES:
+For food:
+- item cards or option rows with “Seç”
+For support:
+- issue categories with selection buttons
+For care about me:
+- preference categories with selection buttons
+
+==================================================
+PHASE 5 — FINAL CONFIRMATION STEP
+==================================================
+
+Every structured quick-action flow must end with a professional confirmation step.
+
+REQUIREMENTS:
+- once the guided flow has enough information, show a summary
+- below the summary show two clear actions:
+  - Onaylıyorum
+  - Düzenlemeye devam et
+- if the guest taps Düzenlemeye devam et:
+  - allow them to go back / refine selections
+- if the guest taps Onaylıyorum:
+  - create the structured request immediately
+  - show clear success feedback
+  - ensure staff dashboard receives the request
+
+This must feel polished and trustworthy.
+
+==================================================
+PHASE 6 — ACIKTIM FLOW (FOOD ORDER)
+==================================================
+
+Make Acıktım a fully guided button-first room service flow.
+
+REQUIREMENTS:
+- open chat in food-order mode
+- AI should show currently available menu items from a structured menu source
+- guest should pick items mostly using buttons
+- allow yes/no style branching where helpful
+- allow optional final note only at the end
+- after final confirmation, create a FOOD_ORDER request for staff
+
+If live menu infrastructure is not fully ready:
+- preserve clean architecture so current menu data can be loaded from a structured source
+- do not hardcode messy logic inside UI
+
+==================================================
+PHASE 7 — DESTEK TALEP FLOW
+==================================================
+
+Make Destek Talep a guided support-request flow.
+
+REQUIREMENTS:
+- AI should help guest select the issue category with buttons
+- keep it fast, practical, and low-friction
+- create a SUPPORT_REQUEST after final confirmation
+- ensure the request appears on staff screen as a yellow alert-style card
+- include:
+  - guest name
+  - room number
+  - hotel presence info if available
+  - request content summary
+
+==================================================
+PHASE 8 — CARE ABOUT ME FLOW
+==================================================
+
+Make Care about me a guided preference/care-data collection flow.
+
+REQUIREMENTS:
+- AI should guide the guest with structured selectable options
+- collect hospitality-relevant care/preference information
+- keep it practical and tasteful
+- create a CARE_PROFILE_UPDATE or equivalent structured request/entity after confirmation
+- ensure staff screen shows these entries as dedicated care cards
+
+==================================================
+PHASE 9 — NORMAL CHAT SHOULD REMAIN HOTEL-FOCUSED
+==================================================
+
+The normal guest chat must also be hardened.
+
+IMPORTANT:
+- do not let the guest use AI as a fully unrestricted open assistant
+- keep the assistant hotel-focused
+- the assistant should guide, support, and create staff requests when needed
+- if a guest describes a service issue in normal chat, AI should be able to convert that into a structured request when the conversation reaches enough clarity
+
+==================================================
+PHASE 10 — STRUCTURED REQUEST DOMAIN MODEL
+==================================================
+
+Refactor or harden the structured request model.
+
+REQUIREMENTS:
+- do not rely on raw unstructured chat text only
+- requests should have proper types and structured payloads
+
+Expected request types may include:
+- FOOD_ORDER
+- SUPPORT_REQUEST
+- CARE_PROFILE_UPDATE
+- GENERAL_SERVICE_REQUEST
+
+Each request should support:
+- guestId
+- roomNumber
+- requestType
+- content summary
+- optional structured fields
+- sourceConversationId
+- createdAt
+- status
+
+Make the model easy to extend later.
+
+==================================================
+PHASE 11 — ERROR HANDLING / DIAGNOSTICS
+==================================================
+
+Professionalize request-creation error handling.
+
+REQUIREMENTS:
+- do not show generic meaningless failure messages
+- capture and expose the real reason internally/logically
+- return safe but useful error feedback to UI
+- add enough logging/diagnostics to understand failures
+- distinguish between:
+  - validation error
+  - auth/session error
+  - API/network error
+  - DB failure
+  - rendering/query mismatch
+
+Also improve success handling:
+- clear success message
+- clear card creation result on staff side
+- no ambiguous final state
+
+==================================================
+PHASE 12 — STAFF DASHBOARD REQUEST RENDERING
+==================================================
+
+Ensure staff screen receives and displays the created requests correctly.
+
+REQUIREMENTS:
+- support requests as yellow alert-style cards
+- food orders with distinct visual treatment
+- care-about-me entries as dedicated structured cards
+- cards must show guest/room/request context clearly
+- staff must see the result immediately or after proper refresh/query update
+- fix any query/rendering mismatch if requests are created but not shown
+
+==================================================
+PHASE 13 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement everything in a meaningful, maintainable architecture.
+
+REQUIREMENTS:
+- business logic separate from chat UI
+- guided conversation state separate from raw rendering
+- request creation centralized
+- AI prompt routing centralized
+- no giant chat component
+- no duplicated workflow logic
+- no fake architecture
+- no dead code
+- clean naming
+- meaningful modules only
+
+Suggested layered structure:
+- domain:
+  - RequestType
+  - ServiceRequest
+  - GuidedFlowState
+- application:
+  - StartQuickActionFlow
+  - ProgressGuidedFlow
+  - ConfirmStructuredRequest
+  - FoodOrderFlowService
+  - SupportRequestFlowService
+  - CareAboutMeFlowService
+  - ConversationIntentRouter
+- infrastructure:
+  - AI prompt provider
+  - request repository
+  - menu source adapter
+  - care profile repository
+- presentation:
+  - QuickActionCard
+  - GuidedChatOptionList
+  - GuidedChatOptionButton
+  - GuidedChatSummaryCard
+  - ConfirmationActions
+  - StaffRequestAlertCard
+  - FoodOrderCard
+  - CareAboutMeCard
+
+Make the architecture actually used and meaningful.
+
+==================================================
+PHASE 14 — MOBILE-FIRST UX QUALITY
+==================================================
+
+The UX must be:
+- premium
+- fast
+- low-friction
+- highly tappable
+- calm and elegant
+- mobile-first
+- easy to understand
+- not cluttered
+- not chat-heavy
+
+The guest should feel:
+- “I tap, choose, confirm, done.”
+
+==================================================
+PHASE 15 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- guest login/logout
+- staff login
+- manager login
+- current guest dashboard structure
+- AI backend integration
+- route protection
+- stable APIs
+
+This task is specifically about fixing request creation and redesigning quick-action flows as button-first guided conversations.
+
+==================================================
+PHASE 16 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Support request creation works reliably
+2. Food order creation works reliably
+3. Care about me creation works reliably
+4. Real root cause of previous error is fixed
+5. Option buttons appear next to AI choices
+6. Guest can complete flows without typing in normal cases
+7. Final confirmation step works
+8. Onaylıyorum creates the request
+9. Düzenlemeye devam et keeps the flow editable
+10. Staff dashboard receives support requests correctly
+11. Staff dashboard receives food orders correctly
+12. Staff dashboard receives care-about-me entries correctly
+13. Normal chat remains hotel-focused
+14. Mobile UX feels premium and production-ready
+
+==================================================
+PHASE 17 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. Exact root cause of the request creation failure
+3. What was fixed
+4. What was redesigned
+5. How button-first guided flows now work
+6. How final confirmation works
+7. How structured requests are created
+8. How staff dashboard rendering works
+9. Which files were changed
+10. Any schema/model changes
+11. How to test all guest/staff quick-action flows end-to-end
+
+IMPORTANT:
+- Start with inspection first
+- Then fix the bug professionally
+- Then redesign the flows properly
+- Keep the result mobile-first, SOLID, layered, premium, and production-ready
+- The guest should be able to complete most service flows using buttons only

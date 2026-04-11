@@ -73,7 +73,7 @@ export default function GuestHome() {
   const goToVoice = () => setLocation("/guest/chat?voice=1");
 
   const handleQuickAction = (mode: QuickActionMode) => {
-    setLocation(`/guest/chat?mode=${mode}`);
+    setLocation(`/guest/flow?mode=${mode}`);
   };
 
   const voice = useVoice({
