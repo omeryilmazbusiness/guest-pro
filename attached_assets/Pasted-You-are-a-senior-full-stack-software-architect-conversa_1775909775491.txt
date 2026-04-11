@@ -1,0 +1,433 @@
+You are a senior full-stack software architect, conversation-flow designer, premium mobile UX designer, and production-grade product engineer.
+
+Your task is to inspect, redesign, and harden the GUEST and STAFF experience of the existing “Guest Pro” project into a guided, hotel-focused, AI-assisted service system with structured quick actions, automatic request creation, and premium mobile-first UX.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the current codebase, guest dashboard, guest chat flow, staff dashboard, request/task model, AI integration, auth/session flow, role structure, database schema, and UI components.
+- Do NOT rebuild the project from scratch if working parts already exist.
+- Preserve working guest auth, guest dashboard entry, staff auth, manager/staff dashboards, AI backend integration, route protection, and stable APIs.
+- Preserve the existing main “Konuş benimle” section exactly as requested unless there is a serious product or stability issue.
+- Refactor only where there is real architecture, maintainability, UX, or production value.
+- The final result must be mobile-first, premium, simple, soft, modern, structured, SOLID, layered, and production-ready.
+
+PROJECT CONTEXT:
+Guest Pro is a hotel guest web app with guest and staff-facing operational screens.
+We now need to turn the guest quick-action experience into a guided AI assistant that minimizes friction and routes outcomes into the staff side as structured requests.
+
+PRIMARY GOALS:
+1. Keep the “Konuş benimle” section unchanged
+2. Professionally redesign the sections below it with subtle premium UX improvements
+3. Add a “Konaklamanız hakkında” section that shows the guest’s current key with copy functionality
+4. Add Quick Actions cards:
+   - Acıktım
+   - Destek Talep
+   - Care about me
+5. When these cards are tapped, AI chat opens in a guided mode with minimal friction
+6. AI should drive the flow using yes/no choices and simple selection steps, not chaotic open-ended chat
+7. Food flow should let the guest order to the room quickly from a predefined currently-available menu
+8. Support requests should create structured staff-facing alerts/cards
+9. “Care about me” should collect guest preference/context information via guided AI prompts and create structured staff-facing cards
+10. Normal guest chat should not be a fully open unrestricted conversation space; it should remain hotel-focused and able to generate staff tasks when needed
+11. Staff screen must clearly separate support requests, food orders, and care-about-me entries with distinct card styles
+12. All of this must be implemented in a production-ready, SOLID, layered architecture
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current guest dashboard structure
+2. Current “Konuş benimle” section
+3. Current guest chat flow
+4. Current AI prompt/orchestration structure
+5. Current quick actions implementation if any
+6. Current staff dashboard structure
+7. Current request/task/ticket model if any
+8. Current data model for guest info, room info, guest key, and requests
+9. Current role-aware access and UI rendering
+10. Current mobile UX strengths and weaknesses
+11. What already works
+12. What should be preserved
+13. What needs redesign/refactor for a guided-service architecture
+
+Then provide:
+- concise architecture audit
+- guest quick-actions gap analysis
+- staff-request handling gap analysis
+- AI-guided workflow gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — PRESERVE “KONUŞ BENİMLE”, REDESIGN THE REST
+==================================================
+
+Keep the main “Konuş benimle” section intact as requested.
+
+Below it, redesign the supporting sections professionally.
+
+DESIGN GOALS:
+- premium
+- simple
+- soft
+- modern
+- subtle
+- mobile-first
+- elegant hospitality feel
+- not noisy
+- not cluttered
+
+Redesign the lower part of the guest screen with refined layout, spacing, card hierarchy, and polished micro-interactions.
+
+==================================================
+PHASE 3 — KONAKLAMANIZ HAKKINDA SECTION
+==================================================
+
+Add a premium section titled “Konaklamanız hakkında”.
+
+REQUIREMENTS:
+- show the guest’s current active key
+- provide a polished copy action
+- show key information clearly but elegantly
+- maintain a premium and trustworthy appearance
+- if useful, include other stay context such as room number or relevant stay meta, but do not clutter the section
+
+UX REQUIREMENTS:
+- premium light design
+- soft rounded card
+- subtle hierarchy
+- clean copy feedback
+- mobile-friendly touch targets
+
+==================================================
+PHASE 4 — QUICK ACTIONS CARDS
+==================================================
+
+Add these quick action cards below the stay section:
+- Acıktım
+- Destek Talep
+- Care about me
+
+REQUIREMENTS:
+- cards must be premium, clear, and highly tappable
+- mobile-first layout
+- elegant iconography and subtle visual differentiation
+- cards should feel like high-value actions
+- no noisy or childish visuals
+
+The purpose of these cards:
+- open AI chat in a structured task-oriented mode
+- reduce typing and confusion
+- guide the guest quickly to a useful result
+
+==================================================
+PHASE 5 — GUIDED AI CHAT ARCHITECTURE
+==================================================
+
+Implement a guided AI interaction model, not an unrestricted chat-by-default model.
+
+IMPORTANT PRODUCT RULE:
+Guest chat should NOT behave like a fully open generic AI chatbot for any topic.
+It must remain hotel-focused, action-oriented, and structured.
+
+The AI should:
+- guide the user with simple choices
+- prefer yes/no and option buttons where appropriate
+- minimize typing
+- understand the intent
+- either complete the task directly or create a structured staff request
+
+Create a clean architecture for:
+- guided quick-action flows
+- hotel-specific AI prompt routing
+- request extraction from conversation
+- structured output for staff dashboard
+
+Do not bury prompt logic inside UI components.
+
+==================================================
+PHASE 6 — “ACIKTIM” FLOW
+==================================================
+
+When the guest taps “Acıktım”:
+
+REQUIREMENTS:
+- automatically open AI chat in “food ordering mode”
+- AI should use a predefined menu of currently available items
+- AI should present the available options in a fast and practical way
+- the guest should be able to move through the flow mostly using yes/no or selection clicks
+- the flow should minimize free typing
+- at the end, allow the guest to optionally add a final note
+- the result should become a structured room-service order or food request
+
+IMPORTANT:
+- the menu must come from a structured source if possible
+- if a live menu backend is not ready yet, build the architecture so a current menu source can be plugged in cleanly
+- do not make the food flow a chaotic free chat
+
+EXPECTED FLOW EXAMPLES:
+- show categories or available items
+- ask if the guest wants item A/B/C
+- ask quantity or variant if needed
+- confirm room delivery
+- allow final note
+- finalize request
+
+==================================================
+PHASE 7 — “DESTEK TALEP” FLOW
+==================================================
+
+When the guest taps “Destek Talep”:
+
+REQUIREMENTS:
+- automatically open AI chat in support-request mode
+- AI should guide the guest to describe the issue quickly
+- use minimal, practical prompts
+- create a structured support request for staff
+
+STAFF-SIDE RESULT:
+- create a yellow-themed alert card in the staff screen
+- show guest name
+- show room number
+- show whether the guest is currently in hotel if that data exists
+- show the request content clearly
+- also surface it as an alert/notification style event
+
+This should feel like a real hotel operations alert system.
+
+==================================================
+PHASE 8 — “CARE ABOUT ME” FLOW
+==================================================
+
+When the guest taps “Care about me”:
+
+REQUIREMENTS:
+- automatically open AI chat in care-preferences mode
+- AI should guide the guest quickly and practically
+- gather useful guest-specific care/preference data in a structured way
+- avoid overly long or messy questioning
+- collect only meaningful hospitality-oriented personal preferences or considerations suitable for service
+
+Examples may include:
+- food preferences
+- sleep preferences
+- comfort requests
+- sensitivity/preferences relevant to hospitality service
+- support style preferences
+
+STAFF-SIDE RESULT:
+- create a dedicated “Care about me” card section on the staff screen
+- each guest’s care-related data should appear as a structured card
+- staff should be able to quickly understand how to serve that guest better
+
+IMPORTANT:
+- keep this professional and tasteful
+- do not collect irrelevant or creepy data
+- keep it hospitality-service-oriented
+
+==================================================
+PHASE 9 — STAFF DASHBOARD REQUEST STRUCTURE
+==================================================
+
+On the staff side, create distinct request/card types.
+
+REQUIREMENTS:
+- support requests must appear as yellow-themed alert/request cards
+- food orders must appear with a distinct visual treatment, different from support
+- care-about-me entries must appear as a separate structured card type
+- each card should clearly show:
+  - guest identity
+  - room number
+  - request type
+  - key details
+  - status if appropriate
+  - hotel presence info if available
+
+The staff screen should feel operational, fast, and clear.
+
+==================================================
+PHASE 10 — NORMAL CHAT RESTRICTION / HOTEL-FOCUSED AI
+==================================================
+
+The normal chat must also be improved.
+
+IMPORTANT:
+- do not let the guest use the AI as a totally unrestricted general-purpose assistant
+- keep the assistant focused on hotel-related guidance, support, requests, and service routing
+- if the guest raises a real issue/problem in normal chat, AI should be able to convert that conversation outcome into a structured staff request automatically when the conversation ends or when the intent is clear
+
+REQUIREMENTS:
+- design hotel-specific system prompts / conversation policy
+- intent detection for:
+  - food
+  - support
+  - care-about-me
+  - general hotel assistance
+- request extraction from free text when needed
+- staff task creation when the conversation implies a real actionable issue
+
+==================================================
+PHASE 11 — REQUEST / TASK DOMAIN MODEL
+==================================================
+
+Design or refactor a proper request/task domain model.
+
+REQUIREMENTS:
+- do not treat every outcome as unstructured chat text
+- create structured request entities where needed
+
+Possible request types:
+- FOOD_ORDER
+- SUPPORT_REQUEST
+- CARE_PROFILE_UPDATE
+- GENERAL_SERVICE_REQUEST
+
+Each should support:
+- guestId
+- roomNumber
+- requestType
+- content summary
+- structured fields if applicable
+- sourceConversationId
+- createdAt
+- status
+- createdByAI / guest initiated metadata if useful
+
+ARCHITECTURE GOAL:
+This must be easy to extend later and usable by staff dashboards cleanly.
+
+==================================================
+PHASE 12 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement this in a meaningful, maintainable architecture.
+
+REQUIREMENTS:
+- business logic separate from presentation
+- AI prompt routing separate from chat UI
+- quick-action workflows separate from generic chat rendering
+- request creation logic centralized
+- no giant guest dashboard component
+- no giant staff dashboard component
+- no duplicated prompt logic
+- no fake architecture
+- no dead code
+- clean naming
+- meaningful modules only
+
+Suggested layered structure:
+- domain:
+  - RequestType
+  - ServiceRequest
+  - CareProfile
+  - FoodOrder
+- application:
+  - StartQuickActionConversation
+  - FoodOrderFlowService
+  - SupportRequestFlowService
+  - CareAboutMeFlowService
+  - ConversationIntentRouter
+  - CreateStructuredRequestFromChat
+- infrastructure:
+  - AI prompt provider
+  - request repository
+  - menu repository/source adapter
+  - care profile repository
+- presentation:
+  - GuestStayKeyCard
+  - QuickActionsSection
+  - QuickActionCard
+  - GuidedChatScreen
+  - StaffRequestAlertCard
+  - FoodOrderCard
+  - CareAboutMeCard
+  - StaffRequestsBoard
+
+Make the architecture actually used and meaningful.
+
+==================================================
+PHASE 13 — MOBILE-FIRST UX DESIGN
+==================================================
+
+Everything must be mobile-first and premium.
+
+REQUIREMENTS:
+- elegant spacing
+- refined cards
+- highly tappable quick actions
+- clean section hierarchy
+- calm white/light design
+- subtle premium micro-interactions
+- polished loading, confirm, success, and error states
+- no clutter
+- no overwhelming conversational chaos
+
+The whole experience should feel:
+- premium hospitality assistant
+- modern and trustworthy
+- easy and fast
+- intentionally guided
+
+==================================================
+PHASE 14 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- guest login/logout
+- staff login
+- manager login
+- existing guest dashboard flows
+- existing AI backend integration
+- route protection
+- stable APIs
+- current working chat infrastructure where appropriate
+
+This task is specifically about guided quick actions, structured requests, and premium guest/staff UX.
+
+==================================================
+PHASE 15 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. “Konuş benimle” remains unchanged
+2. The sections below it are redesigned professionally
+3. “Konaklamanız hakkında” shows the active guest key
+4. Copy action works correctly
+5. Quick Actions cards are visible and polished
+6. Tapping “Acıktım” opens guided food flow
+7. Food flow can complete with minimal typing and optional final note
+8. Tapping “Destek Talep” opens guided support flow
+9. Support requests appear on staff screen as yellow alert cards
+10. Tapping “Care about me” opens guided care-preference flow
+11. Care-about-me results appear on staff screen as structured cards
+12. Normal chat remains hotel-focused and not fully unrestricted
+13. AI can create staff requests from guest conversations when appropriate
+14. Staff card types are visually and structurally separated
+15. Mobile UX feels premium and production-ready
+
+==================================================
+PHASE 16 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was preserved
+3. What was redesigned
+4. How the quick-action guided AI flows work
+5. How food ordering works
+6. How support requests work
+7. How care-about-me works
+8. How structured staff requests are modeled
+9. Which files were changed
+10. Any schema/data model changes
+11. How to test guest and staff flows end-to-end
+12. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result mobile-first, SOLID, layered, premium, and production-ready
+- The AI must behave like a hotel-focused service assistant, not a fully unrestricted chatbot

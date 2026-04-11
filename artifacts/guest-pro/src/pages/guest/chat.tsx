@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocale } from "@/hooks/use-locale";
 import {
@@ -22,7 +22,13 @@ import {
   MessageSquare,
   AlertCircle,
   Trash2,
+  UtensilsCrossed,
+  Bell,
+  Heart,
+  CheckCircle2,
+  X,
 } from "lucide-react";
+import { createServiceRequest } from "@/lib/service-requests";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Message } from "@workspace/api-client-react/generated/api.schemas";
@@ -60,6 +66,10 @@ export default function GuestChat() {
   const [voiceAutoStart, setVoiceAutoStart] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+  // Guided chat mode state
+  const [activeChatMode, setActiveChatMode] = useState<"food" | "support" | "care" | "general">("general");
+  const [showRequestCreated, setShowRequestCreated] = useState(false);
+  const [isCreatingRequest, setIsCreatingRequest] = useState(false);
   // Initialize to the guest's registered locale; updated by actual voice recognition
   const [detectedLanguage, setDetectedLanguage] = useState<string>(voiceLocale);
 
@@ -90,13 +100,27 @@ export default function GuestChat() {
     }
   }, [isAuthenticated, user, setLocation]);
 
-  // Parse URL params on mount
+  // Parse URL params on mount — supports ?q=, ?voice=1, and ?mode=food|support|care
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const q = params.get("q");
     const voice = params.get("voice");
+    const mode = params.get("mode");
+
     if (q) setPendingAutoSend(decodeURIComponent(q));
     if (voice === "1") setVoiceAutoStart(true);
+
+    if (mode === "food" || mode === "support" || mode === "care") {
+      setActiveChatMode(mode);
+      // Auto-inject the mode greeting as the first user message
+      const modeIntros: Record<string, string> = {
+        food: "Acıktım, bir şeyler sipariş etmek istiyorum.",
+        support: "Destek talebim var, yardımcı olur musunuz?",
+        care: "Hizmet tercihlerimi paylaşmak istiyorum.",
+      };
+      setPendingAutoSend(modeIntros[mode]);
+    }
+
     window.history.replaceState({}, "", window.location.pathname);
   }, []);
 
@@ -210,7 +234,7 @@ export default function GuestChat() {
     if (textareaRef.current) textareaRef.current.style.height = "auto";
 
     sendMessageMutation.mutate(
-      { sessionId, data: { content: trimmed, language: lang ?? detectedLanguage } },
+      { sessionId, data: { content: trimmed, language: lang ?? detectedLanguage, chatMode: activeChatMode } as Parameters<typeof sendMessageMutation.mutate>[0]["data"] },
       {
         onSuccess: () => {
           setPendingUserMessage(null);
@@ -276,9 +300,61 @@ export default function GuestChat() {
     }
   };
 
+  const handleCreateRequest = useCallback(async () => {
+    if (!sessionId || activeChatMode === "general") return;
+    setIsCreatingRequest(true);
+
+    // Build a summary from the last few AI messages
+    const lastAiMessages = (messages ?? [])
+      .filter((m: Message) => m.role === "assistant")
+      .slice(-2)
+      .map((m: Message) => m.content)
+      .join(" ");
+
+    const typeMap = {
+      food: "FOOD_ORDER" as const,
+      support: "SUPPORT_REQUEST" as const,
+      care: "CARE_PROFILE_UPDATE" as const,
+    };
+
+    const summaryPrefixes = {
+      food: "Yemek siparişi: ",
+      support: "Destek talebi: ",
+      care: "Misafir tercihleri: ",
+    };
+
+    const rawSummary = lastAiMessages || "Rehberli sohbet tamamlandı.";
+    const summary = (summaryPrefixes[activeChatMode] || "") + rawSummary.slice(0, 500);
+
+    try {
+      await createServiceRequest({
+        requestType: typeMap[activeChatMode],
+        summary,
+        sourceSessionId: sessionId ?? undefined,
+      });
+      setShowRequestCreated(true);
+    } catch {
+      toast.error("Talep oluşturulurken bir hata oluştu.");
+    } finally {
+      setIsCreatingRequest(false);
+    }
+  }, [sessionId, activeChatMode, messages]);
+
   if (!isAuthenticated || user?.role !== "guest") return null;
 
   const visibleMessages = messages?.filter((m: Message) => m.role !== "system") ?? [];
+
+  // Mode config for visual treatment
+  const MODE_CONFIG = {
+    food: { icon: UtensilsCrossed, label: "Yemek Siparişi", color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" },
+    support: { icon: Bell, label: "Destek Talebi", color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-200" },
+    care: { icon: Heart, label: "Care About Me", color: "text-rose-500", bg: "bg-rose-50", border: "border-rose-200" },
+    general: { icon: MessageSquare, label: "", color: "text-zinc-500", bg: "bg-zinc-50", border: "border-zinc-200" },
+  };
+  const modeConfig = MODE_CONFIG[activeChatMode];
+  const isGuidedMode = activeChatMode !== "general";
+  const assistantMessageCount = visibleMessages.filter((m: Message) => m.role === "assistant").length;
+  const canCreateRequest = isGuidedMode && assistantMessageCount >= 1 && !showRequestCreated;
   const isWaiting = sendMessageMutation.isPending;
   const hasMessages = visibleMessages.length > 0 || !!pendingUserMessage;
 
@@ -296,9 +372,16 @@ export default function GuestChat() {
           </button>
 
           <div className="flex-1 min-w-0">
-            <p className="text-[15px] font-medium text-zinc-900 truncate">
-              {branding?.appName || "Concierge"}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-[15px] font-medium text-zinc-900 truncate">
+                {branding?.appName || "Concierge"}
+              </p>
+              {isGuidedMode && (
+                <span className={`shrink-0 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border ${modeConfig.bg} ${modeConfig.color} ${modeConfig.border}`}>
+                  {modeConfig.label}
+                </span>
+              )}
+            </div>
             <p className="text-[11px] text-zinc-400 uppercase tracking-wide font-medium">
               {tFmt(t.headerRoom, {
                 name: user.firstName ?? "",
@@ -384,6 +467,38 @@ export default function GuestChat() {
                 </div>
               </div>
             )}
+
+            {/* Guided mode: Create Request CTA */}
+            {canCreateRequest && !isWaiting && (() => {
+              const ModeIcon = modeConfig.icon;
+              return (
+                <div className="flex justify-center py-2 animate-in fade-in slide-in-from-bottom-2 duration-400">
+                  <button
+                    onClick={handleCreateRequest}
+                    disabled={isCreatingRequest}
+                    className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-[14px] font-semibold shadow-sm transition-all active:scale-95 ${modeConfig.bg} ${modeConfig.color} border ${modeConfig.border}`}
+                  >
+                    {isCreatingRequest ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <ModeIcon className="w-4 h-4" />
+                    )}
+                    Talebi Oluştur ve Personeli Bildir
+                  </button>
+                </div>
+              );
+            })()}
+
+            {/* Guided mode: success confirmation */}
+            {showRequestCreated && (
+              <div className="flex justify-center py-2 animate-in fade-in slide-in-from-bottom-2 duration-400">
+                <div className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-[14px] font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200`}>
+                  <CheckCircle2 className="w-4 h-4" />
+                  Talebiniz iletildi, personelimiz yakında ilgilenecek.
+                </div>
+              </div>
+            )}
+
             <div ref={messagesEndRef} className="h-2" />
           </div>
         )}

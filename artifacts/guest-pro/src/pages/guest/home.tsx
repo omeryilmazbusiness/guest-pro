@@ -28,6 +28,8 @@ import { MicrophoneButton } from "@/components/chat/MicrophoneButton";
 import { useInstallPrompt } from "@/hooks/use-install-prompt";
 import { InstallSheet } from "@/components/InstallSheet";
 import { useTrackingHeartbeat } from "@/hooks/use-tracking-heartbeat";
+import { StayKeyCard } from "@/components/guest/StayKeyCard";
+import { ServiceQuickActions, type QuickActionMode } from "@/components/guest/ServiceQuickActions";
 
 const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   "map-pin": MapPin,
@@ -44,7 +46,6 @@ export default function GuestHome() {
   const { t, voiceLocale } = useLocale();
 
   // Start presence heartbeat — sends location + backend IP for tracking.
-  // Only active when the user is authenticated as a guest.
   useTrackingHeartbeat();
 
   const { data: branding } = useGetHotelBranding();
@@ -70,6 +71,10 @@ export default function GuestHome() {
   };
 
   const goToVoice = () => setLocation("/guest/chat?voice=1");
+
+  const handleQuickAction = (mode: QuickActionMode) => {
+    setLocation(`/guest/chat?mode=${mode}`);
+  };
 
   const voice = useVoice({
     onResult: (transcript, _lang) => {
@@ -97,6 +102,8 @@ export default function GuestHome() {
   };
 
   if (!isAuthenticated || user?.role !== "guest") return null;
+
+  const guestUser = user as typeof user & { guestKeyDisplay?: string | null };
 
   const INFO_ITEMS = [
     { icon: Phone, title: t.receptionTitle, desc: t.receptionDesc },
@@ -133,7 +140,7 @@ export default function GuestHome() {
           </p>
         </div>
 
-        {/* ── Voice Hero — PRIMARY CTA ── */}
+        {/* ── Voice Hero — PRIMARY CTA — UNCHANGED ── */}
         <section className="mb-6">
           <div className="bg-zinc-900 rounded-3xl px-6 py-8 flex flex-col items-center text-center shadow-xl shadow-zinc-900/20">
             <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-widest mb-4">
@@ -148,7 +155,6 @@ export default function GuestHome() {
 
             {/* Large mic button */}
             <div className="relative flex items-center justify-center mb-6">
-              {/* Ambient rings */}
               {voice.isListening && (
                 <>
                   <div
@@ -191,7 +197,6 @@ export default function GuestHome() {
                 : t.voiceHint}
             </p>
 
-            {/* Or go straight to voice chat page */}
             {!voice.isListening && (
               <button
                 onClick={goToVoice}
@@ -224,46 +229,22 @@ export default function GuestHome() {
           </button>
         </section>
 
-        {/* Your Stay card */}
+        {/* ── Konaklamanız hakkında — Stay Key Card ── */}
         <section className="mb-7">
-          <h3 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-3 px-1">
-            {t.staySection}
-          </h3>
-          <div className="bg-white rounded-3xl border border-zinc-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-5 flex items-center justify-between">
-              <div>
-                <p className="text-[11px] text-zinc-400 font-medium uppercase tracking-wide mb-1.5">
-                  {t.room}
-                </p>
-                <p className="text-3xl font-serif text-zinc-900 leading-none">
-                  {user.roomNumber}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-[11px] text-zinc-400 font-medium uppercase tracking-wide mb-1.5">
-                  {t.guest}
-                </p>
-                <p className="text-[15px] font-medium text-zinc-800">
-                  {user.firstName} {user.lastName}
-                </p>
-              </div>
-            </div>
-            <div className="border-t border-zinc-50 px-6 py-3.5">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span className="text-[13px] text-zinc-500">{t.stayActive}</span>
-                <button
-                  onClick={() => goToChat()}
-                  className="ml-auto flex items-center gap-1 text-[13px] text-zinc-400 hover:text-zinc-700 transition-colors"
-                >
-                  {t.chatLink} <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          </div>
+          <StayKeyCard
+            guestKeyDisplay={guestUser.guestKeyDisplay}
+            roomNumber={user.roomNumber ?? undefined}
+            firstName={user.firstName ?? undefined}
+            lastName={user.lastName ?? undefined}
+          />
         </section>
 
-        {/* Quick Actions */}
+        {/* ── Hızlı Hizmetler — Service Quick Actions ── */}
+        <section className="mb-7">
+          <ServiceQuickActions onAction={handleQuickAction} />
+        </section>
+
+        {/* Hotel-configured quick actions */}
         {quickActions && quickActions.length > 0 && (
           <section className="mb-7">
             <h3 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-3 px-1">

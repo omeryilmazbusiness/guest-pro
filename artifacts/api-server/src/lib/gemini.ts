@@ -1,24 +1,5 @@
 import { ai } from "@workspace/integrations-gemini-ai";
-
-const HOTEL_SYSTEM_PROMPT = `You are a premium hotel AI concierge assistant. Your name is "Aria" and you work at a luxury hotel.
-
-Your personality:
-- Warm, professional, and attentive
-- Always address guests by their first name when known
-- Speak with elegance and care
-- Multilingual: detect the language the guest is writing or speaking in and always respond in that exact same language
-- Keep responses concise but complete — guests are on mobile devices
-
-Your capabilities:
-- Answer questions about hotel amenities, services, and facilities
-- Help with room service, housekeeping, and maintenance requests
-- Provide local area recommendations (dining, attractions, transportation)
-- Assist with wake-up calls, spa bookings, and activity inquiries
-- Handle special requests with grace
-
-Language rule: If the guest message is in Turkish, respond in Turkish. If Arabic, respond in Arabic. If Russian, respond in Russian. Match the guest's language exactly.
-
-Keep responses under 150 words. Be warm and helpful.`;
+import { buildSystemPrompt, type ChatMode } from "./guided-prompts";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -29,7 +10,7 @@ function detectCategory(message: string): string {
   const lower = message.toLowerCase();
   if (lower.includes("reception") || lower.includes("check") || lower.includes("key") || lower.includes("desk") || lower.includes("resepsiyon") || lower.includes("anahtar")) {
     return "reception";
-  } else if (lower.includes("room service") || lower.includes("food") || lower.includes("drink") || lower.includes("eat") || lower.includes("breakfast") || lower.includes("yemek") || lower.includes("kahvaltı")) {
+  } else if (lower.includes("room service") || lower.includes("food") || lower.includes("drink") || lower.includes("eat") || lower.includes("breakfast") || lower.includes("yemek") || lower.includes("kahvaltı") || lower.includes("acıktım") || lower.includes("sipariş")) {
     return "room_service";
   } else if (lower.includes("clean") || lower.includes("towel") || lower.includes("housekeep") || lower.includes("temizlik") || lower.includes("havlu")) {
     return "housekeeping";
@@ -37,6 +18,10 @@ function detectCategory(message: string): string {
     return "activities";
   } else if (lower.includes("taxi") || lower.includes("transport") || lower.includes("airport") || lower.includes("car") || lower.includes("taksi") || lower.includes("transfer")) {
     return "transport";
+  } else if (lower.includes("support") || lower.includes("problem") || lower.includes("issue") || lower.includes("broken") || lower.includes("sorun") || lower.includes("destek") || lower.includes("arıza")) {
+    return "support";
+  } else if (lower.includes("care") || lower.includes("prefer") || lower.includes("tercih") || lower.includes("allerji") || lower.includes("allerg")) {
+    return "care";
   }
   return "general";
 }
@@ -77,21 +62,15 @@ export async function generateConciergeResponse(
   conversationHistory: ChatMessage[],
   guestFirstName?: string,
   contextSummary?: string,
-  detectedLanguage?: string
+  detectedLanguage?: string,
+  chatMode?: ChatMode
 ): Promise<{ response: string; category: string }> {
-  let systemNote = HOTEL_SYSTEM_PROMPT;
-
-  if (guestFirstName) {
-    systemNote += `\n\nThe guest's first name is ${guestFirstName}.`;
-  }
-
-  if (contextSummary) {
-    systemNote += `\n\nEarlier conversation summary (use this as background context): ${contextSummary}`;
-  }
-
-  if (detectedLanguage) {
-    systemNote += `\n\nThe guest is communicating in: ${detectedLanguage}. Respond in this language.`;
-  }
+  const systemNote = buildSystemPrompt(
+    chatMode ?? "general",
+    guestFirstName,
+    contextSummary,
+    detectedLanguage
+  );
 
   const contents = conversationHistory.slice(-8).map((msg) => ({
     role: msg.role === "assistant" ? ("model" as const) : ("user" as const),
@@ -117,7 +96,10 @@ export async function generateConciergeResponse(
     const responseText =
       result.text ??
       "I apologize, I'm having trouble responding right now. Please try again.";
-    const category = detectCategory(userMessage);
+    const category = chatMode === "food" ? "room_service"
+      : chatMode === "support" ? "support"
+      : chatMode === "care" ? "care"
+      : detectCategory(userMessage);
 
     return { response: responseText, category };
   } catch (error) {

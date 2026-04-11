@@ -284,6 +284,13 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
 
     const { voiceLocale } = deriveLocaleFromCountry(guest.countryCode ?? "TR");
     const resolvedLanguage = guest.language || voiceLocale;
+
+    const [activeKey] = await db
+      .select({ keyDisplay: guestKeysTable.keyDisplay })
+      .from(guestKeysTable)
+      .where(and(eq(guestKeysTable.guestId, guest.id), eq(guestKeysTable.isActive, true)))
+      .limit(1);
+
     res.json({
       id: session.userId,
       role: "guest",
@@ -296,6 +303,7 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
       hotelId: guest.hotelId,
       countryCode: guest.countryCode ?? "TR",
       language: resolvedLanguage,
+      guestKeyDisplay: activeKey?.keyDisplay ?? null,
     });
     return;
   }

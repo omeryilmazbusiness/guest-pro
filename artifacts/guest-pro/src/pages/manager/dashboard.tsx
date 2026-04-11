@@ -40,6 +40,7 @@ import {
   Loader2,
   Users,
   DoorOpen,
+  Bell,
   X,
   Settings,
 } from "lucide-react";
@@ -76,10 +77,11 @@ import { GuestHandoffModal, type HandoffData } from "@/components/GuestHandoffMo
 import { getGuestPresences, type TrackingStatus } from "@/lib/tracking";
 import { computeTrackingSummary } from "@/lib/tracking-summary";
 import { GuestsOverviewCard } from "@/components/manager/GuestsOverviewCard";
+import { StaffRequestsBoard } from "@/components/manager/StaffRequestsBoard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type DashboardTab = "guests" | "rooms";
+type DashboardTab = "guests" | "rooms" | "requests";
 
 // ─── Tab switcher ─────────────────────────────────────────────────────────────
 
@@ -88,34 +90,37 @@ function DashboardTabs({
   onChange,
   guestCount,
   roomCount,
+  requestCount,
 }: {
   active: DashboardTab;
   onChange: (tab: DashboardTab) => void;
   guestCount: number;
   roomCount: number;
+  requestCount: number;
 }) {
+  const TABS: { key: DashboardTab; label: string; icon: React.FC<{ className?: string }>; count: number }[] = [
+    { key: "guests", label: "Guests", icon: Users, count: guestCount },
+    { key: "rooms", label: "Rooms", icon: DoorOpen, count: roomCount },
+    { key: "requests", label: "Requests", icon: Bell, count: requestCount },
+  ];
+
   return (
     <div className="flex bg-zinc-100 rounded-2xl p-1 gap-1">
-      {(["guests", "rooms"] as const).map((tab) => {
-        const isActive = active === tab;
-        const count = tab === "guests" ? guestCount : roomCount;
+      {TABS.map(({ key, label, icon: Icon, count }) => {
+        const isActive = active === key;
         return (
           <button
-            key={tab}
-            onClick={() => onChange(tab)}
-            className={`flex-1 flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-semibold transition-all touch-manipulation ${
+            key={key}
+            onClick={() => onChange(key)}
+            className={`flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl text-[13px] font-semibold transition-all touch-manipulation ${
               isActive
                 ? "bg-white text-zinc-900 shadow-sm"
                 : "text-zinc-500 hover:text-zinc-700"
             }`}
             aria-selected={isActive}
           >
-            {tab === "guests" ? (
-              <Users className="w-3.5 h-3.5" />
-            ) : (
-              <DoorOpen className="w-3.5 h-3.5" />
-            )}
-            {tab === "guests" ? "Guests" : "Rooms"}
+            <Icon className="w-3.5 h-3.5" />
+            {label}
             {count > 0 && (
               <span
                 className={`text-[11px] font-mono px-1.5 py-0.5 rounded-md ${
@@ -626,6 +631,7 @@ export default function ManagerDashboard() {
           onChange={setActiveTab}
           guestCount={guests?.length ?? 0}
           roomCount={allRooms.length}
+          requestCount={0}
         />
 
         {/* ══════════════════════════════════
@@ -769,6 +775,16 @@ export default function ManagerDashboard() {
             )}
           </div>
         )}
+
+        {/* ══════════════════════════════════
+            REQUESTS TAB
+        ══════════════════════════════════ */}
+        {activeTab === "requests" && (
+          <div className="animate-in fade-in duration-200">
+            <StaffRequestsBoard presenceMap={presenceMap} />
+          </div>
+        )}
+
       </main>
 
       {/* ── Mobile FAB ── */}

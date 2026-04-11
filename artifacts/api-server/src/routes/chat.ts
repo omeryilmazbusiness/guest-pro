@@ -4,6 +4,7 @@ import { db, chatSessionsTable, messagesTable, guestsTable, dailyUsageTable } fr
 import { eq, and, asc, count } from "drizzle-orm";
 import { requireGuest } from "../middlewares/requireAuth";
 import { generateConciergeResponse, generateConversationSummary } from "../lib/gemini";
+import { detectChatMode } from "../lib/guided-prompts";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -233,7 +234,8 @@ router.post("/chat/sessions/:sessionId/messages", requireGuest, async (req, res)
   }
 
   const guestId = req.session!.guestId!;
-  const { content, language } = req.body;
+  const { content, language, chatMode: rawChatMode } = req.body;
+  const chatMode = detectChatMode(rawChatMode);
 
   if (content == null || typeof content !== "string" || !content.trim()) {
     res.status(400).json({ error: "Message content is required" });
@@ -309,7 +311,8 @@ router.post("/chat/sessions/:sessionId/messages", requireGuest, async (req, res)
       recentMessages,
       guest?.firstName,
       contextSummary ?? undefined,
-      language ?? undefined
+      language ?? undefined,
+      chatMode
     );
     aiResponseText = aiResult.response;
     category = aiResult.category;
