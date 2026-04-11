@@ -1,0 +1,627 @@
+You are a senior full-stack software architect, premium mobile UX designer, conversation-flow designer, localization/i18n architect, and production-grade product engineer.
+
+Your task is to inspect, debug, redesign, and harden the guest quick-actions and staff request-management system of the existing “Guest Pro” project into a fully production-ready, button-first, multilingual hospitality workflow with a clean SOLID layered architecture.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, guest dashboard, guest chat flow, quick actions, request creation pipeline, localization/i18n setup, staff dashboard, request rendering, auth/session flow, database schema, and role-aware access rules.
+- Do NOT rebuild the app from scratch if working parts already exist.
+- Preserve working auth, guest login/logout, staff login, manager login, route protection, stable APIs, and existing good structure where appropriate.
+- Preserve the current “Konuş benimle” section exactly as requested unless there is a serious stability issue.
+- Refactor only where there is real architectural, UX, maintainability, localization, or production value.
+- Keep the final result mobile-first, premium, simple, soft, modern, multilingual, SOLID, layered, and production-ready.
+- The guest should be able to complete service flows very quickly with minimal typing, while still having the ability to type custom needs at every step.
+
+PROJECT CONTEXT:
+Guest Pro is a hotel guest web app with guest-facing and staff-facing screens.
+
+Current guest quick action concepts:
+- Acıktım
+- Destek Talep
+- Care about me
+
+We need these flows to become truly production-ready, structured, multilingual, and operational.
+
+PRIMARY GOALS:
+1. Do NOT use emoji anywhere in quick actions, guided request flows, or request cards
+2. Use proper premium icons instead of emoji
+3. In every guided quick-action flow, always provide a visible custom input area at the bottom so the guest can type their own request if the listed options are not enough
+4. Guest must be able to send custom requests directly
+5. When guest requests are created, the guest dashboard must show previous requests as separate colored status cards
+6. Guest must be able to track request statuses
+7. Care about me must support free custom writing in the first step
+8. Destek Talep must include ready options such as:
+   - minibar tazele
+   - odaya yastık
+   - odam temizlensin
+9. These requests must be processed and structured by AI
+10. Staff screen must have a Requests section with 3 request classes/cards:
+   - Food Orders
+   - Support Requests
+   - Care About Me
+11. Requests must be grouped by type and shown with a modern layered / slightly 3D premium card stack UX
+12. Newest requests must appear first
+13. Tapping a request class/card should expand only that request stack vertically
+14. Staff must be able to update request status:
+   - Açık
+   - İşlemde
+   - Tamamlandı
+15. Add full language support to guest quick actions, guest request history, and staff request screens
+16. The UI should appear in whatever language the screen/app is currently opened in
+17. Requests must preserve original language and also support display in the current viewer language
+18. Keep the “Konuş benimle” section unchanged
+19. In the guest dashboard section below “Konuş benimle”, redesign the remaining parts with subtle premium UX improvements
+20. Add a “Konaklamanız hakkında” section that shows the guest’s current key with copy functionality
+21. Quick action flows should be button-first with minimal typing
+22. Final flow step should show:
+   - Onaylıyorum
+   - Düzenlemeye devam et
+23. When the guest presses Onaylıyorum, the structured request must be created successfully
+24. If the guest types a need in normal chat, AI should still be able to convert it into a structured staff request when appropriate
+25. The entire system must remain hotel-focused and not become a fully unrestricted chatbot
+
+LANGUAGE SUPPORT REQUIREMENTS:
+- Guest-side quick action flows must appear in the active guest UI language
+- Guest-side request history/status cards must appear in the active guest UI language
+- Staff-side requests screen must appear in the active staff UI language
+- If the guest created the request in one language and staff is using another language, the system must still display the request clearly
+- Preserve the original guest wording/language where useful, but also provide translated display text in the viewer’s language
+- Do not build localization as random hardcoded strings in components
+- Use a clean i18n architecture with translation keys, locale dictionaries, language context, and request-language metadata
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current guest dashboard structure
+2. Current “Konuş benimle” section
+3. Current lower guest dashboard sections
+4. Current quick actions implementation
+5. Current guest chat/guided flow implementation
+6. Current request creation logic
+7. Current request/task domain model
+8. Current staff dashboard request section
+9. Current request status handling
+10. Current AI prompt/orchestration structure
+11. Current role-aware access logic
+12. Current DB schema for requests/orders/care entries
+13. Current localization/i18n structure if any
+14. Current language routing for guest/staff screens if any
+15. What already works
+16. What should be preserved
+17. What is weak in UX
+18. What is weak in architecture
+19. What is weak in localization
+20. What needs redesign/refactor for a production-ready guided-request + multilingual system
+
+Then provide:
+- concise architecture audit
+- quick-actions gap analysis
+- request-management gap analysis
+- guest request-tracking gap analysis
+- localization/i18n gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — DEBUG AND FIX REQUEST CREATION FAILURES
+==================================================
+
+There is currently a real bug:
+- support request creation is failing
+- food order creation may be failing
+- care about me creation may be failing
+- the UI may say something like “Destek oluşturulurken hata oluştu”
+
+Find the REAL root cause.
+
+Check all likely causes:
+1. Frontend selections are not persisted correctly
+2. AI response is shown but not transformed into a structured request payload
+3. Backend request endpoint receives malformed payload
+4. Request type mapping is wrong:
+   - FOOD_ORDER
+   - SUPPORT_REQUEST
+   - CARE_PROFILE_UPDATE
+   - GENERAL_SERVICE_REQUEST
+5. Validation schema rejects the payload
+6. Required fields are missing:
+   - guestId
+   - roomNumber
+   - requestType
+   - content summary
+   - structured fields
+   - originalLanguage
+7. Auth/session context is missing on request creation
+8. Conversation completion state never triggers create-request mutation
+9. DB insert fails
+10. Backend returns generic error instead of useful diagnostic
+11. Staff dashboard reads from wrong source or wrong query
+12. Request is created but not displayed due to rendering/query mismatch
+
+Do not guess.
+Find the actual technical root cause and fix it professionally.
+
+==================================================
+PHASE 3 — REDESIGN THE GUEST DASHBOARD BELOW “KONUŞ BENİMLE”
+==================================================
+
+Keep the “Konuş benimle” section unchanged.
+
+Redesign everything below it with subtle premium UX improvements.
+
+Add a premium section:
+- “Konaklamanız hakkında”
+
+This section must:
+- show the guest’s current active key
+- provide a polished copy action
+- optionally show concise stay context if useful, but do not clutter
+
+Below that, add premium Quick Actions cards:
+- Acıktım
+- Destek Talep
+- Care about me
+
+Design goals:
+- premium
+- simple
+- soft
+- modern
+- subtle
+- calm
+- mobile-first
+- hospitality-grade polish
+
+==================================================
+PHASE 4 — REMOVE EMOJI, USE PREMIUM ICONS
+==================================================
+
+Redesign all quick action and request visuals to use proper icons.
+
+REQUIREMENTS:
+- no emoji anywhere in quick actions, guided request flows, request cards, or request groups
+- use premium, subtle, modern icons
+- keep iconography consistent across guest and staff screens
+- icons must feel calm, high-end, and hospitality-oriented
+- do not use childish or noisy icon treatments
+
+Areas to update:
+- quick action cards
+- food/order options
+- support options
+- care-about-me options
+- request status cards
+- guest request history cards
+- staff request grouping cards
+
+==================================================
+PHASE 5 — BUTTON-FIRST GUIDED FLOW + ALWAYS-AVAILABLE CUSTOM INPUT
+==================================================
+
+Redesign the guided flow architecture so guests can proceed with almost no typing, but still always have a custom free-text option available.
+
+CORE RULE:
+At every meaningful step of a guided flow, there must be:
+- structured selectable options/buttons
+- plus a visible custom input area at the bottom where the guest can directly type a custom need if the listed options do not fit
+
+REQUIREMENTS:
+- do not force the guest into only pre-defined options
+- do not hide free input behind multiple taps
+- the free input should feel like a premium “Something else?” / “Write your own request” section
+- keep the guest experience fast and low-friction
+- localize all labels, helper texts, buttons, summaries, and confirmations according to the active guest language
+
+This rule applies to:
+- Acıktım
+- Destek Talep
+- Care about me
+
+==================================================
+PHASE 6 — ACIKTIM FLOW
+==================================================
+
+Make the “Acıktım” flow a fast guided food-order experience.
+
+REQUIREMENTS:
+- AI opens in food-order mode
+- AI shows currently available menu items from a structured source
+- guest can choose via buttons/cards
+- no emoji
+- proper icons only
+- if the desired item is not listed, guest can type it manually in the always-visible custom input area
+- final optional note still supported
+- after confirmation, create a FOOD_ORDER request
+- all guest-facing texts in this flow must be localized to the active guest language
+- staff-facing rendering of food orders must also be localized to the active staff language
+
+FLOW GOAL:
+- fast
+- room-service-like
+- minimal typing
+- premium
+- practical
+
+==================================================
+PHASE 7 — DESTEK TALEP FLOW
+==================================================
+
+Make the support flow guided and highly practical.
+
+REQUIREMENTS:
+Include structured support choices such as:
+- minibar tazele
+- odaya yastık
+- odam temizlensin
+
+You may add other relevant hospitality support options if useful, but keep it clean.
+
+REQUIREMENTS:
+- guest can select these via buttons
+- guest can still type a custom request at any step
+- AI should interpret and structure both option-based and typed requests
+- after final confirmation, create a SUPPORT_REQUEST
+- guest-facing labels/options/errors/summaries must be localized to the active guest language
+- staff-facing request card and request details must render in the active staff language
+
+==================================================
+PHASE 8 — CARE ABOUT ME FLOW
+==================================================
+
+Make “Care about me” a premium structured preference/care input flow.
+
+IMPORTANT:
+In the very first step, the guest must already be able to type custom text about what staff should pay attention to.
+
+REQUIREMENTS:
+- show guided options if useful
+- also provide immediate free-text area in the first step
+- AI should help extract and structure care-related information
+- after final confirmation, create a CARE_PROFILE_UPDATE or equivalent structured request/entity
+- this must remain tasteful, relevant, and hospitality-service-oriented
+- guest-facing UI must be localized to the active guest language
+- staff-facing care cards must render in the active staff language
+
+==================================================
+PHASE 9 — FINAL CONFIRMATION FLOW
+==================================================
+
+Every quick-action flow must end with a premium confirmation stage.
+
+REQUIREMENTS:
+- after selections / custom text are gathered, show a clear summary
+- show two actions:
+  - Onaylıyorum
+  - Düzenlemeye devam et
+- localize these labels according to the current viewer language
+- if the guest taps Düzenlemeye devam et, allow edits cleanly
+- if the guest taps Onaylıyorum, create the structured request successfully
+- show elegant localized success feedback
+
+==================================================
+PHASE 10 — GUEST DASHBOARD REQUEST TRACKING
+==================================================
+
+Add a request-tracking section to the guest dashboard.
+
+REQUIREMENTS:
+- show previous requests as individual cards
+- each request must be a separate card
+- cards must be color-coded or visually state-aware
+- guest must be able to track the current status of each request
+- all labels, status texts, and metadata shown to the guest must be localized into the active guest language
+
+Statuses:
+- Açık
+- İşlemde
+- Tamamlandı
+
+UX REQUIREMENTS:
+- premium card design
+- mobile-first
+- easy to scan
+- newest requests first
+- clear request type, summary, and status
+- distinct visual treatment for different request types if useful
+- no clutter
+
+The guest should clearly understand:
+- what they requested
+- whether staff has started handling it
+- whether it is complete
+
+==================================================
+PHASE 11 — STAFF DASHBOARD REQUESTS SECTION
+==================================================
+
+Create a highly polished Requests section on the staff side.
+
+REQUIREMENTS:
+There should be 3 main request classes/sections/cards:
+1. Food Orders
+2. Support Requests
+3. Care About Me
+
+Each request class should be represented with a distinct premium visual container.
+
+UX GOAL:
+- modern layered / stack-like / slightly 3D card feeling
+- calm, premium, operational
+- not gimmicky
+- not noisy
+- newest request appears first
+- multiple requests of the same class should feel like a stacked sequence of cards
+- all staff-facing section labels, card labels, statuses, controls, and helper texts must render in the active staff language
+
+INTERACTION:
+- when the user taps one request class/card, only that class expands
+- the requests inside that class appear vertically stacked
+- keep interaction clear and mobile-friendly
+- no cluttered accordion chaos
+
+==================================================
+PHASE 12 — STAFF REQUEST CARDS AND STATUS MANAGEMENT
+==================================================
+
+Implement professional request cards for staff.
+
+REQUIREMENTS:
+Each request card should clearly show:
+- guest identity
+- room number
+- request type
+- concise summary
+- request status
+- created time
+- hotel presence info if already available in the system
+- original guest language if useful
+- translated display text in the active staff language when the viewer language differs from the guest’s original language
+
+Staff must be able to update status:
+- Açık
+- İşlemde
+- Tamamlandı
+
+UX REQUIREMENTS:
+- status changes must be clean and fast
+- cards must feel professional and operational
+- status updates must persist correctly
+- card stacks must remain readable on mobile
+- status labels must be localized in the staff UI language
+
+==================================================
+PHASE 13 — AI PROCESSING AND STRUCTURED REQUEST CREATION
+==================================================
+
+Ensure AI processes both button-based selections and free-text custom requests into structured outputs.
+
+REQUIREMENTS:
+- AI must not only answer in chat
+- AI must convert the guest’s guided choices and typed details into a structured request entity
+- support typed custom requests at any stage
+- food/support/care flows must all end in clean structured request creation
+- normal chat should still remain hotel-focused and be able to create structured requests when the intent becomes actionable
+- store the language context of the originating guest request
+- support translated display summaries for viewers in other languages
+
+The structured request model must support:
+- requestType
+- guestId
+- roomNumber
+- summary
+- detailed payload or structured fields
+- sourceConversationId if needed
+- createdAt
+- status
+- originalLanguage
+- translatedDisplaySummary if needed
+- viewerLanguage-aware rendering if needed
+
+==================================================
+PHASE 14 — NORMAL CHAT SHOULD REMAIN HOTEL-FOCUSED
+==================================================
+
+Preserve the normal guest chat but keep it controlled and hotel-focused.
+
+REQUIREMENTS:
+- do not let it become a totally unrestricted general assistant
+- keep it oriented around hotel service, requests, support, and hospitality help
+- if the guest types a free-text service problem in normal chat, AI should be able to turn it into a structured request when appropriate
+- normal chat system prompts and fallback messages must also be localized according to the active guest language
+
+==================================================
+PHASE 15 — LANGUAGE / LOCALIZATION ARCHITECTURE
+==================================================
+
+Implement a professional multilingual architecture.
+
+REQUIREMENTS:
+- do not hardcode translated strings inside components
+- use centralized translation keys and locale dictionaries
+- support locale-aware rendering for:
+  - guest quick action cards
+  - guided flow buttons and summaries
+  - guest request status cards
+  - staff request groups
+  - staff request cards
+  - status labels
+  - empty/loading/error states
+  - confirmation actions
+
+ALSO SUPPORT REQUEST LANGUAGE MODELING:
+- preserve the original request language used by the guest
+- allow staff UI to render the request in the active staff language
+- if the staff UI language differs from the original guest language, provide:
+  - translated display summary
+  - optional original text preview if helpful
+- do not lose the original guest wording when translation/display conversion occurs
+
+Create a clean design such as:
+- originalLanguage
+- currentViewerLanguage
+- translation dictionaries for UI
+- translated request display fields for operational screens
+- locale resolver / language context provider
+
+This must be SOLID and maintainable.
+
+==================================================
+PHASE 16 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement all of this in a meaningful, maintainable architecture.
+
+REQUIREMENTS:
+- business logic separate from presentation
+- guided conversation logic separate from UI rendering
+- request creation centralized
+- option/button flow state centralized
+- localization logic centralized
+- translated display text generation centralized
+- no giant guest dashboard component
+- no giant staff dashboard component
+- no duplicated prompt logic
+- no scattered request-type logic
+- no fake architecture
+- no dead code
+- clean naming
+- meaningful modules only
+
+Suggested layered structure:
+- domain:
+  - RequestType
+  - ServiceRequest
+  - RequestStatus
+  - GuidedFlowState
+  - RequestLanguageContext
+- application:
+  - StartQuickActionFlow
+  - ProgressGuidedFlow
+  - ConfirmStructuredRequest
+  - FoodOrderFlowService
+  - SupportRequestFlowService
+  - CareAboutMeFlowService
+  - RequestTrackingQueryService
+  - UpdateRequestStatusService
+  - ConversationIntentRouter
+  - ResolveDisplayLanguage
+  - BuildLocalizedRequestView
+- infrastructure:
+  - AI prompt provider
+  - request repository
+  - menu repository/source adapter
+  - care-profile repository
+  - locale dictionaries
+  - translation adapter/service if needed
+- presentation:
+  - KonaklamanizHakkindaCard
+  - QuickActionsSection
+  - QuickActionCard
+  - GuidedOptionList
+  - GuidedOptionButton
+  - CustomRequestInput
+  - ConfirmationSummaryCard
+  - GuestRequestHistorySection
+  - GuestRequestStatusCard
+  - StaffRequestsBoard
+  - RequestGroupCard
+  - RequestStackList
+  - RequestStatusControl
+  - LocalizedRequestText
+  - LocaleProvider / LanguageContext
+
+Make the architecture actually used and meaningful.
+
+==================================================
+PHASE 17 — MOBILE-FIRST UX DIRECTION
+==================================================
+
+The entire experience must feel:
+- premium
+- calm
+- low-friction
+- highly tappable
+- simple
+- modern
+- hospitality-focused
+- mobile-first
+- operationally useful
+
+No emoji.
+No noisy visuals.
+No messy chat chaos.
+The guest should feel:
+- “I tap, choose, confirm, done.”
+
+==================================================
+PHASE 18 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- guest login/logout
+- staff login
+- manager login
+- current guest dashboard structure where it still works
+- route protection
+- stable APIs
+- current AI backend integration where it is still good
+
+This task is specifically about fixing request creation, improving guided quick actions, adding request tracking, and adding end-to-end language support.
+
+==================================================
+PHASE 19 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. No emoji remain in quick actions and request flows
+2. Premium icon system is used consistently
+3. Acıktım flow works with buttons and custom text
+4. Destek Talep flow includes minibar tazele / odaya yastık / odam temizlensin
+5. Care about me supports typing in the first step
+6. At every flow step, a custom input area is available
+7. Onaylıyorum creates the request successfully
+8. Düzenlemeye devam et allows editing
+9. Guest request history shows as separate status cards
+10. Guest can track request statuses
+11. Staff Requests section has 3 grouped classes
+12. Newest requests appear first
+13. Tapping a request class expands only that stack
+14. Staff can update status to Açık / İşlemde / Tamamlandı
+15. AI correctly structures option-based and typed requests
+16. Guest quick actions render in the active guest language
+17. Guest request history/status cards render in the active guest language
+18. Staff request screens render in the active staff language
+19. Request original language is preserved
+20. Request display translation works correctly when guest/staff languages differ
+21. Mobile UX feels premium and production-ready
+
+==================================================
+PHASE 20 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. Exact root cause of previous request creation issues
+3. What was fixed
+4. What was redesigned
+5. How the button-first guided flows now work
+6. How custom request input now works
+7. How guest request status cards work
+8. How staff grouped request stacks work
+9. How request status updates work
+10. How language support works end-to-end
+11. How original language vs display language is handled
+12. Which files were changed
+13. Any schema/model changes
+14. How to test all guest/staff flows end-to-end in multiple languages
+
+IMPORTANT:
+- Start with inspection first
+- Then fix the request creation issues professionally
+- Then redesign the workflows and request boards properly
+- Then add full language support cleanly
+- Keep the result mobile-first, SOLID, layered, premium, multilingual, and production-ready

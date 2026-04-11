@@ -315,6 +315,34 @@ Every `POST /api/tracking/heartbeat` response includes a `debug` object:
 - First real GPS fix is sent immediately; subsequent ones are rate-limited to 60s
 - Backend resolves status from location + request source IP
 
+### Guided Quick-Action Flows (`/guest/flow?mode=`)
+- **food** — multi-step food order wizard: category → item → quantity → note → confirm (FOOD_ORDER)
+- **support** — support request wizard: issue type (minibar/yastık/temizlik/oda/teknik/gürültü/malzeme) → urgency → note → confirm (SUPPORT_REQUEST)
+- **care** — preference profile: free-text intro → sleep → diet → comfort → service → confirm (CARE_PROFILE_UPDATE)
+- **No emoji** anywhere in flows — Lucide icons only
+- **Always-visible custom textarea** at the bottom of every select step (overrides button selection)
+- Care step 1 is free-text first (large textarea) + guided options on subsequent steps
+- All button labels (Confirm/Skip/Next/Back) use `useLocale()` → `t` translations across 7 locales
+- Success screen shows CheckCircle + flow icon; routes back to guest home
+- On confirm: calls `createServiceRequest` which posts to `POST /api/requests` (requireGuest)
+
+### Guest My Requests
+- `GET /api/requests/mine` (requireGuest) — returns all requests for authenticated guest, newest first
+- `listMyRequests()` in `service-requests.ts`
+- Guest home shows "Taleplerim" section below quick actions (shown only after first load)
+- Each request shown as a status card: type icon, summary, colored status dot + label, time-ago
+- Status badge colors: open=amber, in_progress=sky, resolved=emerald
+- Section disappears if loading (optimistic: shown only when data available)
+
+### Staff Requests Board
+- Redesigned from tabbed list → 4 grouped collapsible card stacks
+- Groups: Food Orders (amber), Support Requests (sky), Care About Me (rose), General (zinc)
+- Each group header has a "3D card stack" depth effect (2 absolute behind layers)
+- Shows: type icon, label, open-count badge, newest request summary preview, status mini-bar
+- Clicking a group header expands/collapses its request cards vertically
+- Default expanded: Support Requests
+- Uses existing `ServiceRequestCard` for individual expanded cards
+
 ## Database Schema
 
 - `hotels` — hotel/tenant records

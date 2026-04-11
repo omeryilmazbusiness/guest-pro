@@ -57,6 +57,13 @@ export async function listServiceRequests(params?: {
   return customFetch<ServiceRequest[]>(url.pathname + url.search);
 }
 
+/**
+ * Fetch service requests created by the currently authenticated guest.
+ */
+export async function listMyRequests(): Promise<ServiceRequest[]> {
+  return customFetch<ServiceRequest[]>("/api/requests/mine");
+}
+
 export async function updateServiceRequestStatus(
   id: number,
   status: ServiceRequestStatus

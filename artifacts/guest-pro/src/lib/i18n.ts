@@ -86,6 +86,24 @@ export interface GuestTranslations {
   iosStep3Title: string;
   iosStep3Hint: string;
   iosStep4Title: string;
+
+  // ── Guided Flow ─────────────────────────────────────────────────────────────
+  flowConfirm: string;
+  flowEditContinue: string;
+  flowSkip: string;
+  flowNext: string;
+  flowBack: string;
+  flowCustomPlaceholder: string;
+  flowSuccessReturn: string;
+  flowRequestReceived: string;
+
+  // ── My Requests ──────────────────────────────────────────────────────────────
+  myRequestsTitle: string;
+  myRequestsSubtitle: string;
+  myRequestsEmpty: string;
+  reqStatusOpen: string;
+  reqStatusInProgress: string;
+  reqStatusResolved: string;
 }
 
 type SupportedLocale = "en" | "tr" | "ar" | "ru" | "de" | "fr" | "es";
@@ -161,6 +179,22 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     iosStep3Title: "Add to Home Screen",
     iosStep3Hint: "Tap \"Add to Home Screen\"",
     iosStep4Title: "Tap Add",
+
+    flowConfirm: "Confirm",
+    flowEditContinue: "Continue editing",
+    flowSkip: "Skip",
+    flowNext: "Next",
+    flowBack: "Back",
+    flowCustomPlaceholder: "Or describe your own need…",
+    flowSuccessReturn: "Return to Home",
+    flowRequestReceived: "Request Received",
+
+    myRequestsTitle: "My Requests",
+    myRequestsSubtitle: "Track your service requests",
+    myRequestsEmpty: "No requests yet",
+    reqStatusOpen: "Open",
+    reqStatusInProgress: "In Progress",
+    reqStatusResolved: "Completed",
   },
 
   // ── Turkish ───────────────────────────────────────────────────────────────
@@ -233,6 +267,22 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     iosStep3Title: "Ana Ekrana Ekle",
     iosStep3Hint: "\"Ana Ekrana Ekle\" seçeneğine dokunun",
     iosStep4Title: "Ekle'ye dokunun",
+
+    flowConfirm: "Onaylıyorum",
+    flowEditContinue: "Düzenlemeye devam et",
+    flowSkip: "Atla",
+    flowNext: "İleri",
+    flowBack: "Geri",
+    flowCustomPlaceholder: "Ya da kendi isteğinizi yazın…",
+    flowSuccessReturn: "Ana sayfaya dön",
+    flowRequestReceived: "Talebiniz Alındı",
+
+    myRequestsTitle: "Taleplerim",
+    myRequestsSubtitle: "Taleplerinizi takip edin",
+    myRequestsEmpty: "Henüz talep yok",
+    reqStatusOpen: "Açık",
+    reqStatusInProgress: "İşlemde",
+    reqStatusResolved: "Tamamlandı",
   },
 
   // ── Arabic ────────────────────────────────────────────────────────────────
@@ -305,6 +355,22 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     iosStep3Title: "إضافة إلى الشاشة الرئيسية",
     iosStep3Hint: "اضغط \"إضافة إلى الشاشة الرئيسية\"",
     iosStep4Title: "اضغط إضافة",
+
+    flowConfirm: "تأكيد",
+    flowEditContinue: "مواصلة التعديل",
+    flowSkip: "تخطي",
+    flowNext: "التالي",
+    flowBack: "رجوع",
+    flowCustomPlaceholder: "أو اكتب طلبك الخاص…",
+    flowSuccessReturn: "العودة للرئيسية",
+    flowRequestReceived: "تم استلام الطلب",
+
+    myRequestsTitle: "طلباتي",
+    myRequestsSubtitle: "تتبع طلبات الخدمة",
+    myRequestsEmpty: "لا توجد طلبات بعد",
+    reqStatusOpen: "مفتوح",
+    reqStatusInProgress: "قيد التنفيذ",
+    reqStatusResolved: "مكتمل",
   },
 
   // ── Russian ───────────────────────────────────────────────────────────────
@@ -377,6 +443,22 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     iosStep3Title: "На экран «Домой»",
     iosStep3Hint: "Нажмите «На экран Домой»",
     iosStep4Title: "Нажмите «Добавить»",
+
+    flowConfirm: "Подтвердить",
+    flowEditContinue: "Продолжить редактирование",
+    flowSkip: "Пропустить",
+    flowNext: "Далее",
+    flowBack: "Назад",
+    flowCustomPlaceholder: "Или опишите свою потребность…",
+    flowSuccessReturn: "На главную",
+    flowRequestReceived: "Запрос получен",
+
+    myRequestsTitle: "Мои запросы",
+    myRequestsSubtitle: "Отслеживайте свои запросы",
+    myRequestsEmpty: "Запросов пока нет",
+    reqStatusOpen: "Открыт",
+    reqStatusInProgress: "В работе",
+    reqStatusResolved: "Выполнен",
   },
 
   // ── German ────────────────────────────────────────────────────────────────
@@ -449,6 +531,22 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     iosStep3Title: "Zum Home-Bildschirm",
     iosStep3Hint: "Tippen Sie auf \"Zum Home-Bildschirm\"",
     iosStep4Title: "Auf \"Hinzufügen\" tippen",
+
+    flowConfirm: "Bestätigen",
+    flowEditContinue: "Weiter bearbeiten",
+    flowSkip: "Überspringen",
+    flowNext: "Weiter",
+    flowBack: "Zurück",
+    flowCustomPlaceholder: "Oder eigenen Bedarf beschreiben…",
+    flowSuccessReturn: "Zur Startseite",
+    flowRequestReceived: "Anfrage eingegangen",
+
+    myRequestsTitle: "Meine Anfragen",
+    myRequestsSubtitle: "Ihre Serviceanfragen verfolgen",
+    myRequestsEmpty: "Noch keine Anfragen",
+    reqStatusOpen: "Offen",
+    reqStatusInProgress: "In Bearbeitung",
+    reqStatusResolved: "Abgeschlossen",
   },
 
   // ── French ────────────────────────────────────────────────────────────────
@@ -521,6 +619,22 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     iosStep3Title: "Sur l'écran d'accueil",
     iosStep3Hint: "Appuyez sur \"Sur l'écran d'accueil\"",
     iosStep4Title: "Appuyez sur Ajouter",
+
+    flowConfirm: "Confirmer",
+    flowEditContinue: "Continuer à modifier",
+    flowSkip: "Passer",
+    flowNext: "Suivant",
+    flowBack: "Retour",
+    flowCustomPlaceholder: "Ou décrivez votre besoin…",
+    flowSuccessReturn: "Retour à l'accueil",
+    flowRequestReceived: "Demande reçue",
+
+    myRequestsTitle: "Mes demandes",
+    myRequestsSubtitle: "Suivez vos demandes de service",
+    myRequestsEmpty: "Aucune demande pour l'instant",
+    reqStatusOpen: "Ouvert",
+    reqStatusInProgress: "En cours",
+    reqStatusResolved: "Terminé",
   },
 
   // ── Spanish ───────────────────────────────────────────────────────────────
@@ -593,6 +707,22 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     iosStep3Title: "Añadir a inicio",
     iosStep3Hint: "Toca \"Añadir a pantalla de inicio\"",
     iosStep4Title: "Toca Añadir",
+
+    flowConfirm: "Confirmar",
+    flowEditContinue: "Continuar editando",
+    flowSkip: "Omitir",
+    flowNext: "Siguiente",
+    flowBack: "Atrás",
+    flowCustomPlaceholder: "O describe tu propia necesidad…",
+    flowSuccessReturn: "Volver al inicio",
+    flowRequestReceived: "Solicitud recibida",
+
+    myRequestsTitle: "Mis solicitudes",
+    myRequestsSubtitle: "Sigue tus solicitudes de servicio",
+    myRequestsEmpty: "Sin solicitudes aún",
+    reqStatusOpen: "Abierto",
+    reqStatusInProgress: "En progreso",
+    reqStatusResolved: "Completado",
   },
 };
 

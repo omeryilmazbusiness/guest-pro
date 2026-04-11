@@ -103,6 +103,21 @@ router.get("/requests", requireStaff, async (req, res): Promise<void> => {
 });
 
 // ---------------------------------------------------------------------------
+// GET /requests/mine — guest fetches their own requests
+// ---------------------------------------------------------------------------
+router.get("/requests/mine", requireGuest, async (req, res): Promise<void> => {
+  const guestId = req.session!.guestId!;
+
+  const requests = await db
+    .select()
+    .from(serviceRequestsTable)
+    .where(eq(serviceRequestsTable.guestId, guestId))
+    .orderBy(desc(serviceRequestsTable.createdAt));
+
+  res.json(requests);
+});
+
+// ---------------------------------------------------------------------------
 // GET /requests/:id — staff fetches a single request
 // ---------------------------------------------------------------------------
 router.get("/requests/:id", requireStaff, async (req, res): Promise<void> => {

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocale } from "@/hooks/use-locale";
 import {
@@ -16,20 +17,87 @@ import {
   MapPin,
   Clock,
   BedDouble,
-  ChevronRight,
   ArrowRight,
   MessageSquare,
+  UtensilsCrossed,
+  Bell,
+  Heart,
+  LayoutGrid,
 } from "lucide-react";
 import { GuestProLogo } from "@/components/GuestProLogo";
 import { toast } from "sonner";
 import { useVoice } from "@/hooks/use-voice";
-import { tFmt } from "@/lib/i18n";
+import { tFmt, type GuestTranslations } from "@/lib/i18n";
 import { MicrophoneButton } from "@/components/chat/MicrophoneButton";
 import { useInstallPrompt } from "@/hooks/use-install-prompt";
 import { InstallSheet } from "@/components/InstallSheet";
 import { useTrackingHeartbeat } from "@/hooks/use-tracking-heartbeat";
 import { StayKeyCard } from "@/components/guest/StayKeyCard";
 import { ServiceQuickActions, type QuickActionMode } from "@/components/guest/ServiceQuickActions";
+import { listMyRequests, type ServiceRequest } from "@/lib/service-requests";
+
+// ─── Request history card ─────────────────────────────────────────────────────
+
+function timeAgo(isoString: string): string {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const mins = Math.floor(diff / 60_000);
+  const hours = Math.floor(mins / 60);
+  const days = Math.floor(hours / 24);
+  if (days > 0) return `${days}g önce`;
+  if (hours > 0) return `${hours}s önce`;
+  return `${Math.max(1, mins)}dk önce`;
+}
+
+function RequestHistoryCard({
+  request,
+  t,
+}: {
+  request: ServiceRequest;
+  t: GuestTranslations;
+}) {
+  const typeConfig: Record<
+    string,
+    { icon: React.FC<{ className?: string }>; color: string; bg: string }
+  > = {
+    FOOD_ORDER: { icon: UtensilsCrossed, color: "text-amber-600", bg: "bg-amber-50" },
+    SUPPORT_REQUEST: { icon: Bell, color: "text-sky-600", bg: "bg-sky-50" },
+    CARE_PROFILE_UPDATE: { icon: Heart, color: "text-rose-500", bg: "bg-rose-50" },
+    GENERAL_SERVICE_REQUEST: { icon: LayoutGrid, color: "text-zinc-500", bg: "bg-zinc-50" },
+  };
+  const statusConfig: Record<
+    string,
+    { label: string; text: string; dot: string }
+  > = {
+    open: { label: t.reqStatusOpen, text: "text-amber-600", dot: "bg-amber-400" },
+    in_progress: { label: t.reqStatusInProgress, text: "text-sky-600", dot: "bg-sky-500" },
+    resolved: { label: t.reqStatusResolved, text: "text-emerald-600", dot: "bg-emerald-500" },
+  };
+
+  const tc = typeConfig[request.requestType] ?? typeConfig.GENERAL_SERVICE_REQUEST;
+  const sc = statusConfig[request.status] ?? statusConfig.open;
+  const IconComp = tc.icon;
+
+  return (
+    <div className="bg-white rounded-2xl border border-zinc-100 px-4 py-3.5 flex items-center gap-3 shadow-sm">
+      <div
+        className={`w-9 h-9 rounded-xl ${tc.bg} flex items-center justify-center shrink-0`}
+      >
+        <IconComp className={`w-4 h-4 ${tc.color}`} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[14px] font-medium text-zinc-800 leading-tight truncate">
+          {request.summary}
+        </p>
+        <div className="flex items-center gap-1.5 mt-1">
+          <div className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
+          <p className={`text-[11px] font-semibold ${sc.text}`}>{sc.label}</p>
+          <span className="text-[11px] text-zinc-300">·</span>
+          <p className="text-[11px] text-zinc-400">{timeAgo(request.createdAt)}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   "map-pin": MapPin,
@@ -50,6 +118,12 @@ export default function GuestHome() {
 
   const { data: branding } = useGetHotelBranding();
   const { data: quickActions } = useListQuickActions();
+  const { data: myRequests } = useQuery({
+    queryKey: ["my-requests"],
+    queryFn: listMyRequests,
+    staleTime: 30_000,
+    enabled: isAuthenticated && user?.role === "guest",
+  });
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -243,6 +317,29 @@ export default function GuestHome() {
         <section className="mb-7">
           <ServiceQuickActions onAction={handleQuickAction} />
         </section>
+
+        {/* ── My Requests ── */}
+        {myRequests !== undefined && (
+          <section className="mb-7">
+            <h3 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-3 px-1">
+              {t.myRequestsTitle}
+            </h3>
+            {myRequests.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-zinc-100 px-5 py-7 flex flex-col items-center gap-2 shadow-sm">
+                <div className="w-9 h-9 rounded-xl bg-zinc-50 flex items-center justify-center">
+                  <LayoutGrid className="w-4 h-4 text-zinc-200" />
+                </div>
+                <p className="text-[13px] text-zinc-400">{t.myRequestsEmpty}</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {myRequests.slice(0, 5).map((req) => (
+                  <RequestHistoryCard key={req.id} request={req} t={t} />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Hotel-configured quick actions */}
         {quickActions && quickActions.length > 0 && (
