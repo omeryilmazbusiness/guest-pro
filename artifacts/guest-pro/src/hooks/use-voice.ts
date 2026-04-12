@@ -15,7 +15,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { isSttSupported, createSpeechSession } from "@/lib/voice/speech-recognition";
-import { synthesize } from "@/lib/voice/speech-synthesis";
+import { synthesize, primeTts } from "@/lib/voice/speech-synthesis";
 import { detectLanguageFromText } from "@/lib/voice/language-resolver";
 import { VoiceDiagnosticsLogger } from "@/lib/voice/diagnostics";
 
@@ -143,6 +143,12 @@ export function useVoice(opts: VoiceHookOptions): VoiceHookReturn {
     interimBufferRef.current = "";
 
     VoiceDiagnosticsLogger.log("stt:start-requested");
+
+    // iOS/Safari TTS unlock: must be synchronous, still in the user-gesture call
+    // stack (this function is async but no await has fired yet). Priming here
+    // ensures that when the user's speech navigates to chat with ?voice=1, TTS
+    // is already unlocked for that session.
+    primeTts();
 
     // ── commitOnce — exactly one commit per listening session ───────────────
     const commitOnce = (text: string) => {

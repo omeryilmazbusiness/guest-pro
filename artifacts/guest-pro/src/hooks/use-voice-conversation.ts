@@ -36,14 +36,19 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { detectVoiceCapability, type VoiceCapabilityModel } from "@/lib/voice/capability";
 import { detectLanguageFromText } from "@/lib/voice/language-resolver";
-import { synthesize, cancelSpeech } from "@/lib/voice/speech-synthesis";
+import { synthesize, cancelSpeech, primeTts } from "@/lib/voice/speech-synthesis";
 import { createSpeechSession, isSttSupported } from "@/lib/voice/speech-recognition";
 import { VoiceDiagnosticsLogger } from "@/lib/voice/diagnostics";
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
-/** Gap between TTS end and new mic open — prevents mic catching audio tail */
-const TTS_TO_STT_GAP_MS = 300;
+/**
+ * Gap between TTS end and new mic open.
+ * 700 ms is enough for the browser's audio session to fully release from
+ * "playback" mode before STT starts recording — 300 ms was too short on
+ * Android Chrome and iOS Safari, causing silent second-turn failure.
+ */
+const TTS_TO_STT_GAP_MS = 700;
 
 /**
  * Silence threshold — how long (ms) of speech-free audio after interim results
@@ -401,6 +406,13 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
     if (activeRef.current) return;
 
     VoiceDiagnosticsLogger.log("conv:start");
+
+    // ── iOS/Safari TTS unlock ─────────────────────────────────────────────────
+    // MUST run synchronously here, inside the user-gesture call stack.
+    // Speaks a silent near-instant utterance so all future synthesize() calls
+    // are allowed even though they happen after async AI responses.
+    primeTts();
+
     activeRef.current = true;
     setErrorMessage(null);
     setStateSync("starting");

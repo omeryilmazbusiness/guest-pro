@@ -1,0 +1,436 @@
+You are a senior full-stack software architect, browser voice UX engineer, speech systems integrator, and production-grade debugging engineer.
+
+Your task is to inspect, diagnose, fix, and harden the full GUEST voice conversation system of the existing “Guest Pro” web app so it becomes a truly professional, production-ready conversation mode.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, guest voice entry flow, guest dashboard, chat routing/navigation, speech recognition logic, speech synthesis logic, transcript handling, silence detection, AI request flow, chat rendering, and conversation loop orchestration.
+- Do NOT rebuild the app from scratch if working parts already exist.
+- Preserve working guest auth, guest dashboard, guest chat, AI backend integration, request flows, route protection, and stable APIs.
+- Refactor only where there is real architectural, maintainability, browser compatibility, or UX value.
+- This is a WEB APP solution.
+- The final result must be mobile-first, premium, calm, reliable, SOLID, layered, and production-ready.
+- Build the strongest realistic browser-native conversation mode for Safari and Chrome.
+- Do not apply surface-level patches. Fix the full conversation pipeline end to end.
+
+BUG CONTEXT:
+The current system behaves like this:
+1. Guest taps the microphone
+2. The system listens and transcribes
+3. The transcript appears correctly
+4. AI returns a response
+5. BUT the AI response is NOT spoken aloud
+6. After the first response, the system returns to listening mode
+7. But when the guest speaks again, the words are NOT captured
+8. The UI stays in listening mode, but recognition is effectively dead or stuck
+
+PRIMARY GOALS:
+1. Analyze the ENTIRE conversation pipeline end to end
+2. Find the exact root cause of why the first AI response is not spoken aloud
+3. Find the exact root cause of why second-turn speech is not captured after returning to listening
+4. Fix Safari and Chrome integration professionally
+5. Make the full voice conversation mode behave like a high-quality AI conversation loop
+6. Keep the system stable until the guest explicitly stops conversation mode
+7. Keep everything in a clean SOLID architecture
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current microphone button flow
+2. Current guest dashboard voice entry flow
+3. Current chat screen routing/navigation
+4. Current speech recognition implementation
+5. Current transcript buffering logic
+6. Current interim vs final transcript handling
+7. Current silence/end-of-utterance handling
+8. Current AI request trigger logic
+9. Current speech synthesis / TTS implementation
+10. Current voices loading logic
+11. Current speechSynthesis unlock/user-gesture handling
+12. Current recognition restart logic after one utterance
+13. Current listening -> processing -> speaking -> listening loop
+14. Current Safari and Chrome handling
+15. Current fallback behavior
+16. What already works
+17. What should be preserved
+18. What is broken
+19. Where the full flow likely gets stuck
+
+Then provide:
+- concise architecture audit
+- root-cause candidates for TTS failure
+- root-cause candidates for second-turn recognition failure
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — TRACE THE FULL CONVERSATION FLOW END TO END
+==================================================
+
+Trace the complete event chain precisely:
+
+1. microphone button pressed
+2. voice mode starts
+3. recognition instance created or resumed
+4. listening state entered
+5. guest speech detected
+6. interim transcript received
+7. final transcript received or buffered
+8. utterance completion / silence timeout fires
+9. transcript is committed as guest message
+10. chat screen opens or is focused
+11. AI request is sent
+12. AI response is received
+13. AI response is rendered in chat
+14. TTS prepares utterance
+15. voice is selected
+16. TTS starts speaking
+17. TTS ends
+18. recognition restarts or resumes
+19. second-turn guest speech is captured again
+20. loop continues
+
+Find the exact broken transitions.
+
+Do not guess.
+Identify the real broken steps.
+
+==================================================
+PHASE 3 — FIND THE ROOT CAUSE OF TTS NOT SPEAKING THE FIRST RESPONSE
+==================================================
+
+Investigate all likely causes for the first response not being spoken aloud:
+
+1. speechSynthesis.speak() is never actually called
+2. utterance is created but not sent
+3. voices are not loaded yet when first response arrives
+4. voice selection fails silently
+5. language/voice mismatch causes no audible output
+6. TTS is blocked because the browser/user-gesture unlock flow is incomplete
+7. TTS queue is canceled immediately by other logic
+8. chat rendering completes but TTS trigger is disconnected
+9. AI response text exists but the speech pipeline gets empty/undefined text
+10. Safari/Chrome behavior difference not handled
+11. utterance event handlers are broken
+12. speaking state is entered in UI only, but no real TTS playback starts
+
+Find the actual root cause and fix it properly.
+
+==================================================
+PHASE 4 — FIND THE ROOT CAUSE OF SECOND-TURN LISTENING FAILURE
+==================================================
+
+Investigate all likely causes for the second-turn listening bug:
+
+1. recognition is ended after first utterance and never restarted
+2. UI says listening but recognizer is no longer active
+3. recognition instance is disposed but listening state remains true
+4. onend handler does not restart recognition correctly
+5. recognition restart is blocked by stale state
+6. transcript buffer is not reset correctly
+7. silence timeout logic interferes with re-entry to listening
+8. speaking -> listening transition happens visually only
+9. event handlers are detached after first turn
+10. Safari/Chrome requires recognition to be recreated, not just restarted
+11. recognition is restarted too early while TTS is still active
+12. browser-specific error is swallowed and UI remains stuck
+
+Find the actual root cause and fix it properly.
+
+==================================================
+PHASE 5 — IMPLEMENT A PROFESSIONAL CONVERSATION STATE MACHINE
+==================================================
+
+Refactor or implement a clear centralized state machine.
+
+Suggested states:
+- idle
+- starting
+- listening
+- speech_detected
+- transcript_buffering
+- transcript_ready
+- processing
+- speaking
+- restarting_recognition
+- interrupted
+- unsupported
+- error
+- stopped
+
+REQUIREMENTS:
+- no ambiguous boolean chaos
+- every state transition must be explicit
+- speaking must only begin when TTS is truly started
+- listening must only be shown when recognition is truly active
+- after speaking ends, the system must re-enter actual listening, not fake listening UI
+- second-turn capture must work reliably
+
+==================================================
+PHASE 6 — FIX SPEECH SYNTHESIS PROFESSIONALLY
+==================================================
+
+Harden the TTS pipeline.
+
+REQUIREMENTS:
+- load voices correctly
+- handle delayed voice availability
+- listen for voiceschanged if needed
+- choose the best available voice for the active language
+- ensure the first AI response is spoken reliably
+- support Safari and Chrome behavior differences
+- manage utterance lifecycle safely
+- prevent double-speak
+- cancel speech correctly when interrupted by the guest
+- log TTS start/end/error transitions clearly
+
+Also:
+- make chat text and spoken output stay synchronized
+- do not speak empty text
+- do not lose the first response
+
+==================================================
+PHASE 7 — FIX RECOGNITION RESTART / SECOND-TURN CAPTURE
+==================================================
+
+Harden the recognition lifecycle.
+
+REQUIREMENTS:
+- after each completed turn, recognition must restart or resume correctly
+- if the current browser requires re-creating the recognition instance, do it cleanly
+- if recognition ends unexpectedly, recover or fall back cleanly
+- ensure listening UI reflects actual recognizer state
+- second and later turns must capture speech reliably
+- avoid duplicate recognizers
+- avoid stale listeners
+- avoid restart races with TTS
+
+IMPORTANT:
+The user must never see “listening” while the recognizer is actually dead.
+
+==================================================
+PHASE 8 — SILENCE / END-OF-UTTERANCE STRATEGY
+==================================================
+
+Keep or improve a professional silence-detection strategy.
+
+REQUIREMENTS:
+- when speech is detected and transcript exists
+- and then no more speech is heard for a short period
+- commit the utterance as the guest message
+- do not stay stuck in listening forever
+- do not prematurely cut off the guest
+- work reliably even if final transcript behavior differs between browsers
+
+This silence strategy must integrate correctly with:
+- transcript buffering
+- AI request dispatch
+- TTS playback
+- recognition restart
+
+==================================================
+PHASE 9 — CHAT + VOICE INTEGRATION
+==================================================
+
+Make the chat and voice pipeline fully unified.
+
+REQUIREMENTS:
+- guest speech becomes a guest message in chat
+- AI response appears in chat
+- AI response is spoken aloud
+- after speech ends, the system resumes listening
+- if the guest talks while AI is speaking, TTS stops and listening resumes
+- no duplicate messages
+- no duplicate requests
+- no disconnected voice-only behavior
+
+==================================================
+PHASE 10 — SAFARI + CHROME HARDENING
+==================================================
+
+Build this explicitly for Safari and Chrome.
+
+REQUIREMENTS:
+- detect capabilities cleanly
+- handle Safari and Chrome differences professionally
+- handle speech recognition quirks
+- handle speech synthesis voice loading quirks
+- avoid silent failure
+- if some sub-mode is unreliable, degrade gracefully while preserving a premium UX
+
+DO NOT:
+- pretend every environment behaves identically
+- leave the user in a broken state
+
+==================================================
+PHASE 11 — DEBUG VISIBILITY / DIAGNOSTICS
+==================================================
+
+Add safe temporary diagnostics so the entire pipeline can be verified.
+
+At minimum, make it possible to inspect/log:
+- mic button pressed
+- recognition created
+- recognition started
+- listening entered
+- interim transcript received
+- final transcript received
+- transcript buffer current value
+- silence timer started/reset/fired
+- transcript committed
+- chat opened/focused
+- AI request sent
+- AI response received
+- TTS voice selected
+- TTS started
+- TTS ended
+- TTS error
+- recognition restarted
+- recognition ended unexpectedly
+- listening resumed
+- fallback/error transitions
+
+This diagnostic layer must be easy to remove or hide later.
+
+==================================================
+PHASE 12 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement this in a meaningful, maintainable architecture.
+
+REQUIREMENTS:
+- no giant monolithic voice component
+- recognition logic separate from synthesis logic
+- transcript buffering separate from UI rendering
+- silence detection separate from route/navigation
+- conversation controller separate from chat presentation
+- browser capability checks centralized
+- no duplicated restart logic
+- no fake architecture
+- no dead code
+- clean naming
+- meaningful modules only
+
+Suggested structure:
+- domain:
+  - VoiceConversationState
+  - TranscriptBuffer
+  - UtteranceCommitRule
+  - VoiceFlowTransition
+  - VoicePlaybackState
+- application:
+  - StartVoiceConversation
+  - HandleRecognitionResult
+  - BufferTranscript
+  - StartSilenceTimer
+  - ResetSilenceTimer
+  - CommitBufferedTranscript
+  - OpenChatForConversation
+  - SendConversationRequest
+  - SpeakAssistantResponse
+  - ResumeListeningAfterSpeech
+  - RestartRecognitionSafely
+- infrastructure:
+  - BrowserSpeechRecognitionAdapter
+  - BrowserSpeechSynthesisAdapter
+  - VoiceCapabilityDetector
+  - SilenceTimerAdapter
+  - VoiceDiagnosticsLogger
+  - VoiceSelectionResolver
+- presentation:
+  - GuestVoiceEntryButton
+  - GuestVoiceConversationPanel
+  - VoiceStatusBar
+  - ChatTranscriptBridge
+  - VoiceFallbackNotice
+
+Make the architecture actually used and meaningful.
+
+==================================================
+PHASE 13 — MOBILE-FIRST PREMIUM UX
+==================================================
+
+The conversation UX must feel:
+- premium
+- calm
+- modern
+- soft
+- compact
+- mobile-first
+- highly usable
+- production-ready
+
+REQUIREMENTS:
+- clear Listening / Thinking / Speaking states
+- no visually stuck listening state
+- smooth transition from dashboard to chat
+- subtle professional micro-interactions
+- no noisy animations
+- no clutter
+
+==================================================
+PHASE 14 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- guest login/logout
+- guest dashboard
+- guest quick actions
+- request creation flows
+- staff/manager dashboards
+- route protection
+- stable APIs
+- existing AI backend integration
+
+This task is specifically about fixing and hardening the full conversation mode.
+
+==================================================
+PHASE 15 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Microphone tap starts voice mode correctly
+2. User speech is detected correctly
+3. Transcript is committed correctly after speech ends
+4. Chat starts/opens correctly
+5. AI request is triggered correctly
+6. AI response appears in chat
+7. AI response is spoken aloud on the first turn
+8. After the first response, listening truly resumes
+9. Second-turn speech is captured correctly
+10. Third and later turns also work reliably
+11. User can interrupt AI speech and continue
+12. Conversation continues until explicitly stopped
+13. No fake listening state remains
+14. Safari behavior is stable or falls back cleanly
+15. Chrome behavior is stable
+16. No regression in guest flows
+
+==================================================
+PHASE 16 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. Exact root cause of the first-response TTS bug
+3. Exact root cause of the second-turn listening bug
+4. What was fixed
+5. What was centralized/refactored
+6. How the TTS pipeline now works
+7. How recognition restart now works
+8. How the full conversation loop now works
+9. How Safari/Chrome handling now works
+10. Which files were changed
+11. How to test the full voice flow end-to-end
+12. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then fix both root causes professionally
+- Then harden the entire conversation mode
+- Keep the result mobile-first, SOLID, layered, premium, and production-ready
+- Do not apply superficial patches; solve the real end-to-end voice pipeline issues
