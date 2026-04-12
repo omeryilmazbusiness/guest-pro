@@ -1,0 +1,422 @@
+You are a senior full-stack software architect, premium mobile UX designer, design-system specialist, and production-grade product engineer.
+
+Your task is to inspect, redesign, and harden the request presentation system of the existing “Guest Pro” project across both GUEST and STAFF screens.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the current codebase, guest request history UI, staff requests UI, request rendering logic, localization/i18n layer, request enums/types, status handling, dashboard structure, alert/notification system, and design tokens.
+- Do NOT rebuild the app from scratch if working parts already exist.
+- Preserve working auth, request creation, request status flow, staff/guest dashboards, localization if already present, route protection, and stable APIs.
+- Refactor only where there is real architectural, UX, maintainability, or production value.
+- The final result must be mobile-first, premium, compact, soft, modern, minimalist, SOLID, layered, and production-ready.
+
+PROJECT CONTEXT:
+Guest Pro already has:
+- Guest-side My Requests area
+- Staff-side Requests area
+- Structured request types and statuses
+- Request categories such as support, food, care, etc.
+
+CURRENT UX PROBLEMS:
+1. On the guest side, request content is rendered as raw enum-like values such as:
+   - EXTRA_SUPPLIES
+   - GLUTEN_FREE
+   This is not user-friendly or premium.
+2. On the staff side, request cards need the same premium minimal soft design language as guest cards
+3. Request cards currently need better category-based iconography and more compact summaries
+4. Completed requests should be deletable if desired
+5. When a new request arrives, a top-of-screen popup/alert should appear even if the staff user is not currently on the Requests tab
+6. Staff requests area needs a full premium redesign with softer minimized colors and better operational usability
+
+PRIMARY GOALS:
+1. Replace raw enum-like request content with professional user-facing display text
+2. Apply premium minimal soft design to both guest and staff request cards
+3. Show category-aware icons and compact summaries
+4. Add delete capability for completed requests
+5. Add top-level popup/alert for newly arrived requests
+6. Redesign the staff Requests tab as a production-ready operational card system
+7. Keep everything SOLID and maintainable
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current guest “My Requests” implementation
+2. Current staff Requests tab implementation
+3. Current request card components
+4. Current request type / enum model
+5. Current localization/display-text handling
+6. Current status rendering
+7. Current request grouping/category rendering
+8. Current alert/notification system if any
+9. Current deletion/archive behavior for completed requests
+10. Current color/design token usage
+11. What already works
+12. What should be preserved
+13. What is weak in UX
+14. What is weak in architecture
+15. What needs redesign or refactor
+
+Then provide:
+- concise architecture audit
+- request-rendering gap analysis
+- guest UX gap analysis
+- staff Requests UX gap analysis
+- alert/notification gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — FIX RAW ENUM DISPLAY TEXT
+==================================================
+
+The system must not show raw enum-like values to end users.
+
+CURRENT BAD EXAMPLES:
+- EXTRA_SUPPLIES
+- GLUTEN_FREE
+
+REQUIREMENTS:
+- build a clean display mapping layer for request categories, request details, and structured fields
+- map technical/internal enum values to premium, human-readable display text
+- localize these display texts according to the active UI language
+- preserve internal enum values in the domain/model layer
+- only the presentation/display layer should show user-friendly text
+- support both guest-side and staff-side display
+
+IMPORTANT:
+- do not scatter enum-to-label mapping in random UI components
+- centralize it in a clean resolver / presenter / mapper layer
+- preserve extensibility for future request types
+
+Examples of expected behavior:
+- EXTRA_SUPPLIES -> Extra supplies
+- GLUTEN_FREE -> Gluten-free request
+- PILLOW_REQUEST -> Extra pillow
+- MINIBAR_REFRESH -> Refresh minibar
+
+Make the actual wording elegant, short, premium, and operational.
+
+==================================================
+PHASE 3 — GUEST “MY REQUESTS” REDESIGN
+==================================================
+
+Redesign the guest-side My Requests content.
+
+REQUIREMENTS:
+- keep the layered / stacked / grouped card approach
+- cards must feel premium, compact, modern, minimalist, and soft
+- use minimal color accents
+- reduce visual noise
+- use category-aware icons
+- show human-readable content, never raw enums
+- status should be clear but subtle
+- newest requests first
+- tapping a request group should still expand the items downward if that pattern already exists or is being introduced
+
+Design goals:
+- compact
+- elegant
+- calm
+- premium hospitality feel
+- easy to scan
+- mobile-first
+- not too colorful
+- not bulky
+
+==================================================
+PHASE 4 — STAFF REQUESTS CARD REDESIGN
+==================================================
+
+Apply the same premium soft minimal design system to the staff Requests area.
+
+REQUIREMENTS:
+- redesign all request cards with minimalized colors
+- use compact category-specific iconography
+- keep request summaries concise and readable
+- visually separate request categories through subtle iconography and structure, not loud colors
+- make the requests area feel operational and premium
+- maintain strong readability on mobile
+
+The staff Requests tab must feel:
+- calm
+- modern
+- highly usable
+- compact
+- soft
+- premium
+- production-ready
+
+Avoid:
+- loud bright color blocks
+- heavy gradients
+- childish alert styling
+- cluttered card content
+
+==================================================
+PHASE 5 — CATEGORY-AWARE ICON + COMPACT CONTENT MODEL
+==================================================
+
+Make request cards smarter and more compact.
+
+REQUIREMENTS:
+- each request category should have an appropriate premium icon
+- card summaries should be short and operationally useful
+- show only the most important information on the card surface
+- if more details are needed, support expansion or detail reveal cleanly
+- use compact metadata such as:
+  - guest name
+  - room number
+  - request type label
+  - short summary
+  - status
+  - created time if useful
+
+Do not overload cards.
+
+==================================================
+PHASE 6 — DELETE COMPLETED REQUESTS
+==================================================
+
+Allow completed requests to be deleted if desired.
+
+REQUIREMENTS:
+- only completed requests should be deletable
+- add a clean delete action
+- use a confirmation flow if appropriate
+- do not make deletion visually noisy
+- ensure deletion works correctly in both UI and backend/data layer
+- preserve auditability if appropriate
+- decide whether true delete, soft delete, or archive is the best production-minded behavior based on current architecture
+
+IMPORTANT:
+- the implementation must be explicit and safe
+- do not allow accidental deletion of active/in-progress requests
+
+==================================================
+PHASE 7 — GLOBAL NEW REQUEST POPUP / ALERT
+==================================================
+
+When a new request arrives, show a popup/alert at the top of the screen even if the staff user is not currently on the Requests tab.
+
+REQUIREMENTS:
+- lightweight top-of-screen popup/alert/banner/toast style
+- show:
+  - request type
+  - compact summary
+  - room number
+- use subtle category-aware accent color
+- keep it minimal and premium
+- do not make it aggressive or visually noisy
+- it should appear regardless of which staff dashboard tab is currently active
+- support multiple new requests arriving over time in a clean way
+- clicking/tapping the alert should take the user to the relevant request or request category if appropriate
+
+UX GOAL:
+- staff should immediately notice a new request
+- alert should feel elegant and operational, not like a consumer app push spam
+
+==================================================
+PHASE 8 — STAFF REQUESTS TAB REDESIGN
+==================================================
+
+Professionally redesign the Requests tab itself.
+
+REQUIREMENTS:
+- keep or refine grouped request classes such as:
+  - Food Orders
+  - Support Requests
+  - Care About Me
+- newest requests first
+- compact, layered, modern grouped card stacks
+- tapping a category expands only that category
+- each category should remain clearly identifiable through icon and structural treatment, not loud color
+- mobile-first layout
+- professional empty/loading/error states
+- premium interaction feedback
+
+The Requests tab must look like a real hospitality operations tool.
+
+==================================================
+PHASE 9 — STATUS UX
+==================================================
+
+Keep status handling professional.
+
+Statuses:
+- Açık
+- İşlemde
+- Tamamlandı
+
+REQUIREMENTS:
+- show statuses with subtle visual language
+- use minimal color
+- keep readability strong
+- avoid overly bright status pills unless truly necessary
+- maintain clear staff controls to update status
+- maintain clear guest visibility of status
+
+==================================================
+PHASE 10 — LOCALIZATION / DISPLAY LAYER
+==================================================
+
+Ensure all request display text is localization-ready.
+
+REQUIREMENTS:
+- raw enum values must never reach presentation
+- display text must be built through a centralized presenter/mapper/localization layer
+- support active viewer language
+- support both guest-side and staff-side rendering
+- preserve original data in the model/domain layer
+
+Possible clean modules:
+- RequestDisplayMapper
+- RequestLocalizationResolver
+- RequestCategoryIconResolver
+- LocalizedRequestSummaryBuilder
+
+==================================================
+PHASE 11 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement this in a truly maintainable architecture.
+
+REQUIREMENTS:
+- business logic separate from presentation
+- request display mapping separate from UI components
+- alert/new-request notification logic centralized
+- deletion rules centralized
+- status controls centralized
+- no giant dashboard file
+- no duplicated request card logic
+- no duplicated enum-mapping logic
+- no fake architecture
+- no dead code
+- clean naming
+- meaningful modules only
+
+Suggested layered structure:
+- domain:
+  - RequestType
+  - RequestStatus
+  - ServiceRequest
+  - RequestDeletionPolicy
+- application:
+  - GetGuestRequestHistoryView
+  - GetStaffRequestBoardView
+  - DeleteCompletedRequest
+  - UpdateRequestStatus
+  - BuildRequestDisplayModel
+  - NotifyNewRequest
+- infrastructure:
+  - request repository
+  - request event/notification adapter
+  - localization dictionaries
+  - request display mappers
+- presentation:
+  - GuestMyRequestsSection
+  - GuestRequestGroupCard
+  - GuestRequestItemCard
+  - StaffRequestsBoard
+  - StaffRequestGroupCard
+  - StaffRequestItemCard
+  - NewRequestTopAlert
+  - RequestStatusBadge
+  - RequestDeleteAction
+  - RequestIcon
+
+Make the architecture actually used and meaningful.
+
+==================================================
+PHASE 12 — MOBILE-FIRST UX DIRECTION
+==================================================
+
+The entire result must feel:
+- compact
+- modern
+- minimalist
+- soft
+- premium
+- operational
+- highly usable
+- mobile-first
+- calm and elegant
+
+Use:
+- soft rounded corners
+- subtle shadows
+- restrained accent colors
+- premium typography
+- clear spacing
+- compact card composition
+
+Avoid:
+- loud colors
+- oversized card padding
+- cluttered metadata
+- harsh alert visuals
+- raw technical enum text
+
+==================================================
+PHASE 13 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- request creation
+- request status updates
+- guest request history logic
+- staff request board logic
+- guest login/logout
+- staff login
+- manager login
+- route protection
+- stable APIs
+
+This task is specifically about request presentation, request alerts, request deletion, and design hardening.
+
+==================================================
+PHASE 14 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Guest My Requests no longer shows raw enum-like text
+2. All request display text is human-readable and professional
+3. Guest request cards feel premium, compact, and minimal
+4. Staff Requests cards use the same refined design language
+5. Category-aware icons display correctly
+6. Newest requests appear first
+7. Completed requests can be deleted safely
+8. Active/in-progress requests cannot be deleted accidentally
+9. New request popup/alert appears even outside the Requests tab
+10. Alert shows request summary and room number correctly
+11. Alert styling is minimal and premium
+12. Staff Requests tab feels production-ready
+13. Status updates still work correctly
+14. No regression in request creation or dashboards
+15. Overall UX feels soft, modern, compact, and premium
+
+==================================================
+PHASE 15 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was weak before
+3. What was redesigned
+4. How enum-to-display mapping now works
+5. How guest My Requests now works
+6. How staff Requests board now works
+7. How delete-completed behavior works
+8. How the new request popup/alert works
+9. Which files were changed
+10. Any architecture refactors made
+11. How to test the new request UX end-to-end
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result mobile-first, SOLID, layered, compact, premium, and production-ready
+- The request experience must feel like a real premium hotel operations product

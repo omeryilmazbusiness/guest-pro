@@ -87,3 +87,11 @@ export const REQUEST_STATUS_LABELS: Record<ServiceRequestStatus, string> = {
   in_progress: "İşlemde",
   resolved: "Tamamlandı",
 };
+
+export async function deleteServiceRequest(id: number): Promise<void> {
+  await customFetch<void>(`/api/requests/${id}`, { method: "DELETE" });
+}
+
+export async function deleteMyServiceRequest(id: number): Promise<void> {
+  await customFetch<void>(`/api/requests/${id}/guest`, { method: "DELETE" });
+}

@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocale } from "@/hooks/use-locale";
 import {
@@ -24,6 +24,8 @@ import {
   Heart,
   LayoutGrid,
   ChevronDown,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 import { GuestProLogo } from "@/components/GuestProLogo";
 import { toast } from "sonner";
@@ -35,7 +37,8 @@ import { InstallSheet } from "@/components/InstallSheet";
 import { useTrackingHeartbeat } from "@/hooks/use-tracking-heartbeat";
 import { StayKeyCard } from "@/components/guest/StayKeyCard";
 import { ServiceQuickActions, type QuickActionMode } from "@/components/guest/ServiceQuickActions";
-import { listMyRequests, type ServiceRequest } from "@/lib/service-requests";
+import { listMyRequests, deleteMyServiceRequest, type ServiceRequest } from "@/lib/service-requests";
+import { buildDisplaySummary } from "@/lib/request-display";
 
 // ─── Request history — grouped stacked-card system ────────────────────────────
 
@@ -99,11 +102,34 @@ const STATUS_CONFIG: Record<string, { label: (t: GuestTranslations) => string; t
   resolved: { label: (t) => t.reqStatusResolved, text: "text-emerald-500", dot: "bg-emerald-400" },
 };
 
-function RequestCard({ request, t }: { request: ServiceRequest; t: GuestTranslations }) {
+function RequestCard({
+  request,
+  t,
+  onDelete,
+}: {
+  request: ServiceRequest;
+  t: GuestTranslations;
+  onDelete?: (id: number) => void;
+}) {
   const gc = REQUEST_GROUP_CONFIGS.find((c) => c.requestType === request.requestType)
     ?? REQUEST_GROUP_CONFIGS[3];
   const sc = STATUS_CONFIG[request.status] ?? STATUS_CONFIG.open;
   const Icon = gc.icon;
+  const displayText = buildDisplaySummary(request);
+
+  const [deleteState, setDeleteState] = useState<"idle" | "confirming" | "deleting">("idle");
+
+  const handleDelete = async () => {
+    setDeleteState("deleting");
+    try {
+      await deleteMyServiceRequest(request.id);
+      onDelete?.(request.id);
+      toast.success(t.reqDeletedToast);
+    } catch {
+      toast.error(t.sendFailed);
+      setDeleteState("idle");
+    }
+  };
 
   return (
     <div className="bg-white rounded-xl border border-zinc-100 px-4 py-3 flex items-center gap-3">
@@ -112,7 +138,7 @@ function RequestCard({ request, t }: { request: ServiceRequest; t: GuestTranslat
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-medium text-zinc-800 leading-tight truncate">
-          {request.summary}
+          {displayText}
         </p>
         <div className="flex items-center gap-1.5 mt-0.5">
           <div className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
@@ -121,6 +147,40 @@ function RequestCard({ request, t }: { request: ServiceRequest; t: GuestTranslat
           <p className="text-[10px] text-zinc-400">{timeAgo(request.createdAt)}</p>
         </div>
       </div>
+
+      {/* Delete — resolved only */}
+      {request.status === "resolved" && onDelete && (
+        <div className="shrink-0">
+          {deleteState === "idle" && (
+            <button
+              onClick={() => setDeleteState("confirming")}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-200 hover:text-zinc-400 hover:bg-zinc-50 transition-all"
+              aria-label={t.reqDeleteLabel}
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          )}
+          {deleteState === "confirming" && (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleDelete}
+                className="text-[10px] font-semibold text-red-500 hover:text-red-600 px-1.5 py-1 rounded-lg hover:bg-red-50 transition-all"
+              >
+                {t.reqDeleteConfirm}
+              </button>
+              <button
+                onClick={() => setDeleteState("idle")}
+                className="text-[10px] text-zinc-300 hover:text-zinc-500 px-1 py-1 transition-all"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+          {deleteState === "deleting" && (
+            <Loader2 className="w-3.5 h-3.5 text-zinc-300 animate-spin" />
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -128,9 +188,11 @@ function RequestCard({ request, t }: { request: ServiceRequest; t: GuestTranslat
 function GuestRequestGroups({
   requests,
   t,
+  onDelete,
 }: {
   requests: ServiceRequest[];
   t: GuestTranslations;
+  onDelete?: (id: number) => void;
 }) {
   const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set());
 
@@ -211,7 +273,7 @@ function GuestRequestGroups({
             {isExpanded && (
               <div className="mt-1 space-y-1.5 animate-in slide-in-from-top-1 fade-in duration-200">
                 {items.map((req) => (
-                  <RequestCard key={req.id} request={req} t={t} />
+                  <RequestCard key={req.id} request={req} t={t} onDelete={onDelete} />
                 ))}
               </div>
             )}
@@ -233,6 +295,7 @@ export default function GuestHome() {
   const { user, isAuthenticated, logoutAuth } = useAuth();
   const [, setLocation] = useLocation();
   const logoutMutation = useLogout();
+  const queryClient = useQueryClient();
   const install = useInstallPrompt();
   const { t, voiceLocale } = useLocale();
 
@@ -255,6 +318,15 @@ export default function GuestHome() {
       setLocation("/manager");
     }
   }, [isAuthenticated, user, setLocation]);
+
+  const handleDeleteRequest = useCallback(
+    (id: number) => {
+      queryClient.setQueryData<ServiceRequest[]>(["my-requests"], (prev) =>
+        prev?.filter((r) => r.id !== id)
+      );
+    },
+    [queryClient]
+  );
 
   const handleLogout = () => {
     logoutAuth();
@@ -455,7 +527,7 @@ export default function GuestHome() {
                 <p className="text-[13px] text-zinc-400">{t.myRequestsEmpty}</p>
               </div>
             ) : (
-              <GuestRequestGroups requests={myRequests} t={t} />
+              <GuestRequestGroups requests={myRequests} t={t} onDelete={handleDeleteRequest} />
             )}
           </section>
         )}

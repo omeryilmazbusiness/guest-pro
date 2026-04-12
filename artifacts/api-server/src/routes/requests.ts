@@ -177,4 +177,74 @@ router.patch("/requests/:id/status", requireStaff, async (req, res): Promise<voi
   res.json(updated);
 });
 
+// ---------------------------------------------------------------------------
+// DELETE /requests/:id — staff hard-deletes a RESOLVED request
+// ---------------------------------------------------------------------------
+router.delete("/requests/:id", requireStaff, async (req, res): Promise<void> => {
+  const hotelId = req.session!.hotelId;
+  const id = parseInt(req.params.id, 10);
+
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid request ID" });
+    return;
+  }
+
+  const [existing] = await db
+    .select()
+    .from(serviceRequestsTable)
+    .where(and(eq(serviceRequestsTable.id, id), eq(serviceRequestsTable.hotelId, hotelId)));
+
+  if (!existing) {
+    res.status(404).json({ error: "Request not found" });
+    return;
+  }
+
+  if (existing.status !== "resolved") {
+    res.status(409).json({ error: "Only resolved requests can be deleted" });
+    return;
+  }
+
+  await db
+    .delete(serviceRequestsTable)
+    .where(and(eq(serviceRequestsTable.id, id), eq(serviceRequestsTable.hotelId, hotelId)));
+
+  logger.info({ requestId: id }, "Service request deleted");
+  res.status(204).send();
+});
+
+// ---------------------------------------------------------------------------
+// DELETE /requests/:id/guest — guest hard-deletes their own RESOLVED request
+// ---------------------------------------------------------------------------
+router.delete("/requests/:id/guest", requireGuest, async (req, res): Promise<void> => {
+  const guestId = req.session!.guestId!;
+  const id = parseInt(req.params.id, 10);
+
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid request ID" });
+    return;
+  }
+
+  const [existing] = await db
+    .select()
+    .from(serviceRequestsTable)
+    .where(and(eq(serviceRequestsTable.id, id), eq(serviceRequestsTable.guestId, guestId)));
+
+  if (!existing) {
+    res.status(404).json({ error: "Request not found" });
+    return;
+  }
+
+  if (existing.status !== "resolved") {
+    res.status(409).json({ error: "Only resolved requests can be deleted" });
+    return;
+  }
+
+  await db
+    .delete(serviceRequestsTable)
+    .where(and(eq(serviceRequestsTable.id, id), eq(serviceRequestsTable.guestId, guestId)));
+
+  logger.info({ requestId: id, guestId }, "Guest deleted resolved service request");
+  res.status(204).send();
+});
+
 export default router;

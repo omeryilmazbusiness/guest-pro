@@ -245,6 +245,9 @@ export interface GuestTranslations {
   reqStatusOpen: string;
   reqStatusInProgress: string;
   reqStatusResolved: string;
+  reqDeleteLabel: string;
+  reqDeleteConfirm: string;
+  reqDeletedToast: string;
 }
 
 type SupportedLocale = "en" | "tr" | "ar" | "ru" | "de" | "fr" | "es";
@@ -462,6 +465,9 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqStatusOpen: "Open",
     reqStatusInProgress: "In Progress",
     reqStatusResolved: "Completed",
+    reqDeleteLabel: "Remove",
+    reqDeleteConfirm: "Delete?",
+    reqDeletedToast: "Request removed",
   },
 
   // ── Turkish ───────────────────────────────────────────────────────────────
@@ -676,6 +682,9 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqStatusOpen: "Açık",
     reqStatusInProgress: "İşlemde",
     reqStatusResolved: "Tamamlandı",
+    reqDeleteLabel: "Kaldır",
+    reqDeleteConfirm: "Sil?",
+    reqDeletedToast: "Talep kaldırıldı",
   },
 
   // ── Arabic ────────────────────────────────────────────────────────────────
@@ -890,6 +899,9 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqStatusOpen: "مفتوح",
     reqStatusInProgress: "قيد التنفيذ",
     reqStatusResolved: "مكتمل",
+    reqDeleteLabel: "إزالة",
+    reqDeleteConfirm: "حذف؟",
+    reqDeletedToast: "تمت إزالة الطلب",
   },
 
   // ── Russian ───────────────────────────────────────────────────────────────
@@ -1104,6 +1116,9 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqStatusOpen: "Открыт",
     reqStatusInProgress: "В работе",
     reqStatusResolved: "Выполнен",
+    reqDeleteLabel: "Удалить",
+    reqDeleteConfirm: "Удалить?",
+    reqDeletedToast: "Запрос удалён",
   },
 
   // ── German ────────────────────────────────────────────────────────────────
@@ -1318,6 +1333,9 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqStatusOpen: "Offen",
     reqStatusInProgress: "In Bearbeitung",
     reqStatusResolved: "Abgeschlossen",
+    reqDeleteLabel: "Entfernen",
+    reqDeleteConfirm: "Löschen?",
+    reqDeletedToast: "Anfrage entfernt",
   },
 
   // ── French ────────────────────────────────────────────────────────────────
@@ -1532,6 +1550,9 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqStatusOpen: "Ouvert",
     reqStatusInProgress: "En cours",
     reqStatusResolved: "Terminé",
+    reqDeleteLabel: "Supprimer",
+    reqDeleteConfirm: "Supprimer ?",
+    reqDeletedToast: "Demande supprimée",
   },
 
   // ── Spanish ───────────────────────────────────────────────────────────────
@@ -1746,6 +1767,9 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqStatusOpen: "Abierto",
     reqStatusInProgress: "En progreso",
     reqStatusResolved: "Completado",
+    reqDeleteLabel: "Eliminar",
+    reqDeleteConfirm: "¿Eliminar?",
+    reqDeletedToast: "Solicitud eliminada",
   },
 };
 

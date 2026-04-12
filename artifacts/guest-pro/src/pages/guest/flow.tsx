@@ -275,14 +275,20 @@ function buildFlowConfig(t: GuestTranslations, mode: FlowMode): FlowConfig {
 }
 
 // ─── Summary builder ───────────────────────────────────────────────────────────
+//
+// answerLabels maps stepId → the human-readable label of the selected option.
+// This ensures the stored summary never contains raw enum keys like MINIBAR_REFRESH.
 
 function buildSummary(
   mode: FlowMode,
   answers: Record<string, string>,
   customInputs: Record<string, string>,
-  t: GuestTranslations
+  t: GuestTranslations,
+  answerLabels: Record<string, string> = {}
 ): string {
-  const pick = (key: string) => customInputs[key]?.trim() || answers[key] || "";
+  // Human-readable pick: prefer custom text → translated label → raw answer
+  const pick = (key: string) =>
+    customInputs[key]?.trim() || answerLabels[key] || answers[key] || "";
 
   if (mode === "food") {
     const parts: string[] = [];
@@ -297,10 +303,10 @@ function buildSummary(
 
   if (mode === "support") {
     const parts: string[] = [];
-    const issueValue = pick("issueType");
-    if (issueValue) parts.push(issueValue);
-    const urgencyValue = pick("urgency");
-    if (urgencyValue) parts.push(`(${urgencyValue})`);
+    const issue = pick("issueType");
+    if (issue) parts.push(issue);
+    const urgency = pick("urgency");
+    if (urgency && urgency !== "Normal" && urgency !== "NORMAL") parts.push(`(${urgency})`);
     const note = pick("note");
     if (note) parts.push(`— ${note}`);
     return `${t.flowSupportLabel}: ${parts.join(" ")}`;
@@ -310,13 +316,13 @@ function buildSummary(
     const free = pick("freetext");
     const parts: string[] = [];
     if (free) parts.push(free);
-    const sleep = pick("sleep");
-    if (sleep && sleep !== "NORMAL") parts.push(`${t.flowSumSleep}: ${sleep}`);
-    const diet = pick("diet");
-    if (diet && diet !== "NORMAL") parts.push(`${t.flowSumDiet}: ${diet}`);
-    const comfort = pick("comfort");
-    if (comfort && comfort !== "STANDARD") parts.push(`${t.flowSumComfort}: ${comfort}`);
-    const service = pick("service");
+    const sleep = answerLabels["sleep"] || answers["sleep"] || "";
+    if (sleep && answers["sleep"] !== "NORMAL") parts.push(`${t.flowSumSleep}: ${sleep}`);
+    const diet = answerLabels["diet"] || answers["diet"] || "";
+    if (diet && answers["diet"] !== "NORMAL") parts.push(`${t.flowSumDiet}: ${diet}`);
+    const comfort = answerLabels["comfort"] || answers["comfort"] || "";
+    if (comfort && answers["comfort"] !== "STANDARD") parts.push(`${t.flowSumComfort}: ${comfort}`);
+    const service = answerLabels["service"] || answers["service"] || "";
     if (service) parts.push(`${t.flowSumService}: ${service}`);
     return parts.length > 0 ? parts.join(", ") : t.flowCareLabel;
   }
@@ -375,12 +381,12 @@ function OptionButton({
   option: StepOption;
   selected: boolean;
   dimmed?: boolean;
-  onSelect: (value: string) => void;
+  onSelect: (value: string, label: string) => void;
 }) {
   const IconComp = option.icon;
   return (
     <button
-      onClick={() => onSelect(option.value)}
+      onClick={() => onSelect(option.value, option.label)}
       className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl border-2 text-left transition-all active:scale-[0.97] touch-manipulation ${
         selected
           ? "border-zinc-900 bg-zinc-900 text-white shadow-md"
@@ -594,6 +600,7 @@ export default function GuidedFlowPage() {
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [customInputs, setCustomInputs] = useState<Record<string, string>>({});
+  const [answerLabels, setAnswerLabels] = useState<Record<string, string>>({});
   const [isCreating, setIsCreating] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
 
@@ -638,9 +645,12 @@ export default function GuidedFlowPage() {
     setCustomInputs((prev) => ({ ...prev, [currentStep.id]: value }));
   }
 
-  function handleSelectOption(value: string) {
+  function handleSelectOption(value: string, label?: string) {
     setAnswers((prev) => ({ ...prev, [currentStep.id]: value }));
     setCustomInputs((prev) => ({ ...prev, [currentStep.id]: "" }));
+    if (label) {
+      setAnswerLabels((prev) => ({ ...prev, [currentStep.id]: label }));
+    }
   }
 
   function handleNext() {
@@ -692,7 +702,7 @@ export default function GuidedFlowPage() {
   async function handleConfirm() {
     setIsCreating(true);
     try {
-      const summary = buildSummary(mode, answers, customInputs, t);
+      const summary = buildSummary(mode, answers, customInputs, t, answerLabels);
       const structuredData = buildStructuredData(mode, answers, customInputs);
       await createServiceRequest({
         requestType: config.requestType,

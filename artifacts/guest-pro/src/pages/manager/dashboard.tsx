@@ -78,6 +78,7 @@ import { getGuestPresences, type TrackingStatus } from "@/lib/tracking";
 import { computeTrackingSummary } from "@/lib/tracking-summary";
 import { GuestsOverviewCard } from "@/components/manager/GuestsOverviewCard";
 import { StaffRequestsBoard } from "@/components/manager/StaffRequestsBoard";
+import { NewRequestAlert } from "@/components/manager/NewRequestAlert";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -375,8 +376,19 @@ export default function ManagerDashboard() {
   const deleteGuestMutation = useDeleteGuest();
   const renewKeyMutation = useRenewGuestKey();
 
-  // ── Tab
-  const [activeTab, setActiveTab] = useState<DashboardTab>("guests");
+  // ── Tab (reads ?tab= from URL for deep-linking from alerts)
+  const [activeTab, setActiveTab] = useState<DashboardTab>(() => {
+    const param = new URLSearchParams(window.location.search).get("tab");
+    if (param === "guests" || param === "rooms" || param === "requests") return param;
+    return "guests";
+  });
+
+  // ── Open request count (updated by StaffRequestsBoard)
+  const [openRequestCount, setOpenRequestCount] = useState(0);
+
+  const handleNavigateToRequests = useCallback(() => {
+    setActiveTab("requests");
+  }, []);
 
   // ── Guest filters
   const [guestSearch, setGuestSearch] = useState("");
@@ -631,7 +643,7 @@ export default function ManagerDashboard() {
           onChange={setActiveTab}
           guestCount={guests?.length ?? 0}
           roomCount={allRooms.length}
-          requestCount={0}
+          requestCount={openRequestCount}
         />
 
         {/* ══════════════════════════════════
@@ -781,7 +793,10 @@ export default function ManagerDashboard() {
         ══════════════════════════════════ */}
         {activeTab === "requests" && (
           <div className="animate-in fade-in duration-200">
-            <StaffRequestsBoard presenceMap={presenceMap} />
+            <StaffRequestsBoard
+              presenceMap={presenceMap}
+              onOpenCountChange={setOpenRequestCount}
+            />
           </div>
         )}
 
@@ -841,6 +856,12 @@ export default function ManagerDashboard() {
           }}
         />
       )}
+
+      {/* ── New request alert — fixed top banner, visible on all tabs ── */}
+      <NewRequestAlert
+        onNavigateToRequests={handleNavigateToRequests}
+        enabled={isAuthenticated && !!user}
+      />
     </div>
   );
 }
