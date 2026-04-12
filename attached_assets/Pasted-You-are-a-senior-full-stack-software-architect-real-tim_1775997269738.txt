@@ -1,0 +1,399 @@
+You are a senior full-stack software architect, real-time voice UX designer, browser compatibility engineer, and production-grade product engineer.
+
+Your task is to inspect, redesign, and harden the GUEST voice conversation system of the existing “Guest Pro” web app into the most professional, browser-native, low-cost, production-ready voice experience realistically achievable for Safari and Chrome.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, guest dashboard, guest chat screen, voice conversation flow, TTS flow, speech recognition flow, AI response flow, role/auth structure, and UI architecture.
+- Do NOT rebuild the app from scratch if working parts already exist.
+- Preserve working guest auth, guest dashboard, request flows, route protection, and stable APIs.
+- Refactor only where there is real architectural, UX, maintainability, or production value.
+- The final result must be mobile-first, premium, calm, highly usable, SOLID, layered, and production-ready.
+- This is a WEB APP solution, not a native mobile app.
+- Be technically honest: do not fake “100% perfect browser compatibility” if platform limitations exist.
+- Build the best realistic free/low-cost browser-native voice architecture with robust fallbacks.
+
+PROJECT CONTEXT:
+Guest Pro has a guest-side AI chat experience.
+We now need the voice conversation area in the guest screen to feel as close as possible to a professional AI voice conversation experience.
+
+PRIMARY GOALS:
+1. Make guest voice conversation feel highly professional and fluid
+2. Support Safari and Chrome as primary browsers
+3. Use the best free/browser-native speech output approach
+4. Speak back to the guest in the same language the guest speaks
+5. While AI is responding, also render the response as chat text in the chat screen
+6. Keep listening and speaking in a conversation loop until the guest explicitly ends the conversation
+7. Keep the whole implementation SOLID and production-ready
+8. Build proper fallbacks for browser limitations
+
+IMPORTANT PRODUCT TRUTH:
+This must be implemented as the best realistic browser-native solution.
+Do NOT claim impossible guarantees such as:
+- 100% identical behavior in every Safari/Chrome environment
+- perfectly human-like premium TTS on every device
+- fully reliable background voice capture in all web-app modes
+
+Instead:
+- implement the strongest production-ready web approach
+- detect capability
+- provide graceful fallback behavior
+- preserve a premium user experience
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current guest voice conversation UI
+2. Current speech recognition implementation
+3. Current text-to-speech implementation
+4. Current AI response rendering flow
+5. Current language detection/routing logic
+6. Current guest chat integration
+7. Current browser compatibility handling
+8. Current error/fallback handling
+9. Current request/quick-action flows that might be affected by voice
+10. Current auth/session dependencies
+11. What already works
+12. What should be preserved
+13. What is weak in UX
+14. What is weak in architecture
+15. What is weak in browser compatibility handling
+16. What must be redesigned/refactored
+
+Then provide:
+- concise architecture audit
+- voice UX gap analysis
+- browser compatibility gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — DESIGN THE REALISTIC WEB VOICE ARCHITECTURE
+==================================================
+
+Implement the most professional browser-native voice architecture realistically possible for Safari and Chrome.
+
+REQUIREMENTS:
+- use browser-native speech recognition where available
+- use browser-native speech synthesis for free/low-cost TTS
+- detect browser capability before starting voice mode
+- build a proper adapter layer so Safari/Chrome quirks do not leak into UI components
+- keep the architecture maintainable and extendable
+
+Create a clear separation for:
+- speech recognition adapter
+- speech synthesis adapter
+- conversation loop controller
+- language routing
+- UI presentation
+- fallback handling
+
+DO NOT hardcode everything inside one chat component.
+
+==================================================
+PHASE 3 — CONTINUOUS CONVERSATION LOOP
+==================================================
+
+Implement a true conversation loop.
+
+TARGET EXPERIENCE:
+- guest taps voice conversation
+- system starts listening
+- guest speaks
+- speech is recognized
+- guest message appears in chat
+- AI responds
+- AI response appears in chat
+- AI response is spoken aloud
+- once speaking ends, the system returns to listening automatically
+- if the guest starts speaking while AI is speaking, AI should stop speaking and listening should resume
+- this continues until the guest explicitly stops voice mode
+
+REQUIREMENTS:
+- clear conversation state machine
+- no race conditions
+- no double-speaking
+- no duplicate requests
+- no broken loops
+
+Suggested states:
+- idle
+- listening
+- processing
+- speaking
+- interrupted
+- unsupported
+- error
+- stopped
+
+==================================================
+PHASE 4 — SAME LANGUAGE IN, SAME LANGUAGE OUT
+==================================================
+
+The voice system must respond in the same language the guest speaks.
+
+REQUIREMENTS:
+- if guest speaks Turkish, respond in Turkish
+- if guest speaks Arabic, respond in Arabic
+- if guest speaks Russian, respond in Russian
+- if guest speaks English, respond in English
+- both chat text and spoken output must match the detected/current language
+- select the best available browser/system voice for that language
+- gracefully fall back if an exact voice is unavailable
+
+Also:
+- keep the existing guest language context in mind if the app already has a locale for that guest
+- if the spoken language clearly differs from default guest locale, adapt intelligently
+
+==================================================
+PHASE 5 — CHAT + VOICE TOGETHER
+==================================================
+
+Voice mode must remain integrated with the chat screen.
+
+REQUIREMENTS:
+- while the AI is speaking, the response must also appear in chat
+- while the guest is speaking, recognized speech must appear as the guest message
+- preserve a premium chat experience
+- do not make voice a disconnected mode outside the chat context
+- keep the UI calm and professional
+
+==================================================
+PHASE 6 — FREE / LOW-COST TTS STRATEGY
+==================================================
+
+Use the best realistic free/browser-native speech output approach.
+
+REQUIREMENTS:
+- prefer browser-native speech synthesis voices
+- load available voices correctly
+- choose the best voice per language where possible
+- handle delayed voice loading correctly
+- avoid assuming identical voices across browsers/devices
+- make the TTS sound as polished as possible using:
+  - voice selection
+  - stable rate
+  - stable pitch
+  - interruption handling
+  - queue management
+
+IMPORTANT:
+- do not pretend this is a premium cloud voice clone
+- make it the best realistic free web solution
+
+==================================================
+PHASE 7 — SAFARI / CHROME COMPATIBILITY STRATEGY
+==================================================
+
+Design explicitly for Safari and Chrome.
+
+REQUIREMENTS:
+- detect support for speech recognition
+- detect support for speech synthesis
+- account for Safari-specific limitations and quirks
+- account for Chrome behavior differences
+- do not rely on features that fail silently
+- show clean fallback states when voice recognition is not supported in that environment
+
+Also:
+- consider that some web-app-installed / home-screen environments may differ from normal browser tabs
+- if speech recognition is unavailable in a given mode/environment, explain it cleanly and fall back to text chat or push-to-talk style fallback
+
+==================================================
+PHASE 8 — PUSH-TO-TALK / FALLBACK UX
+==================================================
+
+Build a professional fallback strategy.
+
+REQUIREMENTS:
+- if continuous voice conversation is not supported cleanly in the current browser/environment, fall back gracefully
+- possible fallback modes:
+  - push-to-talk
+  - one-turn voice input
+  - text-only with spoken AI output
+  - text-only mode if necessary
+- the UI should remain premium and calm
+- explain the fallback briefly and clearly without technical clutter
+
+The guest should never feel the app is broken.
+The app should feel intentionally adaptive.
+
+==================================================
+PHASE 9 — VOICE CONTROLS / STATUS UX
+==================================================
+
+Create a premium voice UX for the guest screen.
+
+REQUIREMENTS:
+- clear start conversation action
+- clear stop/end conversation action
+- visible states:
+  - Listening
+  - Thinking
+  - Speaking
+  - Tap to stop
+  - Unsupported / fallback state if needed
+- refined microphone visual
+- subtle, modern motion
+- mobile-first tap targets
+- no noisy gaming-style animations
+
+Keep the voice area:
+- calm
+- premium
+- soft
+- modern
+- trustworthy
+
+==================================================
+PHASE 10 — ERROR HANDLING / RESILIENCE
+==================================================
+
+Handle production reality professionally.
+
+REQUIREMENTS:
+- microphone permission denied
+- speech recognition unavailable
+- no TTS voice available for a language
+- synthesis interrupted
+- recognition unexpectedly ends
+- AI request failure
+- duplicate start calls
+- voice queue issues
+- browser lifecycle interruptions
+
+The system should:
+- recover cleanly
+- show calm messages
+- never get stuck in a broken state
+- remain usable through fallback
+
+==================================================
+PHASE 11 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement this with a meaningful, maintainable architecture.
+
+REQUIREMENTS:
+- no giant monolithic voice chat component
+- speech recognition logic separate from speech synthesis logic
+- language routing separate from UI
+- conversation state machine separate from rendering
+- no duplicated browser checks
+- no fake architecture
+- no dead code
+- clean naming
+- meaningful modules only
+
+Suggested structure:
+- domain:
+  - VoiceConversationState
+  - VoiceCapabilityModel
+  - VoiceLanguageContext
+- application:
+  - StartVoiceConversation
+  - StopVoiceConversation
+  - HandleSpeechRecognitionResult
+  - SpeakAssistantResponse
+  - ResolveConversationLanguage
+  - ResolveVoiceFallbackMode
+- infrastructure:
+  - BrowserSpeechRecognitionAdapter
+  - BrowserSpeechSynthesisAdapter
+  - VoiceCapabilityDetector
+  - VoiceLanguageResolver
+- presentation:
+  - GuestVoiceConversationPanel
+  - VoiceStatusBar
+  - MicrophoneActionButton
+  - VoiceFallbackNotice
+  - VoiceChatTranscriptBridge
+
+Make the architecture actually used and meaningful.
+
+==================================================
+PHASE 12 — MOBILE-FIRST PREMIUM DESIGN
+==================================================
+
+The entire voice experience must feel:
+- premium
+- calm
+- modern
+- soft
+- compact
+- highly usable
+- mobile-first
+- hospitality-grade
+- production-ready
+
+Design direction:
+- minimal color
+- strong typography
+- subtle state indicators
+- refined spacing
+- no clutter
+- no loud gradients
+- no gimmicky voice UI
+
+==================================================
+PHASE 13 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- guest login/logout
+- guest dashboard
+- guest quick actions
+- request creation flows
+- staff/manager dashboards
+- route protection
+- stable APIs
+- existing AI backend integration
+
+This task is specifically about hardening the guest voice talk experience.
+
+==================================================
+PHASE 14 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Voice mode starts cleanly
+2. Speech recognition works where supported
+3. Spoken guest input appears in chat
+4. AI responses appear in chat
+5. AI responses are spoken aloud
+6. The system returns to listening after speaking
+7. The guest can interrupt the AI and continue speaking
+8. The conversation continues until explicitly stopped
+9. Language in = language out
+10. Safari fallback behavior is clean
+11. Chrome behavior is clean
+12. Unsupported environments degrade gracefully
+13. Mobile UX feels premium and production-ready
+14. No regression in existing guest flows
+
+==================================================
+PHASE 15 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was preserved
+3. What was redesigned
+4. What free/browser-native voice strategy was chosen and why
+5. How continuous conversation now works
+6. How Safari/Chrome compatibility is handled
+7. How language matching works
+8. What fallbacks exist
+9. Which files were changed
+10. Any architecture refactors made
+11. How to test the voice flow on Safari and Chrome end-to-end
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result mobile-first, SOLID, layered, premium, and production-ready
+- Build the best realistic free web voice experience, with honest compatibility handling and graceful fallbacks

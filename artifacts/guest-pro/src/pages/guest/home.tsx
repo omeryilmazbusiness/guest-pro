@@ -603,10 +603,10 @@ export default function GuestHome() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-6 animate-in fade-in duration-200">
           <div className="bg-zinc-900 rounded-3xl px-8 py-10 flex flex-col items-center gap-5 shadow-2xl mx-6 max-w-xs w-full border border-white/8">
             <MicrophoneButton
+              isConversationActive={voice.isListening}
               isListening={voice.isListening}
-              isSupported={voice.isSupported}
               amplitude={voice.amplitude}
-              transcript={voice.transcript}
+              isSupported={voice.isSupported}
               onToggle={handleMicTap}
               variant="hero"
               size="lg"

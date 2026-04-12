@@ -405,6 +405,52 @@ Every `POST /api/tracking/heartbeat` response includes a `debug` object:
 - `guest_presence_snapshots` — latest presence state per guest (status, last location, last IP, lastSeenAt)
 - `daily_summaries` — stored AI-generated daily summaries (hotelId, date YYYY-MM-DD, insights[], recommendations[], metricsSnapshot jsonb)
 
+## Guest Voice Conversation Architecture
+
+### Design: Continuous Loop, Not Single-Turn
+Voice conversation is a dedicated mode with a proper state machine. Tap mic → start loop → speak → AI responds → TTS plays → mic reopens automatically → repeat until guest taps "End".
+
+### State Machine (`use-voice-conversation.ts`)
+States: `idle | listening | processing | speaking | error | stopped | unsupported`
+
+Loop:
+1. `startConversation()` → opens mic → `listening`
+2. STT final result → `processing` → `onSpeechResult` fires → chat sends to AI
+3. AI responds → chat calls `conv.speakResponse(text, lang)` → `speaking`
+4. TTS `onEnd` → auto-restart listening (250ms gap to avoid mic pickup) → `listening`
+
+Interruption: `interruptAndListen()` cancels TTS and immediately re-opens mic.
+
+### Infrastructure (SOLID layered)
+- `lib/voice/capability.ts` — `VoiceCapabilityModel`, PWA detection, feature flags
+- `lib/voice/language-resolver.ts` — Unicode-based language detection, best-voice picker, markdown stripper
+- `lib/voice/speech-synthesis.ts` — TTS adapter with `onEnd`/`onError` callbacks, `cancelSpeech()` with callback suppression
+- `lib/voice/speech-recognition.ts` — STT adapter, Chrome/Safari quirks, proper session lifecycle
+- `hooks/use-voice-conversation.ts` — state machine, amplitude tracking, loop management
+- `hooks/use-voice.ts` — single-turn hook (used by home page hero mic), delegates to lib/voice
+
+### UI Components
+- `components/chat/VoiceConversationPanel.tsx` — floating panel replacing the input bar when active; shows state label, amplitude rings, live transcript, interrupt button, stop button; unsupported fallback notice for Safari PWA mode
+- `components/chat/MicrophoneButton.tsx` — toggle button (hero + inline variants), `isConversationActive` prop drives styling
+
+### Chat Integration (`pages/guest/chat.tsx`)
+- Input bar replaced by `VoiceConversationPanel` when `conv.isActive`
+- Message `useEffect`: when new assistant message arrives AND `conv.isActive` → `conv.speakResponse(text, lang)`
+- `?voice=1` URL param → auto-starts conversation loop
+- Error handling: quota exceeded stops conversation; AI errors retry listening
+
+### Browser Compatibility (Honest)
+- Chrome: full support — STT + TTS, voices load async via `voiceschanged`
+- Safari (browser tab): `webkitSpeechRecognition` supported, works well
+- Safari PWA / home-screen: may restrict STT — detected at first failure, `VoiceConversationPanel` shows a clear fallback notice
+- Fallback: text input always available; voice mode gracefully degrades to "unsupported" state with explanation
+
+### Language In = Language Out
+- Guest's registered locale seeds STT `lang` hint for better accuracy
+- `detectLanguageFromText()` re-detects from Unicode character ranges after each turn
+- `pickBestVoice(lang)` selects best available TTS voice for that language (exact → prefix → any)
+- Both STT lang and TTS voice update each turn to follow switching languages naturally
+
 ## Artifacts
 
 - `artifacts/api-server` — Express API server (port via `PORT` env)

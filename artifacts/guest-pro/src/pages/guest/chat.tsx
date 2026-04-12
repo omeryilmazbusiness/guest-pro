@@ -26,7 +26,6 @@ import {
   Bell,
   Heart,
   CheckCircle2,
-  X,
 } from "lucide-react";
 import { createServiceRequest } from "@/lib/service-requests";
 import { toast } from "sonner";
@@ -36,7 +35,8 @@ import { MessageBubble } from "@/components/chat/MessageBubble";
 import { ShimmerBubble } from "@/components/chat/ShimmerBubble";
 import { OptimisticUserBubble } from "@/components/chat/OptimisticUserBubble";
 import { MicrophoneButton } from "@/components/chat/MicrophoneButton";
-import { useVoice, speakText } from "@/hooks/use-voice";
+import { VoiceConversationPanel } from "@/components/chat/VoiceConversationPanel";
+import { useVoiceConversation } from "@/hooks/use-voice-conversation";
 import { tFmt } from "@/lib/i18n";
 
 const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
@@ -66,18 +66,14 @@ export default function GuestChat() {
   const [voiceAutoStart, setVoiceAutoStart] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
-  // Guided chat mode state
   const [activeChatMode, setActiveChatMode] = useState<"food" | "support" | "care" | "general">("general");
   const [showRequestCreated, setShowRequestCreated] = useState(false);
   const [isCreatingRequest, setIsCreatingRequest] = useState(false);
-  // Initialize to the guest's registered locale; updated by actual voice recognition
   const [detectedLanguage, setDetectedLanguage] = useState<string>(voiceLocale);
 
   const autoSendFiredRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  // Tracks whether the LAST send was triggered by voice, so we know to read the reply aloud
-  const voicePendingTTSRef = useRef(false);
 
   const seenIdsRef = useRef<Set<number>>(new Set());
   const initialLoadedRef = useRef(false);
@@ -91,7 +87,22 @@ export default function GuestChat() {
     query: { enabled: !!sessionId },
   });
 
-  // Auth guard
+  // ── Voice conversation hook ──────────────────────────────────────────────
+  const conv = useVoiceConversation({
+    defaultLang: voiceLocale,
+    onSpeechResult: (transcript, lang) => {
+      setDetectedLanguage(lang);
+      // Mark we're processing — the AI response will trigger speakResponse
+      conv.setProcessing();
+      handleSend(transcript, lang);
+    },
+    messages: {
+      notSupported: t.voiceNotSupported,
+      micDenied: t.micDenied,
+    },
+  });
+
+  // ── Auth guard ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isAuthenticated) {
       setLocation("/");
@@ -100,7 +111,7 @@ export default function GuestChat() {
     }
   }, [isAuthenticated, user, setLocation]);
 
-  // Parse URL params on mount — supports ?q=, ?voice=1, and ?mode=food|support|care
+  // ── Parse URL params on mount ─────────────────────────────────────────────
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const q = params.get("q");
@@ -112,7 +123,6 @@ export default function GuestChat() {
 
     if (mode === "food" || mode === "support" || mode === "care") {
       setActiveChatMode(mode);
-      // Auto-inject the mode greeting as the first user message
       const modeIntros: Record<string, string> = {
         food: "Acıktım, bir şeyler sipariş etmek istiyorum.",
         support: "Destek talebim var, yardımcı olur musunuz?",
@@ -124,7 +134,7 @@ export default function GuestChat() {
     window.history.replaceState({}, "", window.location.pathname);
   }, []);
 
-  // Create session on mount
+  // ── Create session on mount ───────────────────────────────────────────────
   useEffect(() => {
     if (isAuthenticated && user?.role === "guest" && !sessionId) {
       createSessionMutation.mutate(undefined, {
@@ -133,44 +143,19 @@ export default function GuestChat() {
     }
   }, [isAuthenticated, user, sessionId]);
 
-  // Voice hook — seeded with guest's registered language
-  const voice = useVoice({
-    onResult: (transcript, lang) => {
-      setDetectedLanguage(lang);
-      // Mark that the NEXT AI reply should be spoken aloud
-      voicePendingTTSRef.current = true;
-      handleSend(transcript, lang);
-    },
-    onError: (msg) => toast.error(msg),
-    defaultLang: voiceLocale,
-    messages: {
-      notSupported: t.voiceNotSupported,
-      micDenied: t.micDenied,
-      noSpeech: t.noSpeech,
-      genericError: (code) => t.voiceErrorGeneric.replace("{code}", code),
-      micNotAvailable: t.micDenied,
-    },
-  });
-
-  // Auto-start voice if ?voice=1 in URL
+  // ── Auto-start voice conversation if ?voice=1 ─────────────────────────────
   useEffect(() => {
-    if (
-      voiceAutoStart &&
-      sessionId &&
-      !messagesLoading &&
-      !voice.isListening &&
-      !autoSendFiredRef.current
-    ) {
+    if (voiceAutoStart && sessionId && !messagesLoading && !autoSendFiredRef.current) {
       setVoiceAutoStart(false);
-      if (voice.isSupported) {
-        voice.startListening();
+      if (conv.capability.sttSupported) {
+        conv.startConversation();
       } else {
         toast.error(t.voiceNotSupported);
       }
     }
   }, [voiceAutoStart, sessionId, messagesLoading]);
 
-  // Auto-send ?q= param when session + messages ready
+  // ── Auto-send ?q= param ───────────────────────────────────────────────────
   useEffect(() => {
     if (sessionId && pendingAutoSend && !autoSendFiredRef.current && !messagesLoading) {
       autoSendFiredRef.current = true;
@@ -180,7 +165,7 @@ export default function GuestChat() {
     }
   }, [sessionId, pendingAutoSend, messagesLoading]);
 
-  // Track new messages → animation + TTS
+  // ── Track new messages → animation + TTS loop ─────────────────────────────
   useEffect(() => {
     if (!messages) return;
 
@@ -205,18 +190,19 @@ export default function GuestChat() {
       setAnimatingIds((prev) => new Set([...prev, ...newIds]));
     }
 
-    // TTS: only speak if the last send came from voice input
-    if (voicePendingTTSRef.current && newAssistantMessages.length > 0) {
-      voicePendingTTSRef.current = false;
+    // Voice conversation loop: speak AI response then resume listening
+    if (conv.isActive && newAssistantMessages.length > 0) {
       const latest = newAssistantMessages[newAssistantMessages.length - 1];
-      speakText(latest.content, detectedLanguage);
+      conv.speakResponse(latest.content, detectedLanguage);
     }
   }, [messages]);
 
-  // Scroll to bottom
+  // ── Scroll to bottom ──────────────────────────────────────────────────────
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, pendingUserMessage]);
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputValue(e.target.value);
@@ -242,12 +228,15 @@ export default function GuestChat() {
         },
         onError: (err: { data?: { quotaExceeded?: boolean; error?: string } }) => {
           setPendingUserMessage(null);
-          voicePendingTTSRef.current = false;
           if (err.data?.quotaExceeded) {
             setQuotaExceeded(true);
+            // Can't continue conversation if quota exceeded
+            if (conv.isActive) conv.stopConversation();
           } else {
             toast.error(err.data?.error || t.sendFailed);
             setInputValue(trimmed);
+            // Voice: transition back to listening after error
+            if (conv.isActive) conv.retryListening();
           }
         },
       }
@@ -269,11 +258,10 @@ export default function GuestChat() {
       seenIdsRef.current = new Set();
       initialLoadedRef.current = false;
       autoSendFiredRef.current = false;
-      voicePendingTTSRef.current = false;
       setAnimatingIds(new Set());
       setQuotaExceeded(false);
-      // Reset detected language back to guest's registered locale (not "en-US")
       setDetectedLanguage(voiceLocale);
+      if (conv.isActive) conv.stopConversation();
       window.speechSynthesis?.cancel();
       await refetchMessages();
       toast.success(t.clearedMessage);
@@ -286,17 +274,17 @@ export default function GuestChat() {
   };
 
   const handleLogout = () => {
+    if (conv.isActive) conv.stopConversation();
     logoutAuth();
     logoutMutation.mutate(undefined);
     toast.success(t.logoutSuccess);
   };
 
-  const toggleVoice = () => {
-    if (voice.isListening) {
-      voice.stopListening();
-      window.speechSynthesis?.cancel();
+  const toggleVoiceConversation = () => {
+    if (conv.isActive) {
+      conv.stopConversation();
     } else {
-      voice.startListening();
+      conv.startConversation();
     }
   };
 
@@ -304,7 +292,6 @@ export default function GuestChat() {
     if (!sessionId || activeChatMode === "general") return;
     setIsCreatingRequest(true);
 
-    // Build a summary from the last few AI messages
     const lastAiMessages = (messages ?? [])
       .filter((m: Message) => m.role === "assistant")
       .slice(-2)
@@ -344,7 +331,6 @@ export default function GuestChat() {
 
   const visibleMessages = messages?.filter((m: Message) => m.role !== "system") ?? [];
 
-  // Mode config for visual treatment
   const MODE_CONFIG = {
     food: { icon: UtensilsCrossed, label: "Yemek Siparişi", color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" },
     support: { icon: Bell, label: "Destek Talebi", color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-200" },
@@ -357,6 +343,7 @@ export default function GuestChat() {
   const canCreateRequest = isGuidedMode && assistantMessageCount >= 1 && !showRequestCreated;
   const isWaiting = sendMessageMutation.isPending;
   const hasMessages = visibleMessages.length > 0 || !!pendingUserMessage;
+  const voiceActive = conv.isActive;
 
   return (
     <div className="flex flex-col h-[100dvh] bg-[#F8F8F8]">
@@ -364,7 +351,7 @@ export default function GuestChat() {
       <header className="bg-white/95 backdrop-blur-sm border-b border-zinc-100/80 shrink-0 sticky top-0 z-20">
         <div className="max-w-3xl mx-auto px-4 h-[64px] flex items-center gap-3">
           <button
-            onClick={() => setLocation("/guest")}
+            onClick={() => { if (conv.isActive) conv.stopConversation(); setLocation("/guest"); }}
             className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-50 transition-all -ml-1"
             aria-label={t.backLabel}
           >
@@ -390,7 +377,7 @@ export default function GuestChat() {
             </p>
           </div>
 
-          {hasMessages && (
+          {hasMessages && !voiceActive && (
             <button
               onClick={() => setShowClearConfirm(true)}
               className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-50 transition-all"
@@ -422,6 +409,7 @@ export default function GuestChat() {
             <Skeleton className="h-24 w-5/6 max-w-md rounded-3xl rounded-tl-sm bg-zinc-100" />
           </div>
         ) : !hasMessages ? (
+          /* Empty state — show hero mic */
           <div className="h-full flex flex-col items-center justify-center text-center gap-5 animate-in fade-in duration-500">
             <div className="w-16 h-16 rounded-full bg-white border border-zinc-100 shadow-sm flex items-center justify-center">
               <MessageSquare className="w-7 h-7 text-zinc-300" />
@@ -432,13 +420,13 @@ export default function GuestChat() {
                 {t.emptySubtitle}
               </p>
             </div>
-            {voice.isSupported && (
+            {conv.capability.sttSupported && (
               <MicrophoneButton
-                isListening={voice.isListening}
-                isSupported={voice.isSupported}
-                amplitude={voice.amplitude}
-                transcript={voice.transcript}
-                onToggle={toggleVoice}
+                isConversationActive={voiceActive}
+                isListening={conv.state === "listening"}
+                amplitude={conv.amplitude}
+                isSupported={conv.capability.sttSupported}
+                onToggle={toggleVoiceConversation}
                 variant="hero"
                 size="lg"
               />
@@ -489,10 +477,9 @@ export default function GuestChat() {
               );
             })()}
 
-            {/* Guided mode: success confirmation */}
             {showRequestCreated && (
               <div className="flex justify-center py-2 animate-in fade-in slide-in-from-bottom-2 duration-400">
-                <div className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-[14px] font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200`}>
+                <div className="flex items-center gap-2 px-5 py-3 rounded-2xl text-[14px] font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">
                   <CheckCircle2 className="w-4 h-4" />
                   Talebiniz iletildi, personelimiz yakında ilgilenecek.
                 </div>
@@ -504,95 +491,100 @@ export default function GuestChat() {
         )}
       </main>
 
-      {/* Input area */}
+      {/* Bottom area — voice panel OR text input */}
       <div className="shrink-0 sticky bottom-0 z-20 bg-[#F8F8F8]/95 backdrop-blur-sm">
         <div className="max-w-3xl mx-auto px-4 md:px-8 pt-2 pb-6 space-y-3">
-          {/* Quick actions */}
-          {!messagesLoading && !hasMessages && quickActions && quickActions.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none snap-x">
-              {quickActions.map((action: { id: number; icon?: string; label: string }) => {
-                const IconComponent = ICON_MAP[action.icon ?? ""] ?? MapPin;
-                return (
-                  <button
-                    key={action.id}
-                    onClick={() => handleSend(action.label)}
-                    className="shrink-0 snap-start bg-white border border-zinc-200 shadow-sm px-4 py-2.5 rounded-full text-[13px] font-medium text-zinc-600 hover:bg-zinc-50 hover:border-zinc-300 active:scale-95 transition-all whitespace-nowrap flex items-center gap-1.5"
-                  >
-                    <IconComponent className="w-3.5 h-3.5 text-zinc-400" />
-                    {action.label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
 
-          {/* Live voice transcript preview */}
-          {voice.isListening && voice.transcript && (
-            <div className="flex justify-end">
-              <div className="bg-zinc-100 text-zinc-500 italic text-[14px] px-4 py-2 rounded-full max-w-xs truncate">
-                "{voice.transcript}"
-              </div>
-            </div>
-          )}
-
-          {/* Chat input bar */}
-          <div
-            className={`flex items-end gap-2 bg-white rounded-3xl border shadow-sm transition-all duration-200 px-4 py-2.5 ${
-              quotaExceeded
-                ? "border-zinc-100 opacity-60"
-                : "border-zinc-200 focus-within:border-zinc-300 focus-within:shadow-md"
-            }`}
-          >
-            <textarea
-              ref={textareaRef}
-              data-testid="input-message"
-              value={inputValue}
-              onChange={handleInput}
-              onKeyDown={handleKeyDown}
-              placeholder={
-                voice.isListening
-                  ? t.listeningPlaceholder
-                  : quotaExceeded
-                  ? t.quotaPlaceholder
-                  : t.inputPlaceholder
-              }
-              rows={1}
-              className="flex-1 max-h-[120px] bg-transparent border-0 resize-none outline-none focus:ring-0 py-2 text-[15px] text-zinc-900 placeholder:text-zinc-400 leading-relaxed font-sans"
-              disabled={isWaiting || !sessionId || quotaExceeded || voice.isListening}
+          {voiceActive ? (
+            /* ── Voice Conversation Panel ─────────────────────────────── */
+            <VoiceConversationPanel
+              state={conv.state}
+              transcript={conv.transcript}
+              amplitude={conv.amplitude}
+              capability={conv.capability}
+              errorMessage={conv.errorMessage}
+              onStop={conv.stopConversation}
+              onInterrupt={conv.interruptAndListen}
+              onRetry={conv.retryListening}
             />
+          ) : (
+            /* ── Text input area ──────────────────────────────────────── */
+            <>
+              {/* Quick actions (empty state only) */}
+              {!messagesLoading && !hasMessages && quickActions && quickActions.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none snap-x">
+                  {quickActions.map((action: { id: number; icon?: string; label: string }) => {
+                    const IconComponent = ICON_MAP[action.icon ?? ""] ?? MapPin;
+                    return (
+                      <button
+                        key={action.id}
+                        onClick={() => handleSend(action.label)}
+                        className="shrink-0 snap-start bg-white border border-zinc-200 shadow-sm px-4 py-2.5 rounded-full text-[13px] font-medium text-zinc-600 hover:bg-zinc-50 hover:border-zinc-300 active:scale-95 transition-all whitespace-nowrap flex items-center gap-1.5"
+                      >
+                        <IconComponent className="w-3.5 h-3.5 text-zinc-400" />
+                        {action.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
-            {voice.isSupported && !quotaExceeded && (
-              <div className="shrink-0 pb-1">
-                <MicrophoneButton
-                  isListening={voice.isListening}
-                  isSupported={voice.isSupported}
-                  amplitude={voice.amplitude}
-                  onToggle={toggleVoice}
-                  size="sm"
-                  variant="inline"
-                />
-              </div>
-            )}
-
-            <div className="shrink-0 pb-1">
-              <button
-                data-testid="button-send"
-                disabled={!inputValue.trim() || isWaiting || !sessionId || quotaExceeded || voice.isListening}
-                onClick={() => handleSend(inputValue)}
-                className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 ${
-                  inputValue.trim() && !isWaiting && !quotaExceeded && !voice.isListening
-                    ? "bg-zinc-900 text-white shadow-sm hover:bg-zinc-800"
-                    : "bg-zinc-100 text-zinc-400"
+              {/* Chat input bar */}
+              <div
+                className={`flex items-end gap-2 bg-white rounded-3xl border shadow-sm transition-all duration-200 px-4 py-2.5 ${
+                  quotaExceeded
+                    ? "border-zinc-100 opacity-60"
+                    : "border-zinc-200 focus-within:border-zinc-300 focus-within:shadow-md"
                 }`}
               >
-                {isWaiting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
+                <textarea
+                  ref={textareaRef}
+                  data-testid="input-message"
+                  value={inputValue}
+                  onChange={handleInput}
+                  onKeyDown={handleKeyDown}
+                  placeholder={
+                    quotaExceeded ? t.quotaPlaceholder : t.inputPlaceholder
+                  }
+                  rows={1}
+                  className="flex-1 max-h-[120px] bg-transparent border-0 resize-none outline-none focus:ring-0 py-2 text-[15px] text-zinc-900 placeholder:text-zinc-400 leading-relaxed font-sans"
+                  disabled={isWaiting || !sessionId || quotaExceeded}
+                />
+
+                {/* Mic toggle — starts conversation mode */}
+                {conv.capability.sttSupported && !quotaExceeded && (
+                  <div className="shrink-0 pb-1">
+                    <MicrophoneButton
+                      isConversationActive={false}
+                      isSupported={conv.capability.sttSupported}
+                      onToggle={toggleVoiceConversation}
+                      size="sm"
+                      variant="inline"
+                    />
+                  </div>
                 )}
-              </button>
-            </div>
-          </div>
+
+                <div className="shrink-0 pb-1">
+                  <button
+                    data-testid="button-send"
+                    disabled={!inputValue.trim() || isWaiting || !sessionId || quotaExceeded}
+                    onClick={() => handleSend(inputValue)}
+                    className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 ${
+                      inputValue.trim() && !isWaiting && !quotaExceeded
+                        ? "bg-zinc-900 text-white shadow-sm hover:bg-zinc-800"
+                        : "bg-zinc-100 text-zinc-400"
+                    }`}
+                  >
+                    {isWaiting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
