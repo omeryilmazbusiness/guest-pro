@@ -17,6 +17,15 @@ The main product is **Guest Pro** — a premium mobile-first hotel guest web app
 ### Supported UI Languages
 `en`, `tr`, `ar` (RTL), `ru`, `de`, `fr`, `es` — all via `artifacts/guest-pro/src/lib/i18n.ts`.
 
+### GuestTranslations Interface (full coverage)
+The `GuestTranslations` interface has 190+ keys covering:
+- Global labels (cancel, logout, room, guest, etc.)
+- Home page, chat, voice, install sheet
+- **Guided Flow** — all step questions, subtitles, option labels, dividers, success messages, confirm card labels for food, support, and care modes
+- **Quick Actions** — titles and subtitles for all 3 action types (food, support, care)
+- My Requests section labels
+- All 7 locales have complete translations with no fallback gaps
+
 ### Key Files
 - `artifacts/guest-pro/src/lib/locale.ts` — COUNTRY_LOCALE_MAP, COUNTRIES list, countryFlag helper, uiLocaleFromVoiceLocale, dirFromUiLocale
 - `artifacts/guest-pro/src/lib/i18n.ts` — GuestTranslations interface + full dictionaries for 7 locales
@@ -317,7 +326,7 @@ Every `POST /api/tracking/heartbeat` response includes a `debug` object:
 
 ### Guided Quick-Action Flows (`/guest/flow?mode=`)
 - **food** — multi-step food order wizard: category → item → quantity → note → confirm (FOOD_ORDER)
-- **support** — support request wizard: issue type (minibar/yastık/temizlik/oda/teknik/gürültü/malzeme) → urgency → note → confirm (SUPPORT_REQUEST)
+- **support** — support request wizard: issue type → urgency → note → confirm (SUPPORT_REQUEST)
 - **care** — preference profile: free-text intro → sleep → diet → comfort → service → confirm (CARE_PROFILE_UPDATE)
 - **No emoji** anywhere in flows — Lucide icons only
 - **Always-visible custom textarea** at the bottom of every select step (overrides button selection)
@@ -325,6 +334,9 @@ Every `POST /api/tracking/heartbeat` response includes a `debug` object:
 - All button labels (Confirm/Skip/Next/Back) use `useLocale()` → `t` translations across 7 locales
 - Success screen shows CheckCircle + flow icon; routes back to guest home
 - On confirm: calls `createServiceRequest` which posts to `POST /api/requests` (requireGuest)
+- **i18n-driven step builders**: `buildFoodSteps(t)`, `buildSupportSteps(t)`, `buildCareSteps(t)` in `flow.tsx` build all step definitions dynamically from the translation function; option VALUES are semantic English keys (e.g. MINIBAR_REFRESH, URGENT, VEGETARIAN) stored in structuredData; `originalLanguage: navigator.language` is stored alongside all structuredData
+- **ServiceQuickActions** now accepts `t: GuestTranslations` prop; all titles, subtitles, section headers are i18n strings
+- **ConfirmCard**: `resolveLabel(stepId, value)` maps semantic keys to localized display text by looking up step.options; custom text overrides option label
 
 ### Guest My Requests
 - `GET /api/requests/mine` (requireGuest) — returns all requests for authenticated guest, newest first

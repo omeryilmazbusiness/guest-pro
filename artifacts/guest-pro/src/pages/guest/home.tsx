@@ -315,7 +315,7 @@ export default function GuestHome() {
 
         {/* ── Hızlı Hizmetler — Service Quick Actions ── */}
         <section className="mb-7">
-          <ServiceQuickActions onAction={handleQuickAction} />
+          <ServiceQuickActions onAction={handleQuickAction} t={t} />
         </section>
 
         {/* ── My Requests ── */}

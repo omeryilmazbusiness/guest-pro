@@ -1,23 +1,20 @@
 import { UtensilsCrossed, Bell, Heart } from "lucide-react";
+import type { GuestTranslations } from "@/lib/i18n";
 
 export type QuickActionMode = "food" | "support" | "care";
 
-interface QuickAction {
+type ActionConfig = {
   mode: QuickActionMode;
   icon: React.FC<{ className?: string }>;
-  title: string;
-  subtitle: string;
   accent: string;
   iconBg: string;
   iconColor: string;
-}
+};
 
-const QUICK_ACTIONS: QuickAction[] = [
+const ACTION_CONFIGS: ActionConfig[] = [
   {
     mode: "food",
     icon: UtensilsCrossed,
-    title: "Acıktım",
-    subtitle: "Odaya servis",
     accent: "border-amber-100",
     iconBg: "bg-amber-50 border-amber-100",
     iconColor: "text-amber-500",
@@ -25,8 +22,6 @@ const QUICK_ACTIONS: QuickAction[] = [
   {
     mode: "support",
     icon: Bell,
-    title: "Destek Talep",
-    subtitle: "Bir sorun mu var?",
     accent: "border-yellow-100",
     iconBg: "bg-yellow-50 border-yellow-100",
     iconColor: "text-yellow-500",
@@ -34,8 +29,6 @@ const QUICK_ACTIONS: QuickAction[] = [
   {
     mode: "care",
     icon: Heart,
-    title: "Care about me",
-    subtitle: "Tercihleriniz",
     accent: "border-rose-100",
     iconBg: "bg-rose-50 border-rose-100",
     iconColor: "text-rose-400",
@@ -44,16 +37,28 @@ const QUICK_ACTIONS: QuickAction[] = [
 
 interface ServiceQuickActionsProps {
   onAction: (mode: QuickActionMode) => void;
+  t: GuestTranslations;
 }
 
-export function ServiceQuickActions({ onAction }: ServiceQuickActionsProps) {
+export function ServiceQuickActions({ onAction, t }: ServiceQuickActionsProps) {
+  const titles: Record<QuickActionMode, string> = {
+    food: t.quickActionFoodTitle,
+    support: t.quickActionSupportTitle,
+    care: t.quickActionCareTitle,
+  };
+  const subtitles: Record<QuickActionMode, string> = {
+    food: t.quickActionFoodSubtitle,
+    support: t.quickActionSupportSubtitle,
+    care: t.quickActionCareSubtitle,
+  };
+
   return (
     <section>
       <h3 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-3 px-1">
-        Hızlı Hizmetler
+        {t.quickActionsSection}
       </h3>
       <div className="grid grid-cols-3 gap-2.5">
-        {QUICK_ACTIONS.map((action) => {
+        {ACTION_CONFIGS.map((action) => {
           const Icon = action.icon;
           return (
             <button
@@ -66,8 +71,12 @@ export function ServiceQuickActions({ onAction }: ServiceQuickActionsProps) {
               >
                 <Icon className={`w-5 h-5 ${action.iconColor}`} />
               </div>
-              <p className="text-[13px] font-semibold text-zinc-800 leading-tight">{action.title}</p>
-              <p className="text-[11px] text-zinc-400 mt-0.5 leading-tight">{action.subtitle}</p>
+              <p className="text-[13px] font-semibold text-zinc-800 leading-tight">
+                {titles[action.mode]}
+              </p>
+              <p className="text-[11px] text-zinc-400 mt-0.5 leading-tight">
+                {subtitles[action.mode]}
+              </p>
             </button>
           );
         })}

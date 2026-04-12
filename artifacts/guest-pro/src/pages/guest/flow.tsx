@@ -27,6 +27,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useLocale } from "@/hooks/use-locale";
 import { createServiceRequest, type ServiceRequestType } from "@/lib/service-requests";
+import type { GuestTranslations } from "@/lib/i18n";
 import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -34,8 +35,8 @@ import { toast } from "sonner";
 type FlowMode = "food" | "support" | "care";
 
 interface StepOption {
-  value: string;
-  label: string;
+  value: string;  // semantic key — stored in structuredData, language-neutral
+  label: string;  // localized display label from t
   subtitle?: string;
   icon: LucideIcon;
 }
@@ -50,244 +51,230 @@ interface WizardStep {
   careIntro?: boolean;
 }
 
-// ─── Step definitions ─────────────────────────────────────────────────────────
+// ─── Turkish food menu items (hotel-specific dish names, not translated) ──────
 
-const FOOD_MENU: Record<string, StepOption[]> = {
+const FOOD_MENU_RAW: Record<string, { value: string; subtitle: string; icon: LucideIcon }[]> = {
   breakfast: [
-    { value: "Serpme Kahvaltı", label: "Serpme Kahvaltı", subtitle: "Peynir, zeytin, bal, reçel", icon: UtensilsCrossed },
-    { value: "Omlet", label: "Omlet", subtitle: "Seçiminize göre iç malzeme", icon: Utensils },
-    { value: "Avokado Tost", label: "Avokado Tost", subtitle: "Ekşi maya ekmek, haşlanmış yumurta", icon: Utensils },
-    { value: "Taze Meyve Tabağı", label: "Taze Meyve Tabağı", subtitle: "Mevsim meyveleri", icon: Leaf },
+    { value: "Serpme Kahvaltı", subtitle: "Peynir, zeytin, bal, reçel", icon: UtensilsCrossed },
+    { value: "Omlet", subtitle: "Seçiminize göre iç malzeme", icon: Utensils },
+    { value: "Avokado Tost", subtitle: "Ekşi maya ekmek, haşlanmış yumurta", icon: Utensils },
+    { value: "Taze Meyve Tabağı", subtitle: "Mevsim meyveleri", icon: Leaf },
   ],
   light: [
-    { value: "Ekmeğe Yumurta", label: "Ekmeğe Yumurta", subtitle: "El yapımı ekmek", icon: Utensils },
-    { value: "Peynirli Sandviç", label: "Peynirli Sandviç", subtitle: "Izgara peynirli sandviç", icon: Utensils },
-    { value: "Günün Çorbası", label: "Günün Çorbası", subtitle: "Şefin günlük seçimi", icon: Utensils },
-    { value: "Salata", label: "Salata", subtitle: "Tercih ettiğiniz sos ile", icon: Leaf },
+    { value: "Ekmeğe Yumurta", subtitle: "El yapımı ekmek", icon: Utensils },
+    { value: "Peynirli Sandviç", subtitle: "Izgara peynirli sandviç", icon: Utensils },
+    { value: "Günün Çorbası", subtitle: "Şefin günlük seçimi", icon: Utensils },
+    { value: "Salata", subtitle: "Tercih ettiğiniz sos ile", icon: Leaf },
   ],
   main: [
-    { value: "Izgara Tavuk", label: "Izgara Tavuk", subtitle: "Mevsim sebzeli", icon: UtensilsCrossed },
-    { value: "Şefin Makarnası", label: "Şefin Makarnası", subtitle: "Günlük özel makarna", icon: UtensilsCrossed },
-    { value: "Tavada Balık", label: "Tavada Balık", subtitle: "Günün balığı", icon: UtensilsCrossed },
-    { value: "Vejetaryen Tabak", label: "Vejetaryen Tabak", subtitle: "Mevsim sebze & tahıl", icon: Leaf },
+    { value: "Izgara Tavuk", subtitle: "Mevsim sebzeli", icon: UtensilsCrossed },
+    { value: "Şefin Makarnası", subtitle: "Günlük özel makarna", icon: UtensilsCrossed },
+    { value: "Tavada Balık", subtitle: "Günün balığı", icon: UtensilsCrossed },
+    { value: "Vejetaryen Tabak", subtitle: "Mevsim sebze & tahıl", icon: Leaf },
   ],
   drinks: [
-    { value: "Türk Çayı", label: "Türk Çayı", subtitle: "Demlik çay", icon: Coffee },
-    { value: "Kahve", label: "Kahve", subtitle: "Türk kahvesi veya filtre", icon: Coffee },
-    { value: "Taze Portakal Suyu", label: "Taze Portakal Suyu", subtitle: "Taze sıkılmış", icon: Coffee },
-    { value: "Su / Maden Suyu", label: "Su / Maden Suyu", subtitle: "Sade veya köpüklü", icon: Coffee },
+    { value: "Türk Çayı", subtitle: "Demlik çay", icon: Coffee },
+    { value: "Kahve", subtitle: "Türk kahvesi veya filtre", icon: Coffee },
+    { value: "Taze Portakal Suyu", subtitle: "Taze sıkılmış", icon: Coffee },
+    { value: "Su / Maden Suyu", subtitle: "Sade veya köpüklü", icon: Coffee },
   ],
 };
 
-const CATEGORY_STEPS: StepOption[] = [
-  { value: "breakfast", label: "Kahvaltı", subtitle: "Serpme, omlet, tost", icon: Sunrise },
-  { value: "light", label: "Hafif Yemekler", subtitle: "Sandviç, çorba, salata", icon: Leaf },
-  { value: "main", label: "Ana Yemekler", subtitle: "Tavuk, balık, makarna", icon: UtensilsCrossed },
-  { value: "drinks", label: "İçecekler", subtitle: "Çay, kahve, meyve suyu", icon: Coffee },
-];
+// ─── Step builders (i18n-driven) ──────────────────────────────────────────────
 
-const QUANTITY_OPTIONS: StepOption[] = [
-  { value: "1", label: "1 porsiyon", icon: Utensils },
-  { value: "2", label: "2 porsiyon", icon: Utensils },
-  { value: "3", label: "3 porsiyon", icon: Utensils },
-];
+function buildFoodSteps(t: GuestTranslations): WizardStep[] {
+  const categories: StepOption[] = [
+    { value: "breakfast", label: t.flowCatBreakfast, subtitle: t.flowCatBreakfastHint, icon: Sunrise },
+    { value: "light", label: t.flowCatLight, subtitle: t.flowCatLightHint, icon: Leaf },
+    { value: "main", label: t.flowCatMain, subtitle: t.flowCatMainHint, icon: UtensilsCrossed },
+    { value: "drinks", label: t.flowCatDrinks, subtitle: t.flowCatDrinksHint, icon: Coffee },
+  ];
 
-const FOOD_STEPS: WizardStep[] = [
-  {
-    id: "category",
-    question: "Ne canınız çekiyor?",
-    subtitle: "Bir kategori seçin",
-    type: "select",
-    options: CATEGORY_STEPS,
-  },
-  {
-    id: "item",
-    question: "Hangi yemeği istersiniz?",
-    subtitle: "Bir ürün seçin",
-    type: "select",
-    options: [],
-  },
-  {
-    id: "quantity",
-    question: "Kaç porsiyon?",
-    type: "select",
-    options: QUANTITY_OPTIONS,
-  },
-  {
-    id: "note",
-    question: "Mutfağa notunuz var mı?",
-    subtitle: "Opsiyonel — alerjiler, özel istek...",
-    type: "text",
-    skippable: true,
-  },
-  {
-    id: "confirm",
-    question: "Siparişinizi onaylayın",
-    type: "confirm",
-  },
-];
+  const quantities: StepOption[] = [
+    { value: "1", label: t.flowQty1, icon: Utensils },
+    { value: "2", label: t.flowQty2, icon: Utensils },
+    { value: "3", label: t.flowQty3, icon: Utensils },
+  ];
 
-const SUPPORT_STEPS: WizardStep[] = [
-  {
-    id: "issueType",
-    question: "Nasıl yardımcı olalım?",
-    subtitle: "Konuyu seçin",
-    type: "select",
-    options: [
-      { value: "Minibar Tazele", label: "Minibar Tazele", subtitle: "İçecek ve atıştırmalık yenileme", icon: Wine },
-      { value: "Odaya Yastık", label: "Odaya Yastık", subtitle: "Ekstra yastık getirin", icon: Moon },
-      { value: "Oda Temizliği", label: "Oda Temizliği", subtitle: "Odam temizlensin", icon: Sparkles },
-      { value: "Oda Sorunu", label: "Oda Sorunu", subtitle: "Klima, ısıtma, kapı vb.", icon: DoorOpen },
-      { value: "Teknik Sorun", label: "Teknik Sorun", subtitle: "TV, wi-fi, elektrik", icon: Wifi },
-      { value: "Gürültü Şikayeti", label: "Gürültü Şikayeti", subtitle: "Komşu oda, koridor", icon: Volume2 },
-      { value: "Ekstra Malzeme", label: "Ekstra Malzeme", subtitle: "Havlu, sabun vb.", icon: Package },
-      { value: "Diğer", label: "Diğer", subtitle: "Başka bir konuda", icon: MessageSquare },
-    ],
-  },
-  {
-    id: "urgency",
-    question: "Bu ne kadar acil?",
-    type: "select",
-    options: [
-      { value: "Acil", label: "Acil", subtitle: "Hemen ilgilenilmeli", icon: Bell },
-      { value: "Normal", label: "Normal", subtitle: "Müsait olduğunuzda", icon: Utensils },
-    ],
-  },
-  {
-    id: "note",
-    question: "Eklemek istediğiniz bir şey var mı?",
-    subtitle: "Opsiyonel — detay veya özel bilgi",
-    type: "text",
-    skippable: true,
-  },
-  {
-    id: "confirm",
-    question: "Destek talebini onaylayın",
-    type: "confirm",
-  },
-];
+  return [
+    { id: "category", question: t.flowFoodCategoryQ, subtitle: t.flowFoodCategoryHint, type: "select", options: categories },
+    { id: "item", question: t.flowFoodItemQ, subtitle: t.flowFoodItemHint, type: "select", options: [] },
+    { id: "quantity", question: t.flowFoodQuantityQ, type: "select", options: quantities },
+    { id: "note", question: t.flowFoodNoteQ, subtitle: t.flowFoodNoteHint, type: "text", skippable: true },
+    { id: "confirm", question: t.flowFoodConfirmQ, type: "confirm" },
+  ];
+}
 
-const CARE_STEPS: WizardStep[] = [
-  {
-    id: "freetext",
-    question: "Tercihlerinizi paylaşın",
-    subtitle: "Konaklamanızı sizin için kişiselleştirelim",
-    type: "text",
-    skippable: false,
-    careIntro: true,
-  },
-  {
-    id: "sleep",
-    question: "Uyku düzeniniz nedir?",
-    type: "select",
-    skippable: true,
-    options: [
-      { value: "Erken yatarım", label: "Erken yatarım", subtitle: "22:00'dan önce", icon: Moon },
-      { value: "Normal", label: "Normal", subtitle: "23:00 - 01:00 arası", icon: Moon },
-      { value: "Geç yatarım", label: "Geç yatarım", subtitle: "01:00'dan sonra", icon: Moon },
-    ],
-  },
-  {
-    id: "diet",
-    question: "Beslenme tercihiniz?",
-    type: "select",
-    skippable: true,
-    options: [
-      { value: "Normal", label: "Normal", subtitle: "Her şey", icon: UtensilsCrossed },
-      { value: "Vejeteryan", label: "Vejeteryan", subtitle: "Et yok", icon: Leaf },
-      { value: "Vegan", label: "Vegan", subtitle: "Hayvansal ürün yok", icon: Leaf },
-      { value: "Gluten-free", label: "Gluten-free", subtitle: "Gluten içermez", icon: Leaf },
-      { value: "Helal", label: "Helal", subtitle: "Helal gıda", icon: UtensilsCrossed },
-    ],
-  },
-  {
-    id: "comfort",
-    question: "Konfor tercihiniz?",
-    type: "select",
-    skippable: true,
-    options: [
-      { value: "Standart", label: "Standart", subtitle: "Normal konfor ayarları", icon: Heart },
-      { value: "Fazla yastık", label: "Fazla yastık", subtitle: "Ekstra yastık", icon: Moon },
-      { value: "Fazla battaniye", label: "Fazla battaniye", subtitle: "Ekstra battaniye", icon: Moon },
-      { value: "Serin oda", label: "Serin oda tercih ederim", subtitle: "Klimayı serin tutun", icon: Wind },
-      { value: "Sıcak oda", label: "Sıcak oda tercih ederim", subtitle: "Isıtmayı yüksek tutun", icon: Wind },
-    ],
-  },
-  {
-    id: "service",
-    question: "Hizmet stiliniz nedir?",
-    type: "select",
-    skippable: true,
-    options: [
-      { value: "Tam hizmet", label: "Tam hizmet", subtitle: "Sık kontrol, yardım hazır", icon: Bell },
-      { value: "Minimal rahatsızlık", label: "Minimal rahatsızlık", subtitle: "Yalnız kalmak tercihim", icon: Bell },
-    ],
-  },
-  {
-    id: "confirm",
-    question: "Tercihlerinizi onaylayın",
-    type: "confirm",
-  },
-];
+function buildSupportSteps(t: GuestTranslations): WizardStep[] {
+  return [
+    {
+      id: "issueType",
+      question: t.flowSupportIssueQ,
+      subtitle: t.flowSupportIssueHint,
+      type: "select",
+      options: [
+        { value: "MINIBAR_REFRESH", label: t.flowIssueMinibark, subtitle: t.flowIssueMinibarHint, icon: Wine },
+        { value: "EXTRA_PILLOW", label: t.flowIssuePillow, subtitle: t.flowIssuePillowHint, icon: Moon },
+        { value: "ROOM_CLEANING", label: t.flowIssueCleaning, subtitle: t.flowIssueCleaningHint, icon: Sparkles },
+        { value: "ROOM_ISSUE", label: t.flowIssueRoomIssue, subtitle: t.flowIssueRoomIssueHint, icon: DoorOpen },
+        { value: "TECH_ISSUE", label: t.flowIssueTechIssue, subtitle: t.flowIssueTechIssueHint, icon: Wifi },
+        { value: "NOISE_COMPLAINT", label: t.flowIssueNoise, subtitle: t.flowIssueNoiseHint, icon: Volume2 },
+        { value: "EXTRA_SUPPLIES", label: t.flowIssueExtra, subtitle: t.flowIssueExtraHint, icon: Package },
+        { value: "OTHER", label: t.flowIssueOther, subtitle: t.flowIssueOtherHint, icon: MessageSquare },
+      ],
+    },
+    {
+      id: "urgency",
+      question: t.flowSupportUrgencyQ,
+      type: "select",
+      options: [
+        { value: "URGENT", label: t.flowUrgUrgent, subtitle: t.flowUrgUrgentHint, icon: Bell },
+        { value: "NORMAL", label: t.flowUrgNormal, subtitle: t.flowUrgNormalHint, icon: Utensils },
+      ],
+    },
+    { id: "note", question: t.flowSupportNoteQ, subtitle: t.flowSupportNoteHint, type: "text", skippable: true },
+    { id: "confirm", question: t.flowSupportConfirmQ, type: "confirm" },
+  ];
+}
 
-const FLOW_CONFIG: Record<
-  FlowMode,
-  {
-    steps: WizardStep[];
-    requestType: ServiceRequestType;
-    accentBg: string;
-    accentBorder: string;
-    accentText: string;
-    accentIconBg: string;
-    label: string;
-    icon: LucideIcon;
-    successMessage: string;
-  }
-> = {
-  food: {
-    steps: FOOD_STEPS,
-    requestType: "FOOD_ORDER",
-    accentBg: "bg-amber-50",
-    accentBorder: "border-amber-200",
-    accentText: "text-amber-700",
-    accentIconBg: "bg-amber-100",
-    label: "Oda Servisi",
-    icon: UtensilsCrossed,
-    successMessage: "Siparişiniz mutfağa iletildi. En kısa sürede hazırlanacak.",
-  },
-  support: {
-    steps: SUPPORT_STEPS,
-    requestType: "SUPPORT_REQUEST",
-    accentBg: "bg-sky-50",
-    accentBorder: "border-sky-200",
-    accentText: "text-sky-700",
-    accentIconBg: "bg-sky-100",
-    label: "Destek Talebi",
-    icon: Bell,
-    successMessage: "Talebiniz personele iletildi. En kısa sürede ilgilenilecek.",
-  },
-  care: {
-    steps: CARE_STEPS,
-    requestType: "CARE_PROFILE_UPDATE",
-    accentBg: "bg-rose-50",
-    accentBorder: "border-rose-200",
-    accentText: "text-rose-600",
-    accentIconBg: "bg-rose-100",
-    label: "Care About Me",
-    icon: Heart,
-    successMessage: "Tercihleriniz kaydedildi. Konaklamanızı kişiselleştireceğiz.",
-  },
-};
+function buildCareSteps(t: GuestTranslations): WizardStep[] {
+  return [
+    {
+      id: "freetext",
+      question: t.flowCareIntroQ,
+      subtitle: t.flowCareIntroHint,
+      type: "text",
+      skippable: false,
+      careIntro: true,
+    },
+    {
+      id: "sleep",
+      question: t.flowCareSleepQ,
+      type: "select",
+      skippable: true,
+      options: [
+        { value: "EARLY", label: t.flowSleepEarly, subtitle: t.flowSleepEarlyHint, icon: Moon },
+        { value: "NORMAL", label: t.flowSleepNormal, subtitle: t.flowSleepNormalHint, icon: Moon },
+        { value: "LATE", label: t.flowSleepLate, subtitle: t.flowSleepLateHint, icon: Moon },
+      ],
+    },
+    {
+      id: "diet",
+      question: t.flowCareDietQ,
+      type: "select",
+      skippable: true,
+      options: [
+        { value: "NORMAL", label: t.flowDietNormal, subtitle: t.flowDietNormalHint, icon: UtensilsCrossed },
+        { value: "VEGETARIAN", label: t.flowDietVeg, subtitle: t.flowDietVegHint, icon: Leaf },
+        { value: "VEGAN", label: t.flowDietVegan, subtitle: t.flowDietVeganHint, icon: Leaf },
+        { value: "GLUTEN_FREE", label: t.flowDietGluten, subtitle: t.flowDietGlutenHint, icon: Leaf },
+        { value: "HALAL", label: t.flowDietHalal, subtitle: t.flowDietHalalHint, icon: UtensilsCrossed },
+      ],
+    },
+    {
+      id: "comfort",
+      question: t.flowCareComfortQ,
+      type: "select",
+      skippable: true,
+      options: [
+        { value: "STANDARD", label: t.flowComfortStd, subtitle: t.flowComfortStdHint, icon: Heart },
+        { value: "EXTRA_PILLOW", label: t.flowComfortPillow, subtitle: t.flowComfortPillowHint, icon: Moon },
+        { value: "EXTRA_BLANKET", label: t.flowComfortBlanket, subtitle: t.flowComfortBlanketHint, icon: Moon },
+        { value: "COOL_ROOM", label: t.flowComfortCool, subtitle: t.flowComfortCoolHint, icon: Wind },
+        { value: "WARM_ROOM", label: t.flowComfortWarm, subtitle: t.flowComfortWarmHint, icon: Wind },
+      ],
+    },
+    {
+      id: "service",
+      question: t.flowCareServiceQ,
+      type: "select",
+      skippable: true,
+      options: [
+        { value: "FULL_SERVICE", label: t.flowServiceFull, subtitle: t.flowServiceFullHint, icon: Bell },
+        { value: "MINIMAL_DISTURBANCE", label: t.flowServiceMin, subtitle: t.flowServiceMinHint, icon: Bell },
+      ],
+    },
+    { id: "confirm", question: t.flowCareConfirmQ, type: "confirm" },
+  ];
+}
+
+// ─── Flow config builder ──────────────────────────────────────────────────────
+
+interface FlowConfig {
+  steps: WizardStep[];
+  requestType: ServiceRequestType;
+  accentBg: string;
+  accentBorder: string;
+  accentText: string;
+  accentIconBg: string;
+  label: string;
+  icon: LucideIcon;
+  successMessage: string;
+}
+
+function buildFlowConfig(t: GuestTranslations, mode: FlowMode): FlowConfig {
+  const base: Record<FlowMode, Omit<FlowConfig, "steps" | "label" | "successMessage">> = {
+    food: {
+      requestType: "FOOD_ORDER",
+      accentBg: "bg-amber-50",
+      accentBorder: "border-amber-200",
+      accentText: "text-amber-700",
+      accentIconBg: "bg-amber-100",
+      icon: UtensilsCrossed,
+    },
+    support: {
+      requestType: "SUPPORT_REQUEST",
+      accentBg: "bg-sky-50",
+      accentBorder: "border-sky-200",
+      accentText: "text-sky-700",
+      accentIconBg: "bg-sky-100",
+      icon: Bell,
+    },
+    care: {
+      requestType: "CARE_PROFILE_UPDATE",
+      accentBg: "bg-rose-50",
+      accentBorder: "border-rose-200",
+      accentText: "text-rose-600",
+      accentIconBg: "bg-rose-100",
+      icon: Heart,
+    },
+  };
+
+  const labels: Record<FlowMode, string> = {
+    food: t.flowFoodLabel,
+    support: t.flowSupportLabel,
+    care: t.flowCareLabel,
+  };
+
+  const successMessages: Record<FlowMode, string> = {
+    food: t.flowFoodSuccess,
+    support: t.flowSupportSuccess,
+    care: t.flowCareSuccess,
+  };
+
+  const steps: Record<FlowMode, WizardStep[]> = {
+    food: buildFoodSteps(t),
+    support: buildSupportSteps(t),
+    care: buildCareSteps(t),
+  };
+
+  return {
+    ...base[mode],
+    steps: steps[mode],
+    label: labels[mode],
+    successMessage: successMessages[mode],
+  };
+}
 
 // ─── Summary builder ──────────────────────────────────────────────────────────
 
 function buildSummary(
   mode: FlowMode,
   answers: Record<string, string>,
-  customInputs: Record<string, string>
+  customInputs: Record<string, string>,
+  t: GuestTranslations
 ): string {
-  const pick = (key: string) =>
-    customInputs[key]?.trim() || answers[key] || "";
+  const pick = (key: string) => customInputs[key]?.trim() || answers[key] || "";
 
   if (mode === "food") {
     const parts: string[] = [];
@@ -296,19 +283,22 @@ function buildSummary(
     const qty = pick("quantity");
     if (qty && qty !== "1") parts.push(`× ${qty}`);
     const note = pick("note");
-    if (note) parts.push(`Not: ${note}`);
-    return `Yemek siparişi: ${parts.join(" ")}`;
+    if (note) parts.push(`— ${note}`);
+    return `${t.flowFoodLabel}: ${parts.join(" ")}`;
   }
 
   if (mode === "support") {
     const parts: string[] = [];
-    const issue = pick("issueType");
-    if (issue) parts.push(issue);
-    const urgency = pick("urgency");
-    if (urgency) parts.push(`(${urgency})`);
+    const issueValue = pick("issueType");
+    // Find label for the semantic value — fall back to raw value for custom text
+    const issueLabel = issueValue;
+    if (issueLabel) parts.push(issueLabel);
+    const urgencyValue = pick("urgency");
+    const urgencyLabel = urgencyValue;
+    if (urgencyLabel) parts.push(`(${urgencyLabel})`);
     const note = pick("note");
     if (note) parts.push(`— ${note}`);
-    return `Destek talebi: ${parts.join(" ")}`;
+    return `${t.flowSupportLabel}: ${parts.join(" ")}`;
   }
 
   if (mode === "care") {
@@ -316,19 +306,17 @@ function buildSummary(
     const parts: string[] = [];
     if (free) parts.push(free);
     const sleep = pick("sleep");
-    if (sleep && sleep !== "Normal") parts.push(`Uyku: ${sleep}`);
+    if (sleep && sleep !== "NORMAL") parts.push(`${t.flowSumSleep}: ${sleep}`);
     const diet = pick("diet");
-    if (diet && diet !== "Normal") parts.push(`Diyet: ${diet}`);
+    if (diet && diet !== "NORMAL") parts.push(`${t.flowSumDiet}: ${diet}`);
     const comfort = pick("comfort");
-    if (comfort && comfort !== "Standart") parts.push(`Konfor: ${comfort}`);
+    if (comfort && comfort !== "STANDARD") parts.push(`${t.flowSumComfort}: ${comfort}`);
     const service = pick("service");
-    if (service) parts.push(`Hizmet: ${service}`);
-    return parts.length > 0
-      ? `Misafir tercihleri: ${parts.join(", ")}`
-      : "Misafir tercihleri kaydedildi";
+    if (service) parts.push(`${t.flowSumService}: ${service}`);
+    return parts.length > 0 ? parts.join(", ") : t.flowCareLabel;
   }
 
-  return "Servis talebi";
+  return "Service request";
 }
 
 function buildStructuredData(
@@ -336,34 +324,39 @@ function buildStructuredData(
   answers: Record<string, string>,
   customInputs: Record<string, string>
 ) {
-  const pick = (key: string) =>
-    customInputs[key]?.trim() || answers[key] || null;
+  const pick = (key: string) => customInputs[key]?.trim() || answers[key] || null;
+
+  const base = { originalLanguage: navigator.language };
 
   if (mode === "food") {
     return {
+      ...base,
       category: pick("category"),
       item: pick("item"),
-      quantity: parseInt(pick("quantity") || "1", 10),
+      quantity: parseInt(pick("quantity") ?? "1", 10),
       note: pick("note"),
     };
   }
   if (mode === "support") {
     return {
-      issueType: pick("issueType"),
-      urgency: pick("urgency"),
+      ...base,
+      issueTypeKey: answers["issueType"] ?? null,
+      issueTypeCustom: customInputs["issueType"] ?? null,
+      urgencyKey: answers["urgency"] ?? null,
       note: pick("note"),
     };
   }
   if (mode === "care") {
     return {
+      ...base,
       freetext: pick("freetext"),
-      sleep: pick("sleep"),
-      diet: pick("diet"),
-      comfort: pick("comfort"),
-      service: pick("service"),
+      sleepKey: answers["sleep"] ?? null,
+      dietKey: answers["diet"] ?? null,
+      comfortKey: answers["comfort"] ?? null,
+      serviceKey: answers["service"] ?? null,
     };
   }
-  return { ...answers, ...customInputs };
+  return { ...base, ...answers, ...customInputs };
 }
 
 // ─── Option Button ─────────────────────────────────────────────────────────────
@@ -439,12 +432,14 @@ function CustomInputArea({
   placeholder,
   rows = 2,
   prominent = false,
+  activeLabel,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
   rows?: number;
   prominent?: boolean;
+  activeLabel?: string;
 }) {
   return (
     <div
@@ -468,10 +463,8 @@ function CustomInputArea({
           className="flex-1 bg-transparent text-[14px] text-zinc-900 placeholder:text-zinc-300 focus:outline-none resize-none leading-relaxed"
         />
       </div>
-      {value.trim() && (
-        <p className="text-[11px] text-zinc-500 font-medium mt-2 ml-7">
-          Kendi isteğiniz kullanılacak
-        </p>
+      {value.trim() && activeLabel && (
+        <p className="text-[11px] text-zinc-500 font-medium mt-2 ml-7">{activeLabel}</p>
       )}
     </div>
   );
@@ -484,42 +477,55 @@ function ConfirmCard({
   answers,
   customInputs,
   config,
+  t,
+  steps,
 }: {
   mode: FlowMode;
   answers: Record<string, string>;
   customInputs: Record<string, string>;
-  config: (typeof FLOW_CONFIG)[FlowMode];
+  config: FlowConfig;
+  t: GuestTranslations;
+  steps: WizardStep[];
 }) {
-  const pick = (key: string) =>
-    customInputs[key]?.trim() || answers[key] || "";
+  const pick = (key: string) => customInputs[key]?.trim() || answers[key] || "";
+
+  // Resolve display label for a semantic value in a given step
+  function resolveLabel(stepId: string, value: string): string {
+    if (!value) return "";
+    // if it came from customInput, just return the raw text
+    if (customInputs[stepId]?.trim()) return customInputs[stepId].trim();
+    const step = steps.find((s) => s.id === stepId);
+    const opt = step?.options?.find((o) => o.value === value);
+    return opt?.label ?? value;
+  }
 
   const entries: { label: string; value: string }[] = [];
 
   if (mode === "food") {
     const item = pick("item");
-    if (item) entries.push({ label: "Yemek", value: item });
+    if (item) entries.push({ label: t.flowSumFood, value: item });
     const qty = pick("quantity");
-    if (qty) entries.push({ label: "Porsiyon", value: qty });
+    if (qty) entries.push({ label: t.flowSumPortions, value: qty });
     const note = pick("note");
-    if (note) entries.push({ label: "Mutfak notu", value: note });
+    if (note) entries.push({ label: t.flowSumKitchenNote, value: note });
   } else if (mode === "support") {
-    const issue = pick("issueType");
-    if (issue) entries.push({ label: "Konu", value: issue });
-    const urgency = pick("urgency");
-    if (urgency) entries.push({ label: "Öncelik", value: urgency });
+    const issue = resolveLabel("issueType", pick("issueType"));
+    if (issue) entries.push({ label: t.flowSumTopic, value: issue });
+    const urgency = resolveLabel("urgency", pick("urgency"));
+    if (urgency) entries.push({ label: t.flowSumPriority, value: urgency });
     const note = pick("note");
-    if (note) entries.push({ label: "Detay", value: note });
+    if (note) entries.push({ label: t.flowSumDetail, value: note });
   } else if (mode === "care") {
     const free = pick("freetext");
-    if (free) entries.push({ label: "Notunuz", value: free });
-    const sleep = pick("sleep");
-    if (sleep) entries.push({ label: "Uyku", value: sleep });
-    const diet = pick("diet");
-    if (diet) entries.push({ label: "Beslenme", value: diet });
-    const comfort = pick("comfort");
-    if (comfort) entries.push({ label: "Konfor", value: comfort });
-    const service = pick("service");
-    if (service) entries.push({ label: "Hizmet", value: service });
+    if (free) entries.push({ label: t.flowSumNote, value: free });
+    const sleep = resolveLabel("sleep", pick("sleep"));
+    if (sleep) entries.push({ label: t.flowSumSleep, value: sleep });
+    const diet = resolveLabel("diet", pick("diet"));
+    if (diet) entries.push({ label: t.flowSumDiet, value: diet });
+    const comfort = resolveLabel("comfort", pick("comfort"));
+    if (comfort) entries.push({ label: t.flowSumComfort, value: comfort });
+    const service = resolveLabel("service", pick("service"));
+    if (service) entries.push({ label: t.flowSumService, value: service });
   }
 
   const IconComp = config.icon;
@@ -538,14 +544,14 @@ function ConfirmCard({
         {entries.length > 0 ? (
           entries.map(({ label, value }) => (
             <div key={label} className="flex items-start gap-3">
-              <p className="text-[12px] text-zinc-400 font-medium w-24 shrink-0 pt-0.5">
+              <p className="text-[12px] text-zinc-400 font-medium w-28 shrink-0 pt-0.5">
                 {label}
               </p>
               <p className="text-[14px] text-zinc-800 font-medium leading-snug">{value}</p>
             </div>
           ))
         ) : (
-          <p className="text-[13px] text-zinc-500">Tercihleriniz kaydedilecek.</p>
+          <p className="text-[13px] text-zinc-500">{config.label}</p>
         )}
       </div>
     </div>
@@ -566,7 +572,9 @@ export default function GuidedFlowPage() {
       ? rawMode
       : "support";
 
-  const config = FLOW_CONFIG[mode];
+  const config = buildFlowConfig(t, mode);
+  const steps = config.steps;
+
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [customInputs, setCustomInputs] = useState<Record<string, string>>({});
@@ -580,14 +588,17 @@ export default function GuidedFlowPage() {
 
   if (!isAuthenticated || user?.role !== "guest") return null;
 
-  const steps = config.steps;
-
   const currentStep: WizardStep = (() => {
     if (stepIndex >= steps.length) return steps[steps.length - 1];
     const step = steps[stepIndex];
+    // Dynamically inject food items based on selected category
     if (step.id === "item" && mode === "food") {
       const category = answers.category ?? "breakfast";
-      return { ...step, options: FOOD_MENU[category] ?? [] };
+      const raw = FOOD_MENU_RAW[category] ?? [];
+      return {
+        ...step,
+        options: raw.map((item) => ({ ...item, label: item.value })),
+      };
     }
     return step;
   })();
@@ -615,23 +626,16 @@ export default function GuidedFlowPage() {
   }
 
   function handleNext() {
-    if (stepIndex < steps.length - 1) {
-      setStepIndex((i) => i + 1);
-    }
+    if (stepIndex < steps.length - 1) setStepIndex((i) => i + 1);
   }
 
   function handleSkip() {
-    if (stepIndex < steps.length - 1) {
-      setStepIndex((i) => i + 1);
-    }
+    if (stepIndex < steps.length - 1) setStepIndex((i) => i + 1);
   }
 
   function handleBack() {
-    if (stepIndex > 0) {
-      setStepIndex((i) => i - 1);
-    } else {
-      setLocation("/guest");
-    }
+    if (stepIndex > 0) setStepIndex((i) => i - 1);
+    else setLocation("/guest");
   }
 
   function handleEditContinue() {
@@ -641,7 +645,7 @@ export default function GuidedFlowPage() {
   async function handleConfirm() {
     setIsCreating(true);
     try {
-      const summary = buildSummary(mode, answers, customInputs);
+      const summary = buildSummary(mode, answers, customInputs, t);
       const structuredData = buildStructuredData(mode, answers, customInputs);
       await createServiceRequest({
         requestType: config.requestType,
@@ -651,7 +655,7 @@ export default function GuidedFlowPage() {
       setIsComplete(true);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Bir hata oluştu. Lütfen tekrar deneyin.";
+        err instanceof Error ? err.message : t.sendFailed;
       toast.error(message);
     } finally {
       setIsCreating(false);
@@ -730,7 +734,7 @@ export default function GuidedFlowPage() {
                   ? "bg-zinc-900 flex-1"
                   : i === stepIndex
                   ? "bg-zinc-600 flex-[2]"
-                  : "bg-zinc-150 flex-1"
+                  : "flex-1"
               }`}
               style={i > stepIndex ? { backgroundColor: "#e4e4e7" } : undefined}
             />
@@ -754,18 +758,19 @@ export default function GuidedFlowPage() {
             )}
           </div>
 
-          {/* ── Care intro: free text prominent, then options ── */}
+          {/* ── Care intro: prominent free text ── */}
           {isCareIntro && (
             <div className="space-y-3">
               <CustomInputArea
                 value={currentCustom}
                 onChange={setCustom}
-                placeholder="Dikkat etmemizi istediklerinizi buraya yazın… (alerjiler, özel tercihler, kişisel notlar)"
+                placeholder={t.flowCareIntroPH}
                 rows={5}
                 prominent
+                activeLabel={t.flowCustomPlaceholder}
               />
               <p className="text-[12px] text-zinc-400 text-center px-4">
-                Aşağıdaki adımlarda tercihlerinizi hızlıca seçebilirsiniz.
+                {t.flowCareNextHint}
               </p>
             </div>
           )}
@@ -783,10 +788,10 @@ export default function GuidedFlowPage() {
                 />
               ))}
 
-              {/* Custom input divider */}
+              {/* Divider */}
               <div className="flex items-center gap-3 pt-1">
                 <div className="flex-1 h-px bg-zinc-100" />
-                <p className="text-[11px] text-zinc-300 font-medium shrink-0">veya kendiniz yazın</p>
+                <p className="text-[11px] text-zinc-300 font-medium shrink-0">{t.flowOrType}</p>
                 <div className="flex-1 h-px bg-zinc-100" />
               </div>
 
@@ -794,16 +799,17 @@ export default function GuidedFlowPage() {
                 value={currentCustom}
                 onChange={setCustom}
                 placeholder={t.flowCustomPlaceholder}
+                activeLabel={t.flowCustomPlaceholder}
               />
             </div>
           )}
 
-          {/* ── Text step ── */}
+          {/* ── Plain text step ── */}
           {!isCareIntro && currentStep.type === "text" && (
             <textarea
               value={currentCustom}
               onChange={(e) => setCustom(e.target.value)}
-              placeholder="Buraya yazın..."
+              placeholder={t.flowTypeHere}
               rows={4}
               className="w-full bg-white border-2 border-zinc-100 rounded-2xl px-4 py-3.5 text-[15px] text-zinc-900 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-300 resize-none shadow-sm transition-all"
             />
@@ -816,6 +822,8 @@ export default function GuidedFlowPage() {
               answers={answers}
               customInputs={customInputs}
               config={config}
+              t={t}
+              steps={steps}
             />
           )}
         </div>

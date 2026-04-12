@@ -87,7 +87,7 @@ export interface GuestTranslations {
   iosStep3Hint: string;
   iosStep4Title: string;
 
-  // ── Guided Flow ─────────────────────────────────────────────────────────────
+  // ── Guided Flow — navigation buttons ────────────────────────────────────
   flowConfirm: string;
   flowEditContinue: string;
   flowSkip: string;
@@ -97,7 +97,146 @@ export interface GuestTranslations {
   flowSuccessReturn: string;
   flowRequestReceived: string;
 
-  // ── My Requests ──────────────────────────────────────────────────────────────
+  // ── Flow — UI chrome ────────────────────────────────────────────────────
+  flowOrType: string;   // divider between option buttons and custom textarea
+  flowTypeHere: string; // textarea placeholder for plain text steps
+
+  // ── Flow — mode labels & success messages ────────────────────────────────
+  flowFoodLabel: string;
+  flowSupportLabel: string;
+  flowCareLabel: string;
+  flowFoodSuccess: string;
+  flowSupportSuccess: string;
+  flowCareSuccess: string;
+
+  // ── Flow — Food step questions / subtitles ───────────────────────────────
+  flowFoodCategoryQ: string;
+  flowFoodCategoryHint: string;
+  flowFoodItemQ: string;
+  flowFoodItemHint: string;
+  flowFoodQuantityQ: string;
+  flowFoodNoteQ: string;
+  flowFoodNoteHint: string;
+  flowFoodConfirmQ: string;
+
+  // ── Flow — Food categories ───────────────────────────────────────────────
+  flowCatBreakfast: string;
+  flowCatBreakfastHint: string;
+  flowCatLight: string;
+  flowCatLightHint: string;
+  flowCatMain: string;
+  flowCatMainHint: string;
+  flowCatDrinks: string;
+  flowCatDrinksHint: string;
+
+  // ── Flow — Quantity ──────────────────────────────────────────────────────
+  flowQty1: string;
+  flowQty2: string;
+  flowQty3: string;
+
+  // ── Flow — Support step questions / subtitles ────────────────────────────
+  flowSupportIssueQ: string;
+  flowSupportIssueHint: string;
+  flowSupportUrgencyQ: string;
+  flowSupportNoteQ: string;
+  flowSupportNoteHint: string;
+  flowSupportConfirmQ: string;
+
+  // ── Flow — Support issue options ─────────────────────────────────────────
+  flowIssueMinibark: string;
+  flowIssueMinibarHint: string;
+  flowIssuePillow: string;
+  flowIssuePillowHint: string;
+  flowIssueCleaning: string;
+  flowIssueCleaningHint: string;
+  flowIssueRoomIssue: string;
+  flowIssueRoomIssueHint: string;
+  flowIssueTechIssue: string;
+  flowIssueTechIssueHint: string;
+  flowIssueNoise: string;
+  flowIssueNoiseHint: string;
+  flowIssueExtra: string;
+  flowIssueExtraHint: string;
+  flowIssueOther: string;
+  flowIssueOtherHint: string;
+
+  // ── Flow — Urgency options ───────────────────────────────────────────────
+  flowUrgUrgent: string;
+  flowUrgUrgentHint: string;
+  flowUrgNormal: string;
+  flowUrgNormalHint: string;
+
+  // ── Flow — Care step questions / subtitles ───────────────────────────────
+  flowCareIntroQ: string;
+  flowCareIntroHint: string;
+  flowCareIntroPH: string;
+  flowCareNextHint: string;
+  flowCareSleepQ: string;
+  flowCareDietQ: string;
+  flowCareComfortQ: string;
+  flowCareServiceQ: string;
+  flowCareConfirmQ: string;
+
+  // ── Flow — Care sleep options ─────────────────────────────────────────────
+  flowSleepEarly: string;
+  flowSleepEarlyHint: string;
+  flowSleepNormal: string;
+  flowSleepNormalHint: string;
+  flowSleepLate: string;
+  flowSleepLateHint: string;
+
+  // ── Flow — Care diet options ──────────────────────────────────────────────
+  flowDietNormal: string;
+  flowDietNormalHint: string;
+  flowDietVeg: string;
+  flowDietVegHint: string;
+  flowDietVegan: string;
+  flowDietVeganHint: string;
+  flowDietGluten: string;
+  flowDietGlutenHint: string;
+  flowDietHalal: string;
+  flowDietHalalHint: string;
+
+  // ── Flow — Care comfort options ───────────────────────────────────────────
+  flowComfortStd: string;
+  flowComfortStdHint: string;
+  flowComfortPillow: string;
+  flowComfortPillowHint: string;
+  flowComfortBlanket: string;
+  flowComfortBlanketHint: string;
+  flowComfortCool: string;
+  flowComfortCoolHint: string;
+  flowComfortWarm: string;
+  flowComfortWarmHint: string;
+
+  // ── Flow — Care service options ───────────────────────────────────────────
+  flowServiceFull: string;
+  flowServiceFullHint: string;
+  flowServiceMin: string;
+  flowServiceMinHint: string;
+
+  // ── Flow — Confirm card summary labels ────────────────────────────────────
+  flowSumFood: string;
+  flowSumPortions: string;
+  flowSumKitchenNote: string;
+  flowSumTopic: string;
+  flowSumPriority: string;
+  flowSumDetail: string;
+  flowSumNote: string;
+  flowSumSleep: string;
+  flowSumDiet: string;
+  flowSumComfort: string;
+  flowSumService: string;
+
+  // ── Quick Actions ─────────────────────────────────────────────────────────
+  quickActionFoodTitle: string;
+  quickActionFoodSubtitle: string;
+  quickActionSupportTitle: string;
+  quickActionSupportSubtitle: string;
+  quickActionCareTitle: string;
+  quickActionCareSubtitle: string;
+
+  // ── My Requests ───────────────────────────────────────────────────────────
   myRequestsTitle: string;
   myRequestsSubtitle: string;
   myRequestsEmpty: string;
@@ -189,6 +328,130 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowSuccessReturn: "Return to Home",
     flowRequestReceived: "Request Received",
 
+    flowOrType: "or describe your own",
+    flowTypeHere: "Type here…",
+
+    flowFoodLabel: "Room Service",
+    flowSupportLabel: "Support Request",
+    flowCareLabel: "Care About Me",
+    flowFoodSuccess: "Your order has been sent to the kitchen. It will be ready shortly.",
+    flowSupportSuccess: "Your request has been forwarded to staff. We'll attend to it soon.",
+    flowCareSuccess: "Your preferences have been saved. We'll personalize your stay.",
+
+    flowFoodCategoryQ: "What are you craving?",
+    flowFoodCategoryHint: "Select a category",
+    flowFoodItemQ: "Which dish would you like?",
+    flowFoodItemHint: "Select an item",
+    flowFoodQuantityQ: "How many servings?",
+    flowFoodNoteQ: "Any note for the kitchen?",
+    flowFoodNoteHint: "Optional — allergies, special requests…",
+    flowFoodConfirmQ: "Confirm your order",
+
+    flowCatBreakfast: "Breakfast",
+    flowCatBreakfastHint: "Spreads, omelettes, toast",
+    flowCatLight: "Light Meals",
+    flowCatLightHint: "Sandwiches, soup, salads",
+    flowCatMain: "Main Dishes",
+    flowCatMainHint: "Chicken, fish, pasta",
+    flowCatDrinks: "Beverages",
+    flowCatDrinksHint: "Tea, coffee, juice",
+
+    flowQty1: "1 serving",
+    flowQty2: "2 servings",
+    flowQty3: "3 servings",
+
+    flowSupportIssueQ: "How can we help you?",
+    flowSupportIssueHint: "Select a topic",
+    flowSupportUrgencyQ: "How urgent is this?",
+    flowSupportNoteQ: "Anything else to add?",
+    flowSupportNoteHint: "Optional — details or special info",
+    flowSupportConfirmQ: "Confirm your support request",
+
+    flowIssueMinibark: "Minibar Restock",
+    flowIssueMinibarHint: "Refresh drinks & snacks",
+    flowIssuePillow: "Extra Pillow",
+    flowIssuePillowHint: "Bring an additional pillow",
+    flowIssueCleaning: "Room Cleaning",
+    flowIssueCleaningHint: "Please clean my room",
+    flowIssueRoomIssue: "Room Issue",
+    flowIssueRoomIssueHint: "A/C, heating, door, etc.",
+    flowIssueTechIssue: "Technical Problem",
+    flowIssueTechIssueHint: "TV, Wi-Fi, electricity",
+    flowIssueNoise: "Noise Complaint",
+    flowIssueNoiseHint: "Neighboring room, hallway",
+    flowIssueExtra: "Extra Supplies",
+    flowIssueExtraHint: "Towels, toiletries, etc.",
+    flowIssueOther: "Other",
+    flowIssueOtherHint: "Something else",
+
+    flowUrgUrgent: "Urgent",
+    flowUrgUrgentHint: "Needs immediate attention",
+    flowUrgNormal: "Normal",
+    flowUrgNormalHint: "When convenient",
+
+    flowCareIntroQ: "Share Your Preferences",
+    flowCareIntroHint: "Let us personalize your stay",
+    flowCareIntroPH: "Tell us what matters to you during your stay… (allergies, special preferences, personal notes)",
+    flowCareNextHint: "In the next steps, you can quickly select your preferences.",
+    flowCareSleepQ: "What is your sleep schedule?",
+    flowCareDietQ: "What is your diet preference?",
+    flowCareComfortQ: "What is your comfort preference?",
+    flowCareServiceQ: "What is your service style?",
+    flowCareConfirmQ: "Confirm your preferences",
+
+    flowSleepEarly: "Early to bed",
+    flowSleepEarlyHint: "Before 22:00",
+    flowSleepNormal: "Normal",
+    flowSleepNormalHint: "Between 23:00 – 01:00",
+    flowSleepLate: "Late to bed",
+    flowSleepLateHint: "After 01:00",
+
+    flowDietNormal: "Normal",
+    flowDietNormalHint: "Everything",
+    flowDietVeg: "Vegetarian",
+    flowDietVegHint: "No meat",
+    flowDietVegan: "Vegan",
+    flowDietVeganHint: "No animal products",
+    flowDietGluten: "Gluten-free",
+    flowDietGlutenHint: "No gluten",
+    flowDietHalal: "Halal",
+    flowDietHalalHint: "Halal food",
+
+    flowComfortStd: "Standard",
+    flowComfortStdHint: "Normal comfort settings",
+    flowComfortPillow: "Extra Pillow",
+    flowComfortPillowHint: "Additional pillow",
+    flowComfortBlanket: "Extra Blanket",
+    flowComfortBlanketHint: "Additional blanket",
+    flowComfortCool: "Cool Room",
+    flowComfortCoolHint: "Keep the A/C cool",
+    flowComfortWarm: "Warm Room",
+    flowComfortWarmHint: "Keep the heating high",
+
+    flowServiceFull: "Full Service",
+    flowServiceFullHint: "Frequent check-ins, help always ready",
+    flowServiceMin: "Minimal Disturbance",
+    flowServiceMinHint: "I prefer privacy",
+
+    flowSumFood: "Food",
+    flowSumPortions: "Portions",
+    flowSumKitchenNote: "Kitchen note",
+    flowSumTopic: "Topic",
+    flowSumPriority: "Priority",
+    flowSumDetail: "Detail",
+    flowSumNote: "Your note",
+    flowSumSleep: "Sleep",
+    flowSumDiet: "Diet",
+    flowSumComfort: "Comfort",
+    flowSumService: "Service",
+
+    quickActionFoodTitle: "I'm Hungry",
+    quickActionFoodSubtitle: "Room service",
+    quickActionSupportTitle: "Support Request",
+    quickActionSupportSubtitle: "Something wrong?",
+    quickActionCareTitle: "Care About Me",
+    quickActionCareSubtitle: "Your preferences",
+
     myRequestsTitle: "My Requests",
     myRequestsSubtitle: "Track your service requests",
     myRequestsEmpty: "No requests yet",
@@ -276,6 +539,130 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowCustomPlaceholder: "Ya da kendi isteğinizi yazın…",
     flowSuccessReturn: "Ana sayfaya dön",
     flowRequestReceived: "Talebiniz Alındı",
+
+    flowOrType: "veya kendiniz yazın",
+    flowTypeHere: "Buraya yazın…",
+
+    flowFoodLabel: "Oda Servisi",
+    flowSupportLabel: "Destek Talebi",
+    flowCareLabel: "Care About Me",
+    flowFoodSuccess: "Siparişiniz mutfağa iletildi. En kısa sürede hazırlanacak.",
+    flowSupportSuccess: "Talebiniz personele iletildi. En kısa sürede ilgilenilecek.",
+    flowCareSuccess: "Tercihleriniz kaydedildi. Konaklamanızı kişiselleştireceğiz.",
+
+    flowFoodCategoryQ: "Ne canınız çekiyor?",
+    flowFoodCategoryHint: "Bir kategori seçin",
+    flowFoodItemQ: "Hangi yemeği istersiniz?",
+    flowFoodItemHint: "Bir ürün seçin",
+    flowFoodQuantityQ: "Kaç porsiyon?",
+    flowFoodNoteQ: "Mutfağa notunuz var mı?",
+    flowFoodNoteHint: "Opsiyonel — alerjiler, özel istek…",
+    flowFoodConfirmQ: "Siparişinizi onaylayın",
+
+    flowCatBreakfast: "Kahvaltı",
+    flowCatBreakfastHint: "Serpme, omlet, tost",
+    flowCatLight: "Hafif Yemekler",
+    flowCatLightHint: "Sandviç, çorba, salata",
+    flowCatMain: "Ana Yemekler",
+    flowCatMainHint: "Tavuk, balık, makarna",
+    flowCatDrinks: "İçecekler",
+    flowCatDrinksHint: "Çay, kahve, meyve suyu",
+
+    flowQty1: "1 porsiyon",
+    flowQty2: "2 porsiyon",
+    flowQty3: "3 porsiyon",
+
+    flowSupportIssueQ: "Nasıl yardımcı olalım?",
+    flowSupportIssueHint: "Konuyu seçin",
+    flowSupportUrgencyQ: "Bu ne kadar acil?",
+    flowSupportNoteQ: "Eklemek istediğiniz bir şey var mı?",
+    flowSupportNoteHint: "Opsiyonel — detay veya özel bilgi",
+    flowSupportConfirmQ: "Destek talebini onaylayın",
+
+    flowIssueMinibark: "Minibar Tazele",
+    flowIssueMinibarHint: "İçecek ve atıştırmalık yenileme",
+    flowIssuePillow: "Odaya Yastık",
+    flowIssuePillowHint: "Ekstra yastık getirin",
+    flowIssueCleaning: "Oda Temizliği",
+    flowIssueCleaningHint: "Odam temizlensin",
+    flowIssueRoomIssue: "Oda Sorunu",
+    flowIssueRoomIssueHint: "Klima, ısıtma, kapı vb.",
+    flowIssueTechIssue: "Teknik Sorun",
+    flowIssueTechIssueHint: "TV, wi-fi, elektrik",
+    flowIssueNoise: "Gürültü Şikayeti",
+    flowIssueNoiseHint: "Komşu oda, koridor",
+    flowIssueExtra: "Ekstra Malzeme",
+    flowIssueExtraHint: "Havlu, sabun vb.",
+    flowIssueOther: "Diğer",
+    flowIssueOtherHint: "Başka bir konuda",
+
+    flowUrgUrgent: "Acil",
+    flowUrgUrgentHint: "Hemen ilgilenilmeli",
+    flowUrgNormal: "Normal",
+    flowUrgNormalHint: "Müsait olduğunuzda",
+
+    flowCareIntroQ: "Tercihlerinizi Paylaşın",
+    flowCareIntroHint: "Konaklamanızı sizin için kişiselleştirelim",
+    flowCareIntroPH: "Dikkat etmemizi istediklerinizi buraya yazın… (alerjiler, özel tercihler, kişisel notlar)",
+    flowCareNextHint: "Aşağıdaki adımlarda tercihlerinizi hızlıca seçebilirsiniz.",
+    flowCareSleepQ: "Uyku düzeniniz nedir?",
+    flowCareDietQ: "Beslenme tercihiniz?",
+    flowCareComfortQ: "Konfor tercihiniz?",
+    flowCareServiceQ: "Hizmet stiliniz nedir?",
+    flowCareConfirmQ: "Tercihlerinizi onaylayın",
+
+    flowSleepEarly: "Erken yatarım",
+    flowSleepEarlyHint: "22:00'dan önce",
+    flowSleepNormal: "Normal",
+    flowSleepNormalHint: "23:00 – 01:00 arası",
+    flowSleepLate: "Geç yatarım",
+    flowSleepLateHint: "01:00'dan sonra",
+
+    flowDietNormal: "Normal",
+    flowDietNormalHint: "Her şey",
+    flowDietVeg: "Vejeteryan",
+    flowDietVegHint: "Et yok",
+    flowDietVegan: "Vegan",
+    flowDietVeganHint: "Hayvansal ürün yok",
+    flowDietGluten: "Gluten-free",
+    flowDietGlutenHint: "Gluten içermez",
+    flowDietHalal: "Helal",
+    flowDietHalalHint: "Helal gıda",
+
+    flowComfortStd: "Standart",
+    flowComfortStdHint: "Normal konfor ayarları",
+    flowComfortPillow: "Fazla Yastık",
+    flowComfortPillowHint: "Ekstra yastık",
+    flowComfortBlanket: "Fazla Battaniye",
+    flowComfortBlanketHint: "Ekstra battaniye",
+    flowComfortCool: "Serin Oda",
+    flowComfortCoolHint: "Klimayı serin tutun",
+    flowComfortWarm: "Sıcak Oda",
+    flowComfortWarmHint: "Isıtmayı yüksek tutun",
+
+    flowServiceFull: "Tam Hizmet",
+    flowServiceFullHint: "Sık kontrol, yardım hazır",
+    flowServiceMin: "Minimal Rahatsızlık",
+    flowServiceMinHint: "Yalnız kalmak tercihim",
+
+    flowSumFood: "Yemek",
+    flowSumPortions: "Porsiyon",
+    flowSumKitchenNote: "Mutfak notu",
+    flowSumTopic: "Konu",
+    flowSumPriority: "Öncelik",
+    flowSumDetail: "Detay",
+    flowSumNote: "Notunuz",
+    flowSumSleep: "Uyku",
+    flowSumDiet: "Beslenme",
+    flowSumComfort: "Konfor",
+    flowSumService: "Hizmet",
+
+    quickActionFoodTitle: "Acıktım",
+    quickActionFoodSubtitle: "Odaya servis",
+    quickActionSupportTitle: "Destek Talep",
+    quickActionSupportSubtitle: "Bir sorun mu var?",
+    quickActionCareTitle: "Care About Me",
+    quickActionCareSubtitle: "Tercihleriniz",
 
     myRequestsTitle: "Taleplerim",
     myRequestsSubtitle: "Taleplerinizi takip edin",
@@ -365,6 +752,130 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowSuccessReturn: "العودة للرئيسية",
     flowRequestReceived: "تم استلام الطلب",
 
+    flowOrType: "أو اكتب طلبك الخاص",
+    flowTypeHere: "اكتب هنا…",
+
+    flowFoodLabel: "خدمة الغرف",
+    flowSupportLabel: "طلب دعم",
+    flowCareLabel: "اعتنِ بي",
+    flowFoodSuccess: "تم إرسال طلبك إلى المطبخ. سيكون جاهزاً قريباً.",
+    flowSupportSuccess: "تم إرسال طلبك إلى الموظفين. سنتولى ذلك قريباً.",
+    flowCareSuccess: "تم حفظ تفضيلاتك. سنجعل إقامتك مميزة.",
+
+    flowFoodCategoryQ: "ماذا تشتهي؟",
+    flowFoodCategoryHint: "اختر فئة",
+    flowFoodItemQ: "أي طبق تريد؟",
+    flowFoodItemHint: "اختر عنصراً",
+    flowFoodQuantityQ: "كم حصة؟",
+    flowFoodNoteQ: "هل لديك ملاحظة للمطبخ؟",
+    flowFoodNoteHint: "اختياري — حساسيات، طلبات خاصة…",
+    flowFoodConfirmQ: "تأكيد طلبك",
+
+    flowCatBreakfast: "فطور",
+    flowCatBreakfastHint: "مشكل، أومليت، توست",
+    flowCatLight: "وجبات خفيفة",
+    flowCatLightHint: "ساندويش، حساء، سلطة",
+    flowCatMain: "الأطباق الرئيسية",
+    flowCatMainHint: "دجاج، سمك، معكرونة",
+    flowCatDrinks: "مشروبات",
+    flowCatDrinksHint: "شاي، قهوة، عصير",
+
+    flowQty1: "حصة واحدة",
+    flowQty2: "حصتان",
+    flowQty3: "3 حصص",
+
+    flowSupportIssueQ: "كيف يمكننا مساعدتك؟",
+    flowSupportIssueHint: "اختر موضوعاً",
+    flowSupportUrgencyQ: "ما مدى إلحاحية هذا؟",
+    flowSupportNoteQ: "هل تريد إضافة شيء آخر؟",
+    flowSupportNoteHint: "اختياري — تفاصيل أو معلومات خاصة",
+    flowSupportConfirmQ: "تأكيد طلب الدعم",
+
+    flowIssueMinibark: "تجديد الميني بار",
+    flowIssueMinibarHint: "تجديد المشروبات والوجبات",
+    flowIssuePillow: "وسادة إضافية",
+    flowIssuePillowHint: "إحضار وسادة إضافية",
+    flowIssueCleaning: "تنظيف الغرفة",
+    flowIssueCleaningHint: "الرجاء تنظيف غرفتي",
+    flowIssueRoomIssue: "مشكلة في الغرفة",
+    flowIssueRoomIssueHint: "تكييف، تدفئة، باب، إلخ.",
+    flowIssueTechIssue: "مشكلة تقنية",
+    flowIssueTechIssueHint: "تلفاز، واي فاي، كهرباء",
+    flowIssueNoise: "شكوى ضوضاء",
+    flowIssueNoiseHint: "غرفة مجاورة، ممر",
+    flowIssueExtra: "مستلزمات إضافية",
+    flowIssueExtraHint: "مناشف، أدوات نظافة، إلخ.",
+    flowIssueOther: "أخرى",
+    flowIssueOtherHint: "شيء آخر",
+
+    flowUrgUrgent: "عاجل",
+    flowUrgUrgentHint: "يحتاج اهتماماً فورياً",
+    flowUrgNormal: "عادي",
+    flowUrgNormalHint: "عند توفر الوقت",
+
+    flowCareIntroQ: "شارك تفضيلاتك",
+    flowCareIntroHint: "دعنا نخصص إقامتك",
+    flowCareIntroPH: "أخبرنا بما يهمك خلال إقامتك… (حساسيات، تفضيلات خاصة، ملاحظات شخصية)",
+    flowCareNextHint: "في الخطوات التالية، يمكنك اختيار تفضيلاتك بسرعة.",
+    flowCareSleepQ: "ما جدولك للنوم؟",
+    flowCareDietQ: "ما تفضيلاتك الغذائية؟",
+    flowCareComfortQ: "ما تفضيلاتك للراحة؟",
+    flowCareServiceQ: "ما أسلوب الخدمة المفضل لديك؟",
+    flowCareConfirmQ: "تأكيد تفضيلاتك",
+
+    flowSleepEarly: "نوم مبكر",
+    flowSleepEarlyHint: "قبل 22:00",
+    flowSleepNormal: "عادي",
+    flowSleepNormalHint: "بين 23:00 – 01:00",
+    flowSleepLate: "نوم متأخر",
+    flowSleepLateHint: "بعد 01:00",
+
+    flowDietNormal: "عادي",
+    flowDietNormalHint: "كل شيء",
+    flowDietVeg: "نباتي",
+    flowDietVegHint: "بدون لحم",
+    flowDietVegan: "نباتي صرف",
+    flowDietVeganHint: "بدون منتجات حيوانية",
+    flowDietGluten: "خالٍ من الجلوتين",
+    flowDietGlutenHint: "لا جلوتين",
+    flowDietHalal: "حلال",
+    flowDietHalalHint: "طعام حلال",
+
+    flowComfortStd: "معياري",
+    flowComfortStdHint: "إعدادات راحة عادية",
+    flowComfortPillow: "وسادة إضافية",
+    flowComfortPillowHint: "وسادة إضافية",
+    flowComfortBlanket: "بطانية إضافية",
+    flowComfortBlanketHint: "بطانية إضافية",
+    flowComfortCool: "غرفة باردة",
+    flowComfortCoolHint: "ابقِ التكييف بارداً",
+    flowComfortWarm: "غرفة دافئة",
+    flowComfortWarmHint: "ابقِ التدفئة عالية",
+
+    flowServiceFull: "خدمة كاملة",
+    flowServiceFullHint: "تفقد متكرر، المساعدة دائماً متاحة",
+    flowServiceMin: "إزعاج بسيط",
+    flowServiceMinHint: "أفضل الخصوصية",
+
+    flowSumFood: "الطعام",
+    flowSumPortions: "الحصص",
+    flowSumKitchenNote: "ملاحظة المطبخ",
+    flowSumTopic: "الموضوع",
+    flowSumPriority: "الأولوية",
+    flowSumDetail: "التفاصيل",
+    flowSumNote: "ملاحظتك",
+    flowSumSleep: "النوم",
+    flowSumDiet: "النظام الغذائي",
+    flowSumComfort: "الراحة",
+    flowSumService: "الخدمة",
+
+    quickActionFoodTitle: "أنا جائع",
+    quickActionFoodSubtitle: "خدمة الغرف",
+    quickActionSupportTitle: "طلب دعم",
+    quickActionSupportSubtitle: "هل هناك مشكلة؟",
+    quickActionCareTitle: "اعتنِ بي",
+    quickActionCareSubtitle: "تفضيلاتك",
+
     myRequestsTitle: "طلباتي",
     myRequestsSubtitle: "تتبع طلبات الخدمة",
     myRequestsEmpty: "لا توجد طلبات بعد",
@@ -452,6 +963,130 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowCustomPlaceholder: "Или опишите свою потребность…",
     flowSuccessReturn: "На главную",
     flowRequestReceived: "Запрос получен",
+
+    flowOrType: "или опишите своё пожелание",
+    flowTypeHere: "Введите здесь…",
+
+    flowFoodLabel: "Обслуживание номеров",
+    flowSupportLabel: "Запрос в поддержку",
+    flowCareLabel: "Позаботьтесь обо мне",
+    flowFoodSuccess: "Ваш заказ передан на кухню. Он будет готов в ближайшее время.",
+    flowSupportSuccess: "Ваш запрос передан персоналу. Мы займёмся этим в ближайшее время.",
+    flowCareSuccess: "Ваши предпочтения сохранены. Мы персонализируем ваше пребывание.",
+
+    flowFoodCategoryQ: "Чего вам хочется?",
+    flowFoodCategoryHint: "Выберите категорию",
+    flowFoodItemQ: "Какое блюдо вы хотите?",
+    flowFoodItemHint: "Выберите блюдо",
+    flowFoodQuantityQ: "Сколько порций?",
+    flowFoodNoteQ: "Есть ли пожелания для кухни?",
+    flowFoodNoteHint: "Необязательно — аллергии, особые пожелания…",
+    flowFoodConfirmQ: "Подтвердите ваш заказ",
+
+    flowCatBreakfast: "Завтрак",
+    flowCatBreakfastHint: "Ассорти, омлет, тост",
+    flowCatLight: "Лёгкие блюда",
+    flowCatLightHint: "Сэндвичи, суп, салаты",
+    flowCatMain: "Основные блюда",
+    flowCatMainHint: "Курица, рыба, паста",
+    flowCatDrinks: "Напитки",
+    flowCatDrinksHint: "Чай, кофе, сок",
+
+    flowQty1: "1 порция",
+    flowQty2: "2 порции",
+    flowQty3: "3 порции",
+
+    flowSupportIssueQ: "Чем мы можем помочь?",
+    flowSupportIssueHint: "Выберите тему",
+    flowSupportUrgencyQ: "Насколько это срочно?",
+    flowSupportNoteQ: "Хотите добавить что-нибудь ещё?",
+    flowSupportNoteHint: "Необязательно — детали или особая информация",
+    flowSupportConfirmQ: "Подтвердите запрос в поддержку",
+
+    flowIssueMinibark: "Пополнить мини-бар",
+    flowIssueMinibarHint: "Обновить напитки и закуски",
+    flowIssuePillow: "Дополнительная подушка",
+    flowIssuePillowHint: "Принести дополнительную подушку",
+    flowIssueCleaning: "Уборка номера",
+    flowIssueCleaningHint: "Пожалуйста, уберите мой номер",
+    flowIssueRoomIssue: "Проблема в номере",
+    flowIssueRoomIssueHint: "Кондиционер, отопление, дверь и т.д.",
+    flowIssueTechIssue: "Технические проблемы",
+    flowIssueTechIssueHint: "ТВ, Wi-Fi, электричество",
+    flowIssueNoise: "Жалоба на шум",
+    flowIssueNoiseHint: "Соседний номер, коридор",
+    flowIssueExtra: "Дополнительные принадлежности",
+    flowIssueExtraHint: "Полотенца, туалетные принадлежности и т.д.",
+    flowIssueOther: "Другое",
+    flowIssueOtherHint: "Что-то ещё",
+
+    flowUrgUrgent: "Срочно",
+    flowUrgUrgentHint: "Требует немедленного внимания",
+    flowUrgNormal: "Обычно",
+    flowUrgNormalHint: "При возможности",
+
+    flowCareIntroQ: "Поделитесь своими предпочтениями",
+    flowCareIntroHint: "Давайте персонализируем ваше пребывание",
+    flowCareIntroPH: "Расскажите, что для вас важно во время проживания… (аллергии, особые пожелания, личные заметки)",
+    flowCareNextHint: "На следующих шагах вы сможете быстро выбрать свои предпочтения.",
+    flowCareSleepQ: "Каков ваш режим сна?",
+    flowCareDietQ: "Каковы ваши диетические предпочтения?",
+    flowCareComfortQ: "Каковы ваши предпочтения по комфорту?",
+    flowCareServiceQ: "Какой стиль обслуживания вы предпочитаете?",
+    flowCareConfirmQ: "Подтвердите ваши предпочтения",
+
+    flowSleepEarly: "Рано ложусь спать",
+    flowSleepEarlyHint: "До 22:00",
+    flowSleepNormal: "Обычно",
+    flowSleepNormalHint: "Между 23:00 – 01:00",
+    flowSleepLate: "Поздно ложусь спать",
+    flowSleepLateHint: "После 01:00",
+
+    flowDietNormal: "Обычное",
+    flowDietNormalHint: "Всё подходит",
+    flowDietVeg: "Вегетарианское",
+    flowDietVegHint: "Без мяса",
+    flowDietVegan: "Веганское",
+    flowDietVeganHint: "Без животных продуктов",
+    flowDietGluten: "Без глютена",
+    flowDietGlutenHint: "Без глютена",
+    flowDietHalal: "Халяль",
+    flowDietHalalHint: "Халяльная еда",
+
+    flowComfortStd: "Стандарт",
+    flowComfortStdHint: "Обычные настройки комфорта",
+    flowComfortPillow: "Дополнительная подушка",
+    flowComfortPillowHint: "Ещё одна подушка",
+    flowComfortBlanket: "Дополнительное одеяло",
+    flowComfortBlanketHint: "Ещё одно одеяло",
+    flowComfortCool: "Прохладный номер",
+    flowComfortCoolHint: "Держать кондиционер на прохладном режиме",
+    flowComfortWarm: "Тёплый номер",
+    flowComfortWarmHint: "Держать отопление высоким",
+
+    flowServiceFull: "Полное обслуживание",
+    flowServiceFullHint: "Частые проверки, помощь всегда готова",
+    flowServiceMin: "Минимум беспокойства",
+    flowServiceMinHint: "Предпочитаю конфиденциальность",
+
+    flowSumFood: "Блюдо",
+    flowSumPortions: "Порции",
+    flowSumKitchenNote: "Заметка для кухни",
+    flowSumTopic: "Тема",
+    flowSumPriority: "Приоритет",
+    flowSumDetail: "Детали",
+    flowSumNote: "Ваша заметка",
+    flowSumSleep: "Сон",
+    flowSumDiet: "Питание",
+    flowSumComfort: "Комфорт",
+    flowSumService: "Обслуживание",
+
+    quickActionFoodTitle: "Хочу есть",
+    quickActionFoodSubtitle: "Обслуживание в номере",
+    quickActionSupportTitle: "Поддержка",
+    quickActionSupportSubtitle: "Что-то не так?",
+    quickActionCareTitle: "Позаботьтесь обо мне",
+    quickActionCareSubtitle: "Ваши предпочтения",
 
     myRequestsTitle: "Мои запросы",
     myRequestsSubtitle: "Отслеживайте свои запросы",
@@ -541,6 +1176,130 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowSuccessReturn: "Zur Startseite",
     flowRequestReceived: "Anfrage eingegangen",
 
+    flowOrType: "oder eigenen Bedarf angeben",
+    flowTypeHere: "Hier eingeben…",
+
+    flowFoodLabel: "Zimmerservice",
+    flowSupportLabel: "Support-Anfrage",
+    flowCareLabel: "Kümmere dich um mich",
+    flowFoodSuccess: "Ihre Bestellung wurde an die Küche weitergeleitet. Sie wird in Kürze fertig sein.",
+    flowSupportSuccess: "Ihre Anfrage wurde an das Personal weitergeleitet. Wir kümmern uns darum.",
+    flowCareSuccess: "Ihre Präferenzen wurden gespeichert. Wir personalisieren Ihren Aufenthalt.",
+
+    flowFoodCategoryQ: "Wonach ist Ihnen?",
+    flowFoodCategoryHint: "Kategorie auswählen",
+    flowFoodItemQ: "Welches Gericht möchten Sie?",
+    flowFoodItemHint: "Ein Gericht auswählen",
+    flowFoodQuantityQ: "Wie viele Portionen?",
+    flowFoodNoteQ: "Haben Sie eine Anmerkung für die Küche?",
+    flowFoodNoteHint: "Optional — Allergien, besondere Wünsche…",
+    flowFoodConfirmQ: "Bestellung bestätigen",
+
+    flowCatBreakfast: "Frühstück",
+    flowCatBreakfastHint: "Büfett, Omelett, Toast",
+    flowCatLight: "Leichte Mahlzeiten",
+    flowCatLightHint: "Sandwiches, Suppe, Salate",
+    flowCatMain: "Hauptgerichte",
+    flowCatMainHint: "Hähnchen, Fisch, Pasta",
+    flowCatDrinks: "Getränke",
+    flowCatDrinksHint: "Tee, Kaffee, Saft",
+
+    flowQty1: "1 Portion",
+    flowQty2: "2 Portionen",
+    flowQty3: "3 Portionen",
+
+    flowSupportIssueQ: "Wie können wir Ihnen helfen?",
+    flowSupportIssueHint: "Thema auswählen",
+    flowSupportUrgencyQ: "Wie dringend ist das?",
+    flowSupportNoteQ: "Möchten Sie noch etwas hinzufügen?",
+    flowSupportNoteHint: "Optional — Details oder besondere Informationen",
+    flowSupportConfirmQ: "Support-Anfrage bestätigen",
+
+    flowIssueMinibark: "Minibar auffüllen",
+    flowIssueMinibarHint: "Getränke & Snacks erneuern",
+    flowIssuePillow: "Zusatzkissen",
+    flowIssuePillowHint: "Ein weiteres Kissen bringen",
+    flowIssueCleaning: "Zimmerreinigung",
+    flowIssueCleaningHint: "Bitte mein Zimmer reinigen",
+    flowIssueRoomIssue: "Zimmerproblem",
+    flowIssueRoomIssueHint: "Klimaanlage, Heizung, Tür usw.",
+    flowIssueTechIssue: "Technisches Problem",
+    flowIssueTechIssueHint: "TV, WLAN, Strom",
+    flowIssueNoise: "Lärmbeschwerde",
+    flowIssueNoiseHint: "Nachbarzimmer, Flur",
+    flowIssueExtra: "Zusätzliche Ausstattung",
+    flowIssueExtraHint: "Handtücher, Toilettenartikel usw.",
+    flowIssueOther: "Sonstiges",
+    flowIssueOtherHint: "Etwas anderes",
+
+    flowUrgUrgent: "Dringend",
+    flowUrgUrgentHint: "Sofortige Aufmerksamkeit erforderlich",
+    flowUrgNormal: "Normal",
+    flowUrgNormalHint: "Wenn es passt",
+
+    flowCareIntroQ: "Teilen Sie Ihre Präferenzen mit",
+    flowCareIntroHint: "Lassen Sie uns Ihren Aufenthalt personalisieren",
+    flowCareIntroPH: "Teilen Sie uns mit, was Ihnen wichtig ist… (Allergien, besondere Präferenzen, persönliche Anmerkungen)",
+    flowCareNextHint: "In den nächsten Schritten können Sie Ihre Präferenzen schnell auswählen.",
+    flowCareSleepQ: "Wie ist Ihr Schlafrhythmus?",
+    flowCareDietQ: "Was ist Ihre Ernährungspräferenz?",
+    flowCareComfortQ: "Was ist Ihre Komfortpräferenz?",
+    flowCareServiceQ: "Welchen Servicestil bevorzugen Sie?",
+    flowCareConfirmQ: "Ihre Präferenzen bestätigen",
+
+    flowSleepEarly: "Frühschläfer",
+    flowSleepEarlyHint: "Vor 22:00 Uhr",
+    flowSleepNormal: "Normal",
+    flowSleepNormalHint: "Zwischen 23:00 – 01:00 Uhr",
+    flowSleepLate: "Nachtmensch",
+    flowSleepLateHint: "Nach 01:00 Uhr",
+
+    flowDietNormal: "Normal",
+    flowDietNormalHint: "Alles",
+    flowDietVeg: "Vegetarisch",
+    flowDietVegHint: "Kein Fleisch",
+    flowDietVegan: "Vegan",
+    flowDietVeganHint: "Keine tierischen Produkte",
+    flowDietGluten: "Glutenfrei",
+    flowDietGlutenHint: "Kein Gluten",
+    flowDietHalal: "Halal",
+    flowDietHalalHint: "Halal-Essen",
+
+    flowComfortStd: "Standard",
+    flowComfortStdHint: "Normale Komforteinstellungen",
+    flowComfortPillow: "Zusatzkissen",
+    flowComfortPillowHint: "Zusätzliches Kissen",
+    flowComfortBlanket: "Zusatzdecke",
+    flowComfortBlanketHint: "Zusätzliche Decke",
+    flowComfortCool: "Kühles Zimmer",
+    flowComfortCoolHint: "Klimaanlage kühl halten",
+    flowComfortWarm: "Warmes Zimmer",
+    flowComfortWarmHint: "Heizung hoch halten",
+
+    flowServiceFull: "Vollservice",
+    flowServiceFullHint: "Häufige Kontrollen, Hilfe immer bereit",
+    flowServiceMin: "Minimale Störung",
+    flowServiceMinHint: "Ich bevorzuge Privatsphäre",
+
+    flowSumFood: "Gericht",
+    flowSumPortions: "Portionen",
+    flowSumKitchenNote: "Küchenanmerkung",
+    flowSumTopic: "Thema",
+    flowSumPriority: "Priorität",
+    flowSumDetail: "Detail",
+    flowSumNote: "Ihre Anmerkung",
+    flowSumSleep: "Schlaf",
+    flowSumDiet: "Ernährung",
+    flowSumComfort: "Komfort",
+    flowSumService: "Service",
+
+    quickActionFoodTitle: "Ich habe Hunger",
+    quickActionFoodSubtitle: "Zimmerservice",
+    quickActionSupportTitle: "Support-Anfrage",
+    quickActionSupportSubtitle: "Etwas nicht in Ordnung?",
+    quickActionCareTitle: "Kümmere dich um mich",
+    quickActionCareSubtitle: "Ihre Präferenzen",
+
     myRequestsTitle: "Meine Anfragen",
     myRequestsSubtitle: "Ihre Serviceanfragen verfolgen",
     myRequestsEmpty: "Noch keine Anfragen",
@@ -629,6 +1388,130 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowSuccessReturn: "Retour à l'accueil",
     flowRequestReceived: "Demande reçue",
 
+    flowOrType: "ou décrivez votre besoin",
+    flowTypeHere: "Tapez ici…",
+
+    flowFoodLabel: "Service en chambre",
+    flowSupportLabel: "Demande d'assistance",
+    flowCareLabel: "Prenez soin de moi",
+    flowFoodSuccess: "Votre commande a été envoyée en cuisine. Elle sera prête sous peu.",
+    flowSupportSuccess: "Votre demande a été transmise au personnel. Nous nous en occupons.",
+    flowCareSuccess: "Vos préférences ont été enregistrées. Nous personaliserons votre séjour.",
+
+    flowFoodCategoryQ: "Qu'avez-vous envie ?",
+    flowFoodCategoryHint: "Sélectionnez une catégorie",
+    flowFoodItemQ: "Quel plat souhaitez-vous ?",
+    flowFoodItemHint: "Sélectionnez un plat",
+    flowFoodQuantityQ: "Combien de portions ?",
+    flowFoodNoteQ: "Une note pour la cuisine ?",
+    flowFoodNoteHint: "Optionnel — allergies, demandes spéciales…",
+    flowFoodConfirmQ: "Confirmer votre commande",
+
+    flowCatBreakfast: "Petit-déjeuner",
+    flowCatBreakfastHint: "Buffet, omelette, toast",
+    flowCatLight: "Plats légers",
+    flowCatLightHint: "Sandwichs, soupe, salades",
+    flowCatMain: "Plats principaux",
+    flowCatMainHint: "Poulet, poisson, pâtes",
+    flowCatDrinks: "Boissons",
+    flowCatDrinksHint: "Thé, café, jus",
+
+    flowQty1: "1 portion",
+    flowQty2: "2 portions",
+    flowQty3: "3 portions",
+
+    flowSupportIssueQ: "Comment pouvons-nous vous aider ?",
+    flowSupportIssueHint: "Sélectionnez un sujet",
+    flowSupportUrgencyQ: "Quelle est l'urgence ?",
+    flowSupportNoteQ: "Souhaitez-vous ajouter autre chose ?",
+    flowSupportNoteHint: "Optionnel — détails ou informations spéciales",
+    flowSupportConfirmQ: "Confirmer la demande d'assistance",
+
+    flowIssueMinibark: "Réapprovisionner le minibar",
+    flowIssueMinibarHint: "Renouveler les boissons et snacks",
+    flowIssuePillow: "Oreiller supplémentaire",
+    flowIssuePillowHint: "Apporter un oreiller supplémentaire",
+    flowIssueCleaning: "Nettoyage de la chambre",
+    flowIssueCleaningHint: "Veuillez nettoyer ma chambre",
+    flowIssueRoomIssue: "Problème dans la chambre",
+    flowIssueRoomIssueHint: "Climatisation, chauffage, porte, etc.",
+    flowIssueTechIssue: "Problème technique",
+    flowIssueTechIssueHint: "TV, Wi-Fi, électricité",
+    flowIssueNoise: "Plainte de bruit",
+    flowIssueNoiseHint: "Chambre voisine, couloir",
+    flowIssueExtra: "Fournitures supplémentaires",
+    flowIssueExtraHint: "Serviettes, articles de toilette, etc.",
+    flowIssueOther: "Autre",
+    flowIssueOtherHint: "Autre chose",
+
+    flowUrgUrgent: "Urgent",
+    flowUrgUrgentHint: "Nécessite une attention immédiate",
+    flowUrgNormal: "Normal",
+    flowUrgNormalHint: "Quand c'est possible",
+
+    flowCareIntroQ: "Partagez vos préférences",
+    flowCareIntroHint: "Laissez-nous personnaliser votre séjour",
+    flowCareIntroPH: "Dites-nous ce qui vous importe pendant votre séjour… (allergies, préférences spéciales, notes personnelles)",
+    flowCareNextHint: "Aux étapes suivantes, vous pourrez rapidement sélectionner vos préférences.",
+    flowCareSleepQ: "Quel est votre rythme de sommeil ?",
+    flowCareDietQ: "Quelle est votre préférence alimentaire ?",
+    flowCareComfortQ: "Quelle est votre préférence de confort ?",
+    flowCareServiceQ: "Quel style de service préférez-vous ?",
+    flowCareConfirmQ: "Confirmer vos préférences",
+
+    flowSleepEarly: "Couche-tôt",
+    flowSleepEarlyHint: "Avant 22h00",
+    flowSleepNormal: "Normal",
+    flowSleepNormalHint: "Entre 23h00 – 01h00",
+    flowSleepLate: "Couche-tard",
+    flowSleepLateHint: "Après 01h00",
+
+    flowDietNormal: "Normal",
+    flowDietNormalHint: "Tout",
+    flowDietVeg: "Végétarien",
+    flowDietVegHint: "Sans viande",
+    flowDietVegan: "Vegan",
+    flowDietVeganHint: "Sans produits animaux",
+    flowDietGluten: "Sans gluten",
+    flowDietGlutenHint: "Sans gluten",
+    flowDietHalal: "Halal",
+    flowDietHalalHint: "Nourriture halal",
+
+    flowComfortStd: "Standard",
+    flowComfortStdHint: "Paramètres de confort normaux",
+    flowComfortPillow: "Oreiller supplémentaire",
+    flowComfortPillowHint: "Oreiller supplémentaire",
+    flowComfortBlanket: "Couverture supplémentaire",
+    flowComfortBlanketHint: "Couverture supplémentaire",
+    flowComfortCool: "Chambre fraîche",
+    flowComfortCoolHint: "Garder la climatisation fraîche",
+    flowComfortWarm: "Chambre chaude",
+    flowComfortWarmHint: "Garder le chauffage élevé",
+
+    flowServiceFull: "Service complet",
+    flowServiceFullHint: "Contrôles fréquents, aide toujours disponible",
+    flowServiceMin: "Dérangement minimal",
+    flowServiceMinHint: "Je préfère la confidentialité",
+
+    flowSumFood: "Plat",
+    flowSumPortions: "Portions",
+    flowSumKitchenNote: "Note cuisine",
+    flowSumTopic: "Sujet",
+    flowSumPriority: "Priorité",
+    flowSumDetail: "Détail",
+    flowSumNote: "Votre note",
+    flowSumSleep: "Sommeil",
+    flowSumDiet: "Alimentation",
+    flowSumComfort: "Confort",
+    flowSumService: "Service",
+
+    quickActionFoodTitle: "J'ai faim",
+    quickActionFoodSubtitle: "Service en chambre",
+    quickActionSupportTitle: "Demande d'assistance",
+    quickActionSupportSubtitle: "Un problème ?",
+    quickActionCareTitle: "Prenez soin de moi",
+    quickActionCareSubtitle: "Vos préférences",
+
     myRequestsTitle: "Mes demandes",
     myRequestsSubtitle: "Suivez vos demandes de service",
     myRequestsEmpty: "Aucune demande pour l'instant",
@@ -716,6 +1599,130 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowCustomPlaceholder: "O describe tu propia necesidad…",
     flowSuccessReturn: "Volver al inicio",
     flowRequestReceived: "Solicitud recibida",
+
+    flowOrType: "o describe tu propia necesidad",
+    flowTypeHere: "Escribe aquí…",
+
+    flowFoodLabel: "Servicio a la habitación",
+    flowSupportLabel: "Solicitud de soporte",
+    flowCareLabel: "Cuídame",
+    flowFoodSuccess: "Tu pedido ha sido enviado a la cocina. Estará listo en breve.",
+    flowSupportSuccess: "Tu solicitud ha sido enviada al personal. Nos ocuparemos en breve.",
+    flowCareSuccess: "Tus preferencias han sido guardadas. Personalizaremos tu estancia.",
+
+    flowFoodCategoryQ: "¿Qué te apetece?",
+    flowFoodCategoryHint: "Selecciona una categoría",
+    flowFoodItemQ: "¿Qué plato quieres?",
+    flowFoodItemHint: "Selecciona un plato",
+    flowFoodQuantityQ: "¿Cuántas porciones?",
+    flowFoodNoteQ: "¿Tienes alguna nota para la cocina?",
+    flowFoodNoteHint: "Opcional — alergias, peticiones especiales…",
+    flowFoodConfirmQ: "Confirmar tu pedido",
+
+    flowCatBreakfast: "Desayuno",
+    flowCatBreakfastHint: "Bufé, tortilla, tostadas",
+    flowCatLight: "Platos ligeros",
+    flowCatLightHint: "Sándwiches, sopa, ensaladas",
+    flowCatMain: "Platos principales",
+    flowCatMainHint: "Pollo, pescado, pasta",
+    flowCatDrinks: "Bebidas",
+    flowCatDrinksHint: "Té, café, zumo",
+
+    flowQty1: "1 porción",
+    flowQty2: "2 porciones",
+    flowQty3: "3 porciones",
+
+    flowSupportIssueQ: "¿Cómo podemos ayudarte?",
+    flowSupportIssueHint: "Selecciona un tema",
+    flowSupportUrgencyQ: "¿Qué tan urgente es?",
+    flowSupportNoteQ: "¿Quieres añadir algo más?",
+    flowSupportNoteHint: "Opcional — detalles o información especial",
+    flowSupportConfirmQ: "Confirmar solicitud de soporte",
+
+    flowIssueMinibark: "Reponer minibar",
+    flowIssueMinibarHint: "Renovar bebidas y aperitivos",
+    flowIssuePillow: "Almohada adicional",
+    flowIssuePillowHint: "Traer una almohada adicional",
+    flowIssueCleaning: "Limpieza de habitación",
+    flowIssueCleaningHint: "Por favor, limpia mi habitación",
+    flowIssueRoomIssue: "Problema en la habitación",
+    flowIssueRoomIssueHint: "Aire acondicionado, calefacción, puerta, etc.",
+    flowIssueTechIssue: "Problema técnico",
+    flowIssueTechIssueHint: "TV, Wi-Fi, electricidad",
+    flowIssueNoise: "Queja de ruido",
+    flowIssueNoiseHint: "Habitación vecina, pasillo",
+    flowIssueExtra: "Suministros adicionales",
+    flowIssueExtraHint: "Toallas, artículos de aseo, etc.",
+    flowIssueOther: "Otro",
+    flowIssueOtherHint: "Otra cosa",
+
+    flowUrgUrgent: "Urgente",
+    flowUrgUrgentHint: "Necesita atención inmediata",
+    flowUrgNormal: "Normal",
+    flowUrgNormalHint: "Cuando sea conveniente",
+
+    flowCareIntroQ: "Comparte tus preferencias",
+    flowCareIntroHint: "Déjanos personalizar tu estancia",
+    flowCareIntroPH: "Cuéntanos qué te importa durante tu estancia… (alergias, preferencias especiales, notas personales)",
+    flowCareNextHint: "En los siguientes pasos, podrás seleccionar tus preferencias rápidamente.",
+    flowCareSleepQ: "¿Cuál es tu horario de sueño?",
+    flowCareDietQ: "¿Cuáles son tus preferencias dietéticas?",
+    flowCareComfortQ: "¿Cuáles son tus preferencias de confort?",
+    flowCareServiceQ: "¿Qué estilo de servicio prefieres?",
+    flowCareConfirmQ: "Confirmar tus preferencias",
+
+    flowSleepEarly: "Me acuesto temprano",
+    flowSleepEarlyHint: "Antes de las 22:00",
+    flowSleepNormal: "Normal",
+    flowSleepNormalHint: "Entre 23:00 – 01:00",
+    flowSleepLate: "Me acuesto tarde",
+    flowSleepLateHint: "Después de la 01:00",
+
+    flowDietNormal: "Normal",
+    flowDietNormalHint: "Todo",
+    flowDietVeg: "Vegetariano",
+    flowDietVegHint: "Sin carne",
+    flowDietVegan: "Vegano",
+    flowDietVeganHint: "Sin productos animales",
+    flowDietGluten: "Sin gluten",
+    flowDietGlutenHint: "Sin gluten",
+    flowDietHalal: "Halal",
+    flowDietHalalHint: "Comida halal",
+
+    flowComfortStd: "Estándar",
+    flowComfortStdHint: "Configuración de confort normal",
+    flowComfortPillow: "Almohada extra",
+    flowComfortPillowHint: "Almohada adicional",
+    flowComfortBlanket: "Manta extra",
+    flowComfortBlanketHint: "Manta adicional",
+    flowComfortCool: "Habitación fresca",
+    flowComfortCoolHint: "Mantener el aire fresco",
+    flowComfortWarm: "Habitación cálida",
+    flowComfortWarmHint: "Mantener la calefacción alta",
+
+    flowServiceFull: "Servicio completo",
+    flowServiceFullHint: "Revisiones frecuentes, ayuda siempre disponible",
+    flowServiceMin: "Mínima perturbación",
+    flowServiceMinHint: "Prefiero privacidad",
+
+    flowSumFood: "Comida",
+    flowSumPortions: "Porciones",
+    flowSumKitchenNote: "Nota de cocina",
+    flowSumTopic: "Tema",
+    flowSumPriority: "Prioridad",
+    flowSumDetail: "Detalle",
+    flowSumNote: "Tu nota",
+    flowSumSleep: "Sueño",
+    flowSumDiet: "Dieta",
+    flowSumComfort: "Confort",
+    flowSumService: "Servicio",
+
+    quickActionFoodTitle: "Tengo hambre",
+    quickActionFoodSubtitle: "Servicio a la habitación",
+    quickActionSupportTitle: "Solicitud de soporte",
+    quickActionSupportSubtitle: "¿Hay algún problema?",
+    quickActionCareTitle: "Cuídame",
+    quickActionCareSubtitle: "Tus preferencias",
 
     myRequestsTitle: "Mis solicitudes",
     myRequestsSubtitle: "Sigue tus solicitudes de servicio",
