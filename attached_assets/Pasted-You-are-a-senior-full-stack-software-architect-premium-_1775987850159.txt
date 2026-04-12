@@ -1,0 +1,391 @@
+You are a senior full-stack software architect, premium mobile UX designer, conversation-flow designer, and production-grade product engineer.
+
+Your task is to inspect, redesign, and harden specific parts of the existing “Guest Pro” guest quick-actions and guest request history UX into a more compact, modern, minimalist, soft, premium, production-ready system.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, guest dashboard, quick-action flows, guided chat flow, request creation flow, request history UI, localization structure if present, and staff-side request handling.
+- Do NOT rebuild the app from scratch if working parts already exist.
+- Preserve working auth, guest login/logout, staff login, manager login, route protection, stable APIs, and the existing good architecture where appropriate.
+- Preserve the overall quick-action/request creation concept, but refine the UX and flow logic professionally.
+- Refactor only where there is real architectural, UX, maintainability, or production value.
+- The final result must be mobile-first, premium, compact, modern, minimalist, soft, SOLID, layered, and production-ready.
+
+PROJECT CONTEXT:
+Guest Pro already has guided quick-action flows such as:
+- I’m Hungry
+- Support Request
+- Care about me
+
+It also has:
+- confirmation screens
+- guest request history / My Requests
+- structured request creation
+- staff-side request handling
+
+We now need to refine the flow details and visual quality to feel much more professional.
+
+PRIMARY GOALS:
+1. In the I’m Hungry flow, remove the “or describe your own” area from the first step
+2. I’m Hungry must start directly with category selection
+3. After the guest selects a category, the second step must show all menu items in that category
+4. At the end of I’m Hungry, the guest may add an optional note
+5. The confirmation screen across flows must become more modern, attractive, minimal, and professional
+6. Reduce the current colorful card feeling and make the confirm step visually calmer and more premium
+7. In Support Request:
+   - if the guest types into the custom input field in the first step
+   - and presses Next
+   - go directly to the confirm screen
+   - do NOT force the guest through extra option steps
+8. In Care about me:
+   - if the guest writes a direct custom description
+   - and presses Next
+   - show two actions:
+     - Continue
+     - Confirm with your description
+   - this lets the guest either continue filling options or proceed directly with their written description
+9. In Guest Dashboard, redesign My Requests into a categorized stacked-card system
+10. My Requests must look compact, modern, minimalist, soft, and premium
+11. Request groups should feel lightly layered / stacked / modern
+12. Tapping a request group should expand the cards downward
+13. Keep everything SOLID and production-ready
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current I’m Hungry flow structure
+2. Current Support Request flow structure
+3. Current Care about me flow structure
+4. Current confirm screen implementation
+5. Current custom input handling in quick-action flows
+6. Current guest request history / My Requests section
+7. Current request grouping/categorization if any
+8. Current request creation logic
+9. Current staff-side request rendering
+10. Current mobile responsiveness and design system
+11. What already works
+12. What should be preserved
+13. What is weak in UX
+14. What is weak in architecture
+15. What needs redesign or refactor
+
+Then provide:
+- concise architecture audit
+- flow-specific UX gap analysis
+- confirm-screen UX gap analysis
+- My Requests UX gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — I’M HUNGRY FLOW REFINEMENT
+==================================================
+
+Refine the I’m Hungry flow into a cleaner, more guided food ordering experience.
+
+REQUIREMENTS:
+- remove “or describe your own” from the first step only
+- first step must begin with category selection
+- categories should be clear, highly tappable, and premium
+- after a category is selected, second step must show all items in that category
+- item selection should remain button-first
+- do not clutter the UI
+- at the final stage, allow an optional note field
+- the optional note must appear only near the end of the flow, not at the first step
+
+UX GOAL:
+- fast
+- simple
+- practical
+- elegant
+- room-service-like
+- minimal typing
+
+==================================================
+PHASE 3 — SUPPORT REQUEST FLOW REFINEMENT
+==================================================
+
+Adjust the Support Request flow to respect direct custom input better.
+
+REQUIREMENTS:
+- if the guest types into the custom request field in the first step
+- and taps Next
+- then skip the extra guided selection steps
+- go directly to the confirm screen
+- do not force additional structured option selection after a custom support issue is already clearly described
+
+If the guest does not type anything:
+- keep the normal guided support flow with buttons/options
+
+This must feel smart and low-friction.
+
+==================================================
+PHASE 4 — CARE ABOUT ME FLOW REFINEMENT
+==================================================
+
+Refine the Care about me flow so typed descriptions can be confirmed more directly.
+
+REQUIREMENTS:
+- if the guest writes their own description and taps Next
+- show a clean intermediate action row with:
+  - Continue
+  - Confirm with your description
+- Continue = keep exploring structured options
+- Confirm with your description = go directly to final confirmation using only the typed description
+- do not force the user through unnecessary extra steps if they already wrote a meaningful description
+
+UX GOAL:
+- flexible
+- respectful of user intent
+- quick
+- premium
+- not rigid
+
+==================================================
+PHASE 5 — CONFIRM SCREEN REDESIGN
+==================================================
+
+Redesign the confirmation step across these guided flows.
+
+CURRENT ISSUE:
+The current confirm step feels too colorful and not professional enough.
+
+REQUIREMENTS:
+- redesign the confirmation UI to feel:
+  - modern
+  - attractive
+  - calm
+  - premium
+  - minimal
+  - more professional
+- reduce excessive color use
+- keep emphasis through typography, spacing, subtle surfaces, and clean visual hierarchy
+- use minimal and tasteful status/accent coloring only where useful
+- confirmation summary should feel polished and trustworthy
+- actions should be very clear and highly tappable on mobile
+
+DESIGN GOAL:
+No loud colorful card feel.
+Use compact premium surfaces and refined hierarchy.
+
+==================================================
+PHASE 6 — GUEST DASHBOARD “MY REQUESTS” REDESIGN
+==================================================
+
+Redesign My Requests on the guest dashboard.
+
+REQUIREMENTS:
+- use a categorized request grouping structure
+- categories may reflect request types such as:
+  - Food Orders
+  - Support Requests
+  - Care About Me
+- each category should look like a lightly layered / stacked card set
+- compact, modern, minimalist, soft design
+- cards should feel premium, not bulky
+- tapping a category expands its request items downward
+- newest requests must appear first
+- keep it highly readable and mobile-first
+
+UX GOAL:
+- compact
+- premium
+- structured
+- calm
+- operational
+- elegant
+- easy to scan
+
+Do NOT make it visually heavy or over-animated.
+
+==================================================
+PHASE 7 — REQUEST CARD DESIGN FOR GUEST HISTORY
+==================================================
+
+Professionalize the request cards inside My Requests.
+
+REQUIREMENTS:
+- each request must still be identifiable clearly
+- show essential info only:
+  - request type
+  - concise summary
+  - current status
+  - created time if useful
+- use subtle differentiated styling by request category if helpful
+- keep status clear but minimal
+- modern compact card sizing
+- no clutter
+
+Request statuses should still remain clear and visible.
+
+==================================================
+PHASE 8 — PRESERVE STAFF-SIDE COMPATIBILITY
+==================================================
+
+Ensure these flow refinements still work cleanly with staff-side request handling.
+
+REQUIREMENTS:
+- I’m Hungry requests still create correct food orders
+- Support Request direct-typed flow still creates proper structured support request
+- Care about me direct-typed flow still creates proper care-profile request/entity
+- no regression in staff request rendering
+- no regression in status updates
+- preserve existing staff dashboard grouping logic if it already works well
+
+==================================================
+PHASE 9 — FLOW STATE ARCHITECTURE
+==================================================
+
+Refactor flow logic cleanly if needed.
+
+IMPORTANT:
+Do NOT leave these branching rules hardcoded in random UI handlers.
+
+REQUIREMENTS:
+- centralize guided flow step logic
+- centralize branching rules such as:
+  - I’m Hungry starts with categories
+  - Support typed-first input skips to confirm
+  - Care typed-first input shows Continue / Confirm with your description
+- keep flow state maintainable and testable
+- avoid fragile step-index hacks
+- no giant component with deeply nested conditionals
+
+==================================================
+PHASE 10 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement these changes in a meaningful, maintainable architecture.
+
+REQUIREMENTS:
+- business logic separate from presentation
+- guided flow branching separate from chat rendering
+- confirm-screen content building separate from UI
+- request history grouping/query logic separate from dashboard components
+- no giant guest dashboard component
+- no giant flow component
+- no duplicated branching logic
+- no fake architecture
+- no dead code
+- clean naming
+- meaningful modules only
+
+Suggested layered structure:
+- domain:
+  - RequestType
+  - RequestStatus
+  - GuidedFlowState
+  - FlowBranchRule
+- application:
+  - StartQuickActionFlow
+  - ProgressGuidedFlow
+  - ResolveFlowBranch
+  - BuildConfirmationSummary
+  - RequestHistoryQueryService
+- infrastructure:
+  - request repository
+  - menu/category source adapter
+  - localization dictionaries if present
+- presentation:
+  - QuickActionCard
+  - GuidedCategorySelector
+  - GuidedOptionList
+  - CustomRequestInput
+  - ConfirmationSummaryCard
+  - ConfirmationActionBar
+  - GuestMyRequestsSection
+  - RequestCategoryStackCard
+  - GuestRequestCard
+
+Make the architecture actually used and meaningful.
+
+==================================================
+PHASE 11 — MOBILE-FIRST UX DIRECTION
+==================================================
+
+The whole experience must feel:
+- compact
+- modern
+- minimalist
+- soft
+- premium
+- low-friction
+- mobile-first
+- highly tappable
+- calm and elegant
+
+Do NOT:
+- overuse color
+- overuse shadows
+- overuse decoration
+- create noisy or flashy visuals
+
+Think:
+- premium hospitality assistant
+- compact modern mobile SaaS
+- subtle luxury
+
+==================================================
+PHASE 12 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- guest login/logout
+- staff login
+- manager login
+- existing route protection
+- request creation backend
+- status updates
+- stable APIs
+- current AI integration where it still works correctly
+
+This task is specifically about refining flow behavior and redesigning guest request history UX.
+
+==================================================
+PHASE 13 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. I’m Hungry no longer shows custom input in the first step
+2. I’m Hungry starts with category selection
+3. After category selection, all menu items of that category appear correctly
+4. Optional note appears only near the end of I’m Hungry
+5. In Support Request, typed custom input in step 1 goes directly to confirm
+6. In Care about me, typed custom input leads to:
+   - Continue
+   - Confirm with your description
+7. Confirmation screens feel more premium and less colorful
+8. My Requests uses categorized layered/stacked card groups
+9. Tapping a request group expands cards downward
+10. Newest requests appear first
+11. Mobile UX feels compact, soft, and premium
+12. No regression in request creation
+13. No regression in staff-side request handling
+14. Overall result feels production-ready
+
+==================================================
+PHASE 14 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was preserved
+3. What was redesigned
+4. How the I’m Hungry flow now works
+5. How the Support Request typed-direct flow now works
+6. How the Care about me Continue / Confirm with your description flow now works
+7. How the new confirm screen UX works
+8. How My Requests grouping/stacking now works
+9. Which files were changed
+10. Any architecture refactors made
+11. How to test all flows end-to-end on mobile
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result mobile-first, SOLID, layered, compact, premium, and production-ready
+- Prioritize clean flow logic, premium confirmation UX, and elegant request history design

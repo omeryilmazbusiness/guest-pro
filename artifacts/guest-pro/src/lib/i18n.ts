@@ -171,6 +171,8 @@ export interface GuestTranslations {
   flowCareIntroHint: string;
   flowCareIntroPH: string;
   flowCareNextHint: string;
+  flowCareContinue: string;
+  flowCareConfirmDesc: string;
   flowCareSleepQ: string;
   flowCareDietQ: string;
   flowCareComfortQ: string;
@@ -393,6 +395,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowCareIntroHint: "Let us personalize your stay",
     flowCareIntroPH: "Tell us what matters to you during your stay… (allergies, special preferences, personal notes)",
     flowCareNextHint: "In the next steps, you can quickly select your preferences.",
+    flowCareContinue: "Continue exploring options",
+    flowCareConfirmDesc: "Confirm with my description",
     flowCareSleepQ: "What is your sleep schedule?",
     flowCareDietQ: "What is your diet preference?",
     flowCareComfortQ: "What is your comfort preference?",
@@ -605,6 +609,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowCareIntroHint: "Konaklamanızı sizin için kişiselleştirelim",
     flowCareIntroPH: "Dikkat etmemizi istediklerinizi buraya yazın… (alerjiler, özel tercihler, kişisel notlar)",
     flowCareNextHint: "Aşağıdaki adımlarda tercihlerinizi hızlıca seçebilirsiniz.",
+    flowCareContinue: "Seçenekleri keşfet",
+    flowCareConfirmDesc: "Açıklamamla onayla",
     flowCareSleepQ: "Uyku düzeniniz nedir?",
     flowCareDietQ: "Beslenme tercihiniz?",
     flowCareComfortQ: "Konfor tercihiniz?",
@@ -817,6 +823,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowCareIntroHint: "دعنا نخصص إقامتك",
     flowCareIntroPH: "أخبرنا بما يهمك خلال إقامتك… (حساسيات، تفضيلات خاصة، ملاحظات شخصية)",
     flowCareNextHint: "في الخطوات التالية، يمكنك اختيار تفضيلاتك بسرعة.",
+    flowCareContinue: "تابع استكشاف الخيارات",
+    flowCareConfirmDesc: "تأكيد بوصفي",
     flowCareSleepQ: "ما جدولك للنوم؟",
     flowCareDietQ: "ما تفضيلاتك الغذائية؟",
     flowCareComfortQ: "ما تفضيلاتك للراحة؟",
@@ -1029,6 +1037,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowCareIntroHint: "Давайте персонализируем ваше пребывание",
     flowCareIntroPH: "Расскажите, что для вас важно во время проживания… (аллергии, особые пожелания, личные заметки)",
     flowCareNextHint: "На следующих шагах вы сможете быстро выбрать свои предпочтения.",
+    flowCareContinue: "Продолжить выбор",
+    flowCareConfirmDesc: "Подтвердить моим описанием",
     flowCareSleepQ: "Каков ваш режим сна?",
     flowCareDietQ: "Каковы ваши диетические предпочтения?",
     flowCareComfortQ: "Каковы ваши предпочтения по комфорту?",
@@ -1241,6 +1251,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowCareIntroHint: "Lassen Sie uns Ihren Aufenthalt personalisieren",
     flowCareIntroPH: "Teilen Sie uns mit, was Ihnen wichtig ist… (Allergien, besondere Präferenzen, persönliche Anmerkungen)",
     flowCareNextHint: "In den nächsten Schritten können Sie Ihre Präferenzen schnell auswählen.",
+    flowCareContinue: "Optionen erkunden",
+    flowCareConfirmDesc: "Mit meiner Beschreibung bestätigen",
     flowCareSleepQ: "Wie ist Ihr Schlafrhythmus?",
     flowCareDietQ: "Was ist Ihre Ernährungspräferenz?",
     flowCareComfortQ: "Was ist Ihre Komfortpräferenz?",
@@ -1453,6 +1465,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowCareIntroHint: "Laissez-nous personnaliser votre séjour",
     flowCareIntroPH: "Dites-nous ce qui vous importe pendant votre séjour… (allergies, préférences spéciales, notes personnelles)",
     flowCareNextHint: "Aux étapes suivantes, vous pourrez rapidement sélectionner vos préférences.",
+    flowCareContinue: "Explorer les options",
+    flowCareConfirmDesc: "Confirmer avec ma description",
     flowCareSleepQ: "Quel est votre rythme de sommeil ?",
     flowCareDietQ: "Quelle est votre préférence alimentaire ?",
     flowCareComfortQ: "Quelle est votre préférence de confort ?",
@@ -1665,6 +1679,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowCareIntroHint: "Déjanos personalizar tu estancia",
     flowCareIntroPH: "Cuéntanos qué te importa durante tu estancia… (alergias, preferencias especiales, notas personales)",
     flowCareNextHint: "En los siguientes pasos, podrás seleccionar tus preferencias rápidamente.",
+    flowCareContinue: "Explorar opciones",
+    flowCareConfirmDesc: "Confirmar con mi descripción",
     flowCareSleepQ: "¿Cuál es tu horario de sueño?",
     flowCareDietQ: "¿Cuáles son tus preferencias dietéticas?",
     flowCareComfortQ: "¿Cuáles son tus preferencias de confort?",

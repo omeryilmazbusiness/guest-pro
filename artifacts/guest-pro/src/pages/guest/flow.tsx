@@ -22,6 +22,7 @@ import {
   Heart,
   Utensils,
   PenLine,
+  ChevronRight,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -35,8 +36,8 @@ import { toast } from "sonner";
 type FlowMode = "food" | "support" | "care";
 
 interface StepOption {
-  value: string;  // semantic key — stored in structuredData, language-neutral
-  label: string;  // localized display label from t
+  value: string;
+  label: string;
   subtitle?: string;
   icon: LucideIcon;
 }
@@ -49,9 +50,10 @@ interface WizardStep {
   options?: StepOption[];
   skippable?: boolean;
   careIntro?: boolean;
+  noCustomInput?: boolean;
 }
 
-// ─── Turkish food menu items (hotel-specific dish names, not translated) ──────
+// ─── Turkish food menu items ───────────────────────────────────────────────────
 
 const FOOD_MENU_RAW: Record<string, { value: string; subtitle: string; icon: LucideIcon }[]> = {
   breakfast: [
@@ -97,8 +99,22 @@ function buildFoodSteps(t: GuestTranslations): WizardStep[] {
   ];
 
   return [
-    { id: "category", question: t.flowFoodCategoryQ, subtitle: t.flowFoodCategoryHint, type: "select", options: categories },
-    { id: "item", question: t.flowFoodItemQ, subtitle: t.flowFoodItemHint, type: "select", options: [] },
+    {
+      id: "category",
+      question: t.flowFoodCategoryQ,
+      subtitle: t.flowFoodCategoryHint,
+      type: "select",
+      options: categories,
+      noCustomInput: true,
+    },
+    {
+      id: "item",
+      question: t.flowFoodItemQ,
+      subtitle: t.flowFoodItemHint,
+      type: "select",
+      options: [],
+      noCustomInput: true,
+    },
     { id: "quantity", question: t.flowFoodQuantityQ, type: "select", options: quantities },
     { id: "note", question: t.flowFoodNoteQ, subtitle: t.flowFoodNoteHint, type: "text", skippable: true },
     { id: "confirm", question: t.flowFoodConfirmQ, type: "confirm" },
@@ -198,13 +214,11 @@ function buildCareSteps(t: GuestTranslations): WizardStep[] {
   ];
 }
 
-// ─── Flow config builder ──────────────────────────────────────────────────────
+// ─── Flow config ───────────────────────────────────────────────────────────────
 
 interface FlowConfig {
   steps: WizardStep[];
   requestType: ServiceRequestType;
-  accentBg: string;
-  accentBorder: string;
   accentText: string;
   accentIconBg: string;
   label: string;
@@ -216,26 +230,20 @@ function buildFlowConfig(t: GuestTranslations, mode: FlowMode): FlowConfig {
   const base: Record<FlowMode, Omit<FlowConfig, "steps" | "label" | "successMessage">> = {
     food: {
       requestType: "FOOD_ORDER",
-      accentBg: "bg-amber-50",
-      accentBorder: "border-amber-200",
-      accentText: "text-amber-700",
-      accentIconBg: "bg-amber-100",
+      accentText: "text-amber-600",
+      accentIconBg: "bg-amber-50",
       icon: UtensilsCrossed,
     },
     support: {
       requestType: "SUPPORT_REQUEST",
-      accentBg: "bg-sky-50",
-      accentBorder: "border-sky-200",
-      accentText: "text-sky-700",
-      accentIconBg: "bg-sky-100",
+      accentText: "text-sky-600",
+      accentIconBg: "bg-sky-50",
       icon: Bell,
     },
     care: {
       requestType: "CARE_PROFILE_UPDATE",
-      accentBg: "bg-rose-50",
-      accentBorder: "border-rose-200",
-      accentText: "text-rose-600",
-      accentIconBg: "bg-rose-100",
+      accentText: "text-rose-500",
+      accentIconBg: "bg-rose-50",
       icon: Heart,
     },
   };
@@ -266,7 +274,7 @@ function buildFlowConfig(t: GuestTranslations, mode: FlowMode): FlowConfig {
   };
 }
 
-// ─── Summary builder ──────────────────────────────────────────────────────────
+// ─── Summary builder ───────────────────────────────────────────────────────────
 
 function buildSummary(
   mode: FlowMode,
@@ -290,12 +298,9 @@ function buildSummary(
   if (mode === "support") {
     const parts: string[] = [];
     const issueValue = pick("issueType");
-    // Find label for the semantic value — fall back to raw value for custom text
-    const issueLabel = issueValue;
-    if (issueLabel) parts.push(issueLabel);
+    if (issueValue) parts.push(issueValue);
     const urgencyValue = pick("urgency");
-    const urgencyLabel = urgencyValue;
-    if (urgencyLabel) parts.push(`(${urgencyLabel})`);
+    if (urgencyValue) parts.push(`(${urgencyValue})`);
     const note = pick("note");
     if (note) parts.push(`— ${note}`);
     return `${t.flowSupportLabel}: ${parts.join(" ")}`;
@@ -470,7 +475,7 @@ function CustomInputArea({
   );
 }
 
-// ─── Confirm Card ──────────────────────────────────────────────────────────────
+// ─── Confirm Card — Premium Neutral Design ─────────────────────────────────────
 
 function ConfirmCard({
   mode,
@@ -489,10 +494,8 @@ function ConfirmCard({
 }) {
   const pick = (key: string) => customInputs[key]?.trim() || answers[key] || "";
 
-  // Resolve display label for a semantic value in a given step
   function resolveLabel(stepId: string, value: string): string {
     if (!value) return "";
-    // if it came from customInput, just return the raw text
     if (customInputs[stepId]?.trim()) return customInputs[stepId].trim();
     const step = steps.find((s) => s.id === stepId);
     const opt = step?.options?.find((o) => o.value === value);
@@ -502,6 +505,12 @@ function ConfirmCard({
   const entries: { label: string; value: string }[] = [];
 
   if (mode === "food") {
+    const cat = pick("category");
+    if (cat) {
+      const catStep = steps.find((s) => s.id === "category");
+      const catOpt = catStep?.options?.find((o) => o.value === cat);
+      entries.push({ label: "Category", value: catOpt?.label ?? cat });
+    }
     const item = pick("item");
     if (item) entries.push({ label: t.flowSumFood, value: item });
     const qty = pick("quantity");
@@ -531,27 +540,34 @@ function ConfirmCard({
   const IconComp = config.icon;
 
   return (
-    <div className={`rounded-2xl border ${config.accentBorder} ${config.accentBg} p-5`}>
-      <div className="flex items-center gap-2.5 mb-4">
-        <div className={`w-8 h-8 rounded-xl ${config.accentIconBg} flex items-center justify-center`}>
-          <IconComp className={`w-4 h-4 ${config.accentText}`} />
+    <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm overflow-hidden">
+      {/* Header band */}
+      <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-zinc-50">
+        <div className={`w-7 h-7 rounded-lg ${config.accentIconBg} flex items-center justify-center`}>
+          <IconComp className={`w-3.5 h-3.5 ${config.accentText}`} />
         </div>
-        <p className={`text-[13px] font-bold uppercase tracking-wider ${config.accentText}`}>
+        <p className="text-[12px] font-semibold text-zinc-400 uppercase tracking-wider flex-1">
           {config.label}
         </p>
+        <div className="w-1.5 h-1.5 rounded-full bg-zinc-200" />
       </div>
-      <div className="space-y-3">
+      {/* Content rows */}
+      <div className="px-5 py-4">
         {entries.length > 0 ? (
-          entries.map(({ label, value }) => (
-            <div key={label} className="flex items-start gap-3">
-              <p className="text-[12px] text-zinc-400 font-medium w-28 shrink-0 pt-0.5">
-                {label}
-              </p>
-              <p className="text-[14px] text-zinc-800 font-medium leading-snug">{value}</p>
-            </div>
-          ))
+          <div className="space-y-3.5">
+            {entries.map(({ label, value }) => (
+              <div key={label} className="flex items-start gap-0">
+                <p className="text-[11px] text-zinc-400 font-medium w-24 shrink-0 pt-[3px] leading-tight">
+                  {label}
+                </p>
+                <p className="text-[14px] text-zinc-800 font-medium leading-snug flex-1">
+                  {value}
+                </p>
+              </div>
+            ))}
+          </div>
         ) : (
-          <p className="text-[13px] text-zinc-500">{config.label}</p>
+          <p className="text-[13px] text-zinc-400">{config.label}</p>
         )}
       </div>
     </div>
@@ -581,6 +597,9 @@ export default function GuidedFlowPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
 
+  // Care branch: shown after typing in freetext step and pressing Next
+  const [showCareBranch, setShowCareBranch] = useState(false);
+
   useEffect(() => {
     if (!isAuthenticated) setLocation("/");
     else if (user?.role !== "guest") setLocation("/manager");
@@ -591,7 +610,6 @@ export default function GuidedFlowPage() {
   const currentStep: WizardStep = (() => {
     if (stepIndex >= steps.length) return steps[steps.length - 1];
     const step = steps[stepIndex];
-    // Dynamically inject food items based on selected category
     if (step.id === "item" && mode === "food") {
       const category = answers.category ?? "breakfast";
       const raw = FOOD_MENU_RAW[category] ?? [];
@@ -626,6 +644,21 @@ export default function GuidedFlowPage() {
   }
 
   function handleNext() {
+    const stepId = currentStep.id;
+    const customText = customInputs[stepId]?.trim();
+
+    // Support: custom text on issueType → jump straight to confirm
+    if (mode === "support" && stepId === "issueType" && customText && !answers[stepId]) {
+      setStepIndex(steps.length - 1);
+      return;
+    }
+
+    // Care: custom text on freetext → show branch choice overlay
+    if (mode === "care" && stepId === "freetext" && customText) {
+      setShowCareBranch(true);
+      return;
+    }
+
     if (stepIndex < steps.length - 1) setStepIndex((i) => i + 1);
   }
 
@@ -634,8 +667,22 @@ export default function GuidedFlowPage() {
   }
 
   function handleBack() {
+    if (showCareBranch) {
+      setShowCareBranch(false);
+      return;
+    }
     if (stepIndex > 0) setStepIndex((i) => i - 1);
     else setLocation("/guest");
+  }
+
+  function handleCareContinue() {
+    setShowCareBranch(false);
+    setStepIndex((i) => i + 1);
+  }
+
+  function handleCareConfirmWithDesc() {
+    setShowCareBranch(false);
+    setStepIndex(steps.length - 1);
   }
 
   function handleEditContinue() {
@@ -654,8 +701,7 @@ export default function GuidedFlowPage() {
       });
       setIsComplete(true);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : t.sendFailed;
+      const message = err instanceof Error ? err.message : t.sendFailed;
       toast.error(message);
     } finally {
       setIsCreating(false);
@@ -665,20 +711,16 @@ export default function GuidedFlowPage() {
   const isConfirmStep = currentStep.type === "confirm";
   const isCareIntro = currentStep.careIntro === true;
 
-  // ── Success screen ─────────────────────────────────────────────────────────
+  // ── Success screen ──────────────────────────────────────────────────────────
   if (isComplete) {
     const IconComp = config.icon;
     return (
       <div className="min-h-[100dvh] bg-[#F8F8F8] flex flex-col items-center justify-center px-6 text-center animate-in fade-in duration-500">
-        <div
-          className={`w-20 h-20 rounded-full ${config.accentBg} border-2 ${config.accentBorder} flex items-center justify-center mb-6`}
-        >
-          <CheckCircle2 className={`w-9 h-9 ${config.accentText}`} />
+        <div className="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center mb-5">
+          <CheckCircle2 className="w-8 h-8 text-white" />
         </div>
-        <div
-          className={`w-12 h-12 rounded-2xl ${config.accentIconBg} flex items-center justify-center mb-4`}
-        >
-          <IconComp className={`w-6 h-6 ${config.accentText}`} />
+        <div className={`w-10 h-10 rounded-2xl ${config.accentIconBg} flex items-center justify-center mb-4`}>
+          <IconComp className={`w-5 h-5 ${config.accentText}`} />
         </div>
         <h1 className="text-[22px] font-serif text-zinc-900 mb-3 leading-snug">
           {t.flowRequestReceived}
@@ -715,9 +757,7 @@ export default function GuidedFlowPage() {
             </div>
             <p className="text-[15px] font-semibold text-zinc-900">{config.label}</p>
           </div>
-          <span
-            className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${config.accentBg} ${config.accentText} ${config.accentBorder}`}
-          >
+          <span className="text-[11px] font-medium text-zinc-400">
             {stepIndex + 1} / {steps.length}
           </span>
         </div>
@@ -733,10 +773,9 @@ export default function GuidedFlowPage() {
                 i < stepIndex
                   ? "bg-zinc-900 flex-1"
                   : i === stepIndex
-                  ? "bg-zinc-600 flex-[2]"
-                  : "flex-1"
+                  ? "bg-zinc-400 flex-[2]"
+                  : "bg-zinc-100 flex-1"
               }`}
-              style={i > stepIndex ? { backgroundColor: "#e4e4e7" } : undefined}
             />
           ))}
         </div>
@@ -746,7 +785,7 @@ export default function GuidedFlowPage() {
       <main className="flex-1 overflow-y-auto">
         <div
           key={stepIndex}
-          className="max-w-lg mx-auto px-4 pt-7 pb-32 animate-in fade-in slide-in-from-bottom-2 duration-250"
+          className="max-w-lg mx-auto px-4 pt-7 pb-36 animate-in fade-in slide-in-from-bottom-2 duration-250"
         >
           {/* Question */}
           <div className="mb-5">
@@ -775,7 +814,7 @@ export default function GuidedFlowPage() {
             </div>
           )}
 
-          {/* ── Select step: options + always-visible custom input ── */}
+          {/* ── Select step ── */}
           {!isCareIntro && currentStep.type === "select" && currentStep.options && (
             <div className="space-y-2.5">
               {currentStep.options.map((opt) => (
@@ -783,28 +822,35 @@ export default function GuidedFlowPage() {
                   key={opt.value}
                   option={opt}
                   selected={currentSelection === opt.value}
-                  dimmed={currentCustom.trim().length > 0 && currentSelection !== opt.value}
+                  dimmed={
+                    !currentStep.noCustomInput &&
+                    currentCustom.trim().length > 0 &&
+                    currentSelection !== opt.value
+                  }
                   onSelect={handleSelectOption}
                 />
               ))}
 
-              {/* Divider */}
-              <div className="flex items-center gap-3 pt-1">
-                <div className="flex-1 h-px bg-zinc-100" />
-                <p className="text-[11px] text-zinc-300 font-medium shrink-0">{t.flowOrType}</p>
-                <div className="flex-1 h-px bg-zinc-100" />
-              </div>
-
-              <CustomInputArea
-                value={currentCustom}
-                onChange={setCustom}
-                placeholder={t.flowCustomPlaceholder}
-                activeLabel={t.flowCustomPlaceholder}
-              />
+              {/* Custom input — hidden for food category and item steps */}
+              {!currentStep.noCustomInput && (
+                <>
+                  <div className="flex items-center gap-3 pt-1">
+                    <div className="flex-1 h-px bg-zinc-100" />
+                    <p className="text-[11px] text-zinc-300 font-medium shrink-0">{t.flowOrType}</p>
+                    <div className="flex-1 h-px bg-zinc-100" />
+                  </div>
+                  <CustomInputArea
+                    value={currentCustom}
+                    onChange={setCustom}
+                    placeholder={t.flowCustomPlaceholder}
+                    activeLabel={t.flowCustomPlaceholder}
+                  />
+                </>
+              )}
             </div>
           )}
 
-          {/* ── Plain text step ── */}
+          {/* ── Plain text step (note) ── */}
           {!isCareIntro && currentStep.type === "text" && (
             <textarea
               value={currentCustom}
@@ -832,14 +878,31 @@ export default function GuidedFlowPage() {
       {/* Footer CTA */}
       <div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-sm border-t border-zinc-100 z-10">
         <div className="max-w-lg mx-auto px-4 py-4 flex flex-col gap-2.5">
-          {isConfirmStep ? (
+
+          {/* ── Care branch choice ── */}
+          {showCareBranch ? (
+            <>
+              <button
+                onClick={handleCareConfirmWithDesc}
+                className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl text-[15px] font-semibold bg-zinc-900 text-white transition-all active:scale-[0.98] shadow-sm"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                {t.flowCareConfirmDesc}
+              </button>
+              <button
+                onClick={handleCareContinue}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-[15px] font-medium text-zinc-600 bg-zinc-50 border border-zinc-100 transition-all active:scale-[0.98] hover:bg-zinc-100"
+              >
+                {t.flowCareContinue}
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </>
+          ) : isConfirmStep ? (
             <>
               <button
                 onClick={handleConfirm}
                 disabled={isCreating}
-                className={`w-full flex items-center justify-center gap-2 py-4 rounded-2xl text-[16px] font-semibold transition-all active:scale-[0.98] ${
-                  config.accentBg
-                } ${config.accentText} ${config.accentBorder} border shadow-sm disabled:opacity-60`}
+                className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl text-[16px] font-semibold bg-zinc-900 text-white transition-all active:scale-[0.98] shadow-sm disabled:opacity-60"
               >
                 {isCreating ? (
                   <Loader2 className="w-5 h-5 animate-spin" />

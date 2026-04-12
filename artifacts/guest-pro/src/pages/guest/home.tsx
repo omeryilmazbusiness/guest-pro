@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocale } from "@/hooks/use-locale";
@@ -23,6 +23,7 @@ import {
   Bell,
   Heart,
   LayoutGrid,
+  ChevronDown,
 } from "lucide-react";
 import { GuestProLogo } from "@/components/GuestProLogo";
 import { toast } from "sonner";
@@ -36,65 +37,187 @@ import { StayKeyCard } from "@/components/guest/StayKeyCard";
 import { ServiceQuickActions, type QuickActionMode } from "@/components/guest/ServiceQuickActions";
 import { listMyRequests, type ServiceRequest } from "@/lib/service-requests";
 
-// ─── Request history card ─────────────────────────────────────────────────────
+// ─── Request history — grouped stacked-card system ────────────────────────────
 
 function timeAgo(isoString: string): string {
   const diff = Date.now() - new Date(isoString).getTime();
   const mins = Math.floor(diff / 60_000);
   const hours = Math.floor(mins / 60);
   const days = Math.floor(hours / 24);
-  if (days > 0) return `${days}g önce`;
-  if (hours > 0) return `${hours}s önce`;
-  return `${Math.max(1, mins)}dk önce`;
+  if (days > 0) return `${days}d`;
+  if (hours > 0) return `${hours}h`;
+  return `${Math.max(1, mins)}m`;
 }
 
-function RequestHistoryCard({
-  request,
-  t,
-}: {
-  request: ServiceRequest;
-  t: GuestTranslations;
-}) {
-  const typeConfig: Record<
-    string,
-    { icon: React.FC<{ className?: string }>; color: string; bg: string }
-  > = {
-    FOOD_ORDER: { icon: UtensilsCrossed, color: "text-amber-600", bg: "bg-amber-50" },
-    SUPPORT_REQUEST: { icon: Bell, color: "text-sky-600", bg: "bg-sky-50" },
-    CARE_PROFILE_UPDATE: { icon: Heart, color: "text-rose-500", bg: "bg-rose-50" },
-    GENERAL_SERVICE_REQUEST: { icon: LayoutGrid, color: "text-zinc-500", bg: "bg-zinc-50" },
-  };
-  const statusConfig: Record<
-    string,
-    { label: string; text: string; dot: string }
-  > = {
-    open: { label: t.reqStatusOpen, text: "text-amber-600", dot: "bg-amber-400" },
-    in_progress: { label: t.reqStatusInProgress, text: "text-sky-600", dot: "bg-sky-500" },
-    resolved: { label: t.reqStatusResolved, text: "text-emerald-600", dot: "bg-emerald-500" },
-  };
+interface RequestGroupConfig {
+  requestType: string;
+  label: (t: GuestTranslations) => string;
+  icon: React.FC<{ className?: string }>;
+  iconColor: string;
+  iconBg: string;
+  dotColor: string;
+}
 
-  const tc = typeConfig[request.requestType] ?? typeConfig.GENERAL_SERVICE_REQUEST;
-  const sc = statusConfig[request.status] ?? statusConfig.open;
-  const IconComp = tc.icon;
+const REQUEST_GROUP_CONFIGS: RequestGroupConfig[] = [
+  {
+    requestType: "FOOD_ORDER",
+    label: (t) => t.flowFoodLabel,
+    icon: UtensilsCrossed,
+    iconColor: "text-amber-600",
+    iconBg: "bg-amber-50",
+    dotColor: "bg-amber-400",
+  },
+  {
+    requestType: "SUPPORT_REQUEST",
+    label: (t) => t.flowSupportLabel,
+    icon: Bell,
+    iconColor: "text-sky-600",
+    iconBg: "bg-sky-50",
+    dotColor: "bg-sky-400",
+  },
+  {
+    requestType: "CARE_PROFILE_UPDATE",
+    label: (t) => t.flowCareLabel,
+    icon: Heart,
+    iconColor: "text-rose-500",
+    iconBg: "bg-rose-50",
+    dotColor: "bg-rose-400",
+  },
+  {
+    requestType: "GENERAL_SERVICE_REQUEST",
+    label: (t) => t.myRequestsTitle,
+    icon: LayoutGrid,
+    iconColor: "text-zinc-500",
+    iconBg: "bg-zinc-100",
+    dotColor: "bg-zinc-400",
+  },
+];
+
+const STATUS_CONFIG: Record<string, { label: (t: GuestTranslations) => string; text: string; dot: string }> = {
+  open: { label: (t) => t.reqStatusOpen, text: "text-amber-600", dot: "bg-amber-400" },
+  in_progress: { label: (t) => t.reqStatusInProgress, text: "text-sky-600", dot: "bg-sky-500" },
+  resolved: { label: (t) => t.reqStatusResolved, text: "text-emerald-500", dot: "bg-emerald-400" },
+};
+
+function RequestCard({ request, t }: { request: ServiceRequest; t: GuestTranslations }) {
+  const gc = REQUEST_GROUP_CONFIGS.find((c) => c.requestType === request.requestType)
+    ?? REQUEST_GROUP_CONFIGS[3];
+  const sc = STATUS_CONFIG[request.status] ?? STATUS_CONFIG.open;
+  const Icon = gc.icon;
 
   return (
-    <div className="bg-white rounded-2xl border border-zinc-100 px-4 py-3.5 flex items-center gap-3 shadow-sm">
-      <div
-        className={`w-9 h-9 rounded-xl ${tc.bg} flex items-center justify-center shrink-0`}
-      >
-        <IconComp className={`w-4 h-4 ${tc.color}`} />
+    <div className="bg-white rounded-xl border border-zinc-100 px-4 py-3 flex items-center gap-3">
+      <div className={`w-8 h-8 rounded-lg ${gc.iconBg} flex items-center justify-center shrink-0`}>
+        <Icon className={`w-3.5 h-3.5 ${gc.iconColor}`} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[14px] font-medium text-zinc-800 leading-tight truncate">
+        <p className="text-[13px] font-medium text-zinc-800 leading-tight truncate">
           {request.summary}
         </p>
-        <div className="flex items-center gap-1.5 mt-1">
+        <div className="flex items-center gap-1.5 mt-0.5">
           <div className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
-          <p className={`text-[11px] font-semibold ${sc.text}`}>{sc.label}</p>
-          <span className="text-[11px] text-zinc-300">·</span>
-          <p className="text-[11px] text-zinc-400">{timeAgo(request.createdAt)}</p>
+          <p className={`text-[10px] font-semibold ${sc.text}`}>{sc.label(t)}</p>
+          <span className="text-[10px] text-zinc-200">·</span>
+          <p className="text-[10px] text-zinc-400">{timeAgo(request.createdAt)}</p>
         </div>
       </div>
+    </div>
+  );
+}
+
+function GuestRequestGroups({
+  requests,
+  t,
+}: {
+  requests: ServiceRequest[];
+  t: GuestTranslations;
+}) {
+  const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set());
+
+  const grouped = useMemo(() => {
+    const map: Record<string, ServiceRequest[]> = {};
+    for (const req of requests) {
+      if (!map[req.requestType]) map[req.requestType] = [];
+      map[req.requestType].push(req);
+    }
+    return map;
+  }, [requests]);
+
+  const toggle = (type: string) => {
+    setExpandedTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) next.delete(type);
+      else next.add(type);
+      return next;
+    });
+  };
+
+  const activeGroups = REQUEST_GROUP_CONFIGS.filter(
+    (g) => (grouped[g.requestType]?.length ?? 0) > 0
+  );
+
+  if (activeGroups.length === 0) return null;
+
+  return (
+    <div className="space-y-2.5">
+      {activeGroups.map((group) => {
+        const items = grouped[group.requestType] ?? [];
+        const isExpanded = expandedTypes.has(group.requestType);
+        const Icon = group.icon;
+        const newestSummary = items[0]?.summary ?? "";
+
+        return (
+          <div key={group.requestType}>
+            {/* Stack group header */}
+            <button
+              onClick={() => toggle(group.requestType)}
+              className="w-full text-left"
+            >
+              <div className="relative pb-1.5">
+                {/* Depth layer 2 — furthest back */}
+                <div className="absolute inset-x-3 bottom-0 h-full rounded-2xl bg-zinc-100 border border-zinc-100/80" />
+                {/* Depth layer 1 — middle */}
+                <div className="absolute inset-x-1.5 bottom-0.5 h-full rounded-2xl bg-zinc-50 border border-zinc-100" />
+                {/* Top card */}
+                <div className="relative bg-white rounded-2xl border border-zinc-100 shadow-sm px-4 py-3.5 flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-xl ${group.iconBg} flex items-center justify-center shrink-0`}>
+                    <Icon className={`w-4 h-4 ${group.iconColor}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-[14px] font-semibold text-zinc-800 leading-tight">
+                        {group.label(t)}
+                      </p>
+                      <span className="text-[10px] font-bold text-zinc-400 bg-zinc-100 rounded-full px-1.5 py-0.5 leading-none">
+                        {items.length}
+                      </span>
+                    </div>
+                    {!isExpanded && newestSummary && (
+                      <p className="text-[11px] text-zinc-400 mt-0.5 truncate leading-tight">
+                        {newestSummary}
+                      </p>
+                    )}
+                  </div>
+                  <ChevronDown
+                    className={`w-4 h-4 text-zinc-300 transition-transform duration-200 shrink-0 ${
+                      isExpanded ? "rotate-180" : ""
+                    }`}
+                  />
+                </div>
+              </div>
+            </button>
+
+            {/* Expanded cards */}
+            {isExpanded && (
+              <div className="mt-1 space-y-1.5 animate-in slide-in-from-top-1 fade-in duration-200">
+                {items.map((req) => (
+                  <RequestCard key={req.id} request={req} t={t} />
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -318,7 +441,7 @@ export default function GuestHome() {
           <ServiceQuickActions onAction={handleQuickAction} t={t} />
         </section>
 
-        {/* ── My Requests ── */}
+        {/* ── My Requests — grouped stacked cards ── */}
         {myRequests !== undefined && (
           <section className="mb-7">
             <h3 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-3 px-1">
@@ -332,11 +455,7 @@ export default function GuestHome() {
                 <p className="text-[13px] text-zinc-400">{t.myRequestsEmpty}</p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {myRequests.slice(0, 5).map((req) => (
-                  <RequestHistoryCard key={req.id} request={req} t={t} />
-                ))}
-              </div>
+              <GuestRequestGroups requests={myRequests} t={t} />
             )}
           </section>
         )}
