@@ -1,0 +1,455 @@
+You are a senior full-stack software architect, product analytics designer, premium mobile/admin UX designer, and production-grade engineer.
+
+Your task is to inspect, design, and implement a new MANAGER dashboard capability for the existing “Guest Pro” project: a Daily Summary tab and a Quick Report popup, built in a production-ready, SOLID, layered architecture.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, manager dashboard, request/task model, staff request workflow, request status lifecycle, analytics/reporting structure, AI integration, role system, database schema, and UI architecture.
+- Do NOT rebuild the app from scratch if working systems already exist.
+- Preserve working auth, manager/staff dashboards, guest flows, request creation flows, status updates, route protection, and stable APIs.
+- Refactor only where there is real architectural, maintainability, analytics, or UX value.
+- The final result must be mobile-friendly, premium, operationally useful, SOLID, layered, and production-ready.
+
+PROJECT CONTEXT:
+Guest Pro already has:
+- guest requests
+- request types such as food/support/care
+- request statuses such as Açık / İşlemde / Tamamlandı
+- manager dashboard
+- staff dashboard
+- AI integrations
+
+We now need a new manager-facing intelligence/reporting layer.
+
+PRIMARY GOALS:
+1. Add a new Manager dashboard tab called “Daily Summary”
+2. At the end of each day, automatically generate a short AI-powered summary of that day’s requests
+3. The summary must be short, useful, and operational, not verbose
+4. AI must analyze:
+   - repeated/common issues
+   - request patterns
+   - rooms with unusual activity
+   - frequent request categories
+   - bottlenecks / waiting patterns
+   - quality/service improvement opportunities
+5. AI must also generate short, practical recommendations aimed at:
+   - reducing manager workload
+   - improving service quality
+   - reducing repeated support friction
+6. Add a “Quick Report” action that opens a popup/modal showing a live/on-demand report for the current moment
+7. Quick Report must include metrics such as:
+   - total requests so far
+   - completed count
+   - in-progress count
+   - open count
+   - request breakdown by category
+   - how long requests waited
+   - how many minutes requests stayed unresolved
+   - AI short commentary
+   - AI short improvement suggestions
+8. Keep everything compact, premium, and operational
+9. Build this in a clean SOLID architecture with centralized analytics/query/services
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current manager dashboard structure
+2. Current request/task model
+3. Current request statuses and lifecycle
+4. Current request timestamps available in the system
+5. Current request categories/types
+6. Current staff-side completion/update flow
+7. Current AI integration points
+8. Current database schema relevant to requests and rooms
+9. Current manager navigation/tabs
+10. Current analytics/reporting structure if any
+11. What already works
+12. What should be preserved
+13. What is missing for a proper daily-summary/reporting architecture
+14. What needs redesign/refactor
+
+Then provide:
+- concise architecture audit
+- analytics/reporting gap analysis
+- request-lifecycle data gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — ADD DAILY SUMMARY TAB TO MANAGER DASHBOARD
+==================================================
+
+Add a new manager-only tab:
+- Daily Summary
+
+REQUIREMENTS:
+- it must feel like a premium operational intelligence screen
+- mobile/tablet friendly
+- compact and clean
+- easy to scan
+- not cluttered
+- suited for managers, not staff
+
+The tab should show:
+- today’s summary
+- previous daily summaries if useful
+- short AI bullets
+- key metrics
+- recommendations
+
+Design goals:
+- premium
+- calm
+- modern
+- operationally useful
+- minimal but informative
+
+==================================================
+PHASE 3 — DAILY END-OF-DAY AI SUMMARY
+==================================================
+
+Implement an automatic end-of-day summary system.
+
+REQUIREMENTS:
+- every day, generate a summary for that day’s requests
+- AI should analyze all requests opened/processed/completed during the day
+- output must be SHORT and useful
+- use bullet-style concise insights
+- avoid long generic paragraphs
+
+AI should summarize things like:
+- most frequent request categories
+- repeated issues
+- rooms with unusually high request activity
+- common friction points
+- delayed/slow request handling patterns
+- any quality/service trend worth attention
+
+Examples of useful insight themes:
+- “5 Wi-Fi connection issues came from the same floor”
+- “Extra pillow requests are very frequent”
+- “Room cleaning requests spike after noon”
+- “Food requests are resolved quickly, but support requests wait longer”
+
+Do NOT produce generic fluff.
+The summary must be operational.
+
+==================================================
+PHASE 4 — DAILY AI RECOMMENDATIONS
+==================================================
+
+After generating the short summary, AI must also generate short, practical recommendations.
+
+REQUIREMENTS:
+- recommendations must be manager-oriented
+- focus on reducing manager workload
+- focus on improving service quality
+- focus on preventing repeated issues
+- keep recommendations short and concrete
+
+Examples of recommendation directions:
+- improve Wi-Fi support instructions
+- pre-place extra pillows on certain floors
+- assign faster housekeeping response windows
+- improve minibar refill scheduling
+- prepare quick templates for frequent care requests
+
+Recommendations must be:
+- concise
+- practical
+- relevant
+- non-generic
+
+==================================================
+PHASE 5 — QUICK REPORT POPUP / MODAL
+==================================================
+
+Add a manager action called:
+- Quick Report
+
+When clicked, it must open a premium popup/modal/sheet showing a live report for the current moment.
+
+REQUIREMENTS:
+- use current request data up to “now”
+- show compact operational metrics
+- include a short AI live summary
+- include short AI recommendations
+- the popup must feel premium and calm
+- not cluttered
+- mobile-friendly
+- easy to scan quickly
+
+This is NOT just a raw table dump.
+It should feel like an intelligent snapshot.
+
+==================================================
+PHASE 6 — QUICK REPORT METRICS
+==================================================
+
+Quick Report should include at minimum:
+- total requests so far
+- Açık count
+- İşlemde count
+- Tamamlandı count
+- request count by category/type
+- average time to completion if enough data exists
+- average waiting time
+- longest waiting active request
+- how many minutes requests remain unresolved on average
+- room hotspots if meaningful
+- top repeated issue types
+
+Use only real, available data.
+Do not invent metrics if the source data is missing.
+
+==================================================
+PHASE 7 — REQUEST ANALYTICS DATA MODEL
+==================================================
+
+Design a professional analytics/reporting model.
+
+REQUIREMENTS:
+- avoid doing all calculations directly in the UI
+- centralize request analytics
+- make daily summaries queryable and reusable
+- make quick report queries reusable
+
+Possible analytics data structures:
+- DailyRequestSummary
+- RequestAnalyticsSnapshot
+- RequestCategoryStats
+- RoomRequestStats
+- RequestTimingStats
+- AIInsightSummary
+- AIRecommendationSummary
+
+Suggested data points:
+- request counts by type/status
+- average completion time
+- waiting duration
+- time-to-first-status-change if available
+- top rooms by request count
+- repeated issue patterns
+
+==================================================
+PHASE 8 — DISTINGUISH BETWEEN AUTO DAILY SUMMARY AND LIVE QUICK REPORT
+==================================================
+
+These are two different products and must be modeled separately.
+
+AUTO DAILY SUMMARY:
+- generated automatically at end of day
+- stored or cached as a daily summary record
+- represents the finished day
+
+LIVE QUICK REPORT:
+- generated on demand
+- reflects current active and completed requests so far
+- can be recalculated instantly
+
+Do not mix these concepts carelessly.
+Design them as separate use-cases with related but distinct services.
+
+==================================================
+PHASE 9 — AI SUMMARY / RECOMMENDATION PIPELINE
+==================================================
+
+Implement a clean AI analysis pipeline.
+
+REQUIREMENTS:
+- AI should not directly read random UI text
+- feed structured analytics data into the AI summary generator
+- summarize from clean metrics and grouped request data
+- generate short, high-signal output
+- keep the AI output format controlled and production-ready
+
+Suggested pipeline:
+1. analytics aggregation
+2. structured summary input building
+3. AI summary generation
+4. AI recommendations generation
+5. validated/presentable output
+
+The AI output should remain short, manager-friendly, and operational.
+
+==================================================
+PHASE 10 — UX / VISUAL DESIGN
+==================================================
+
+Design the Daily Summary tab and Quick Report popup with a premium minimal style.
+
+VISUAL REQUIREMENTS:
+- light/white dominant
+- soft rounded corners
+- subtle shadows
+- compact cards
+- modern enterprise/hospitality feel
+- highly readable
+- minimal color usage
+- premium iconography
+- elegant typography hierarchy
+- calm, trustworthy, useful
+
+Do NOT:
+- make it look like a generic analytics BI dashboard
+- use noisy charts everywhere
+- overload the manager with too much detail
+
+Use a balanced mix of:
+- compact summary cards
+- short bullets
+- concise KPI blocks
+- elegant modal/popup layout
+
+==================================================
+PHASE 11 — ROLE-AWARE ACCESS
+==================================================
+
+Preserve role-aware behavior.
+
+REQUIREMENTS:
+- Daily Summary tab is manager-only unless current policy explicitly allows staff
+- Quick Report action is manager-only unless current policy explicitly allows staff
+- do not rely only on UI hiding
+- route/API-level authorization must remain correct
+
+==================================================
+PHASE 12 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement this in a truly maintainable architecture.
+
+REQUIREMENTS:
+- no giant manager dashboard file
+- no analytics logic inside UI components
+- no duplicated summary calculation logic
+- no duplicated AI summary prompt logic
+- centralize request analytics aggregation
+- centralize daily summary generation
+- centralize quick report generation
+- no fake architecture
+- no dead code
+- clean naming
+- meaningful modules only
+
+Suggested layered structure:
+- domain:
+  - RequestAnalyticsSnapshot
+  - DailyRequestSummary
+  - RequestTimingStats
+  - RoomIssuePattern
+  - AIInsightSummary
+- application:
+  - GenerateDailySummary
+  - GenerateQuickReport
+  - BuildRequestAnalyticsSnapshot
+  - BuildAISummaryInput
+  - GetManagerDailySummaryView
+- infrastructure:
+  - request analytics repository
+  - daily summary repository
+  - AI summary provider
+  - scheduler/cron adapter
+- presentation:
+  - DailySummaryTab
+  - DailySummaryCard
+  - QuickReportButton
+  - QuickReportModal
+  - SummaryBullets
+  - RecommendationBullets
+  - CompactKpiSection
+
+Make the architecture actually used and meaningful.
+
+==================================================
+PHASE 13 — SCHEDULING / AUTOMATION
+==================================================
+
+Implement a production-ready daily automation flow.
+
+REQUIREMENTS:
+- generate daily summary automatically at the end of each day
+- define the timezone clearly
+- avoid duplicate summary generation for the same day
+- handle rerun/rebuild safely if needed
+- if the project already has job/scheduler support, preserve it and extend it properly
+- if not, add a clean scheduling mechanism appropriate for the project/runtime
+
+The automation must be reliable and predictable.
+
+==================================================
+PHASE 14 — DATA QUALITY / VALIDATION
+==================================================
+
+Be careful with missing or partial data.
+
+REQUIREMENTS:
+- if some requests do not have complete timing data, handle gracefully
+- do not break summary generation because of a few incomplete rows
+- if room mapping is missing, skip room-based insight safely
+- if AI generation fails, provide safe fallback summary text
+- log failures cleanly
+- avoid noisy or broken manager UX
+
+==================================================
+PHASE 15 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- manager login
+- staff login
+- guest login/logout
+- request creation
+- request status updates
+- request boards
+- guest/staff dashboards
+- route protection
+- stable APIs
+
+This task is specifically about adding a manager intelligence/reporting layer.
+
+==================================================
+PHASE 16 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Daily Summary tab appears correctly for manager
+2. Quick Report action opens correctly
+3. Quick Report shows real current metrics
+4. Daily end-of-day summary generates automatically
+5. AI summary is short and useful
+6. AI recommendations are practical and manager-focused
+7. Request category patterns are reflected correctly
+8. Room/request hotspot analysis works if data exists
+9. Average waiting/completion timing is calculated correctly
+10. Mobile/tablet UX remains polished
+11. No regression in auth or request flows
+12. Overall UX feels premium and production-ready
+
+==================================================
+PHASE 17 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was preserved
+3. What was redesigned
+4. How Daily Summary works
+5. How Quick Report works
+6. How analytics data is aggregated
+7. How AI summary/recommendation generation works
+8. Which files were changed
+9. Any schema/model additions
+10. How scheduling was implemented
+11. How to test daily summary and quick report end-to-end
+12. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result mobile-friendly, SOLID, layered, premium, and production-ready
+- The manager should get a short, high-signal, operational summary — not a noisy analytics page

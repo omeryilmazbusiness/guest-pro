@@ -6,6 +6,7 @@ import chatRouter from "./chat";
 import hotelRouter from "./hotel";
 import trackingRouter from "./tracking";
 import requestsRouter from "./requests";
+import analyticsRouter from "./analytics";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(chatRouter);
 router.use(hotelRouter);
 router.use(trackingRouter);
 router.use(requestsRouter);
+router.use(analyticsRouter);
 
 export default router;

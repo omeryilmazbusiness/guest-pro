@@ -355,6 +355,41 @@ Every `POST /api/tracking/heartbeat` response includes a `debug` object:
 - Default expanded: Support Requests
 - Uses existing `ServiceRequestCard` for individual expanded cards
 
+## Manager Analytics & Reporting
+
+### Architecture (Layered)
+- **Domain**: `RequestAnalyticsSnapshot`, `DailySummaryRecord`, `AIInsightOutput` — defined in backend lib
+- **Aggregation**: `artifacts/api-server/src/lib/request-analytics.ts` — `buildAnalyticsSnapshot(hotelId, start, end)` — pure data crunching, no AI, no routes
+- **AI pipeline**: `artifacts/api-server/src/lib/ai-summary.ts` — `generateAISummary(snapshot)` → `{ insights[], recommendations[] }` using Gemini 2.5 Flash with structured JSON output; safe fallback on failure
+- **Scheduler**: `artifacts/api-server/src/lib/scheduler.ts` — setInterval checks every 60s for 23:30 UTC; idempotent (skips if today's summary already exists); generates for all hotels
+- **Routes**: `artifacts/api-server/src/routes/analytics.ts` — all `requireManager`-protected:
+  - `GET /api/analytics/quick-report` — live on-demand: aggregates today so far + AI
+  - `GET /api/analytics/daily-summaries` — list stored summaries for hotel (last 30 days)
+  - `POST /api/analytics/daily-summaries/generate` — manually trigger for a date (upserts)
+- **Client**: `artifacts/guest-pro/src/lib/analytics.ts` — typed API client, `formatMinutes()` helper, `TYPE_LABELS`
+- **UI**: `DailySummaryTab` + `QuickReportModal` in `artifacts/guest-pro/src/components/manager/`
+
+### Daily Summary Tab
+- Manager-only tab ("Summary") added to dashboard tab switcher
+- Shows stored daily summaries as expandable cards (newest first)
+- Each card: date label, total/resolved/avgTime metrics, type breakdown chips, AI insight bullets, AI recommendation bullets
+- "Generate Today" / "Refresh Today" button — triggers POST to generate/update today's summary
+- Auto-generated nightly at 23:30 UTC for all hotels
+
+### Quick Report Modal
+- Triggered by the `FileText` icon button in the dashboard header (manager-only)
+- Live on-demand: fetches and calls AI every time it opens
+- Refresh button re-fetches without closing
+- Shows: today's total/avgResolution KPIs, open/in-progress/resolved status bar with color indicators, longest waiting active request highlight (amber), by-category breakdown, top rooms, AI insights, AI recommendations
+- Premium modal design: backdrop blur, rounded panel, scrollable body, safe area footer
+
+### Metrics Available (from `service_requests` timestamps)
+- `createdAt` → `updatedAt` on resolved rows = resolution time
+- `createdAt` → now on open/in_progress rows = waiting time
+- `topRooms` — grouped by roomNumber, sorted descending
+- `byType` / `byStatus` — full breakdowns
+- `longestWaitingRequest` — oldest non-resolved request
+
 ## Database Schema
 
 - `hotels` — hotel/tenant records
@@ -368,6 +403,7 @@ Every `POST /api/tracking/heartbeat` response includes a `debug` object:
 - `hotel_tracking_configs` — geofence config per hotel (enabled, lat/lng/radius, notes)
 - `hotel_tracking_networks` — allowed IP/CIDR rules per hotel
 - `guest_presence_snapshots` — latest presence state per guest (status, last location, last IP, lastSeenAt)
+- `daily_summaries` — stored AI-generated daily summaries (hotelId, date YYYY-MM-DD, insights[], recommendations[], metricsSnapshot jsonb)
 
 ## Artifacts
 

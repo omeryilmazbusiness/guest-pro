@@ -7,3 +7,4 @@ export * from "./audit-logs";
 export * from "./daily-usage";
 export * from "./tracking";
 export * from "./service-requests";
+export * from "./daily-summaries";

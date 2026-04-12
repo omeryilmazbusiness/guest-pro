@@ -43,6 +43,8 @@ import {
   Bell,
   X,
   Settings,
+  TrendingUp,
+  FileText,
 } from "lucide-react";
 import {
   useListGuests,
@@ -79,10 +81,12 @@ import { computeTrackingSummary } from "@/lib/tracking-summary";
 import { GuestsOverviewCard } from "@/components/manager/GuestsOverviewCard";
 import { StaffRequestsBoard } from "@/components/manager/StaffRequestsBoard";
 import { NewRequestAlert } from "@/components/manager/NewRequestAlert";
+import { DailySummaryTab } from "@/components/manager/DailySummaryTab";
+import { QuickReportModal } from "@/components/manager/QuickReportModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type DashboardTab = "guests" | "rooms" | "requests";
+type DashboardTab = "guests" | "rooms" | "requests" | "summary";
 
 // ─── Tab switcher ─────────────────────────────────────────────────────────────
 
@@ -92,28 +96,33 @@ function DashboardTabs({
   guestCount,
   roomCount,
   requestCount,
+  isManager,
 }: {
   active: DashboardTab;
   onChange: (tab: DashboardTab) => void;
   guestCount: number;
   roomCount: number;
   requestCount: number;
+  isManager: boolean;
 }) {
-  const TABS: { key: DashboardTab; label: string; icon: React.FC<{ className?: string }>; count: number }[] = [
+  const TABS: { key: DashboardTab; label: string; icon: React.FC<{ className?: string }>; count: number; managerOnly?: boolean }[] = [
     { key: "guests", label: "Guests", icon: Users, count: guestCount },
     { key: "rooms", label: "Rooms", icon: DoorOpen, count: roomCount },
     { key: "requests", label: "Requests", icon: Bell, count: requestCount },
+    { key: "summary", label: "Summary", icon: TrendingUp, count: 0, managerOnly: true },
   ];
 
+  const visibleTabs = TABS.filter((t) => !t.managerOnly || isManager);
+
   return (
-    <div className="flex bg-zinc-100 rounded-2xl p-1 gap-1">
-      {TABS.map(({ key, label, icon: Icon, count }) => {
+    <div className="flex bg-zinc-100 rounded-2xl p-1 gap-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+      {visibleTabs.map(({ key, label, icon: Icon, count }) => {
         const isActive = active === key;
         return (
           <button
             key={key}
             onClick={() => onChange(key)}
-            className={`flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl text-[13px] font-semibold transition-all touch-manipulation ${
+            className={`flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl text-[13px] font-semibold transition-all touch-manipulation shrink-0 ${
               isActive
                 ? "bg-white text-zinc-900 shadow-sm"
                 : "text-zinc-500 hover:text-zinc-700"
@@ -379,9 +388,12 @@ export default function ManagerDashboard() {
   // ── Tab (reads ?tab= from URL for deep-linking from alerts)
   const [activeTab, setActiveTab] = useState<DashboardTab>(() => {
     const param = new URLSearchParams(window.location.search).get("tab");
-    if (param === "guests" || param === "rooms" || param === "requests") return param;
+    if (param === "guests" || param === "rooms" || param === "requests" || param === "summary") return param;
     return "guests";
   });
+
+  // ── Quick Report modal
+  const [quickReportOpen, setQuickReportOpen] = useState(false);
 
   // ── Open request count (updated by StaffRequestsBoard)
   const [openRequestCount, setOpenRequestCount] = useState(0);
@@ -575,6 +587,18 @@ export default function ManagerDashboard() {
               <Button
                 variant="ghost"
                 size="icon"
+                onClick={() => setQuickReportOpen(true)}
+                className="w-8 h-8 rounded-xl text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 touch-manipulation"
+                aria-label="Quick Report"
+                title="Quick Report"
+              >
+                <FileText className="w-3.5 h-3.5" />
+              </Button>
+            )}
+            {isManager && (
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setLocation("/manager/settings")}
                 className="w-8 h-8 rounded-xl text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 touch-manipulation"
                 aria-label="Settings"
@@ -644,6 +668,7 @@ export default function ManagerDashboard() {
           guestCount={guests?.length ?? 0}
           roomCount={allRooms.length}
           requestCount={openRequestCount}
+          isManager={isManager}
         />
 
         {/* ══════════════════════════════════
@@ -800,6 +825,15 @@ export default function ManagerDashboard() {
           </div>
         )}
 
+        {/* ══════════════════════════════════
+            DAILY SUMMARY TAB (manager-only)
+        ══════════════════════════════════ */}
+        {activeTab === "summary" && isManager && (
+          <div className="animate-in fade-in duration-200">
+            <DailySummaryTab />
+          </div>
+        )}
+
       </main>
 
       {/* ── Mobile FAB ── */}
@@ -862,6 +896,14 @@ export default function ManagerDashboard() {
         onNavigateToRequests={handleNavigateToRequests}
         enabled={isAuthenticated && !!user}
       />
+
+      {/* ── Quick Report modal (manager-only) ── */}
+      {isManager && (
+        <QuickReportModal
+          open={quickReportOpen}
+          onClose={() => setQuickReportOpen(false)}
+        />
+      )}
     </div>
   );
 }
