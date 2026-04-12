@@ -13,7 +13,7 @@ import { db, dailySummariesTable, hotelsTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
 import { requireManager } from "../middlewares/requireAuth";
 import { buildAnalyticsSnapshot, todayRange, utcDateString } from "../lib/request-analytics";
-import { generateAISummary } from "../lib/ai-summary";
+import { generateAISummary, generateQuickReportAI } from "../lib/ai-summary";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -27,9 +27,15 @@ router.get("/analytics/quick-report", requireManager, async (req, res): Promise<
   const { start, end } = todayRange();
 
   const snapshot = await buildAnalyticsSnapshot(hotelId, start, end);
-  const { insights, recommendations } = await generateAISummary(snapshot);
+  const ai = await generateQuickReportAI(snapshot);
 
-  res.json({ ...snapshot, insights, recommendations });
+  res.json({
+    ...snapshot,
+    summary: ai.summary,
+    complaintAnalysis: ai.complaintAnalysis,
+    timingInsights: ai.timingInsights,
+    recommendations: ai.recommendations,
+  });
 });
 
 // ---------------------------------------------------------------------------

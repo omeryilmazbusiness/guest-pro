@@ -1,0 +1,400 @@
+You are a senior full-stack software architect, product analytics designer, AI insight workflow designer, and production-grade engineer.
+
+Your task is to inspect, redesign, and harden the “Quick Report” feature inside the existing “Guest Pro” manager dashboard so it becomes a production-ready, manager-focused operational intelligence tool.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, manager dashboard, request/task model, request status lifecycle, timestamps, room data, guest data, AI integration, analytics/reporting structure, and UI architecture.
+- Do NOT rebuild the app from scratch if working systems already exist.
+- Preserve working auth, manager/staff dashboards, request creation flows, status updates, route protection, and stable APIs.
+- Refactor only where there is real architectural, maintainability, analytics, or UX value.
+- The final result must be mobile-friendly, premium, compact, operationally useful, SOLID, layered, and production-ready.
+
+PROJECT CONTEXT:
+Guest Pro already has:
+- guest requests
+- request types such as food/support/care
+- request statuses such as Açık / İşlemde / Tamamlandı
+- room numbers
+- guest information
+- manager dashboard
+- AI integration
+
+We now need to refine the “Quick Report” feature.
+
+PRIMARY GOALS:
+1. When the manager clicks “Quick Report”, the system must analyze the CURRENT requests and generate a compact operational report
+2. The AI summary and recommendation must focus approximately 80% on:
+   - requests
+   - complaints
+   - repeated problems
+   - unresolved/friction-heavy issues
+3. The report must analyze:
+   - what issue each guest has
+   - in which room it happened
+   - what type of request/complaint it is
+   - whether it is still open, in progress, or completed
+   - how long it waited
+   - how long it took to resolve
+4. The report must produce:
+   - a short summary
+   - a short problem-focused analysis
+   - short manager-oriented recommendations
+5. Recommendations must focus on:
+   - reducing manager workload
+   - improving service quality
+   - reducing repeated complaints
+   - improving response speed
+6. Keep the feature compact, premium, and highly operational
+7. Build it with a clean SOLID architecture
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current Quick Report implementation
+2. Current request/task model
+3. Current request types and statuses
+4. Current timestamps available:
+   - createdAt
+   - first response / first status change if available
+   - completedAt if available
+5. Current room number and guest mapping
+6. Current AI summary/recommendation pipeline if any
+7. Current analytics/reporting structure
+8. Current manager dashboard integration
+9. What already works
+10. What should be preserved
+11. What is weak in analytics
+12. What is weak in UX
+13. What needs redesign/refactor for a proper complaint-and-request-focused reporting feature
+
+Then provide:
+- concise architecture audit
+- quick-report analytics gap analysis
+- complaint/request insight gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — REDEFINE QUICK REPORT PURPOSE
+==================================================
+
+The Quick Report is NOT a generic dashboard summary.
+
+It must be a manager-focused operational intelligence popup/report with strong focus on complaints and service requests.
+
+REPORT EMPHASIS RULE:
+Approximately 80% of the output should focus on:
+- active requests
+- repeated complaints
+- unresolved issues
+- delays
+- friction points
+- service failures or recurring support patterns
+
+Only the remaining smaller portion should focus on broader operational context.
+
+The output must feel like:
+- “What is going wrong right now?”
+- “Where are the repeated problems?”
+- “Which rooms/guests need attention?”
+- “How can we reduce repeated problems and manager workload?”
+
+==================================================
+PHASE 3 — ANALYTICS DATA MODEL
+==================================================
+
+Build or refine the data model for reporting.
+
+REQUIREMENTS:
+Create a structured analytics layer that can answer:
+- which requests are currently open
+- which requests are in progress
+- which requests are completed
+- which types are most frequent
+- which rooms generate the most complaints/requests
+- how long each request waited before status change
+- how long each request took to resolve
+- which complaint/request categories repeat most
+
+Possible derived analytics models:
+- RequestAnalyticsSnapshot
+- ComplaintPatternSummary
+- RoomIssueSummary
+- RequestTimingSummary
+- RequestInsightInput
+- ManagerOperationalQuickReport
+
+Use only real available data.
+Do not fabricate metrics.
+
+==================================================
+PHASE 4 — QUICK REPORT CONTENT STRUCTURE
+==================================================
+
+When the manager clicks Quick Report, generate a compact report with the following structure:
+
+1. SHORT SUMMARY
+- very short bullet list
+- current high-signal overview
+
+2. REQUEST / COMPLAINT ANALYSIS (MAIN FOCUS)
+- repeated issues
+- complaint-heavy categories
+- rooms with unusual request volume
+- open issues that need attention
+- delayed requests
+- requests that took too long
+
+3. TIMING INSIGHTS
+- how long requests are waiting
+- how long completed requests took
+- longest unresolved request
+- average completion time if data exists
+
+4. AI RECOMMENDATIONS
+- short
+- concrete
+- manager-oriented
+- aimed at reducing repeated problems and workload
+
+IMPORTANT:
+This must remain compact, not a huge report.
+
+==================================================
+PHASE 5 — REQUEST / COMPLAINT INTELLIGENCE RULES
+==================================================
+
+The analysis must prioritize useful operational interpretation.
+
+AI should detect patterns such as:
+- repeated Wi-Fi complaints
+- repeated extra pillow requests
+- repeated minibar refresh requests
+- repeated cleaning requests
+- rooms with unusually frequent support tickets
+- requests staying open too long
+- bottlenecks between Açık and İşlemde
+- support categories that consume disproportionate staff effort
+
+The report should explicitly connect:
+- guest / room / issue / timing / repeated pattern
+
+Examples of insight style:
+- “Room 304 and 306 generated repeated Wi-Fi-related support requests.”
+- “Extra pillow requests are frequent and mostly come in the evening.”
+- “Cleaning requests are taking longer than food requests.”
+- “Three support requests remained open for more than X minutes.”
+
+Keep insights very short and operational.
+
+==================================================
+PHASE 6 — TIMING ANALYSIS
+==================================================
+
+Implement professional timing metrics.
+
+REQUIREMENTS:
+For each request, use available timestamps to calculate where possible:
+- waiting duration
+- time to first progress
+- time to completion
+- current unresolved duration
+
+If some timestamps are missing:
+- handle gracefully
+- do not break the report
+- exclude or degrade safely
+
+Analytics should support:
+- average completion time
+- average waiting time
+- longest open request
+- longest in-progress request
+- request aging by category if useful
+
+==================================================
+PHASE 7 — AI SUMMARY AND RECOMMENDATION GENERATION
+==================================================
+
+Implement a controlled AI summary pipeline.
+
+IMPORTANT:
+Do not send raw chaotic request dumps directly to AI without structure.
+
+Use a structured input-building step:
+1. aggregate request metrics
+2. group repeated issues
+3. summarize room hotspots
+4. summarize timing patterns
+5. feed a compact structured payload to AI
+6. generate:
+   - short summary
+   - short complaint/request analysis
+   - short recommendations
+
+RECOMMENDATION STYLE:
+Recommendations must be:
+- short
+- practical
+- manager-focused
+- workload-reducing
+- service-quality-oriented
+
+Good recommendation directions:
+- pre-stock common supplies on certain floors
+- improve Wi-Fi support instructions
+- introduce faster housekeeping handoff windows
+- prepare standard replies for recurring issues
+- assign special handling for rooms with repeated requests
+
+Do NOT generate generic management fluff.
+
+==================================================
+PHASE 8 — QUICK REPORT UX / POPUP DESIGN
+==================================================
+
+Redesign the Quick Report popup/modal as a premium compact intelligence sheet.
+
+UX REQUIREMENTS:
+- premium
+- clean
+- white/light dominant
+- compact
+- operational
+- modern
+- calm
+- mobile/tablet friendly
+- easy to scan quickly
+
+Use:
+- compact KPI blocks
+- short bullet summaries
+- clear section headings
+- subtle iconography
+- restrained color usage
+- soft rounded cards
+- strong typography hierarchy
+
+Do NOT:
+- make it look like a noisy BI dashboard
+- overload with giant tables
+- overload with verbose text
+
+==================================================
+PHASE 9 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement this feature in a truly maintainable architecture.
+
+REQUIREMENTS:
+- no analytics logic inside UI components
+- no duplicated timing calculations
+- no duplicated AI prompt logic
+- no giant manager dashboard file
+- centralize analytics aggregation
+- centralize quick-report use case
+- centralize AI summary input building
+- no fake architecture
+- no dead code
+- clean naming
+- meaningful modules only
+
+Suggested layered structure:
+- domain:
+  - RequestAnalyticsSnapshot
+  - ComplaintPatternSummary
+  - RoomIssueSummary
+  - RequestTimingSummary
+  - QuickReportInsight
+- application:
+  - GenerateQuickReport
+  - BuildRequestAnalyticsSnapshot
+  - BuildQuickReportAISummaryInput
+  - GetComplaintFocusedInsights
+  - GetTimingInsights
+- infrastructure:
+  - request analytics repository
+  - AI summary provider
+  - time/duration calculator
+- presentation:
+  - QuickReportButton
+  - QuickReportModal
+  - QuickSummaryBullets
+  - ComplaintInsightBullets
+  - TimingInsightSection
+  - RecommendationBullets
+
+Make the architecture actually used and meaningful.
+
+==================================================
+PHASE 10 — ROLE-AWARE ACCESS
+==================================================
+
+Preserve role-aware behavior.
+
+REQUIREMENTS:
+- Quick Report is manager-only unless existing business rules explicitly allow staff
+- do not rely only on UI hiding
+- route/API authorization must remain correct
+
+==================================================
+PHASE 11 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- manager login
+- staff login
+- guest login/logout
+- request creation
+- request status updates
+- request boards
+- dashboards
+- route protection
+- stable APIs
+
+This task is specifically about making Quick Report complaint/request-focused and operationally useful.
+
+==================================================
+PHASE 12 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Quick Report opens correctly
+2. It uses current request data
+3. It focuses mostly on requests and complaints
+4. It identifies repeated issues correctly
+5. It identifies room/request hotspots correctly
+6. It calculates waiting/completion durations correctly where data exists
+7. It generates short, useful summaries
+8. It generates short, practical recommendations
+9. It stays compact and premium in the UI
+10. No regression in auth or request flows
+11. Overall result feels production-ready and manager-useful
+
+==================================================
+PHASE 13 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was preserved
+3. What was redesigned
+4. How Quick Report analytics are built
+5. How request/complaint analysis works
+6. How timing analysis works
+7. How AI recommendations are generated
+8. Which files were changed
+9. Any schema/model additions
+10. How to test Quick Report end-to-end
+11. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result mobile-friendly, SOLID, layered, premium, and production-ready
+- Quick Report must feel like a short, sharp, manager-focused operational intelligence tool
