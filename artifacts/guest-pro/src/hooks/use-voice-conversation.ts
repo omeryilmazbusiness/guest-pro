@@ -5,18 +5,32 @@
  * State flow:
  *   idle → starting → listening → processing → speaking → listening (loop)
  *
- * The loop continues until the user explicitly calls stopConversation().
- * Interruption (user taps while AI speaks) calls interruptAndListen() which
- * cancels TTS and immediately restarts listening.
+ * ─── End-of-utterance strategy ───────────────────────────────────────────────
+ * We use a DUAL-PATH approach so the system never stays stuck in listening:
  *
- * The chat page drives the loop externally:
- *   1. onSpeechResult fires → chat sends message to AI
- *   2. AI responds → chat calls speakResponse(text, lang)
- *   3. TTS ends → hook restarts listening automatically
+ *   PATH A — Browser final result (fast, preferred):
+ *     When the browser delivers isFinal=true, commitOnce() is called immediately.
+ *     The silence timer is cancelled — no need to wait.
  *
- * Safety net: if the AI never responds (network error, timeout), a processing
- * watchdog timer fires after PROCESSING_TIMEOUT_MS and resumes listening so
- * the guest is never stuck in "Thinking" state.
+ *   PATH B — Silence timeout (fallback, always-present):
+ *     When interim speech is detected, we start a SILENCE_THRESHOLD_MS timer.
+ *     The timer RESETS on every new interim result (user still talking).
+ *     When the timer fires (user paused for 1.5 s), we call commitOnce() with
+ *     the buffered interim text — without waiting for the browser to decide.
+ *     The recognition session is aborted; the conversation advances.
+ *
+ *   PATH C — Browser onend with interim text (backup):
+ *     speech-recognition.ts promotes the last interim to a final result when
+ *     the session ends without isFinal=true (handled at the adapter layer).
+ *     commitOnce() de-duplicates regardless of which path fires first.
+ *
+ * ─── commitOnce guarantee ────────────────────────────────────────────────────
+ *   Only ONE commit fires per listening turn. The committedRef flag prevents
+ *   any second commit from paths B or C after path A has already fired.
+ *
+ * ─── Processing watchdog ────────────────────────────────────────────────────
+ *   If the AI never responds (network hang, quota exceeded), a 30 s watchdog
+ *   resumes listening so the guest is never stuck in "Thinking" state.
  */
 
 import { useState, useRef, useCallback, useEffect } from "react";
@@ -32,29 +46,41 @@ import { VoiceDiagnosticsLogger } from "@/lib/voice/diagnostics";
 const TTS_TO_STT_GAP_MS = 300;
 
 /**
- * Max time to stay in "processing" state before auto-resuming listening.
- * Guards against network hangs where the AI never responds.
+ * Silence threshold — how long (ms) of speech-free audio after interim results
+ * before we proactively commit the transcript and stop waiting for the browser.
+ * 1500 ms is enough to not cut off mid-sentence, but short enough to feel snappy.
+ */
+const SILENCE_THRESHOLD_MS = 1500;
+
+/**
+ * Max time in "processing" before resuming listening.
+ * Guards against AI network hangs where the server never responds.
  */
 const PROCESSING_TIMEOUT_MS = 30_000;
+
+/**
+ * If no speech at all is detected in a turn, wait this long before restarting.
+ * Prevents a tight loop if the mic opens but detects nothing.
+ */
+const EMPTY_TURN_RESTART_MS = 600;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type ConversationState =
-  | "idle"       // not started
-  | "starting"   // mic permission requested, amplitude being set up
-  | "listening"  // mic open, waiting for speech
-  | "processing" // transcript committed, waiting for AI response
-  | "speaking"   // TTS playing AI response
-  | "error"      // unrecoverable error (e.g. mic denied)
-  | "stopped"    // user explicitly stopped
-  | "unsupported"; // STT not available in this browser
+  | "idle"         // not started
+  | "starting"     // mic permission requested, amplitude being set up
+  | "listening"    // mic open, waiting for speech
+  | "processing"   // transcript committed, waiting for AI response
+  | "speaking"     // TTS playing AI response
+  | "error"        // unrecoverable (e.g. mic denied)
+  | "stopped"      // user explicitly stopped
+  | "unsupported"; // STT unavailable in this browser
 
 export interface VoiceConversationOptions {
   /** Called when guest speech is recognized — trigger your AI call here */
   onSpeechResult: (transcript: string, detectedLang: string) => void;
   /** BCP 47 language hint for the speech recognizer */
   defaultLang: string;
-  /** Error message overrides */
   messages?: {
     notSupported?: string;
     micDenied?: string;
@@ -64,30 +90,16 @@ export interface VoiceConversationOptions {
 
 export interface VoiceConversationReturn {
   state: ConversationState;
-  /** Live interim transcript during listening */
   transcript: string;
-  /** 0–1 amplitude for animation (0 when not listening) */
   amplitude: number;
-  /** Capability model — expose for fallback notices */
   capability: VoiceCapabilityModel;
-  /** True when conversation is running (not idle/stopped/unsupported/error) */
   isActive: boolean;
-  /** Start the conversation loop */
   startConversation: () => void;
-  /** Stop the conversation loop cleanly */
   stopConversation: () => void;
-  /** Interrupt AI speaking and immediately restart listening */
   interruptAndListen: () => void;
-  /** Call this when the AI response is ready to be spoken */
   speakResponse: (text: string, lang: string) => void;
-  /**
-   * Call this when the AI request is in-flight.
-   * No-op if not in processing state — safe to call multiple times.
-   */
   setProcessing: () => void;
-  /** Retry after a transient error */
   retryListening: () => void;
-  /** Last error message, if any */
   errorMessage: string | null;
 }
 
@@ -104,25 +116,44 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
   const [amplitude, setAmplitude] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // ── Refs (mutable control plane — no re-render needed) ─────────────────────
+  // ── Mutable control plane ───────────────────────────────────────────────────
   const stateRef = useRef<ConversationState>("idle");
-  const activeRef = useRef(false);     // true while loop should continue
+  const activeRef = useRef(false);
   const sessionRef = useRef<ReturnType<typeof createSpeechSession>>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const animFrameRef = useRef<number | null>(null);
+
+  // Timer refs — all cleared on stopConversation / unmount
   const loopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const processingWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Always-fresh opts ref — avoids stale closures in doListen/speakResponse
+  // Per-turn transcript buffer and commit guard
+  const interimBufferRef = useRef("");
+  const committedRef = useRef(false);
+
+  // Always-fresh opts ref — no stale closures in async callbacks
   const optsRef = useRef(opts);
   optsRef.current = opts;
 
-  // ── Sync state to both ref and React state ──────────────────────────────────
+  // Forward ref so armProcessingWatchdog can call doListen without a circular dep
+  const doListenRef = useRef<() => void>(() => {});
+
+  // ── State sync ──────────────────────────────────────────────────────────────
   const setStateSync = useCallback((s: ConversationState) => {
     stateRef.current = s;
     setState(s);
+  }, []);
+
+  // ── Silence timer management ────────────────────────────────────────────────
+  const clearSilenceTimer = useCallback(() => {
+    if (silenceTimerRef.current !== null) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+      VoiceDiagnosticsLogger.log("conv:silence-timer-clear");
+    }
   }, []);
 
   // ── Processing watchdog ─────────────────────────────────────────────────────
@@ -133,13 +164,9 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
     }
   }, []);
 
-  // Forward declaration — will be assigned below after doListen is defined
-  const doListenRef = useRef<() => void>(() => {});
-
   const armProcessingWatchdog = useCallback(() => {
     clearProcessingWatchdog();
     processingWatchdogRef.current = setTimeout(() => {
-      // If we're still in processing after timeout, resume listening
       if (activeRef.current && stateRef.current === "processing") {
         VoiceDiagnosticsLogger.log("conv:processing-timeout", "resuming listening");
         doListenRef.current();
@@ -171,8 +198,7 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
       };
       tick();
     } catch {
-      // Amplitude visualization is optional — voice still works without it
-      VoiceDiagnosticsLogger.log("conv:amplitude-failed", "continuing without viz");
+      VoiceDiagnosticsLogger.log("conv:amplitude-failed", "voice continues without viz");
     }
   }, []);
 
@@ -202,29 +228,82 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
       return;
     }
 
+    // Reset per-turn state
     clearProcessingWatchdog();
+    clearSilenceTimer();
+    committedRef.current = false;
+    interimBufferRef.current = "";
+
     setTranscript("");
     setStateSync("listening");
     VoiceDiagnosticsLogger.log("conv:listening");
 
+    // ── commitOnce — only one commit fires per turn ─────────────────────────
+    // Called from: (A) browser onFinalResult, (B) silence timer, (C) onEnd fallback
+    const commitOnce = (text: string) => {
+      if (committedRef.current) return; // already committed this turn
+      committedRef.current = true;
+
+      clearSilenceTimer();
+
+      // Stop the recognition session cleanly
+      sessionRef.current?.abort();
+      sessionRef.current = null;
+
+      const trimmed = text.trim();
+      if (!trimmed) {
+        // Empty transcript after all paths — restart listening
+        VoiceDiagnosticsLogger.log("conv:commit-empty", "restarting");
+        if (activeRef.current) {
+          loopTimerRef.current = setTimeout(() => doListen(), EMPTY_TURN_RESTART_MS);
+        }
+        return;
+      }
+
+      const lang = detectLanguageFromText(trimmed, optsRef.current.defaultLang);
+      VoiceDiagnosticsLogger.log("conv:commit", `"${trimmed.slice(0, 60)}"`);
+
+      setTranscript(trimmed);
+      setStateSync("processing");
+      armProcessingWatchdog();
+      VoiceDiagnosticsLogger.log("conv:processing");
+
+      optsRef.current.onSpeechResult(trimmed, lang);
+    };
+
     const session = createSpeechSession({
       lang: optsRef.current.defaultLang,
+
       onInterimResult: (text) => {
         VoiceDiagnosticsLogger.log("conv:interim", text.slice(0, 40));
         setTranscript(text);
+        interimBufferRef.current = text;
+
+        if (committedRef.current) return;
+
+        // Reset / start silence timer on every interim result
+        clearSilenceTimer();
+        if (text.trim()) {
+          VoiceDiagnosticsLogger.log("conv:silence-timer-start");
+          silenceTimerRef.current = setTimeout(() => {
+            silenceTimerRef.current = null;
+            const buffered = interimBufferRef.current;
+            VoiceDiagnosticsLogger.log("conv:silence-timer-fired", `"${buffered.slice(0, 40)}"`);
+            // PATH B: silence timeout — commit whatever we've buffered
+            commitOnce(buffered);
+          }, SILENCE_THRESHOLD_MS);
+        }
       },
+
       onFinalResult: (text) => {
         VoiceDiagnosticsLogger.log("conv:final", text.slice(0, 80));
-        const lang = detectLanguageFromText(text, optsRef.current.defaultLang);
-        setTranscript(text);
-        setStateSync("processing");
-        // Arm watchdog — if AI never responds, we resume listening
-        armProcessingWatchdog();
-        VoiceDiagnosticsLogger.log("conv:processing");
-        optsRef.current.onSpeechResult(text, lang);
+        // PATH A: browser delivered a final result — commit immediately
+        commitOnce(text);
       },
+
       onError: (code) => {
         if (!activeRef.current) return;
+        clearSilenceTimer();
         VoiceDiagnosticsLogger.log("conv:stt-error", code);
 
         if (code === "not-allowed") {
@@ -235,9 +314,9 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
               "Microphone access denied. Please check your browser settings."
           );
         } else if (code === "no-speech") {
-          // Silence — restart listening after brief pause
+          // Restart after silence with no detectable speech
           if (activeRef.current) {
-            loopTimerRef.current = setTimeout(() => doListen(), 500);
+            loopTimerRef.current = setTimeout(() => doListen(), EMPTY_TURN_RESTART_MS);
           }
         } else {
           // Transient error — auto-retry
@@ -246,15 +325,21 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
           }
         }
       },
-      // onEnd fires only when session ends with NO speech at all.
-      // (With speech — even interim — speech-recognition.ts promotes it to
-      //  onFinalResult before calling onEnd, so by the time we're here the
-      //  transcript has already been committed.)
+
+      // onEnd fires only when the session ends with no speech detected at all
+      // (if speech was heard, speech-recognition.ts promotes interim to final
+      //  via PATH C, so commitOnce has already been called by the time onEnd fires)
       onEnd: () => {
-        VoiceDiagnosticsLogger.log("conv:stt-end-silence");
-        if (activeRef.current && stateRef.current === "listening") {
-          // Restart listening after a brief pause
-          loopTimerRef.current = setTimeout(() => doListen(), 500);
+        clearSilenceTimer();
+        VoiceDiagnosticsLogger.log("conv:stt-end");
+        // If we still have buffered text and haven't committed, PATH C:
+        const buffered = interimBufferRef.current;
+        if (buffered.trim() && !committedRef.current) {
+          VoiceDiagnosticsLogger.log("conv:stt-end-commit-fallback", buffered.slice(0, 40));
+          commitOnce(buffered);
+        } else if (!committedRef.current && activeRef.current && stateRef.current === "listening") {
+          // Genuine silence — restart
+          loopTimerRef.current = setTimeout(() => doListen(), EMPTY_TURN_RESTART_MS);
         }
       },
     });
@@ -266,9 +351,9 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
 
     sessionRef.current = session;
     session.start();
-  }, [setStateSync, clearProcessingWatchdog, armProcessingWatchdog]);
+  }, [setStateSync, clearProcessingWatchdog, armProcessingWatchdog, clearSilenceTimer]);
 
-  // Wire doListen into the forward ref so armProcessingWatchdog can call it
+  // Keep forward ref current
   useEffect(() => {
     doListenRef.current = doListen;
   }, [doListen]);
@@ -313,7 +398,7 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
       setStateSync("unsupported");
       return;
     }
-    if (activeRef.current) return; // already running
+    if (activeRef.current) return;
 
     VoiceDiagnosticsLogger.log("conv:start");
     activeRef.current = true;
@@ -330,10 +415,8 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
     VoiceDiagnosticsLogger.log("conv:stop");
     activeRef.current = false;
 
-    if (loopTimerRef.current) {
-      clearTimeout(loopTimerRef.current);
-      loopTimerRef.current = null;
-    }
+    if (loopTimerRef.current) { clearTimeout(loopTimerRef.current); loopTimerRef.current = null; }
+    clearSilenceTimer();
     clearProcessingWatchdog();
 
     sessionRef.current?.abort();
@@ -342,8 +425,10 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
     cancelSpeech();
     stopAmplitude();
     setTranscript("");
+    interimBufferRef.current = "";
+    committedRef.current = false;
     setStateSync("stopped");
-  }, [setStateSync, stopAmplitude, clearProcessingWatchdog]);
+  }, [setStateSync, stopAmplitude, clearSilenceTimer, clearProcessingWatchdog]);
 
   // ── Public: interruptAndListen ──────────────────────────────────────────────
   const interruptAndListen = useCallback(() => {
@@ -351,13 +436,12 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
     VoiceDiagnosticsLogger.log("conv:interrupt");
     cancelSpeech();
 
-    if (loopTimerRef.current) {
-      clearTimeout(loopTimerRef.current);
-      loopTimerRef.current = null;
-    }
+    if (loopTimerRef.current) { clearTimeout(loopTimerRef.current); loopTimerRef.current = null; }
+    clearSilenceTimer();
     clearProcessingWatchdog();
+
     doListen();
-  }, [doListen, clearProcessingWatchdog]);
+  }, [doListen, clearSilenceTimer, clearProcessingWatchdog]);
 
   // ── Public: retryListening ──────────────────────────────────────────────────
   const retryListening = useCallback(() => {
@@ -365,14 +449,16 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
     VoiceDiagnosticsLogger.log("conv:retry");
     activeRef.current = true;
     setErrorMessage(null);
+    clearSilenceTimer();
     doListen();
-  }, [capability.sttSupported, doListen]);
+  }, [capability.sttSupported, doListen, clearSilenceTimer]);
 
   // ── Cleanup on unmount ──────────────────────────────────────────────────────
   useEffect(() => {
     return () => {
       activeRef.current = false;
       if (loopTimerRef.current) clearTimeout(loopTimerRef.current);
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       clearProcessingWatchdog();
       sessionRef.current?.abort();
       cancelSpeech();

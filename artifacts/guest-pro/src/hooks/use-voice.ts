@@ -2,11 +2,15 @@
  * use-voice.ts
  * Single-turn voice input hook — home page hero mic.
  *
- * For the continuous conversation loop in chat, use use-voice-conversation.ts.
+ * For the full conversation loop in chat, use use-voice-conversation.ts.
  *
- * Uses optsRef pattern: all callbacks (onResult, onError, etc.) are kept in a
- * ref so startListening never captures a stale closure, even though home.tsx
- * passes inline functions that change every render.
+ * Uses the same dual-path end-of-utterance strategy as use-voice-conversation:
+ *   PATH A — browser final result fires → commit immediately
+ *   PATH B — silence timer (1.5 s after last interim) → commit buffered transcript
+ *   PATH C — session onEnd with buffered interim → commit
+ *
+ * Uses optsRef pattern: all callbacks stored in a ref so startListening never
+ * captures a stale closure, even though home.tsx passes inline functions.
  */
 
 import { useState, useRef, useCallback, useEffect } from "react";
@@ -14,6 +18,17 @@ import { isSttSupported, createSpeechSession } from "@/lib/voice/speech-recognit
 import { synthesize } from "@/lib/voice/speech-synthesis";
 import { detectLanguageFromText } from "@/lib/voice/language-resolver";
 import { VoiceDiagnosticsLogger } from "@/lib/voice/diagnostics";
+
+// ─── Constants ──────────────────────────────────────────────────────────────
+
+/**
+ * How long of speech-free silence (ms) before we commit the buffered interim
+ * transcript as the final result. Must be long enough to not cut mid-sentence,
+ * short enough to feel snappy. 1500 ms is the right balance.
+ */
+const SILENCE_THRESHOLD_MS = 1500;
+
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface VoiceMessages {
   notSupported?: string;
@@ -46,6 +61,8 @@ export function speakText(text: string, lang: string): void {
   synthesize(text, lang);
 }
 
+// ─── Hook ────────────────────────────────────────────────────────────────────
+
 export function useVoice(opts: VoiceHookOptions): VoiceHookReturn {
   const isSupported = isSttSupported();
 
@@ -53,9 +70,7 @@ export function useVoice(opts: VoiceHookOptions): VoiceHookReturn {
   const [transcript, setTranscript] = useState("");
   const [amplitude, setAmplitude] = useState(0);
 
-  // Keep all callback options in a ref to avoid stale closures.
-  // Callers (home.tsx) pass inline functions that recreate every render —
-  // without this pattern, startListening would silently call the wrong version.
+  // Always-fresh callbacks — no stale closures
   const optsRef = useRef(opts);
   optsRef.current = opts;
 
@@ -63,9 +78,14 @@ export function useVoice(opts: VoiceHookOptions): VoiceHookReturn {
   const audioContextRef = useRef<AudioContext | null>(null);
   const animFrameRef = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const activeRef = useRef(false); // guards re-entrant calls
+  const activeRef = useRef(false);
 
-  // ── Cleanup helper (no deps — uses only refs) ──────────────────────────────
+  // Silence timer and per-turn transcript buffer
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const interimBufferRef = useRef("");
+  const committedRef = useRef(false);
+
+  // ── Media cleanup (no deps — only uses refs) ─────────────────────────────
   const cleanupMedia = useCallback(() => {
     if (animFrameRef.current !== null) {
       cancelAnimationFrame(animFrameRef.current);
@@ -81,25 +101,34 @@ export function useVoice(opts: VoiceHookOptions): VoiceHookReturn {
     }
   }, []);
 
-  // ── stopListening — also has no volatile deps (uses refs) ──────────────────
+  const clearSilenceTimer = useCallback(() => {
+    if (silenceTimerRef.current !== null) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+  }, []);
+
+  // ── stopListening ─────────────────────────────────────────────────────────
   const stopListening = useCallback(() => {
     if (!activeRef.current) return;
     activeRef.current = false;
 
+    clearSilenceTimer();
     sessionRef.current?.abort();
     sessionRef.current = null;
-
     cleanupMedia();
 
     setIsListening(false);
     setAmplitude(0);
     setTranscript("");
+    interimBufferRef.current = "";
+    committedRef.current = false;
 
     optsRef.current.onEnd?.();
     VoiceDiagnosticsLogger.log("stt:stopped");
-  }, [cleanupMedia]);
+  }, [cleanupMedia, clearSilenceTimer]);
 
-  // ── startListening ─────────────────────────────────────────────────────────
+  // ── startListening ────────────────────────────────────────────────────────
   const startListening = useCallback(async () => {
     if (!isSupported) {
       optsRef.current.onError?.(
@@ -108,10 +137,31 @@ export function useVoice(opts: VoiceHookOptions): VoiceHookReturn {
       );
       return;
     }
-    if (activeRef.current) return; // already running
+    if (activeRef.current) return;
     activeRef.current = true;
+    committedRef.current = false;
+    interimBufferRef.current = "";
 
     VoiceDiagnosticsLogger.log("stt:start-requested");
+
+    // ── commitOnce — exactly one commit per listening session ───────────────
+    const commitOnce = (text: string) => {
+      if (committedRef.current) return;
+      committedRef.current = true;
+
+      clearSilenceTimer();
+      stopListening();
+
+      const trimmed = text.trim();
+      if (!trimmed) {
+        VoiceDiagnosticsLogger.log("stt:commit-empty");
+        return;
+      }
+
+      const lang = detectLanguageFromText(trimmed, optsRef.current.defaultLang ?? "en-US");
+      VoiceDiagnosticsLogger.log("stt:commit", `"${trimmed.slice(0, 60)}"`);
+      optsRef.current.onResult(trimmed, lang);
+    };
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -139,41 +189,67 @@ export function useVoice(opts: VoiceHookOptions): VoiceHookReturn {
 
       const session = createSpeechSession({
         lang: optsRef.current.defaultLang ?? "",
+
         onInterimResult: (text) => {
           VoiceDiagnosticsLogger.log("stt:interim", text.slice(0, 40));
           setTranscript(text);
+          interimBufferRef.current = text;
+
+          if (committedRef.current) return;
+
+          // Reset silence timer on every interim update
+          clearSilenceTimer();
+          if (text.trim()) {
+            VoiceDiagnosticsLogger.log("stt:silence-timer-start");
+            silenceTimerRef.current = setTimeout(() => {
+              silenceTimerRef.current = null;
+              const buffered = interimBufferRef.current;
+              VoiceDiagnosticsLogger.log("stt:silence-timer-fired", `"${buffered.slice(0, 40)}"`);
+              // PATH B: commit on silence
+              commitOnce(buffered);
+            }, SILENCE_THRESHOLD_MS);
+          }
         },
+
         onFinalResult: (text) => {
           VoiceDiagnosticsLogger.log("stt:final", text.slice(0, 80));
-          const lang = detectLanguageFromText(
-            text,
-            optsRef.current.defaultLang ?? "en-US"
-          );
-          // Stop listening before calling onResult so UI updates cleanly
-          stopListening();
-          // Always call onResult via ref — never a stale closure
-          optsRef.current.onResult(text, lang);
+          // PATH A: browser delivered final — commit immediately
+          commitOnce(text);
         },
+
         onError: (code) => {
           VoiceDiagnosticsLogger.log("stt:error", code);
+          clearSilenceTimer();
           const msgs = optsRef.current.messages ?? {};
           if (code === "not-allowed") {
             optsRef.current.onError?.(msgs.micDenied ?? "Microphone access denied.");
           } else if (code === "no-speech") {
-            optsRef.current.onError?.(msgs.noSpeech ?? "No speech detected. Please try again.");
+            // No audio at all — if we have buffered interim, still commit
+            if (interimBufferRef.current.trim()) {
+              commitOnce(interimBufferRef.current);
+            } else {
+              optsRef.current.onError?.(msgs.noSpeech ?? "No speech detected. Please try again.");
+              stopListening();
+            }
           } else {
             optsRef.current.onError?.(
               msgs.genericError?.(code) ?? `Voice error: ${code}`
             );
+            stopListening();
           }
-          stopListening();
         },
-        // onEnd fires when the session ends with no speech at all
-        // (if there was speech — even interim — speech-recognition.ts promotes
-        //  it to onFinalResult, so onEnd here means genuine silence)
+
+        // PATH C fallback — session ended without isFinal=true
+        // (speech-recognition.ts promotes interim to final first via its own PATH C,
+        //  but this catches any remaining edge cases)
         onEnd: () => {
           VoiceDiagnosticsLogger.log("stt:end-no-speech");
-          stopListening();
+          clearSilenceTimer();
+          if (interimBufferRef.current.trim() && !committedRef.current) {
+            commitOnce(interimBufferRef.current);
+          } else {
+            stopListening();
+          }
         },
       });
 
@@ -197,23 +273,17 @@ export function useVoice(opts: VoiceHookOptions): VoiceHookReturn {
       }
       stopListening();
     }
-  }, [isSupported, stopListening]);
+  }, [isSupported, stopListening, clearSilenceTimer]);
 
-  // ── Cleanup on unmount ─────────────────────────────────────────────────────
+  // ── Cleanup on unmount ────────────────────────────────────────────────────
   useEffect(() => {
     return () => {
       activeRef.current = false;
+      clearSilenceTimer();
       sessionRef.current?.abort();
       cleanupMedia();
     };
-  }, [cleanupMedia]);
+  }, [cleanupMedia, clearSilenceTimer]);
 
-  return {
-    isListening,
-    isSupported,
-    transcript,
-    amplitude,
-    startListening,
-    stopListening,
-  };
+  return { isListening, isSupported, transcript, amplitude, startListening, stopListening };
 }
