@@ -37,6 +37,7 @@ import { OptimisticUserBubble } from "@/components/chat/OptimisticUserBubble";
 import { MicrophoneButton } from "@/components/chat/MicrophoneButton";
 import { VoiceConversationPanel } from "@/components/chat/VoiceConversationPanel";
 import { useVoiceConversation } from "@/hooks/use-voice-conversation";
+import { VoiceDiagnosticsLogger } from "@/lib/voice/diagnostics";
 import { tFmt } from "@/lib/i18n";
 
 const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
@@ -144,9 +145,15 @@ export default function GuestChat() {
   }, [isAuthenticated, user, sessionId]);
 
   // ── Auto-start voice conversation if ?voice=1 ─────────────────────────────
+  // NOTE: deliberately does NOT check autoSendFiredRef — the two concerns are
+  // independent. If ?q= and ?voice=1 both appear (home mic → chat navigation),
+  // the transcript auto-send and the conversation loop must both run.
+  // The loop will be in "listening" state; when the AI responds to the auto-sent
+  // transcript, the messages useEffect calls speakResponse to close the loop.
   useEffect(() => {
-    if (voiceAutoStart && sessionId && !messagesLoading && !autoSendFiredRef.current) {
+    if (voiceAutoStart && sessionId && !messagesLoading) {
       setVoiceAutoStart(false);
+      VoiceDiagnosticsLogger.log("chat:voice-auto-start");
       if (conv.capability.sttSupported) {
         conv.startConversation();
       } else {
@@ -193,6 +200,7 @@ export default function GuestChat() {
     // Voice conversation loop: speak AI response then resume listening
     if (conv.isActive && newAssistantMessages.length > 0) {
       const latest = newAssistantMessages[newAssistantMessages.length - 1];
+      VoiceDiagnosticsLogger.log("chat:ai-response-speak", latest.content.slice(0, 40));
       conv.speakResponse(latest.content, detectedLanguage);
     }
   }, [messages]);

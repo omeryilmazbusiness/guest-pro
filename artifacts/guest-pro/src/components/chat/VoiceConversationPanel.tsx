@@ -32,6 +32,12 @@ const STATE_CONFIG: Record<
   ConversationState,
   { label: string; sublabel?: string; icon: React.ReactNode; color: string }
 > = {
+  starting: {
+    label: "Starting",
+    sublabel: "Opening microphone",
+    icon: <Loader2 className="w-6 h-6 animate-spin" />,
+    color: "text-zinc-400",
+  },
   listening: {
     label: "Listening",
     sublabel: "Speak now",

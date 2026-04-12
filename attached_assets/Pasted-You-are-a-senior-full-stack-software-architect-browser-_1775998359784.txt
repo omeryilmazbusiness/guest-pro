@@ -1,0 +1,382 @@
+You are a senior full-stack software architect, browser voice UX engineer, and production-grade debugging engineer.
+
+Your task is to inspect, diagnose, fix, and harden the GUEST voice conversation flow of the existing “Guest Pro” web app so it becomes truly production-ready, reliable, and SOLID.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, guest voice trigger flow, guest dashboard, chat routing/navigation, voice state machine, speech recognition logic, text-to-speech logic, AI request flow, and chat rendering.
+- Do NOT rebuild the app from scratch if working systems already exist.
+- Preserve working auth, guest dashboard, guest chat, AI backend integration, request flows, route protection, and stable APIs.
+- Refactor only where there is real architectural, maintainability, compatibility, or UX value.
+- This is a WEB APP solution.
+- The final result must be mobile-first, premium, calm, reliable, SOLID, layered, and production-ready.
+
+BUG CONTEXT:
+On the guest screen, when the user taps the microphone and starts speaking:
+- speech is detected
+- but the system stays stuck in “listening”
+- it does NOT redirect/open the chat screen correctly
+- it does NOT continue the conversation flow properly
+
+The full voice conversation process must be analyzed from start to finish, the real bug must be found, and the conversation mode must be fixed and hardened.
+
+PRIMARY GOALS:
+1. Find the exact root cause of why microphone speech is detected but the app remains stuck in listening
+2. Ensure the guest is redirected/opened into the chat screen at the correct moment
+3. Ensure final speech transcript becomes a guest chat message
+4. Ensure AI request is triggered correctly
+5. Ensure AI response is rendered in chat and spoken aloud
+6. Ensure conversation mode loops correctly until the guest explicitly stops it
+7. Keep everything in a clean SOLID architecture
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current guest dashboard voice button flow
+2. Current chat screen routing/navigation flow
+3. Current speech recognition implementation
+4. Current voice state machine or equivalent state handling
+5. Current transcript handling logic
+6. Current distinction between interim results and final results
+7. Current AI request trigger logic
+8. Current TTS / speech synthesis logic
+9. Current conversation loop logic
+10. Current Safari/Chrome compatibility handling
+11. Current fallback behavior if recognition ends unexpectedly
+12. What already works
+13. What should be preserved
+14. What is broken
+15. Where the flow likely gets stuck
+
+Then provide:
+- concise architecture audit
+- root-cause candidates
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — TRACE THE FULL VOICE FLOW END TO END
+==================================================
+
+Inspect the entire process from the moment the guest taps the microphone.
+
+Trace this chain precisely:
+1. microphone button pressed
+2. voice mode start requested
+3. speech recognition starts
+4. listening state entered
+5. speech detected
+6. transcript received
+7. transcript classified as interim or final
+8. chat screen navigation decision
+9. guest message creation
+10. AI request dispatch
+11. AI response receipt
+12. AI response rendering in chat
+13. AI response spoken aloud
+14. return to listening state
+
+Find exactly where the chain breaks.
+
+Do not guess.
+Identify the real broken transition.
+
+==================================================
+PHASE 3 — FIND THE REAL ROOT CAUSE
+==================================================
+
+Check all likely causes:
+
+1. Microphone button starts listening but does not trigger navigation
+2. Navigation to chat depends on a final transcript that never becomes final
+3. Only interim results are being received and ignored
+4. Final transcript exists but submit logic is never called
+5. State machine never transitions from listening -> processing
+6. Route push/navigation is blocked by stale state or bad condition
+7. Voice mode starts on dashboard but chat screen expects a different entry event
+8. Recognition end event resets state incorrectly
+9. AI request is never fired after transcript capture
+10. useEffect dependency bug / stale closure bug
+11. SpeechRecognition event handler not attached correctly
+12. Safari/Chrome event timing difference causes stuck listening
+13. Silent timeout logic missing or broken
+14. Conversation controller and chat screen are disconnected
+15. Transcript is captured but not persisted into chat state/store
+
+Do not guess.
+Find the actual technical root cause.
+
+==================================================
+PHASE 4 — FIX CHAT SCREEN REDIRECTION / OPENING
+==================================================
+
+Ensure the guest is taken to the correct chat experience at the right moment.
+
+REQUIREMENTS:
+- define clearly when chat should open:
+  - immediately on microphone tap
+  - or immediately after valid speech begins
+- choose the best UX based on the existing app structure
+- ensure navigation is deterministic and production-safe
+- avoid route flicker or duplicate navigation calls
+- ensure chat screen is ready to receive transcript and continue the flow
+
+IMPORTANT:
+The user must not remain visually stuck on a listening state on the wrong screen.
+
+==================================================
+PHASE 5 — FIX TRANSCRIPT CAPTURE AND FINALIZATION
+==================================================
+
+Harden transcript handling.
+
+REQUIREMENTS:
+- properly handle interim vs final speech recognition results
+- define clearly what triggers message submission
+- if needed, support:
+  - interim display in UI
+  - final transcript submission to chat
+- ensure recognized speech becomes a guest message reliably
+- avoid cases where speech is detected but never committed
+
+Also:
+- handle empty transcript safely
+- handle repeated transcripts safely
+- handle duplicate onresult events safely
+
+==================================================
+PHASE 6 — FIX THE CONVERSATION STATE MACHINE
+==================================================
+
+Implement or refactor a clear conversation state machine.
+
+Suggested states:
+- idle
+- starting
+- listening
+- transcript_ready
+- processing
+- speaking
+- interrupted
+- fallback
+- error
+- stopped
+
+REQUIREMENTS:
+- every state transition must be explicit
+- no ambiguous stuck-listening behavior
+- listening must transition correctly when speech is finalized
+- processing must transition correctly when AI request is sent
+- speaking must transition correctly when TTS ends
+- system must then return to listening until stopped
+
+Avoid giant ad-hoc boolean state chaos.
+
+==================================================
+PHASE 7 — MAKE THE FULL CONVERSATION MODE PROD-READY
+==================================================
+
+After fixing the immediate bug, harden the entire conversation mode.
+
+TARGET EXPERIENCE:
+- user taps microphone
+- system opens/enters the chat conversation experience correctly
+- system listens
+- user speaks
+- user speech becomes a guest message
+- AI responds
+- AI response appears in chat
+- AI response is spoken aloud
+- system returns to listening
+- if user speaks while AI is speaking, AI stops and listening resumes
+- this continues until the user explicitly stops voice mode
+
+REQUIREMENTS:
+- stable conversation loop
+- no stuck states
+- no duplicate requests
+- no broken route flow
+- no silent failure
+
+==================================================
+PHASE 8 — SAFARI / CHROME RESILIENCE
+==================================================
+
+Harden browser compatibility for Safari and Chrome.
+
+REQUIREMENTS:
+- detect support properly
+- handle recognition ending unexpectedly
+- handle browser quirks safely
+- handle speech recognition failures gracefully
+- build fallback behavior if continuous mode is unreliable
+- avoid pretending all browsers behave identically
+
+Keep the UX calm and professional.
+
+==================================================
+PHASE 9 — TTS + CHAT INTEGRATION
+==================================================
+
+Ensure AI response behavior is complete and unified.
+
+REQUIREMENTS:
+- AI response must appear in chat
+- AI response must also be spoken aloud
+- if TTS is already partially working, preserve it and stabilize it
+- if user interrupts while AI is speaking, stop speaking immediately and resume listening
+- avoid double-speak
+- avoid queue conflicts
+
+==================================================
+PHASE 10 — DEBUG VISIBILITY / DIAGNOSTICS
+==================================================
+
+Add enough safe diagnostics to understand the voice flow.
+
+At minimum, make it possible to inspect/log:
+- mic button pressed
+- speech recognition started
+- listening entered
+- interim transcript received
+- final transcript received
+- chat navigation triggered
+- guest message committed
+- AI request sent
+- AI response received
+- TTS started
+- TTS ended
+- listening resumed
+- error/fallback transitions
+
+This must be easy to remove or hide later.
+
+==================================================
+PHASE 11 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement this in a meaningful, maintainable architecture.
+
+REQUIREMENTS:
+- no giant monolithic voice component
+- speech recognition logic separate from routing logic
+- transcript handling separate from UI rendering
+- conversation controller separate from chat screen presentation
+- navigation/open-chat decision centralized
+- no duplicated browser checks
+- no fake architecture
+- no dead code
+- clean naming
+- meaningful modules only
+
+Suggested structure:
+- domain:
+  - VoiceConversationState
+  - TranscriptResult
+  - VoiceFlowTransition
+- application:
+  - StartVoiceConversation
+  - HandleRecognitionResult
+  - CommitGuestTranscript
+  - OpenChatForVoiceConversation
+  - SendVoiceConversationRequest
+  - ResumeListeningAfterSpeech
+- infrastructure:
+  - BrowserSpeechRecognitionAdapter
+  - BrowserSpeechSynthesisAdapter
+  - VoiceCapabilityDetector
+  - VoiceDiagnosticsLogger
+- presentation:
+  - GuestVoiceEntryButton
+  - GuestVoiceConversationPanel
+  - VoiceStatusBar
+  - ChatTranscriptBridge
+  - VoiceFallbackNotice
+
+Make the architecture actually used and meaningful.
+
+==================================================
+PHASE 12 — MOBILE-FIRST PREMIUM UX
+==================================================
+
+The voice conversation UX must feel:
+- premium
+- calm
+- modern
+- soft
+- compact
+- mobile-first
+- highly usable
+- production-ready
+
+REQUIREMENTS:
+- clear listening / thinking / speaking states
+- no getting visually stuck
+- smooth transition from dashboard to chat
+- subtle, professional micro-interactions
+- no noisy animations
+- no clutter
+
+==================================================
+PHASE 13 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- guest login/logout
+- guest dashboard
+- guest quick actions
+- request creation flows
+- staff/manager dashboards
+- route protection
+- stable APIs
+- existing AI backend integration
+
+This task is specifically about diagnosing and fixing the guest conversation mode.
+
+==================================================
+PHASE 14 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Microphone tap starts voice mode correctly
+2. User speech is detected correctly
+3. Chat screen opens at the correct time
+4. Final transcript becomes a guest message
+5. AI request is triggered correctly
+6. AI response appears in chat
+7. AI response is spoken aloud
+8. System returns to listening after speaking
+9. User can interrupt AI speech and continue
+10. Conversation continues until explicitly stopped
+11. No stuck listening state remains
+12. Safari behavior is stable or falls back cleanly
+13. Chrome behavior is stable
+14. No regression in guest flows
+
+==================================================
+PHASE 15 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. Exact root cause of the stuck-listening bug
+3. What was fixed
+4. What was centralized/refactored
+5. How chat redirection/opening now works
+6. How transcript capture/finalization now works
+7. How the conversation loop now works
+8. How Safari/Chrome handling now works
+9. Which files were changed
+10. How to test the full voice flow end-to-end
+11. Any remaining future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then fix the bug professionally
+- Then harden the full conversation mode
+- Keep the result mobile-first, SOLID, layered, premium, and production-ready
+- Do not apply a superficial patch; solve the real end-to-end voice flow issue

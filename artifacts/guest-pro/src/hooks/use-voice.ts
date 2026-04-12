@@ -1,15 +1,19 @@
 /**
  * use-voice.ts
- * Single-turn voice input hook — used for the home page hero mic.
- * For the full conversation loop, use use-voice-conversation.ts.
+ * Single-turn voice input hook — home page hero mic.
  *
- * Refactored to delegate to the shared voice infrastructure in lib/voice/.
+ * For the continuous conversation loop in chat, use use-voice-conversation.ts.
+ *
+ * Uses optsRef pattern: all callbacks (onResult, onError, etc.) are kept in a
+ * ref so startListening never captures a stale closure, even though home.tsx
+ * passes inline functions that change every render.
  */
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { isSttSupported, createSpeechSession } from "@/lib/voice/speech-recognition";
-import { synthesize, cancelSpeech } from "@/lib/voice/speech-synthesis";
+import { synthesize } from "@/lib/voice/speech-synthesis";
 import { detectLanguageFromText } from "@/lib/voice/language-resolver";
+import { VoiceDiagnosticsLogger } from "@/lib/voice/diagnostics";
 
 export interface VoiceMessages {
   notSupported?: string;
@@ -37,63 +41,77 @@ export interface VoiceHookReturn {
   stopListening: () => void;
 }
 
-/** @deprecated Use speakText from lib/voice/speech-synthesis instead */
+/** @deprecated Use synthesize() from lib/voice/speech-synthesis directly */
 export function speakText(text: string, lang: string): void {
   synthesize(text, lang);
 }
 
-export function useVoice({
-  onResult,
-  onError,
-  onStart,
-  onEnd,
-  defaultLang,
-  messages = {},
-}: VoiceHookOptions): VoiceHookReturn {
+export function useVoice(opts: VoiceHookOptions): VoiceHookReturn {
   const isSupported = isSttSupported();
 
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [amplitude, setAmplitude] = useState(0);
 
+  // Keep all callback options in a ref to avoid stale closures.
+  // Callers (home.tsx) pass inline functions that recreate every render —
+  // without this pattern, startListening would silently call the wrong version.
+  const optsRef = useRef(opts);
+  optsRef.current = opts;
+
   const sessionRef = useRef<ReturnType<typeof createSpeechSession>>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const animFrameRef = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const stoppedRef = useRef(false);
+  const activeRef = useRef(false); // guards re-entrant calls
 
-  const stopListening = useCallback(() => {
-    if (stoppedRef.current) return;
-    stoppedRef.current = true;
-
-    sessionRef.current?.abort();
-    sessionRef.current = null;
-
+  // ── Cleanup helper (no deps — uses only refs) ──────────────────────────────
+  const cleanupMedia = useCallback(() => {
     if (animFrameRef.current !== null) {
       cancelAnimationFrame(animFrameRef.current);
       animFrameRef.current = null;
     }
     if (audioContextRef.current) {
-      audioContextRef.current.close();
+      audioContextRef.current.close().catch(() => {});
       audioContextRef.current = null;
     }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     }
+  }, []);
+
+  // ── stopListening — also has no volatile deps (uses refs) ──────────────────
+  const stopListening = useCallback(() => {
+    if (!activeRef.current) return;
+    activeRef.current = false;
+
+    sessionRef.current?.abort();
+    sessionRef.current = null;
+
+    cleanupMedia();
+
     setIsListening(false);
     setAmplitude(0);
     setTranscript("");
-    onEnd?.();
-  }, [onEnd]);
 
+    optsRef.current.onEnd?.();
+    VoiceDiagnosticsLogger.log("stt:stopped");
+  }, [cleanupMedia]);
+
+  // ── startListening ─────────────────────────────────────────────────────────
   const startListening = useCallback(async () => {
     if (!isSupported) {
-      onError?.(messages.notSupported ?? "Speech recognition is not supported in this browser. Please type your message.");
+      optsRef.current.onError?.(
+        optsRef.current.messages?.notSupported ??
+          "Speech recognition is not supported in this browser."
+      );
       return;
     }
+    if (activeRef.current) return; // already running
+    activeRef.current = true;
 
-    stoppedRef.current = false;
+    VoiceDiagnosticsLogger.log("stt:start-requested");
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -106,41 +124,63 @@ export function useVoice({
       analyser.fftSize = 256;
       source.connect(analyser);
 
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      const trackAmplitude = () => {
-        analyser.getByteFrequencyData(dataArray);
-        const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      const tick = () => {
+        analyser.getByteFrequencyData(data);
+        const avg = data.reduce((a, b) => a + b, 0) / data.length;
         setAmplitude(avg / 128);
-        animFrameRef.current = requestAnimationFrame(trackAmplitude);
+        animFrameRef.current = requestAnimationFrame(tick);
       };
-      trackAmplitude();
+      tick();
 
       setIsListening(true);
-      onStart?.();
+      optsRef.current.onStart?.();
+      VoiceDiagnosticsLogger.log("stt:listening");
 
       const session = createSpeechSession({
-        lang: defaultLang ?? "",
-        onInterimResult: (text) => setTranscript(text),
+        lang: optsRef.current.defaultLang ?? "",
+        onInterimResult: (text) => {
+          VoiceDiagnosticsLogger.log("stt:interim", text.slice(0, 40));
+          setTranscript(text);
+        },
         onFinalResult: (text) => {
-          const detectedLang = detectLanguageFromText(text, defaultLang ?? "en-US");
+          VoiceDiagnosticsLogger.log("stt:final", text.slice(0, 80));
+          const lang = detectLanguageFromText(
+            text,
+            optsRef.current.defaultLang ?? "en-US"
+          );
+          // Stop listening before calling onResult so UI updates cleanly
           stopListening();
-          onResult(text, detectedLang);
+          // Always call onResult via ref — never a stale closure
+          optsRef.current.onResult(text, lang);
         },
         onError: (code) => {
+          VoiceDiagnosticsLogger.log("stt:error", code);
+          const msgs = optsRef.current.messages ?? {};
           if (code === "not-allowed") {
-            onError?.(messages.micDenied ?? "Microphone access denied.");
+            optsRef.current.onError?.(msgs.micDenied ?? "Microphone access denied.");
           } else if (code === "no-speech") {
-            onError?.(messages.noSpeech ?? "No speech detected. Please try again.");
+            optsRef.current.onError?.(msgs.noSpeech ?? "No speech detected. Please try again.");
           } else {
-            onError?.(messages.genericError?.(code) ?? `Voice error: ${code}`);
+            optsRef.current.onError?.(
+              msgs.genericError?.(code) ?? `Voice error: ${code}`
+            );
           }
           stopListening();
         },
-        onEnd: () => stopListening(),
+        // onEnd fires when the session ends with no speech at all
+        // (if there was speech — even interim — speech-recognition.ts promotes
+        //  it to onFinalResult, so onEnd here means genuine silence)
+        onEnd: () => {
+          VoiceDiagnosticsLogger.log("stt:end-no-speech");
+          stopListening();
+        },
       });
 
       if (!session) {
-        onError?.(messages.notSupported ?? "Speech recognition is not supported.");
+        optsRef.current.onError?.(
+          optsRef.current.messages?.notSupported ?? "Speech recognition unavailable."
+        );
         stopListening();
         return;
       }
@@ -148,14 +188,25 @@ export function useVoice({
       sessionRef.current = session;
       session.start();
     } catch (err) {
+      VoiceDiagnosticsLogger.log("stt:mic-error", (err as Error).name);
+      const msgs = optsRef.current.messages ?? {};
       if ((err as Error).name === "NotAllowedError") {
-        onError?.(messages.micDenied ?? "Microphone access denied.");
+        optsRef.current.onError?.(msgs.micDenied ?? "Microphone access denied.");
       } else {
-        onError?.(messages.micNotAvailable ?? "Cannot access microphone.");
+        optsRef.current.onError?.(msgs.micNotAvailable ?? "Microphone unavailable.");
       }
       stopListening();
     }
-  }, [isSupported, onResult, onError, onStart, stopListening, defaultLang, messages]);
+  }, [isSupported, stopListening]);
+
+  // ── Cleanup on unmount ─────────────────────────────────────────────────────
+  useEffect(() => {
+    return () => {
+      activeRef.current = false;
+      sessionRef.current?.abort();
+      cleanupMedia();
+    };
+  }, [cleanupMedia]);
 
   return {
     isListening,
