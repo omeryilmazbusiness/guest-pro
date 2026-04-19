@@ -1,0 +1,266 @@
+You are a senior full-stack software architect, routing/auth flow debugger, premium UX designer, and production-grade product engineer.
+
+Your task is to inspect, diagnose, fix, and harden the new public guest welcoming flow in the existing “Guest Pro” project.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, routing structure, auth/session flow, guest auto-login logic, route guards/middleware, redirect logic, guest dashboard entry flow, and current /welcoming implementation.
+- Do NOT rebuild the project from scratch if working parts already exist.
+- Preserve working auth, guest auto-login, manager/staff dashboards, guest dashboard, stable APIs, and existing good structure where appropriate.
+- Refactor only where there is real architectural, maintainability, routing, or UX value.
+- The final result must be production-ready, SOLID, modular, premium, and reliable.
+
+BUG CONTEXT:
+The /welcoming path does not open correctly.
+Even when /welcoming is entered directly, the app redirects automatically into login / auto-login / dashboard flow instead of showing the welcoming screen.
+
+NEW REQUIRED BEHAVIOR:
+- /welcoming must be accessible without any login requirement
+- if login is not desired, the welcoming screen must still open normally
+- welcoming screen must be a true public route
+- auto-login or route guards must NOT override it
+- the welcoming screen should act as a premium public entry experience before any guest login if needed
+
+PRIMARY GOALS:
+1. Find the exact root cause of why /welcoming is being auto-redirected
+2. Fix the routing/auth guard behavior professionally
+3. Make /welcoming a clean public route with no login requirement
+4. Ensure existing login-required routes remain protected
+5. Keep the architecture modular and SOLID
+6. Preserve current project structure and integrate the welcoming flow cleanly
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current routing/app structure
+2. Current guest auth/session flow
+3. Current auto-login logic
+4. Current route guards / middleware / redirect rules
+5. Current guest dashboard entry flow
+6. Current /welcoming route implementation if any
+7. Current locale/language initialization flow
+8. Current theme/design system
+9. What already works
+10. What should be preserved
+11. What is causing the unwanted redirect
+12. What needs redesign/refactor
+
+Then provide:
+- concise architecture audit
+- public-route gap analysis
+- auth/redirect bug root-cause candidates
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — FIND THE REAL ROOT CAUSE
+==================================================
+
+Diagnose the exact reason why /welcoming is not opening.
+
+Check all likely causes:
+
+1. Global auth middleware redirects all guest-facing routes automatically
+2. Auto-login logic runs before route resolution and hijacks /welcoming
+3. Route guard incorrectly classifies /welcoming as protected
+4. Guest session bootstrap always redirects to dashboard when a token exists
+5. Root layout/page effect forces redirect on mount
+6. Locale initialization or guest bootstrap code triggers auto-navigation
+7. useEffect / router push logic runs unconditionally
+8. Public/private route config is missing or inconsistent
+9. Route matcher excludes /welcoming accidentally
+10. Middleware or server-side redirect overrides client route
+11. There is a race between session restore and route rendering
+
+Do not guess.
+Find the actual technical root cause.
+
+==================================================
+PHASE 3 — MAKE /WELCOMING A TRUE PUBLIC ROUTE
+==================================================
+
+Implement /welcoming as a real public entry route.
+
+REQUIREMENTS:
+- no login requirement
+- no guest token requirement
+- no auto-login requirement
+- no forced redirect to dashboard
+- route must open directly when typed in the browser
+- route must still work if there is no active session
+- route must still work if login is intentionally skipped
+
+IMPORTANT:
+- do not weaken protected routes globally
+- only public-route behavior should be corrected
+- public/private route rules must become explicit and maintainable
+
+==================================================
+PHASE 4 — PRESERVE AUTO-LOGIN LOGIC WITHOUT BREAKING /WELCOMING
+==================================================
+
+Auto-login may still exist for other flows, but it must not hijack /welcoming.
+
+REQUIREMENTS:
+- inspect current auto-login/session restoration logic
+- keep it working for intended routes
+- exclude /welcoming from unwanted redirects
+- ensure public-entry logic is clearly defined
+- avoid brittle if-path-string hacks scattered everywhere
+
+ARCHITECTURE GOAL:
+Create clean route access rules such as:
+- public routes
+- guest protected routes
+- manager protected routes
+- staff protected routes
+
+==================================================
+PHASE 5 — DEFINE THE WELCOMING FLOW PROFESSIONALLY
+==================================================
+
+Clarify how /welcoming should behave as a product flow.
+
+REQUIREMENTS:
+- if opened directly, it should render the premium welcoming experience immediately
+- from there, the guest may:
+  - choose a language
+  - continue into dashboard or next step depending on app design
+- welcoming route must feel intentional and first-class
+- not like a broken bypass page
+
+If the project already has a guest dashboard entry flow:
+- integrate /welcoming cleanly into that architecture
+- do not duplicate logic unnecessarily
+
+==================================================
+PHASE 6 — HARDEN ROUTING / NAVIGATION ARCHITECTURE
+==================================================
+
+Refactor route access and redirects into a maintainable architecture.
+
+REQUIREMENTS:
+- centralize route access policy
+- centralize redirect decisions
+- avoid scattered `router.push()` hacks
+- avoid duplicated auth checks in many pages
+- define explicit behavior for:
+  - public routes
+  - protected guest routes
+  - protected manager routes
+  - protected staff routes
+- keep /welcoming clearly public
+
+Possible architecture:
+- RouteAccessPolicy
+- SessionRedirectResolver
+- PublicRouteRegistry
+- GuestRouteGuard
+- ManagerRouteGuard
+- StaffRouteGuard
+
+Make the architecture meaningful and actually used.
+
+==================================================
+PHASE 7 — WELCOMING SCREEN UX / ENTRY STATE
+==================================================
+
+Ensure the welcoming screen is visually stable and production-ready.
+
+REQUIREMENTS:
+- route should render without flicker
+- no momentary redirect flash
+- no loading-to-redirect confusion
+- if session/bootstrap checks are happening, they must not visually break the screen
+- welcoming screen must feel like a premium intentional entry page
+
+==================================================
+PHASE 8 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- guest login/logout
+- guest dashboard
+- manager login/dashboard
+- staff login/dashboard
+- existing protected routes
+- stable APIs
+- current locale handling where it works
+- current Guest Pro theme and design language
+
+This task is specifically about fixing the public welcoming route and auth redirect behavior.
+
+==================================================
+PHASE 9 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement this in a meaningful, maintainable architecture.
+
+REQUIREMENTS:
+- no giant route file full of hardcoded redirect conditions
+- no duplicated auth/redirect checks across pages
+- no fake architecture
+- no dead code
+- clean naming
+- meaningful modules only
+
+Suggested structure:
+- domain:
+  - RouteAccessLevel
+  - SessionState
+  - RedirectIntent
+- application:
+  - ResolveRouteAccess
+  - ResolveSessionRedirect
+  - EnterWelcomingFlow
+- infrastructure:
+  - auth/session adapter
+  - route registry
+  - middleware/guard integration
+- presentation:
+  - GuestWelcomingPage
+  - PublicRouteWrapper
+  - RouteAccessBoundary
+
+Make the architecture actually used and meaningful.
+
+==================================================
+PHASE 10 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. /welcoming opens directly with no login requirement
+2. Typing /welcoming in the browser does not redirect away unexpectedly
+3. Welcoming screen renders correctly without flicker
+4. Auto-login no longer hijacks /welcoming
+5. Protected guest routes still remain protected where required
+6. Manager/staff protected routes still remain protected
+7. Existing login flows still work
+8. Existing dashboard flows still work
+9. No regression in locale/theme handling
+10. Overall behavior feels production-ready
+
+==================================================
+PHASE 11 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. Exact root cause of the unwanted redirect
+3. What was fixed
+4. How /welcoming is now treated as a public route
+5. How auto-login and route guards are now handled
+6. Which files were changed
+7. Any architecture refactors made
+8. How to test the public welcoming flow end-to-end
+9. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then fix the redirect bug professionally
+- Keep the result SOLID, modular, premium, and production-ready
+- /welcoming must be a real public route that works even without login
