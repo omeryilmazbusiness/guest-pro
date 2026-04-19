@@ -208,6 +208,7 @@ export default function GuestWelcoming() {
         <InfoBlocks
           config={HOTEL_CONFIG}
           s={s}
+          locale={selectedLocale}
           isAuthenticated={isAuthenticated}
           onOpenConcierge={handleOpenConcierge}
           onAccessStay={handleAccessStay}

@@ -7,6 +7,7 @@ import hotelRouter from "./hotel";
 import trackingRouter from "./tracking";
 import requestsRouter from "./requests";
 import analyticsRouter from "./analytics";
+import welcomeAlertRouter from "./welcome-alert";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(hotelRouter);
 router.use(trackingRouter);
 router.use(requestsRouter);
 router.use(analyticsRouter);
+router.use(welcomeAlertRouter);
 
 export default router;

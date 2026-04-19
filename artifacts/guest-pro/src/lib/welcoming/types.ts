@@ -22,10 +22,19 @@ export interface ServiceHours {
   close: string;
 }
 
+export interface PlaceCoords {
+  lat: number;
+  lng: number;
+}
+
 export interface NearbyPlace {
   name: string;
   type: "market" | "pharmacy" | "bazaar" | "restaurant" | "other";
   distance: string;
+  /** Short description shown in the place modal */
+  description?: string;
+  /** GPS coordinates used for Google Maps links and the map preview */
+  coords?: PlaceCoords;
 }
 
 export interface MenuItem {
@@ -34,5 +43,7 @@ export interface MenuItem {
 
 export interface MenuSection {
   category: string;
+  /** Lucide icon name for the category */
+  icon: "Coffee" | "UtensilsCrossed" | "IceCream2" | "Soup" | "ChefHat";
   items: MenuItem[];
 }

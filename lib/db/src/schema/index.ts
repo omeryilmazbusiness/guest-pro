@@ -8,3 +8,4 @@ export * from "./daily-usage";
 export * from "./tracking";
 export * from "./service-requests";
 export * from "./daily-summaries";
+export * from "./welcome-alerts";

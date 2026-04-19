@@ -81,6 +81,7 @@ import { computeTrackingSummary } from "@/lib/tracking-summary";
 import { GuestsOverviewCard } from "@/components/manager/GuestsOverviewCard";
 import { StaffRequestsBoard } from "@/components/manager/StaffRequestsBoard";
 import { NewRequestAlert } from "@/components/manager/NewRequestAlert";
+import { WelcomeAreaAlertBanner } from "@/components/manager/WelcomeAreaAlertBanner";
 import { DailySummaryTab } from "@/components/manager/DailySummaryTab";
 import { QuickReportModal } from "@/components/manager/QuickReportModal";
 
@@ -896,6 +897,9 @@ export default function ManagerDashboard() {
         onNavigateToRequests={handleNavigateToRequests}
         enabled={isAuthenticated && !!user}
       />
+
+      {/* ── Welcome-area alert banner — shows when anonymous guests call for help ── */}
+      <WelcomeAreaAlertBanner enabled={isAuthenticated && !!user} />
 
       {/* ── Quick Report modal (manager-only) ── */}
       {isManager && (

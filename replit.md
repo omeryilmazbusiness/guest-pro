@@ -451,6 +451,47 @@ Interruption: `interruptAndListen()` cancels TTS and immediately re-opens mic.
 - `pickBestVoice(lang)` selects best available TTS voice for that language (exact → prefix → any)
 - Both STT lang and TTS voice update each turn to follow switching languages naturally
 
+## Welcome-Area Public Support Alerts
+
+Anonymous guests on `/welcoming` can tap "Call for help" (Destek çağır in Turkish) to notify reception without logging in.
+
+### DB Table: `welcome_area_alerts`
+- Fields: id, hotelId, selectedLanguage, sessionId, status (open|acknowledged), createdAt, acknowledgedAt
+- Separate from `service_requests` (which requires auth) — intentionally isolated
+
+### API Endpoints
+- `POST /api/public/welcome-support` — no auth required, creates alert (single-hotel: always hotelId=1)
+- `GET /api/welcome-alerts` — staff only, returns all hotel alerts
+- `PATCH /api/welcome-alerts/:id/status` — staff only, mark acknowledged
+
+### Frontend
+- `lib/welcoming/welcome-support.ts` — creates stable anonymous sessionId in sessionStorage; calls public endpoint
+- `components/manager/WelcomeAreaAlertBanner.tsx` — polls every 20s, shows horizontal pill banner when open alerts exist; staff can acknowledge individual alerts
+
+## Welcoming Info Blocks Redesign (v2)
+
+### DiningCard — icon-based meal rows
+- Sunrise → Breakfast, Sun → Lunch, Moon → Dinner, Bell → Room Service
+- Room service shown with emerald badge
+
+### MenuCard — icon-based category headers
+- `icon` field on `MenuSection` type: "Coffee" | "UtensilsCrossed" | "IceCream2" | "Soup" | "ChefHat"
+- Each icon has matching bg/text colour pair
+
+### NearbyCard + NearbyPlaceModal
+- Places are clickable rows (ChevronRight indicator)
+- Modal shows: place description, OpenStreetMap iframe (no API key), "Open in Google Maps" (walking directions deep-link), QR code via `qrcode.react`
+- NearbyPlace type extended with `coords?: {lat, lng}` and `description?`
+- Istanbul Grand Bazaar area coordinates used for the 4 demo places
+
+### EmergencyCard — dual CTA
+- Phone number + "Call hotel" link (unchanged)
+- "Call for help" / "Destek çağır" button fires `callForWelcomeSupport()` with 4 states (idle → sending → sent → failed)
+
+### New i18n strings (all 6 welcoming locales)
+`callForSupport`, `callForSupportSending`, `callForSupportSent`, `callForSupportFailed`,
+`nearbyOpenInMaps`, `nearbyGetQr`, `nearbyModalTitle`, `nearbyQrScanNote`
+
 ## Artifacts
 
 - `artifacts/api-server` — Express API server (port via `PORT` env)

@@ -1,0 +1,426 @@
+You are a senior full-stack software architect, premium UX/UI designer, maps/location workflow designer, and production-grade product engineer.
+
+Your task is to inspect, redesign, and harden the public Guest Pro welcoming dashboard flow into a premium, modular, desktop-first hospitality information experience.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, routing structure, current /welcoming flow, public/private route access rules, theme system, localization/i18n setup, dashboard card architecture, request/notification system, and current staff/reception alert flow.
+- Do NOT rebuild the app from scratch if working parts already exist.
+- Preserve working auth, manager/staff dashboards, current guest dashboard, localization, route protection for protected routes, and stable APIs.
+- Preserve /welcoming as a public no-login-required flow.
+- Refactor only where there is real architectural, maintainability, UX, or production value.
+- The final result must be premium, desktop-first, elegant, modular, SOLID, and production-ready.
+- This welcoming dashboard must remain public and must NOT require login.
+
+PROJECT CONTEXT:
+Guest Pro already has or is adding a public /welcoming route.
+This route must now become a premium public welcoming dashboard after language selection, without redirecting to login.
+
+PRIMARY GOALS:
+1. The public welcoming dashboard must have a highly professional, comprehensive, premium card-based design
+2. It must remain desktop-first while still being responsive
+3. Nearby places must support Google Maps integration
+4. When the user clicks a nearby place, a professional popup/modal should open
+5. The popup should show:
+   - map preview or embedded map area if feasible
+   - distance or approximate closeness
+   - the place information
+   - a route/open-in-maps action
+6. If the user wants to continue on their phone, a “Create QR and open on phone” action/button must exist
+7. Clicking that button should generate a QR code
+8. Scanning the QR from the phone should open maps and directly prepare navigation/route to that selected place
+9. The “Günün Menüsü” section must become more understandable, icon-based, soft, and premium
+10. The meal hours section must also become icon-based, clearer, softer, and more premium
+11. The Emergency Help section must include a “Destek çağır” action
+12. When “Destek çağır” is clicked, a reception/staff-side alert must be created
+13. The reception/staff side should receive a notification similar to:
+   - “Guest is calling from welcome area”
+14. This welcome-area support call should work even though the welcoming dashboard is public/no-login
+15. The whole welcoming dashboard must be modular so new cards/features can be added later easily
+16. The architecture must be SOLID, extensible, and production-ready
+
+IMPORTANT LANGUAGE RESTRICTION:
+Only these selectable languages must exist:
+- Türkçe
+- English
+- Русский
+- हिन्दी
+- اردو
+- 日本語
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current /welcoming route implementation
+2. Current public welcoming flow after language selection
+3. Current card/component system
+4. Current localization/i18n structure
+5. Current content/config architecture
+6. Current support/request creation flow
+7. Current staff/reception request/notification flow
+8. Current modal/popup infrastructure
+9. Current route access/public route handling
+10. Current design system/tokens/theme
+11. What already works
+12. What should be preserved
+13. What is weak in the welcoming dashboard
+14. What is weak in maps/location integration
+15. What is weak in welcome-area support alerting
+16. What needs redesign/refactor
+
+Then provide:
+- concise architecture audit
+- welcoming-dashboard UX gap analysis
+- nearby places/maps integration gap analysis
+- welcome-area support alert gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — DEFINE THE PUBLIC WELCOMING DASHBOARD
+==================================================
+
+Clarify the target product behavior.
+
+REQUIREMENTS:
+- /welcoming remains public
+- no login required
+- after selecting a supported language, the user should land on a PUBLIC welcoming dashboard
+- do NOT redirect to login
+- do NOT redirect to protected guest dashboard
+- this dashboard is informational, premium, and modular
+- it must feel like a first-class hospitality product experience, not a temporary landing page
+
+The dashboard should be composed of modular cards such as:
+- Welcome / essentials
+- Wi-Fi information
+- Emergency help
+- Breakfast & meal hours
+- Günün Menüsü
+- Complaint / support info
+- Nearby safe places
+
+==================================================
+PHASE 3 — PREMIUM DESKTOP-FIRST WELCOMING DASHBOARD UX
+==================================================
+
+Design the welcoming dashboard with a highly professional premium style.
+
+DESIGN GOALS:
+- desktop-first
+- luxurious but minimal
+- calm
+- polished
+- premium hospitality software feel
+- strong spacing
+- excellent readability
+- soft modern cards
+- not cluttered
+- not noisy
+
+REQUIREMENTS:
+- card-based layout
+- consistent visual hierarchy
+- premium typography
+- soft shadows
+- subtle interactions
+- refined iconography
+- restrained use of color
+- dark/black premium welcoming hero feel may remain consistent with the prior welcoming screen, but dashboard content should stay readable and elegant
+
+==================================================
+PHASE 4 — NEARBY PLACES WITH GOOGLE MAPS INTEGRATION
+==================================================
+
+Upgrade the nearby places section professionally.
+
+REQUIREMENTS:
+- each nearby place card must support Google Maps integration
+- cards should include:
+  - place name
+  - category (market, pharmacy, bazaar-like, etc.)
+  - short useful description
+  - approximate distance or “how close”
+  - action buttons
+- clicking a place should open a premium popup/modal
+
+The popup/modal should show:
+- a visual map area or map preview if feasible
+- place details
+- approximate distance
+- open in Google Maps
+- create QR and open on phone
+
+IMPORTANT:
+- build this in a robust and maintainable way
+- do not hardcode messy map URLs in UI components
+- use a clean map link builder / place presentation layer
+
+==================================================
+PHASE 5 — “CREATE QR AND OPEN ON PHONE” FLOW
+==================================================
+
+Implement a QR-assisted handoff flow for nearby places.
+
+REQUIREMENTS:
+- in the nearby-place popup/modal, include a button:
+  - “Create QR and open on phone”
+- clicking it should generate a QR code
+- scanning the QR on a phone should open Google Maps (or appropriate maps deep link) and prepare navigation/route to that destination
+- keep the UX simple and premium
+- make the QR modal or QR area elegant and easy to use
+- if routing origin handling is needed, use the cleanest production-safe approach available for web
+
+The QR flow must feel intentional and useful, not hacked together.
+
+==================================================
+PHASE 6 — GÜNÜN MENÜSÜ SECTION REDESIGN
+==================================================
+
+Redesign the “Günün Menüsü” section.
+
+REQUIREMENTS:
+- more understandable
+- icon-based
+- softer
+- visually clearer
+- premium hospitality UX
+- easy to scan
+- desktop-first but responsive
+- use structured content rather than a wall of text
+- allow categories/items to feel organized and readable
+
+The section should feel:
+- appetizing
+- elegant
+- calm
+- premium
+- informative
+
+==================================================
+PHASE 7 — MEAL HOURS SECTION REDESIGN
+==================================================
+
+Redesign the meal/breakfast/food service timing section.
+
+REQUIREMENTS:
+- use icons
+- use soft, understandable layout
+- make hours easy to scan quickly
+- separate breakfast / lunch / dinner / room service or relevant timing if data exists
+- keep design minimal and premium
+- avoid cluttered timetable look
+
+==================================================
+PHASE 8 — EMERGENCY HELP + “DESTEK ÇAĞIR”
+==================================================
+
+Upgrade the Emergency Help section.
+
+REQUIREMENTS:
+- include emergency/help contact information
+- add a strong but premium CTA:
+  - “Destek çağır”
+- this action must create a reception/staff-side support alert
+- even though the welcoming dashboard is public/no-login, the support call must still be trackable as originating from the welcoming area
+
+STAFF/RECEPTION-SIDE EXPECTED RESULT:
+- a notification/alert such as:
+  - “Guest is calling from welcome area”
+- include any useful available metadata such as:
+  - selected language
+  - approximate session timestamp
+  - source = welcoming area
+  - public visitor context / anonymous session ID if appropriate
+
+IMPORTANT:
+- do not require authentication for this welcome-area support request
+- but do implement it safely and cleanly
+- do not pollute the normal guest authenticated request model unless the architecture justifies a shared abstraction
+
+==================================================
+PHASE 9 — WELCOME-AREA SUPPORT ALERT PIPELINE
+==================================================
+
+Design a clean backend/request architecture for public welcome-area support calls.
+
+REQUIREMENTS:
+- create a safe and explicit request type for welcome-area support alerts
+- ensure reception/staff can distinguish these from authenticated guest room requests
+- allow future extension if more public welcome-area actions are added later
+- if the current request model already exists, integrate carefully rather than hacking around it
+
+Possible concepts:
+- request source = WELCOMING_AREA
+- public assistance request type
+- anonymous/public session metadata
+- selected language metadata
+
+==================================================
+PHASE 10 — MODULAR CONTENT / CARD ARCHITECTURE
+==================================================
+
+The welcoming dashboard must be modular.
+
+REQUIREMENTS:
+- each dashboard feature should be its own reusable card/module
+- do not build one giant page file with all logic mixed together
+- content should come from a clean config/repository/content layer
+- allow new cards/features to be added later with minimal change
+- localize card content through a structured system
+- keep architecture flexible for future hotel-specific customization
+
+Possible modular cards:
+- WiFiInfoCard
+- EmergencyHelpCard
+- MealHoursCard
+- DailyMenuCard
+- SupportInfoCard
+- NearbyPlacesCard
+- WelcomeEssentialsCard
+
+==================================================
+PHASE 11 — ROUTING / ACCESS / INTEGRATION
+==================================================
+
+Keep the welcoming dashboard public and integrate it cleanly.
+
+REQUIREMENTS:
+- /welcoming remains public
+- welcoming dashboard remains public
+- manager/staff protected routes remain protected
+- protected guest dashboard remains protected if current system requires it
+- locale selection continues to work with only the approved 6 languages
+- no login redirect should happen during this public flow
+
+==================================================
+PHASE 12 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement this feature in a meaningful, maintainable architecture.
+
+REQUIREMENTS:
+- no giant single page with mixed UI/business logic
+- separate presentation from content/config
+- separate map link generation from UI
+- separate QR generation logic from popup rendering
+- separate welcome-area support alert creation from UI click handlers
+- centralize supported language definitions
+- centralize card/module registration if useful
+- no fake architecture
+- no dead code
+- clean naming
+- meaningful modules only
+
+Suggested structure:
+- domain:
+  - GuestWelcomingLanguage
+  - GuestWelcomingContentSection
+  - NearbyPlace
+  - ServiceHours
+  - PublicSupportAlert
+- application:
+  - ResolveWelcomingLocale
+  - GetGuestWelcomingContent
+  - BuildNearbyPlaceMapLink
+  - BuildNearbyPlaceQrPayload
+  - CreateWelcomeAreaSupportAlert
+  - EnterPublicWelcomingDashboard
+- infrastructure:
+  - localized content repository/config
+  - locale persistence adapter
+  - map/deeplink builder
+  - QR generation adapter
+  - public route registry
+  - staff alert integration
+- presentation:
+  - PublicWelcomingDashboard
+  - WelcomingContentGrid
+  - WiFiInfoCard
+  - EmergencyHelpCard
+  - MealHoursCard
+  - DailyMenuCard
+  - SupportInfoCard
+  - NearbyPlacesCard
+  - NearbyPlaceModal
+  - PlaceQrPanel
+  - WelcomeSupportCallButton
+
+Make the architecture actually used and meaningful.
+
+==================================================
+PHASE 13 — MOBILE / RESPONSIVE SAFETY
+==================================================
+
+Although desktop-first, the welcoming dashboard must remain responsive.
+
+REQUIREMENTS:
+- graceful behavior on tablet/mobile
+- no broken popup layout
+- no overflow issues
+- QR and map popup must still be usable
+- cards must stack elegantly on smaller screens
+
+==================================================
+PHASE 14 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- /welcoming public access
+- language selection
+- existing guest flows
+- existing manager/staff dashboards
+- route protection
+- stable APIs
+- existing support/request systems where they are already working
+
+This task is specifically about enhancing the public welcoming dashboard.
+
+==================================================
+PHASE 15 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Welcoming dashboard looks premium and desktop-first
+2. Nearby places cards render correctly
+3. Clicking a nearby place opens a professional popup/modal
+4. The popup shows map/location details clearly
+5. Google Maps integration works
+6. “Create QR and open on phone” works
+7. QR opens maps routing on a phone cleanly
+8. Günün Menüsü is more understandable, softer, and icon-based
+9. Meal hours are icon-based and clearer
+10. Emergency Help includes “Destek çağır”
+11. Clicking “Destek çağır” creates a reception/staff alert
+12. Staff/reception sees a meaningful “Guest is calling from welcome area” style notification
+13. The architecture is modular and easy to extend
+14. No regression in public welcoming flow
+15. No regression in protected routes or existing dashboards
+
+==================================================
+PHASE 16 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was preserved
+3. What was redesigned
+4. How nearby places + Google Maps integration works
+5. How QR handoff to phone works
+6. How the daily menu section was improved
+7. How the meal hours section was improved
+8. How “Destek çağır” and welcome-area support alerts work
+9. Which files were changed
+10. Any architecture refactors made
+11. How to test the welcoming dashboard end-to-end
+12. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result desktop-first, SOLID, modular, premium, and production-ready
+- The welcoming dashboard must feel like a luxury hospitality information hub, not a simple landing page
