@@ -84,6 +84,7 @@ export const HOTEL_CONFIG: HotelConfig = {
 export interface WelcomingStrings {
   selectLanguage: string;
   continueToStay: string;
+  accessYourStay: string;
   greetingSubtitle: string;
   essentialsSection: string;
   wifiTitle: string;
@@ -102,6 +103,7 @@ export interface WelcomingStrings {
   supportTitle: string;
   supportDesc: string;
   supportAction: string;
+  supportLoginNote: string;
   placeTypeMarket: string;
   placeTypePharmacy: string;
   placeTypeBazaar: string;
@@ -112,7 +114,8 @@ export interface WelcomingStrings {
 export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
   en: {
     selectLanguage:    "Select your language",
-    continueToStay:    "Continue to your stay",
+    continueToStay:    "Explore hotel info",
+    accessYourStay:    "Login to access your stay",
     greetingSubtitle:  "Welcome",
     essentialsSection: "Essentials",
     wifiTitle:         "Wi-Fi",
@@ -131,6 +134,7 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
     supportTitle:      "Help & Complaints",
     supportDesc:       "Our concierge is available 24/7 for any issue, complaint, or request.",
     supportAction:     "Open Concierge",
+    supportLoginNote:  "Login to chat with our concierge",
     placeTypeMarket:   "Supermarket",
     placeTypePharmacy: "Pharmacy",
     placeTypeBazaar:   "Grand Bazaar",
@@ -139,7 +143,8 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
   },
   tr: {
     selectLanguage:    "Dilinizi seçin",
-    continueToStay:    "Konaklamaya devam et",
+    continueToStay:    "Otel bilgilerini görüntüle",
+    accessYourStay:    "Girişe devam et",
     greetingSubtitle:  "Hoş geldiniz",
     essentialsSection: "Temel Bilgiler",
     wifiTitle:         "Wi-Fi",
@@ -158,6 +163,7 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
     supportTitle:      "Yardım & Şikayetler",
     supportDesc:       "Konsierjimiz her türlü istek, şikayet veya sorun için 7/24 hizmetinizdedir.",
     supportAction:     "Konsierj",
+    supportLoginNote:  "Konsierjle görüşmek için giriş yapın",
     placeTypeMarket:   "Süpermarket",
     placeTypePharmacy: "Eczane",
     placeTypeBazaar:   "Kapalıçarşı",
@@ -166,7 +172,8 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
   },
   ru: {
     selectLanguage:    "Выберите язык",
-    continueToStay:    "Продолжить",
+    continueToStay:    "Информация об отеле",
+    accessYourStay:    "Войти в личный кабинет",
     greetingSubtitle:  "Добро пожаловать",
     essentialsSection: "Основное",
     wifiTitle:         "Wi-Fi",
@@ -185,6 +192,7 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
     supportTitle:      "Помощь и жалобы",
     supportDesc:       "Наш консьерж доступен 24/7 по любым вопросам и жалобам.",
     supportAction:     "Консьерж",
+    supportLoginNote:  "Войдите для чата с консьержем",
     placeTypeMarket:   "Супермаркет",
     placeTypePharmacy: "Аптека",
     placeTypeBazaar:   "Гранд-базар",
@@ -193,7 +201,8 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
   },
   hi: {
     selectLanguage:    "अपनी भाषा चुनें",
-    continueToStay:    "अपने प्रवास पर जाएं",
+    continueToStay:    "होटल की जानकारी देखें",
+    accessYourStay:    "अपने प्रवास में प्रवेश करें",
     greetingSubtitle:  "स्वागत है",
     essentialsSection: "आवश्यक",
     wifiTitle:         "वाई-फाई",
@@ -212,6 +221,7 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
     supportTitle:      "सहायता और शिकायत",
     supportDesc:       "हमारा कंसीयर्ज 24/7 किसी भी समस्या या शिकायत के लिए उपलब्ध है।",
     supportAction:     "कंसीयर्ज",
+    supportLoginNote:  "कंसीयर्ज से चैट के लिए लॉगिन करें",
     placeTypeMarket:   "सुपरमार्केट",
     placeTypePharmacy: "फार्मेसी",
     placeTypeBazaar:   "ग्रैंड बाज़ार",
@@ -220,7 +230,8 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
   },
   ur: {
     selectLanguage:    "اپنی زبان منتخب کریں",
-    continueToStay:    "اپنے قیام پر جاریں",
+    continueToStay:    "ہوٹل کی معلومات دیکھیں",
+    accessYourStay:    "اپنے قیام میں داخل ہوں",
     greetingSubtitle:  "خوش آمدید",
     essentialsSection: "ضروری معلومات",
     wifiTitle:         "وائی فائی",
@@ -239,6 +250,7 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
     supportTitle:      "مدد اور شکایات",
     supportDesc:       "ہمارا کنسیرج 24/7 کسی بھی مسئلے یا شکایت کے لیے دستیاب ہے۔",
     supportAction:     "کنسیرج",
+    supportLoginNote:  "کنسیرج سے چیٹ کے لیے لاگ ان کریں",
     placeTypeMarket:   "سپر مارکیٹ",
     placeTypePharmacy: "فارمیسی",
     placeTypeBazaar:   "گرینڈ بازار",
@@ -247,7 +259,8 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
   },
   ja: {
     selectLanguage:    "言語を選択してください",
-    continueToStay:    "ご滞在へ進む",
+    continueToStay:    "ホテル情報を見る",
+    accessYourStay:    "ご滞在へログイン",
     greetingSubtitle:  "ようこそ",
     essentialsSection: "基本情報",
     wifiTitle:         "Wi-Fi",
@@ -266,6 +279,7 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
     supportTitle:      "サポートとご意見",
     supportDesc:       "コンシェルジュは24時間365日、あらゆるご要望やご意見に対応いたします。",
     supportAction:     "コンシェルジュ",
+    supportLoginNote:  "コンシェルジュはログイン後にご利用いただけます",
     placeTypeMarket:   "スーパーマーケット",
     placeTypePharmacy: "薬局",
     placeTypeBazaar:   "グランドバザール",

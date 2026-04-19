@@ -4,18 +4,22 @@
  * Sections: Essentials (Wi-Fi + Emergency) · Dining · Menu · Nearby · Support.
  * Desktop: 2-column grid. Mobile: 1-column stack.
  * Fully driven by HotelConfig + WelcomingStrings — no hardcoded text.
+ *
+ * SupportCard shows two CTAs:
+ *   - Authenticated guests: "Open Concierge" → /guest/chat
+ *   - Unauthenticated visitors: a login-note prompt and an "Access your stay" link
  */
 
 import {
   Wifi,
   Phone,
-  UtensilsCrossed,
   MapPin,
   ChefHat,
   MessageSquare,
   Clock,
   Copy,
   CheckCheck,
+  LogIn,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -256,10 +260,14 @@ function NearbyCard({ config, s }: { config: HotelConfig; s: WelcomingStrings })
 
 function SupportCard({
   s,
+  isAuthenticated,
   onOpenConcierge,
+  onAccessStay,
 }: {
   s: WelcomingStrings;
+  isAuthenticated: boolean;
   onOpenConcierge: () => void;
+  onAccessStay: () => void;
 }) {
   return (
     <InfoCard className="col-span-1 md:col-span-2">
@@ -271,12 +279,27 @@ function SupportCard({
       />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <p className="text-sm text-zinc-600 leading-relaxed max-w-md">{s.supportDesc}</p>
-        <button
-          onClick={onOpenConcierge}
-          className="shrink-0 px-5 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-700 active:scale-95 transition-all duration-150"
-        >
-          {s.supportAction}
-        </button>
+        {isAuthenticated ? (
+          /* Authenticated guests go directly to the concierge chat */
+          <button
+            onClick={onOpenConcierge}
+            className="shrink-0 px-5 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-700 active:scale-95 transition-all duration-150"
+          >
+            {s.supportAction}
+          </button>
+        ) : (
+          /* Unauthenticated visitors see a login prompt instead */
+          <div className="shrink-0 flex flex-col items-start sm:items-end gap-2">
+            <p className="text-[11px] text-zinc-400">{s.supportLoginNote}</p>
+            <button
+              onClick={onAccessStay}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-100 text-zinc-700 text-sm font-medium hover:bg-zinc-200 active:scale-95 transition-all duration-150"
+            >
+              <LogIn className="w-3.5 h-3.5" aria-hidden="true" />
+              {s.accessYourStay}
+            </button>
+          </div>
+        )}
       </div>
     </InfoCard>
   );
@@ -297,10 +320,12 @@ function SectionHeading({ label }: { label: string }) {
 interface InfoBlocksProps {
   config: HotelConfig;
   s: WelcomingStrings;
+  isAuthenticated: boolean;
   onOpenConcierge: () => void;
+  onAccessStay: () => void;
 }
 
-export function InfoBlocks({ config, s, onOpenConcierge }: InfoBlocksProps) {
+export function InfoBlocks({ config, s, isAuthenticated, onOpenConcierge, onAccessStay }: InfoBlocksProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Essentials row */}
@@ -319,7 +344,12 @@ export function InfoBlocks({ config, s, onOpenConcierge }: InfoBlocksProps) {
 
       {/* Support — full width */}
       <SectionHeading label={s.helpSection} />
-      <SupportCard s={s} onOpenConcierge={onOpenConcierge} />
+      <SupportCard
+        s={s}
+        isAuthenticated={isAuthenticated}
+        onOpenConcierge={onOpenConcierge}
+        onAccessStay={onAccessStay}
+      />
     </div>
   );
 }

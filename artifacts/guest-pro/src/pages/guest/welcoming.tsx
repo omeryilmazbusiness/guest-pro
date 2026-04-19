@@ -3,21 +3,23 @@
  *
  * TRUE PUBLIC ROUTE — no auth required.
  *
- * Premium entry experience before (or after) guest login.
+ * Two-stage premium welcoming experience:
  *
- * Flow A — pre-login (unauthenticated):
- *   Guest opens /welcoming directly → selects language → taps "Continue" → /  (login)
- *   After login, home.tsx sees hasSeenWelcoming() = true → stays on /guest.
+ * Stage 1 — Hero (full-viewport black card):
+ *   Cycling greeting loop · language selector · "Explore hotel info" button
  *
- * Flow B — post-login (already authenticated as guest):
- *   home.tsx sees !hasSeenWelcoming() → redirects to /welcoming → guest selects language
- *   → taps "Continue" → /guest.
+ * Stage 2 — Public info dashboard (below the fold, scrolled into view on Continue):
+ *   Wi-Fi · Emergency · Dining hours · Menu · Nearby places · Support
+ *   Unauthenticated visitors see a "Login to access your stay" CTA in the Support card.
+ *   Authenticated guests see the "Open Concierge" button instead.
  *
- * Flow C — returning guest changes language (Globe icon in header → /welcoming):
- *   Already authenticated → Continue goes to /guest.
- *
- * Route guard: NONE. This page renders for everyone without any token check.
- * Protected routes (/guest, /manager, etc.) retain their own guards unchanged.
+ * Navigation rules (no login is ever forced):
+ *   Hero button (unauthenticated)    → smooth-scroll to info dashboard
+ *   Hero button (authenticated)      → navigate to /guest or /manager
+ *   Info bottom CTA (unauthenticated)→ persist locale → navigate to / (login)
+ *   Info bottom CTA (authenticated)  → persist locale → navigate to /guest
+ *   SupportCard login btn            → persist locale → navigate to / (login)
+ *   SupportCard concierge btn        → navigate to /guest/chat (auth required, page guards itself)
  */
 
 import { useState, useRef } from "react";
@@ -38,7 +40,7 @@ import type { WelcomingLocale } from "@/lib/welcoming/types";
 import { cn } from "@/lib/utils";
 
 export default function GuestWelcoming() {
-  // Auth is read only to decide where "Continue" navigates — NOT to gate access.
+  // Auth is consulted to decide navigation destinations only — never to block access.
   const { isAuthenticated, user } = useAuth();
   const [, setLocation] = useLocation();
   const infoRef = useRef<HTMLDivElement>(null);
@@ -50,46 +52,83 @@ export default function GuestWelcoming() {
   const s = getWelcomingStrings(selectedLocale);
   const dir = selectedLocale === "ur" ? "rtl" : "ltr";
 
-  /**
-   * Persist the language choice and mark welcoming as seen so home.tsx
-   * doesn't redirect back here on the next visit, then navigate:
-   *   - authenticated guest → /guest (their dashboard)
-   *   - authenticated manager/personnel → /manager
-   *   - unauthenticated → / (login page, guest key or staff)
-   */
-  function handleContinue() {
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  function scrollToInfo() {
+    infoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  /** Called when an authenticated user taps any "go to dashboard" CTA. */
+  function navigateToDashboard() {
     persistWelcomingLocale(selectedLocale);
     markWelcomingAsSeen();
+    if (user?.role === "guest") {
+      setLocation("/guest");
+    } else {
+      setLocation("/manager");
+    }
+  }
 
+  /** Called when an unauthenticated visitor deliberately chooses to log in. */
+  function navigateToLogin() {
+    persistWelcomingLocale(selectedLocale);
+    markWelcomingAsSeen();
+    setLocation("/");
+  }
+
+  // ── Hero button handler ────────────────────────────────────────────────────
+
+  /**
+   * "Explore hotel info" / "Continue to your stay"
+   *   - Authenticated → go to dashboard immediately (they've already chosen their language before)
+   *   - Unauthenticated → reveal the public info dashboard (stay on /welcoming)
+   */
+  function handleHeroContinue() {
+    persistWelcomingLocale(selectedLocale);
     if (isAuthenticated && user) {
+      markWelcomingAsSeen();
       if (user.role === "guest") {
         setLocation("/guest");
       } else {
         setLocation("/manager");
       }
     } else {
-      setLocation("/");
+      // Show the info dashboard — no redirect
+      scrollToInfo();
     }
   }
 
-  function handleScrollToInfo() {
-    infoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  // ── Info-section button handlers ───────────────────────────────────────────
+
+  /**
+   * Bottom "Access your stay" / "Go to dashboard" CTA inside the info section.
+   * This is the only place that navigates away — and only when the user explicitly asks.
+   */
+  function handleAccessStay() {
+    if (isAuthenticated && user) {
+      navigateToDashboard();
+    } else {
+      navigateToLogin();
+    }
   }
 
+  /**
+   * "Open Concierge" — requires login.
+   * For authenticated guests it goes directly to chat.
+   * For unauthenticated visitors it is replaced by the login prompt (see SupportCard).
+   */
   function handleOpenConcierge() {
     persistWelcomingLocale(selectedLocale);
     markWelcomingAsSeen();
-
-    if (isAuthenticated && user?.role === "guest") {
-      setLocation("/guest/chat");
-    } else {
-      setLocation("/");
-    }
+    setLocation("/guest/chat");
   }
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div dir={dir} className="min-h-[100dvh] bg-stone-50 flex flex-col">
-      {/* ── Hero section — full viewport ───────────────────────────────────── */}
+
+      {/* ── STAGE 1: Hero — full viewport ─────────────────────────────────── */}
       <section className="relative min-h-[100dvh] flex flex-col items-center justify-center px-5 py-16 md:py-20">
 
         {/* Subtle hotel stamp — top center */}
@@ -111,7 +150,7 @@ export default function GuestWelcoming() {
             "animate-in fade-in zoom-in-95 duration-700",
           )}
         >
-          {/* Greeting loop */}
+          {/* Cycling greeting */}
           <GreetingLoop />
 
           {/* Subtitle */}
@@ -131,9 +170,9 @@ export default function GuestWelcoming() {
             label={s.selectLanguage}
           />
 
-          {/* Continue CTA */}
+          {/* Hero CTA */}
           <button
-            onClick={handleContinue}
+            onClick={handleHeroContinue}
             className={cn(
               "w-full flex items-center justify-center gap-2",
               "h-12 rounded-2xl",
@@ -150,9 +189,9 @@ export default function GuestWelcoming() {
           </button>
         </div>
 
-        {/* Scroll hint */}
+        {/* Scroll hint — always visible, invites exploration */}
         <button
-          onClick={handleScrollToInfo}
+          onClick={scrollToInfo}
           className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 opacity-30 hover:opacity-60 transition-opacity"
           aria-label="Scroll to hotel information"
         >
@@ -161,7 +200,7 @@ export default function GuestWelcoming() {
         </button>
       </section>
 
-      {/* ── Hotel information blocks ────────────────────────────────────────── */}
+      {/* ── STAGE 2: Public info dashboard ────────────────────────────────── */}
       <section
         ref={infoRef}
         className="w-full max-w-3xl mx-auto px-5 py-12 md:py-16 flex flex-col gap-6"
@@ -169,13 +208,15 @@ export default function GuestWelcoming() {
         <InfoBlocks
           config={HOTEL_CONFIG}
           s={s}
+          isAuthenticated={isAuthenticated}
           onOpenConcierge={handleOpenConcierge}
+          onAccessStay={handleAccessStay}
         />
 
-        {/* Bottom CTA */}
+        {/* Bottom CTA — "Access your stay" or "Go to dashboard" */}
         <div className="flex justify-center pt-6 pb-4">
           <button
-            onClick={handleContinue}
+            onClick={handleAccessStay}
             className={cn(
               "flex items-center gap-2 px-7 py-3.5 rounded-2xl",
               "bg-zinc-900 text-white text-sm font-semibold",
@@ -184,7 +225,7 @@ export default function GuestWelcoming() {
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400",
             )}
           >
-            {s.continueToStay}
+            {isAuthenticated ? s.continueToStay : s.accessYourStay}
             <ArrowRight className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>

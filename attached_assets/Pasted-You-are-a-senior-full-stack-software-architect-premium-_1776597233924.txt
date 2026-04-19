@@ -1,0 +1,390 @@
+You are a senior full-stack software architect, premium UX/UI designer, i18n/localization architect, and production-grade product engineer.
+
+Your task is to inspect, diagnose, redesign, and harden the public guest welcoming flow of the existing “Guest Pro” project.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, routing structure, auth/session flow, guest dashboard entry flow, theme system, localization/i18n structure, content architecture, and route guards/middleware.
+- Do NOT rebuild the app from scratch if working parts already exist.
+- Preserve working guest auth, guest dashboard, locale handling, route protection for protected routes, stable APIs, and current design language.
+- Refactor only where there is real architecture, maintainability, UX, or production value.
+- The final result must be premium, desktop-first, elegant, modular, SOLID, and production-ready.
+- This welcoming experience must be PUBLIC and must NOT require login.
+
+PROJECT CONTEXT:
+Guest Pro needs a public welcoming flow at:
+- /welcoming
+
+CURRENT BUG / REQUIRED CHANGE:
+- After selecting language on the welcoming screen, the app currently redirects to login or auto-login flow.
+- This is NOT desired.
+- After selecting language, the system must NOT redirect to login.
+- Instead, it must open a PUBLIC “welcoming dashboard” that shows useful hotel information in a premium card-based design.
+- This welcoming dashboard must not require login at all.
+- The architecture must be modular so that new cards/features can be added later easily.
+
+PRIMARY GOALS:
+1. Keep /welcoming as a true public route
+2. Stop language selection from redirecting to login
+3. After language selection, show a public information dashboard
+4. The dashboard must use premium card-based UX
+5. The dashboard must display informational modules such as:
+   - Wi-Fi information
+   - hotel emergency/help number
+   - breakfast hours
+   - meal / food service hours
+   - menu contents
+   - complaint / support info
+   - safe nearby places such as market, pharmacy, bazaar-like locations
+6. The architecture must be modular and easy to extend with future cards/features
+7. Keep everything consistent with Guest Pro theme and production-ready
+
+IMPORTANT LANGUAGE RESTRICTION:
+Only these selectable languages must exist:
+- Türkçe
+- English
+- Русский
+- हिन्दी
+- اردو
+- 日本語
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current routing/app structure
+2. Current guest login/session flow
+3. Current auto-login/redirect logic
+4. Current /welcoming route implementation
+5. Current language selection flow
+6. Current locale initialization logic
+7. Current route guards / middleware / redirect rules
+8. Current theme/design system
+9. Current guest dashboard structure
+10. Current content/config architecture
+11. What already works
+12. What should be preserved
+13. What causes the unwanted redirect after language selection
+14. What is missing for a public welcoming dashboard
+15. What needs redesign/refactor
+
+Then provide:
+- concise architecture audit
+- public-route gap analysis
+- auth/redirect bug root-cause analysis
+- welcoming-dashboard integration gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — FIND THE REAL ROOT CAUSE OF REDIRECT
+==================================================
+
+Diagnose exactly why selecting a language on /welcoming redirects into login or auto-login flow.
+
+Check all likely causes:
+
+1. Global auth middleware redirects public guest routes
+2. Auto-login logic runs after locale selection and hijacks /welcoming
+3. Language selection handler triggers dashboard/login navigation incorrectly
+4. Route guard incorrectly marks welcoming-next-step as protected
+5. Session bootstrap always redirects to login/dashboard when locale changes
+6. Root layout or effect triggers redirect on mount/update
+7. Public/private route config is inconsistent
+8. Locale persistence logic causes route replacement unintentionally
+9. Middleware/server redirect overrides public welcoming behavior
+10. A route transition after language selection points to a protected dashboard instead of a public welcoming dashboard
+
+Do not guess.
+Find the actual technical root cause.
+
+==================================================
+PHASE 3 — DEFINE THE PUBLIC WELCOMING FLOW
+==================================================
+
+Redesign the welcoming flow clearly.
+
+REQUIREMENTS:
+- /welcoming must be a true public route
+- no login requirement
+- no guest token requirement
+- no auto-login requirement
+- after selecting a language, stay within the public welcoming flow
+- do NOT redirect to login
+- do NOT redirect to protected guest dashboard
+- instead, open/render a public welcoming dashboard in the selected language
+
+The welcoming flow should be:
+
+1. user opens /welcoming
+2. premium welcome screen is shown
+3. user selects one of the 6 supported languages
+4. public welcoming dashboard opens
+5. informational cards are shown in that selected language
+
+This must feel intentional and seamless.
+
+==================================================
+PHASE 4 — CREATE A PUBLIC WELCOMING DASHBOARD
+==================================================
+
+Build a public, no-login-required welcoming dashboard.
+
+REQUIREMENTS:
+- this is NOT the protected guest dashboard
+- this is a separate public informational dashboard or public welcoming content screen
+- keep it modular and card-based
+- use premium desktop-first UX
+- preserve Guest Pro design language
+- make the screen useful, elegant, and easy to extend later
+
+The dashboard should display cards/modules for:
+- Wi-Fi information
+- hotel emergency/help number
+- breakfast hours
+- meal / food service hours
+- menu contents
+- complaint / support information
+- safe nearby places such as:
+  - market
+  - pharmacy
+  - bazaar / shopping area / useful nearby spots
+
+IMPORTANT:
+Do not dump everything as plain text.
+Build a structured premium dashboard with modular cards.
+
+==================================================
+PHASE 5 — MODULAR CARD ARCHITECTURE
+==================================================
+
+Build the welcoming dashboard as a modular card system.
+
+REQUIREMENTS:
+- each information block must be its own reusable module/card
+- make it easy to add future cards/features
+- avoid a giant hardcoded page component
+- support structured content config
+- support per-language content
+- support hotel-specific updates without rewriting page logic
+
+Possible modular cards:
+- WiFiInfoCard
+- EmergencyHelpCard
+- BreakfastHoursCard
+- MealHoursCard
+- MenuContentsCard
+- SupportInfoCard
+- NearbyPlacesCard
+
+Make the module system real and maintainable.
+
+==================================================
+PHASE 6 — LANGUAGE SELECTION + LOCALE HANDLING
+==================================================
+
+Implement language selection professionally.
+
+REQUIREMENTS:
+- only these 6 languages can be selected:
+  - Türkçe
+  - English
+  - Русский
+  - हिन्दी
+  - اردو
+  - 日本語
+- selecting a language must set the public welcoming locale
+- after selection, show the public welcoming dashboard in that language
+- do NOT redirect to login
+- do NOT trigger protected-route logic
+- locale persistence should be clean and intentional
+
+==================================================
+PHASE 7 — CONTENT ARCHITECTURE
+==================================================
+
+Design a modular content/config architecture for welcoming dashboard data.
+
+REQUIREMENTS:
+- do not hardcode all content directly into UI components
+- content should be stored in a structured config/repository/content layer
+- make it easy to update:
+  - Wi-Fi info
+  - emergency number
+  - meal hours
+  - menu content
+  - nearby places
+- content must be localizable
+- only the 6 approved languages need support
+- architecture must support future expansion
+
+Possible structure:
+- welcoming content config
+- localized content dictionaries
+- typed content sections
+- typed nearby-place entries
+- typed service-hour entries
+
+==================================================
+PHASE 8 — ROUTING / ACCESS POLICY HARDENING
+==================================================
+
+Refactor routing and access policy professionally.
+
+REQUIREMENTS:
+- make /welcoming public
+- make welcoming dashboard public
+- protected guest dashboard must remain protected if current architecture requires it
+- manager/staff routes must remain protected
+- do not rely on scattered path-based hacks
+- centralize route access logic
+
+Possible access levels:
+- public routes
+- public welcoming routes
+- protected guest routes
+- protected manager routes
+- protected staff routes
+
+==================================================
+PHASE 9 — DESKTOP-FIRST PREMIUM UX
+==================================================
+
+The welcoming dashboard must be desktop-focused first.
+
+REQUIREMENTS:
+- premium layout
+- card-based structure
+- strong spacing
+- elegant typography
+- soft shadows
+- calm visual hierarchy
+- consistent Guest Pro theme
+- responsive safety for smaller screens
+- no clutter
+- no noisy gradients
+- no cheap onboarding look
+
+The result should feel:
+- premium
+- calm
+- informative
+- polished
+- modular
+- hospitality-grade
+
+==================================================
+PHASE 10 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement this feature in a meaningful, maintainable, production-ready architecture.
+
+REQUIREMENTS:
+- no giant single page with all logic mixed together
+- separate presentation from content/config logic
+- separate locale selection from route decisions
+- separate public welcoming flow from protected guest dashboard flow
+- centralize supported languages
+- centralize welcoming route access rules
+- no fake architecture
+- no dead code
+- clean naming
+- meaningful modules only
+
+Suggested structure:
+- domain:
+  - GuestWelcomingLanguage
+  - GuestWelcomingContentSection
+  - NearbyPlace
+  - ServiceHours
+  - RouteAccessLevel
+- application:
+  - ResolveWelcomingLocale
+  - GetGuestWelcomingContent
+  - CompleteWelcomingLanguageSelection
+  - ResolveRouteAccess
+  - EnterPublicWelcomingDashboard
+- infrastructure:
+  - localized content repository/config
+  - locale persistence adapter
+  - public route registry
+  - middleware/guard integration
+- presentation:
+  - GuestWelcomingPage
+  - PremiumHelloLoopCard
+  - LanguageSelectorDropdown
+  - PublicWelcomingDashboard
+  - WelcomingContentGrid
+  - WiFiInfoCard
+  - EmergencyHelpCard
+  - BreakfastHoursCard
+  - MealHoursCard
+  - MenuContentsCard
+  - SupportInfoCard
+  - NearbyPlacesCard
+
+Make the architecture actually used and meaningful.
+
+==================================================
+PHASE 11 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- guest auth/session flow
+- protected guest dashboard
+- manager/staff protected routes
+- existing localization if present
+- route protection
+- stable APIs
+- current guest quick actions and request flows
+- existing dashboard structure where it still works
+
+This task is specifically about fixing /welcoming and creating a public welcoming dashboard.
+
+==================================================
+PHASE 12 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. /welcoming opens directly with no login requirement
+2. Typing /welcoming does not redirect unexpectedly
+3. Language selection does NOT redirect to login
+4. Language selection opens the public welcoming dashboard
+5. Only the 6 supported languages appear
+6. Public welcoming dashboard renders correctly in the selected language
+7. Wi-Fi info card works
+8. Emergency/help card works
+9. Breakfast/meals cards work
+10. Menu content card works
+11. Support/complaint info card works
+12. Nearby places card works
+13. Protected guest dashboard remains protected if required
+14. Manager/staff routes remain protected
+15. The architecture is modular and easy to extend
+16. The UX feels premium and production-ready
+
+==================================================
+PHASE 13 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. Exact root cause of the unwanted redirect after language selection
+3. What was fixed
+4. How the public welcoming flow now works
+5. How the public welcoming dashboard works
+6. How route access/public-vs-protected logic now works
+7. Which files were changed
+8. Any architecture refactors made
+9. How to test the full welcoming flow end-to-end
+10. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then fix the redirect bug professionally
+- Then build the public welcoming dashboard professionally
+- Keep the result SOLID, modular, premium, and production-ready
+- The welcoming flow must remain fully usable without login
