@@ -115,6 +115,26 @@
   }
 }
 
+/**
+ * greeting-slide — used by GreetingLoop to animate each greeting word.
+ *
+ * Encodes the full enter→hold→exit sequence in one pass so React can
+ * remount with key={index} to restart cleanly for every new greeting.
+ *
+ * Timing at 2800ms total:
+ *   0  →  15% (0 – 420ms)  : slide in from left + fade in
+ *   15 →  75% (420 – 2100ms): hold at center
+ *   75 →  90% (2100 – 2520ms): slide out to right + fade out
+ *   90 → 100% (2520 – 2800ms): invisible, waiting for next mount
+ */
+@keyframes greeting-slide {
+  0%   { opacity: 0; transform: translateX(-18px); }
+  15%  { opacity: 1; transform: translateX(0);     }
+  75%  { opacity: 1; transform: translateX(0);     }
+  90%  { opacity: 0; transform: translateX(10px);  }
+  100% { opacity: 0; transform: translateX(10px);  }
+}
+
 @keyframes shimmer-sweep {
   0% {
     transform: translateX(-100%);

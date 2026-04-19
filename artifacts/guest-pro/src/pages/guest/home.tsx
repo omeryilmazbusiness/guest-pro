@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocale } from "@/hooks/use-locale";
@@ -26,6 +26,7 @@ import {
   ChevronDown,
   Trash2,
   Loader2,
+  Globe,
 } from "lucide-react";
 import { GuestProLogo } from "@/components/GuestProLogo";
 import { toast } from "sonner";
@@ -38,6 +39,7 @@ import { useTrackingHeartbeat } from "@/hooks/use-tracking-heartbeat";
 import { StayKeyCard } from "@/components/guest/StayKeyCard";
 import { ServiceQuickActions, type QuickActionMode } from "@/components/guest/ServiceQuickActions";
 import { listMyRequests, deleteMyServiceRequest, type ServiceRequest } from "@/lib/service-requests";
+import { hasSeenWelcoming } from "@/lib/welcoming/welcoming-locale";
 import { buildDisplaySummary } from "@/lib/request-display";
 
 // ─── Request history — grouped stacked-card system ────────────────────────────
@@ -311,11 +313,24 @@ export default function GuestHome() {
     enabled: isAuthenticated && user?.role === "guest",
   });
 
+  // Redirect guard — runs only once (useRef prevents double-fire in StrictMode)
+  const welcomingCheckRef = useRef(false);
   useEffect(() => {
     if (!isAuthenticated) {
       setLocation("/");
-    } else if (user?.role !== "guest") {
+      return;
+    }
+    if (user?.role !== "guest") {
       setLocation("/manager");
+      return;
+    }
+    // First-time guests are sent to the welcoming screen before the dashboard.
+    // The welcoming page calls markWelcomingAsSeen(), so this redirect fires once.
+    if (!welcomingCheckRef.current) {
+      welcomingCheckRef.current = true;
+      if (!hasSeenWelcoming()) {
+        setLocation("/welcoming");
+      }
     }
   }, [isAuthenticated, user, setLocation]);
 
@@ -391,13 +406,23 @@ export default function GuestHome() {
               {branding?.appName || "Guest Pro"}
             </span>
           </div>
-          <button
-            onClick={handleLogout}
-            className="text-zinc-400 hover:text-zinc-700 transition-colors p-2 -mr-2"
-            aria-label={t.logout}
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={() => setLocation("/welcoming")}
+              className="text-zinc-400 hover:text-zinc-700 transition-colors p-2"
+              aria-label="Change language"
+              title="Change language"
+            >
+              <Globe className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleLogout}
+              className="text-zinc-400 hover:text-zinc-700 transition-colors p-2 -mr-2"
+              aria-label={t.logout}
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </header>
 

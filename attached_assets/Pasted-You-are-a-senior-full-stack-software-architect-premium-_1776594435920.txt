@@ -1,0 +1,420 @@
+You are a senior full-stack software architect, premium UX/UI designer, i18n/localization architect, and production-grade product engineer.
+
+Your task is to inspect, design, and implement a new guest-facing screen for the existing “Guest Pro” project:
+
+ROUTE:
+- /welcoming
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, routing structure, guest auth/session flow, guest dashboard entry flow, theme system, localization/i18n structure, content architecture, and design system.
+- Do NOT rebuild the project from scratch if working systems already exist.
+- Preserve working guest auth, guest dashboard, locale/language handling, route protection, stable APIs, and current design language.
+- Refactor only where there is real architecture, maintainability, UX, or production value.
+- The final result must be premium, desktop-first, elegant, production-ready, SOLID, modular, and consistent with the existing Guest Pro theme.
+- This new screen must integrate cleanly into the current project, not feel bolted on.
+
+PROJECT CONTEXT:
+Guest Pro is a hospitality product with guest-facing flows.
+We now need a premium “guest welcoming screen” at /welcoming.
+
+PRIMARY GOALS:
+1. Add a new route:
+   - /welcoming
+2. The screen should be desktop-focused with professional premium UX
+3. The visual theme must stay consistent with the rest of Guest Pro
+4. In the center of the page, show a premium black card
+5. The experience should feel inspired by a high-end Apple-style welcome screen:
+   - elegant
+   - calm
+   - minimal
+   - premium
+6. On the black card, the word “Hello” in many languages must appear in a looping sequence
+7. Each greeting should appear with soft motion and glide horizontally in a refined way
+8. Only these language options must exist in the selector:
+   - Turkish
+   - English
+   - Russian
+   - Hindi
+   - Urdu
+   - Japanese
+9. Beneath that, the guest should be able to click/select the currently shown greeting language or open a language selection dropdown
+10. The language selector must feel extremely professional and premium
+11. After language selection, the welcoming flow should continue into the guest dashboard
+12. The welcoming/dashboard experience should surface useful hospitality information such as:
+   - Wi-Fi info
+   - hotel emergency/help number
+   - breakfast hours
+   - food service / meal hours
+   - menu contents
+   - complaint/support section
+   - safe nearby places such as market, pharmacy, bazaar-like places
+13. The entire architecture must be modular and SOLID
+14. The integration must fit the current project structure professionally
+
+IMPORTANT LANGUAGE RESTRICTION:
+- The language selector must include ONLY these 6 languages:
+  - Türkçe
+  - English
+  - Русский
+  - हिन्दी
+  - اردو
+  - 日本語
+- Do NOT add any other languages to the selectable dropdown
+- The greeting animation may visually loop greetings, but the actual selectable locale list must remain limited to these 6 languages only
+- The application locale/welcoming locale must resolve only to these 6 supported languages
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current routing/app structure
+2. Current guest login/session flow
+3. Current guest dashboard entry path
+4. Current theme/design system
+5. Current i18n/localization setup
+6. Current content/config architecture
+7. Current guest dashboard layout
+8. Current reusable UI primitives/cards/dropdowns/animations
+9. What already works
+10. What should be preserved
+11. What is weak or missing for a welcoming flow
+12. What should be modularized or extended
+
+Then provide:
+- concise architecture audit
+- welcoming-screen integration gap analysis
+- i18n/content gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — DEFINE THE WELCOMING FLOW
+==================================================
+
+Design the new guest welcoming flow clearly.
+
+REQUIREMENTS:
+- the new route is /welcoming
+- define how a guest reaches it:
+  - before dashboard
+  - or on first entry
+  - or after language detection
+- choose the most professional integration based on the existing architecture
+- the route transition to the dashboard must feel seamless
+- avoid awkward intermediate states or broken navigation
+
+The welcoming screen should feel intentional, not like a splash screen hack.
+
+==================================================
+PHASE 3 — VISUAL DESIGN OF THE WELCOMING SCREEN
+==================================================
+
+Design a premium desktop-first welcoming screen.
+
+VISUAL REQUIREMENTS:
+- maintain the same overall Guest Pro theme/language
+- center a premium black card
+- card must feel expensive, minimal, calm, and elegant
+- page should have strong visual balance and premium spacing
+- desktop-first composition
+- still responsive enough for smaller screens
+- avoid loud gradients or noisy visual effects
+- use soft motion and refined typography
+- the overall impression should feel like a luxury software welcome moment
+
+The screen should feel:
+- premium
+- calm
+- polished
+- modern
+- hospitality-grade
+- Apple-inspired in refinement, but not copied literally
+
+==================================================
+PHASE 4 — MULTI-LANGUAGE “HELLO” LOOP
+==================================================
+
+Implement a refined looping greeting animation.
+
+REQUIREMENTS:
+- show “Hello” in the supported language family with a premium loop treatment
+- cycle through greetings smoothly
+- use smooth, soft horizontal motion
+- the text should glide in a subtle rightward or horizontal animated manner
+- animation must be elegant and not gimmicky
+- typography must be premium and highly readable
+- transitions must be smooth and polished
+- do not create a flashy or distracting animation
+
+Supported greeting set should match the supported language experience, for example:
+- Hello
+- Merhaba
+- Привет
+- नमस्ते
+- سلام / ہیلو equivalent for Urdu context if desired
+- こんにちは
+
+Build this in a maintainable, data-driven way rather than hardcoding animation logic everywhere.
+
+==================================================
+PHASE 5 — LANGUAGE SELECTION UX
+==================================================
+
+Below the greeting area, add a premium language selection interaction.
+
+REQUIREMENTS:
+- the language selector must feel extremely polished
+- it may be a dropdown, popover, bottom sheet, or similar pattern depending on the current design system
+- the selected language should control the next guest-facing UI language
+- if the current greeting language is highlighted, it can be used as an entry point into the selector
+- language switching must be clear and elegant
+- avoid raw or cheap-looking select controls unless styled professionally
+- ensure the chosen language integrates with the app’s localization system
+- only these selectable languages may appear:
+  - Türkçe
+  - English
+  - Русский
+  - हिन्दी
+  - اردو
+  - 日本語
+
+After selection:
+- continue to the guest dashboard in that language
+- or set the locale and then show the next welcoming content/dashboard stage professionally
+
+==================================================
+PHASE 6 — WELCOMING CONTENT / DASHBOARD INFORMATION BLOCKS
+==================================================
+
+After the language selection flow, ensure the guest-facing experience can show the following essential hospitality information in a clean, structured way:
+
+- Wi-Fi information
+- hotel emergency/help phone number
+- breakfast hours
+- food service / meal hours
+- menu contents
+- complaint/support section
+- safe nearby places such as:
+  - market
+  - pharmacy
+  - bazaar / shopping area / useful nearby spots
+
+IMPORTANT:
+Do not dump all of this in a messy wall of text.
+
+Build this as modular guest-information content blocks with a premium layout.
+
+Potential structure:
+- Welcome / essentials
+- Dining
+- Help & support
+- Nearby safe places
+
+These blocks should be:
+- concise
+- useful
+- premium
+- easy to scan
+- localized only for the 6 supported languages
+
+==================================================
+PHASE 7 — CONTENT ARCHITECTURE
+==================================================
+
+Design a modular content architecture for the welcoming/dashboard information.
+
+REQUIREMENTS:
+- do not hardcode all content directly inside page components
+- move hotel-specific content into a clean configurable structure
+- make it easy to update:
+  - Wi-Fi info
+  - emergency number
+  - service hours
+  - menu items
+  - nearby places
+- content should be localizable
+- localization must support only the 6 approved languages
+- the architecture must support future hotel-specific changes without rewriting UI code
+
+Possible architecture:
+- hotel guest content config
+- localized content dictionaries
+- typed content sections
+- structured nearby-place entries
+- structured service-hour entries
+
+==================================================
+PHASE 8 — MODULAR DASHBOARD INTEGRATION
+==================================================
+
+Integrate the welcoming flow with the existing guest dashboard professionally.
+
+REQUIREMENTS:
+- the welcoming screen should transition into the dashboard cleanly
+- the dashboard should be able to consume the selected language and guest content modules
+- avoid duplicating dashboard logic
+- avoid route confusion
+- preserve existing guest dashboard functionality
+- make welcoming a modular layer, not a fragile custom detour
+
+==================================================
+PHASE 9 — DESKTOP-FIRST UX WITH RESPONSIVE SAFETY
+==================================================
+
+This screen is desktop-focused first.
+
+REQUIREMENTS:
+- prioritize large-screen composition and polish
+- ensure the centered card and language selector feel balanced on desktop
+- maintain responsive stability for laptop/tablet/smaller screens
+- no broken overflow
+- no poor spacing on smaller screens
+- desktop-first elegance, but responsive enough to remain usable
+
+==================================================
+PHASE 10 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement this feature in a meaningful, maintainable, production-ready architecture.
+
+REQUIREMENTS:
+- no giant single page with all logic mixed together
+- separate presentation from content/config logic
+- separate locale/language selection from routing decisions
+- separate greeting-loop data from animation logic
+- centralize welcoming flow state
+- centralize supported language definitions
+- no fake architecture
+- no dead code
+- clean naming
+- meaningful modules only
+
+Suggested architecture:
+- domain:
+  - GuestWelcomingLanguage
+  - GuestWelcomingContentSection
+  - NearbyPlace
+  - ServiceHours
+- application:
+  - ResolveWelcomingLocale
+  - GetGuestWelcomingContent
+  - CompleteWelcomingFlow
+  - GetSupportedWelcomingLanguages
+- infrastructure:
+  - localized content repository/config
+  - locale persistence adapter
+  - welcoming route integration
+- presentation:
+  - GuestWelcomingPage
+  - PremiumHelloLoopCard
+  - LanguageSelectorDropdown
+  - WelcomingContentSection
+  - WiFiInfoCard
+  - EmergencyHelpCard
+  - DiningHoursCard
+  - MenuPreviewCard
+  - NearbyPlacesCard
+
+Make the architecture actually used and meaningful.
+
+==================================================
+PHASE 11 — DESIGN DIRECTION
+==================================================
+
+The design must feel:
+- premium
+- black-card centered elegance
+- minimal
+- calm
+- expensive-looking
+- refined
+- desktop-oriented
+- polished
+- professional
+- soft
+
+Use:
+- refined typography
+- strong spacing
+- subtle motion
+- restrained accent usage
+- premium dropdown/select styling
+- soft shadows and carefully tuned contrast
+
+Avoid:
+- flashy gradients
+- noisy animation
+- cheap onboarding feel
+- oversized cluttered UI
+
+==================================================
+PHASE 12 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- guest auth/session flow
+- guest dashboard
+- existing localization if present
+- route protection
+- stable APIs
+- current guest quick actions and request flows
+- existing dashboard structure where it still works
+
+This task is specifically about adding a premium modular welcoming flow.
+
+==================================================
+PHASE 13 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. /welcoming route works correctly
+2. The welcoming screen feels premium and desktop-first
+3. The centered black card renders correctly
+4. Multi-language hello loop animates smoothly
+5. Language selection UX feels professional
+6. Only these 6 selectable languages are available:
+   - Türkçe
+   - English
+   - Русский
+   - हिन्दी
+   - اردو
+   - 日本語
+7. Selected language integrates correctly with the app locale
+8. Transition from welcoming to dashboard works cleanly
+9. Wi-Fi info is shown correctly
+10. Emergency/help number is shown correctly
+11. Breakfast and meal hours are shown correctly
+12. Menu content is shown correctly
+13. Complaint/support section is shown correctly
+14. Nearby safe places are shown correctly
+15. The structure is modular and maintainable
+16. No regression in existing guest flows
+
+==================================================
+PHASE 14 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was preserved
+3. What was redesigned
+4. How the /welcoming route integrates with the current app
+5. How the hello-loop animation works
+6. How language selection works
+7. How the 6-language restriction is enforced
+8. How guest welcoming content is structured
+9. Which files were changed
+10. Any architecture refactors made
+11. How to test the welcoming flow end-to-end
+12. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result desktop-first, SOLID, modular, premium, and production-ready
+- The welcoming screen must feel like a real luxury hospitality software welcome experience
+- The selectable language list must remain limited to exactly 6 languages

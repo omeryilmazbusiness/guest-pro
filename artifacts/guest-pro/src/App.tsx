@@ -11,6 +11,7 @@ import GuestHome from "@/pages/guest/home";
 import GuestChat from "@/pages/guest/chat";
 import GuestFlow from "@/pages/guest/flow";
 import GuestAutoLogin from "@/pages/guest/auto-login";
+import GuestWelcoming from "@/pages/guest/welcoming";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/guest/chat" component={GuestChat} />
       <Route path="/guest/flow" component={GuestFlow} />
       <Route path="/guest/auto-login" component={GuestAutoLogin} />
+      <Route path="/welcoming" component={GuestWelcoming} />
       <Route component={NotFound} />
     </Switch>
   );
