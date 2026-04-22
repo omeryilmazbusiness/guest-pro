@@ -45,6 +45,7 @@ import {
   Settings,
   TrendingUp,
   FileText,
+  Briefcase,
 } from "lucide-react";
 import {
   useListGuests,
@@ -84,10 +85,11 @@ import { NewRequestAlert } from "@/components/manager/NewRequestAlert";
 import { WelcomeAreaAlertBanner } from "@/components/manager/WelcomeAreaAlertBanner";
 import { DailySummaryTab } from "@/components/manager/DailySummaryTab";
 import { QuickReportModal } from "@/components/manager/QuickReportModal";
+import { StaffTeamTab } from "@/components/manager/StaffTeamTab";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type DashboardTab = "guests" | "rooms" | "requests" | "summary";
+type DashboardTab = "guests" | "rooms" | "requests" | "summary" | "team";
 
 // ─── Tab switcher ─────────────────────────────────────────────────────────────
 
@@ -111,6 +113,7 @@ function DashboardTabs({
     { key: "rooms", label: "Rooms", icon: DoorOpen, count: roomCount },
     { key: "requests", label: "Requests", icon: Bell, count: requestCount },
     { key: "summary", label: "Summary", icon: TrendingUp, count: 0, managerOnly: true },
+    { key: "team", label: "Team", icon: Briefcase, count: 0, managerOnly: true },
   ];
 
   const visibleTabs = TABS.filter((t) => !t.managerOnly || isManager);
@@ -389,7 +392,7 @@ export default function ManagerDashboard() {
   // ── Tab (reads ?tab= from URL for deep-linking from alerts)
   const [activeTab, setActiveTab] = useState<DashboardTab>(() => {
     const param = new URLSearchParams(window.location.search).get("tab");
-    if (param === "guests" || param === "rooms" || param === "requests" || param === "summary") return param;
+    if (param === "guests" || param === "rooms" || param === "requests" || param === "summary" || param === "team") return param;
     return "guests";
   });
 
@@ -832,6 +835,15 @@ export default function ManagerDashboard() {
         {activeTab === "summary" && isManager && (
           <div className="animate-in fade-in duration-200">
             <DailySummaryTab />
+          </div>
+        )}
+
+        {/* ══════════════════════════════════
+            TEAM TAB (manager-only)
+        ══════════════════════════════════ */}
+        {activeTab === "team" && isManager && (
+          <div className="animate-in fade-in duration-200">
+            <StaffTeamTab />
           </div>
         )}
 

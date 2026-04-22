@@ -492,6 +492,33 @@ Anonymous guests on `/welcoming` can tap "Call for help" (Destek çağır in Tur
 `callForSupport`, `callForSupportSending`, `callForSupportSent`, `callForSupportFailed`,
 `nearbyOpenInMaps`, `nearbyGetQr`, `nearbyModalTitle`, `nearbyQrScanNote`
 
+## Staff Management System
+
+Managers can create and manage personnel accounts via a dedicated **Team** tab in the manager dashboard.
+
+### DB Schema (users table additions)
+- `staffDepartment` — nullable text; one of `HOUSEKEEPING | BELLMAN | RECEPTION | RESTAURANT`
+- `isActive` — boolean (default `true`); deactivated personnel cannot log in
+
+### Auth hardening
+`authenticateManager()` in `lib/auth.ts` checks `isActive === false` and returns `null` before verifying the password — deactivated accounts are fully blocked.
+
+### API: `/api/staff` (all manager-only via `requireManager`)
+- `GET /api/staff` — list all personnel users for the hotel
+- `POST /api/staff` — create a new personnel user; body: `{ email, password, firstName, lastName, staffDepartment }`
+- `PATCH /api/staff/:id` — update name, department, or `isActive`
+- `DELETE /api/staff/:id` — soft-deactivates (sets `isActive = false`)
+
+### Frontend
+- `lib/staff.ts` — `listStaff`, `createStaff`, `updateStaff`, `deactivateStaff`, domain types, department labels + colour maps
+- `components/manager/StaffTeamTab.tsx` — full tab with staff card grid, create modal (name/email/password/department), edit modal, deactivate/reactivate flow
+- `lib/permissions.ts` — `MANAGE_STAFF` permission added; granted to `manager` role only
+- Dashboard `DashboardTab` extended with `"team"`; tab is manager-only (hidden from personnel)
+
+### Demo credentials
+- Manager: `manager@grandhotel.com` / `manager123`
+- Personnel: `staff@grandhotel.com` / `staff123`
+
 ## Artifacts
 
 - `artifacts/api-server` — Express API server (port via `PORT` env)

@@ -39,6 +39,8 @@ export const Permission = {
   RENEW_GUEST_KEY: "renew_guest_key",
   /** Access hotel branding, settings, and admin controls */
   MANAGE_HOTEL: "manage_hotel",
+  /** Create, edit, and deactivate staff members (manager only) */
+  MANAGE_STAFF: "manage_staff",
 } as const;
 
 export type Permission = (typeof Permission)[keyof typeof Permission];
@@ -55,6 +57,7 @@ const ROLE_PERMISSIONS: Record<StaffRole, ReadonlyArray<Permission>> = {
     Permission.DELETE_GUEST,
     Permission.RENEW_GUEST_KEY,
     Permission.MANAGE_HOTEL,
+    Permission.MANAGE_STAFF,
   ],
   personnel: [
     Permission.VIEW_GUESTS,
@@ -63,6 +66,7 @@ const ROLE_PERMISSIONS: Record<StaffRole, ReadonlyArray<Permission>> = {
     Permission.RENEW_GUEST_KEY,
     // DELETE_GUEST excluded — personnel cannot delete guests
     // MANAGE_HOTEL excluded — personnel cannot configure the hotel
+    // MANAGE_STAFF excluded — only managers manage the team
   ],
 };
 

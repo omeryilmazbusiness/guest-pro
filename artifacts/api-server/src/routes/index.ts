@@ -8,6 +8,7 @@ import trackingRouter from "./tracking";
 import requestsRouter from "./requests";
 import analyticsRouter from "./analytics";
 import welcomeAlertRouter from "./welcome-alert";
+import staffRouter from "./staff";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(trackingRouter);
 router.use(requestsRouter);
 router.use(analyticsRouter);
 router.use(welcomeAlertRouter);
+router.use(staffRouter);
 
 export default router;

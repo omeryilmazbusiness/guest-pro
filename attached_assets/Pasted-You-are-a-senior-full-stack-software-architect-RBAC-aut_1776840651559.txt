@@ -1,0 +1,348 @@
+You are a senior full-stack software architect, RBAC/authorization designer, premium admin UX designer, and production-grade product engineer.
+
+Your task is to inspect, design, and integrate a professional staff-creation system into the existing “Guest Pro” project without breaking the current structure.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, auth/session flow, current role model, manager dashboard, staff dashboard, route protection, database schema, request flows, and user creation logic.
+- Do NOT rebuild the app from scratch if working parts already exist.
+- Preserve working auth, manager/staff dashboards, guest flows, request flows, route protection, and stable APIs.
+- Refactor only where there is real architectural, maintainability, RBAC, or UX value.
+- The final result must be production-ready, SOLID, layered, safe, and professionally integrated.
+- Do not break the existing structure just to add departments.
+
+PROJECT CONTEXT:
+Guest Pro currently has manager and staff concepts.
+We now need the manager to be able to create staff users professionally.
+
+NEW REQUIREMENT:
+Manager must be able to create staff.
+
+Staff departments/functions can be:
+- HOUSEKEEPING
+- BELLMAN
+- RECEPTION
+- RESTAURANT
+
+IMPORTANT ARCHITECTURE GOAL:
+Do NOT casually explode the whole role model into many unrelated top-level roles if that would break the existing system.
+The safest and most professional preferred direction is:
+
+Top-level roles remain:
+- MANAGER
+- STAFF
+- GUEST
+
+And for STAFF, add a secondary classification such as:
+- staffDepartment
+or
+- staffFunction
+
+with allowed values:
+- HOUSEKEEPING
+- BELLMAN
+- RECEPTION
+- RESTAURANT
+
+Only choose a different model if inspection proves the existing architecture requires it, and clearly explain why.
+
+PRIMARY GOALS:
+1. Manager can create staff users
+2. Each staff user can be assigned one of these departments:
+   - HOUSEKEEPING
+   - BELLMAN
+   - RECEPTION
+   - RESTAURANT
+3. Keep the existing system stable
+4. Do not break current manager/staff/guest flows
+5. Make the architecture future-ready for department-based permissions and filtering
+6. Keep the implementation SOLID and production-ready
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current auth/session architecture
+2. Current user/role model
+3. Current manager role behavior
+4. Current staff role behavior
+5. Current route guards / middleware / access rules
+6. Current user creation/admin flows
+7. Current DB schema for users/staff if any
+8. Current staff dashboard structure
+9. Current request assignment/rendering logic if any
+10. What already works
+11. What should be preserved
+12. What part of the current architecture would be affected by adding staff departments
+13. What the safest integration strategy is
+
+Then provide:
+- concise architecture audit
+- role-model gap analysis
+- manager-staff management gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — CHOOSE THE SAFEST ROLE MODEL
+==================================================
+
+Implement the safest professional model.
+
+PREFERRED MODEL:
+Top-level roles remain:
+- MANAGER
+- STAFF
+- GUEST
+
+And STAFF gets an additional field:
+- staffDepartment
+or equivalent
+
+Allowed values:
+- HOUSEKEEPING
+- BELLMAN
+- RECEPTION
+- RESTAURANT
+
+REQUIREMENTS:
+- do not break existing role guards
+- do not force many top-level roles if unnecessary
+- keep future extensibility for department-based permissions
+- centralize department enum / type definitions
+- make the model easy to query and render
+
+If inspection shows a different model is required, explain clearly and implement the safest alternative.
+
+==================================================
+PHASE 3 — DATABASE / DOMAIN MODEL HARDENING
+==================================================
+
+Extend the domain and persistence model professionally.
+
+REQUIREMENTS:
+- add a clean staffDepartment field or equivalent
+- use a proper enum/type definition
+- update DB schema/migrations safely
+- preserve backward compatibility where possible
+- do not corrupt existing users
+- handle existing staff rows safely
+
+Possible model fields:
+- id
+- fullName
+- email
+- role = STAFF
+- staffDepartment
+- isActive
+- createdAt
+- updatedAt
+
+Do not add unnecessary complexity.
+
+==================================================
+PHASE 4 — MANAGER STAFF CREATION FLOW
+==================================================
+
+Add a manager-only staff creation flow.
+
+REQUIREMENTS:
+- manager can open a staff creation form
+- form should allow:
+  - name
+  - email / login identifier depending on current system
+  - password or invite flow depending on current architecture
+  - department selection:
+    - HOUSEKEEPING
+    - BELLMAN
+    - RECEPTION
+    - RESTAURANT
+- validation must be clean and professional
+- UX must be premium, simple, and production-ready
+- mobile-friendly enough, but aligned with current manager admin design
+
+If the project already has a user creation flow:
+- reuse/refactor it rather than duplicating logic
+
+==================================================
+PHASE 5 — STAFF MANAGEMENT VIEW
+==================================================
+
+If a staff list/management area already exists:
+- integrate department display there cleanly
+
+If it does not exist:
+- add a minimal professional manager-only staff management section that shows:
+  - name
+  - role
+  - department
+  - active/inactive status if supported
+
+OPTIONAL BUT RECOMMENDED:
+- edit department
+- deactivate/disable staff safely
+
+Do not overbuild if it is not needed, but keep the structure future-ready.
+
+==================================================
+PHASE 6 — VALIDATION / SECURITY / ACCESS CONTROL
+==================================================
+
+Implement professionally.
+
+REQUIREMENTS:
+- only manager can create staff
+- only allowed department values can be saved
+- do not trust frontend-only validation
+- keep API-level authorization correct
+- do not expose manager actions to staff
+- preserve protected routes and login flows
+
+If staff creation touches password/auth logic:
+- preserve current secure patterns
+- do not weaken existing auth
+
+==================================================
+PHASE 7 — FUTURE-READY DEPARTMENT CAPABILITY LAYER
+==================================================
+
+Even if department-based permissions are not fully used yet, prepare the architecture for it.
+
+REQUIREMENTS:
+- make it possible later to filter requests or screens by department
+- centralize department/capability logic
+- do not scatter `if department === ...` everywhere
+- keep the current implementation minimal but extensible
+
+Possible future use cases:
+- HOUSEKEEPING sees cleaning-related requests
+- RESTAURANT sees food-related requests
+- RECEPTION sees guest support/front-desk flows
+- BELLMAN sees luggage/arrival/departure support
+
+Do not fully implement future permissions unless naturally needed, but structure for them cleanly.
+
+==================================================
+PHASE 8 — UX / DESIGN DIRECTION
+==================================================
+
+The manager-side staff creation and management UI must feel:
+- premium
+- clean
+- calm
+- modern
+- professional
+- simple
+- operational
+
+Use:
+- soft card surfaces
+- strong spacing
+- clear labels
+- premium dropdown/select for department
+- polished validation and success states
+
+Avoid:
+- cluttered admin panel feel
+- noisy colors
+- heavy visuals
+- awkward long forms
+
+==================================================
+PHASE 9 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement this in a meaningful, maintainable architecture.
+
+REQUIREMENTS:
+- no giant mixed component with UI + business logic
+- centralize role/department definitions
+- centralize creation rules
+- centralize authorization checks
+- no duplicated user-creation logic
+- no fake architecture
+- no dead code
+- clean naming
+- meaningful modules only
+
+Suggested structure:
+- domain:
+  - UserRole
+  - StaffDepartment
+  - StaffUser
+- application:
+  - CreateStaffUser
+  - UpdateStaffDepartment
+  - ListStaffUsers
+  - ResolveStaffCapabilities
+- infrastructure:
+  - user repository
+  - auth adapter
+  - migration/schema updates
+- presentation:
+  - StaffCreateForm
+  - StaffDepartmentSelect
+  - StaffManagementTable or StaffManagementCards
+  - ManagerStaffSection
+
+Make the architecture actually used and meaningful.
+
+==================================================
+PHASE 10 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- manager login
+- staff login
+- guest login/logout
+- current request flows
+- current dashboards
+- route protection
+- stable APIs
+
+This task is specifically about integrating manager-created staff with staff departments safely.
+
+==================================================
+PHASE 11 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Manager can create staff successfully
+2. Staff department can be selected correctly
+3. Only these departments are allowed:
+   - HOUSEKEEPING
+   - BELLMAN
+   - RECEPTION
+   - RESTAURANT
+4. Existing manager/staff/guest flows still work
+5. Route protection still works
+6. Staff creation does not break current auth/session behavior
+7. Department info is displayed correctly in manager UI
+8. Architecture is future-ready for department-based permissions
+9. No regression in existing dashboards or request flows
+10. Overall result feels production-ready and professionally integrated
+
+==================================================
+PHASE 12 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was preserved
+3. Which role/departments model was chosen and why
+4. What was added/changed
+5. How manager staff creation now works
+6. How department classification now works
+7. Which files were changed
+8. Any schema/model additions
+9. How to test the full flow end-to-end
+10. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then integrate professionally
+- Keep the result SOLID, layered, safe, and production-ready
+- Do not break the existing structure just to add staff departments

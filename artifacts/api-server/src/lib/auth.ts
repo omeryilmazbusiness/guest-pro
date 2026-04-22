@@ -178,6 +178,9 @@ export async function authenticateManager(email: string, password: string) {
     .where(eq(usersTable.email, normalizedEmail));
   if (!user || !user.passwordHash) return null;
 
+  // Deactivated staff members cannot log in regardless of correct credentials
+  if (user.isActive === false) return null;
+
   const hash = user.passwordHash;
 
   // v3: per-user salt
