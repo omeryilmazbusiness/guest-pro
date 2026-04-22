@@ -29,7 +29,7 @@
  *   src/lib/permissions.ts      — role/capability checks
  */
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -99,6 +99,7 @@ function DashboardTabs({
   guestCount,
   roomCount,
   requestCount,
+  teamCount,
   isManager,
 }: {
   active: DashboardTab;
@@ -106,14 +107,15 @@ function DashboardTabs({
   guestCount: number;
   roomCount: number;
   requestCount: number;
+  teamCount: number;
   isManager: boolean;
 }) {
   const TABS: { key: DashboardTab; label: string; icon: React.FC<{ className?: string }>; count: number; managerOnly?: boolean }[] = [
-    { key: "guests", label: "Guests", icon: Users, count: guestCount },
-    { key: "rooms", label: "Rooms", icon: DoorOpen, count: roomCount },
-    { key: "requests", label: "Requests", icon: Bell, count: requestCount },
-    { key: "summary", label: "Summary", icon: TrendingUp, count: 0, managerOnly: true },
-    { key: "team", label: "Team", icon: Briefcase, count: 0, managerOnly: true },
+    { key: "team",     label: "Employees", icon: Briefcase, count: teamCount,    managerOnly: true },
+    { key: "guests",   label: "Guests",    icon: Users,     count: guestCount },
+    { key: "rooms",    label: "Rooms",     icon: DoorOpen,  count: roomCount },
+    { key: "requests", label: "Requests",  icon: Bell,      count: requestCount },
+    { key: "summary",  label: "Summary",   icon: TrendingUp, count: 0,           managerOnly: true },
   ];
 
   const visibleTabs = TABS.filter((t) => !t.managerOnly || isManager);
@@ -389,12 +391,32 @@ export default function ManagerDashboard() {
   const deleteGuestMutation = useDeleteGuest();
   const renewKeyMutation = useRenewGuestKey();
 
-  // ── Tab (reads ?tab= from URL for deep-linking from alerts)
+  // ── Tab (reads ?tab= from URL for deep-linking; defaults to "team" for managers)
   const [activeTab, setActiveTab] = useState<DashboardTab>(() => {
     const param = new URLSearchParams(window.location.search).get("tab");
     if (param === "guests" || param === "rooms" || param === "requests" || param === "summary" || param === "team") return param;
-    return "guests";
+    return "guests"; // real default set below via useEffect once role resolves
   });
+
+  // Active employee count — updated by StaffTeamTab via the staffCount callback
+  const [activeStaffCount, setActiveStaffCount] = useState(0);
+
+  // Auto-switch to Employees tab when a manager lands without a URL tab param.
+  // Uses a ref so this fires exactly once per mount.
+  const hasAutoSwitchedTab = useRef(false);
+  useEffect(() => {
+    if (hasAutoSwitchedTab.current) return;
+    if (!user) return;
+    if (user.role === "manager") {
+      const param = new URLSearchParams(window.location.search).get("tab");
+      if (!param) {
+        setActiveTab("team");
+      }
+      hasAutoSwitchedTab.current = true;
+    } else {
+      hasAutoSwitchedTab.current = true;
+    }
+  }, [user]);
 
   // ── Quick Report modal
   const [quickReportOpen, setQuickReportOpen] = useState(false);
@@ -672,6 +694,7 @@ export default function ManagerDashboard() {
           guestCount={guests?.length ?? 0}
           roomCount={allRooms.length}
           requestCount={openRequestCount}
+          teamCount={activeStaffCount}
           isManager={isManager}
         />
 
@@ -843,7 +866,7 @@ export default function ManagerDashboard() {
         ══════════════════════════════════ */}
         {activeTab === "team" && isManager && (
           <div className="animate-in fade-in duration-200">
-            <StaffTeamTab />
+            <StaffTeamTab staffCount={setActiveStaffCount} />
           </div>
         )}
 

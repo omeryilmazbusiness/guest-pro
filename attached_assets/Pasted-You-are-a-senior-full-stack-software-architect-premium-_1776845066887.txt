@@ -1,0 +1,363 @@
+You are a senior full-stack software architect, premium admin/mobile UX designer, dashboard information-architecture expert, and production-grade product engineer.
+
+Your task is to inspect, redesign, and harden the MANAGER dashboard of the existing “Guest Pro” project so that employee management and employee presence become first-class, highly usable, production-ready features.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, manager dashboard, tab/navigation structure, guest list implementation, staff/user model, auth/session flow, staff department model, presence tracking model, role-based access logic, current design system, and responsive behavior.
+- Do NOT rebuild the app from scratch if working systems already exist.
+- Preserve working auth, manager/staff/guest flows, presence tracking logic, route protection, and stable APIs.
+- Refactor only where there is real architectural, maintainability, UX, or production value.
+- The final result must be premium, calm, highly usable, mobile-first but also desktop-strong, SOLID, modular, and production-ready.
+- The interface must be understandable even if the manager has never read any help text before. By only looking at the screen, the manager should quickly understand what exists, what each area does, and how to use it.
+
+PROJECT CONTEXT:
+Guest Pro already has guest-oriented flows, tracking logic, manager/staff roles, and dashboard-style screens.
+Now the manager dashboard must be extended so employees are clearly manageable and trackable like guests.
+
+PRIMARY GOALS:
+1. Add an Employees area to the manager dashboard
+2. Make the Employees tab the default selected tab on the manager screen
+3. Create an Employees List similar in usability quality to the Guests List
+4. Each employee must have active presence tracking status similar to guests:
+   - in hotel
+   - out of hotel
+   - unknown
+5. Employee cards/list rows must clearly show:
+   - full name
+   - department
+   - presence status
+   - last seen / relevant tracking meta if available
+6. Presence Overview must become much more capable and extensible
+7. The dashboard must be designed so a manager can learn the screen just by looking at it
+8. The UX must be highly optimized for mobile, while also feeling professional on desktop
+9. The architecture must remain modular and future-ready
+10. Do not break the existing system
+
+STAFF DEPARTMENTS:
+- HOUSEKEEPING
+- BELLMAN
+- RECEPTION
+- RESTAURANT
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current manager dashboard structure
+2. Current tab/navigation structure
+3. Current default selected manager tab
+4. Current guest list implementation
+5. Current staff/user model
+6. Current staff department model
+7. Current presence tracking model
+8. Current guest presence UI
+9. Current mobile responsiveness
+10. Current desktop layout behavior
+11. Current overview/presence summary widgets
+12. Current manager mental model / usability weaknesses
+13. What already works
+14. What should be preserved
+15. What should be redesigned or extended
+
+Then provide:
+- concise architecture audit
+- dashboard information-architecture gap analysis
+- employee-management gap analysis
+- employee presence gap analysis
+- mobile + desktop UX gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — MAKE EMPLOYEES THE DEFAULT MANAGER TAB
+==================================================
+
+Implement a professional tab/navigation update.
+
+REQUIREMENTS:
+- manager screen must default to Employees tab
+- preserve other existing tabs
+- do not break route or state behavior
+- keep the tab interaction clean and intentional
+- ensure default tab selection is stable across refreshes and navigation where appropriate
+
+UX GOAL:
+The manager should land immediately on the most operationally useful screen.
+
+==================================================
+PHASE 3 — BUILD EMPLOYEES LIST LIKE A PROFESSIONAL OPERATIONS SCREEN
+==================================================
+
+Create an Employees List that is as usable and polished as the Guests List.
+
+REQUIREMENTS:
+- employee list must be easy to scan
+- mobile-first list/card style
+- desktop should remain elegant and efficient
+- each employee card or list item should clearly show:
+  - full name
+  - department
+  - presence status
+  - last seen or relevant tracking info
+  - optional small operational metadata if useful
+- use strong hierarchy
+- use premium iconography
+- use minimal, calm color accents
+- avoid clutter
+
+This should feel like a real hospitality operations screen.
+
+==================================================
+PHASE 4 — EMPLOYEE ACTIVE TRACKING / PRESENCE
+==================================================
+
+Add employee presence tracking behavior similar to guests.
+
+REQUIREMENTS:
+- employee presence statuses should align with the current tracking model where appropriate
+- if existing tracking statuses include:
+  - in hotel
+  - out of hotel
+  - unknown
+  then reuse and adapt them cleanly
+- employee presence should not be a hacked copy of guest presence
+- create a maintainable shared or parallel model if appropriate
+
+Each employee entry should support:
+- current presence status
+- last seen time
+- optional source/context if already available in the existing tracking architecture
+
+IMPORTANT:
+- integrate with current tracking logic carefully
+- do not duplicate tracking logic unnecessarily
+- centralize shared presence concepts where it makes architectural sense
+
+==================================================
+PHASE 5 — REDESIGN PRESENCE OVERVIEW
+==================================================
+
+The Presence Overview area must become much more capable.
+
+REQUIREMENTS:
+- redesign it so more useful operational information fits cleanly
+- it must remain easy to understand at a glance
+- it must support future expansion without needing a redesign every time
+
+At minimum, Presence Overview should be able to support:
+- total employees
+- in hotel count
+- out of hotel count
+- unknown count
+- department breakdown
+- quick visual ratios
+- last refresh / updated time if relevant
+- quick filters or quick actions if useful
+
+IMPORTANT:
+Do not overcrowd the UI.
+Design it so the section can contain more information while still feeling calm and readable.
+
+==================================================
+PHASE 6 — INFORMATION ARCHITECTURE FOR ZERO-LEARNING UX
+==================================================
+
+Design the manager dashboard so it is understandable even if the manager never read instructions before.
+
+REQUIREMENTS:
+- clear naming
+- obvious visual grouping
+- strong card hierarchy
+- intuitive icons
+- meaningful labels
+- no ambiguous sections
+- default sorting/filtering that makes sense immediately
+- empty/loading/error states that explain themselves clearly
+- the manager should understand:
+  - what this page is
+  - what these people are
+  - who is in the hotel
+  - who is not
+  - what each status means
+  - what to tap next
+
+This is a high-priority usability requirement.
+
+==================================================
+PHASE 7 — MOBILE-FIRST, DESKTOP-STRONG DESIGN
+==================================================
+
+Design for both mobile and desktop with one coherent system.
+
+REQUIREMENTS:
+- mobile usage must feel effortless
+- touch targets must be large and clear
+- scrolling behavior must feel intentional
+- desktop must not feel like a stretched mobile screen
+- desktop should use extra space intelligently
+- overview section and employee list should both feel premium on large screens
+- no cluttered admin-panel feeling
+
+The visual direction must be:
+- soft
+- modern
+- compact
+- premium
+- calm
+- operational
+- highly readable
+
+==================================================
+PHASE 8 — DEPARTMENT VISIBILITY AND FUTURE-READY FILTERING
+==================================================
+
+Employees must clearly show department information:
+- HOUSEKEEPING
+- BELLMAN
+- RECEPTION
+- RESTAURANT
+
+REQUIREMENTS:
+- department should be visible and scannable
+- department should be easy to filter by
+- structure the architecture so future department-based views or permissions can be added easily
+- do not scatter department logic around random components
+
+==================================================
+PHASE 9 — FILTERING / SORTING / QUICK USABILITY
+==================================================
+
+Make the Employees area highly usable.
+
+REQUIREMENTS:
+- support useful filters such as:
+  - all employees
+  - in hotel
+  - out of hotel
+  - unknown
+  - by department
+- sorting should help operations naturally
+- use compact premium controls
+- mobile-friendly
+- easy to understand without explanation
+
+Do not overload the interface, but make it truly useful.
+
+==================================================
+PHASE 10 — PRESENCE DESIGN LANGUAGE
+==================================================
+
+Use a professional minimal presence design language.
+
+REQUIREMENTS:
+- statuses should be clear
+- use restrained colors
+- soft modern badges/dots/labels
+- do not use loud colors or childish UI
+- preserve a premium hospitality operations feel
+- presence meaning must be visible instantly
+
+==================================================
+PHASE 11 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement everything in a meaningful, maintainable architecture.
+
+REQUIREMENTS:
+- no giant manager dashboard file
+- no duplicated guest/staff presence logic if it can be shared cleanly
+- no scattered filter/sort/presence-mapping logic inside UI
+- centralize employee list query logic
+- centralize presence overview aggregation
+- centralize department display/filter logic
+- no fake architecture
+- no dead code
+- clean naming
+- meaningful modules only
+
+Suggested structure:
+- domain:
+  - StaffDepartment
+  - PresenceStatus
+  - EmployeePresenceSnapshot
+  - EmployeeOverviewMetrics
+- application:
+  - GetEmployeeListView
+  - GetEmployeePresenceOverview
+  - FilterEmployeesByDepartment
+  - FilterEmployeesByPresence
+  - ResolveEmployeePresenceDisplay
+- infrastructure:
+  - employee repository
+  - presence repository
+  - overview aggregation service
+- presentation:
+  - ManagerEmployeesTab
+  - EmployeePresenceOverview
+  - EmployeeList
+  - EmployeeCard
+  - DepartmentFilterBar
+  - PresenceFilterBar
+  - EmployeePresenceBadge
+
+Make the architecture actually used and meaningful.
+
+==================================================
+PHASE 12 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- manager login
+- staff login
+- guest login/logout
+- guest tracking logic
+- staff creation logic
+- route protection
+- stable APIs
+- current dashboards where they still work
+
+This task is specifically about professionally integrating employees and employee presence into manager dashboard.
+
+==================================================
+PHASE 13 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Employees tab exists and is the default selected manager tab
+2. Employees list is clear and professional
+3. Each employee shows name, department, and presence correctly
+4. Employee active tracking works correctly
+5. Presence Overview is more capable and more extensible
+6. Filters are usable and intuitive
+7. Manager can understand the screen just by looking at it
+8. Mobile UX feels highly efficient
+9. Desktop UX feels premium and well-structured
+10. No regression in existing auth, tracking, or dashboards
+11. The result feels production-ready
+
+==================================================
+PHASE 14 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was preserved
+3. What was redesigned
+4. How Employees tab now works
+5. How employee presence tracking now works
+6. How Presence Overview was expanded
+7. How usability was improved for first-time manager understanding
+8. Which files were changed
+9. Any architecture refactors made
+10. How to test the full manager employees flow end-to-end
+11. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result mobile-first, desktop-strong, SOLID, modular, premium, and production-ready
+- The manager must be able to understand and use the screen almost instantly by just looking at it
