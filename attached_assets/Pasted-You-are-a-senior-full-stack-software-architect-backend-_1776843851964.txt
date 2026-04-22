@@ -1,0 +1,208 @@
+You are a senior full-stack software architect, backend debugging engineer, and production-grade Node/Express engineer.
+
+Your task is to inspect, diagnose, fix, and harden the staff creation flow in the existing “Guest Pro” project.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, manager staff-creation flow, backend route/controller/service structure, API handlers, response handling, auth/role guards, and database schema.
+- Do NOT rebuild the project from scratch if working parts already exist.
+- Preserve working auth, manager/staff/guest role system, dashboards, route protection, and stable APIs.
+- Refactor only where there is real architectural, maintainability, validation, or production value.
+- The final result must be production-ready, SOLID, layered, safe, and professionally integrated.
+
+BUG CONTEXT:
+When creating a staff user, the system throws:
+- "res.json is not a function"
+
+This must be analyzed professionally from root cause to final fix.
+
+PRIMARY GOALS:
+1. Find the exact root cause of the "res.json is not a function" error
+2. Fix the staff creation flow correctly
+3. Ensure the response lifecycle is handled properly
+4. Ensure manager can create staff safely without breaking current flows
+5. Keep everything SOLID, layered, and production-ready
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current manager staff-creation UI flow
+2. Current frontend API call used for staff creation
+3. Current backend route for staff creation
+4. Current controller method
+5. Current service method
+6. Current repository/DB write flow
+7. Current auth/role guard for manager-only access
+8. Current DTO/validation schema
+9. Current response handling chain
+10. What already works
+11. What should be preserved
+12. Where the error is most likely occurring
+
+Then provide:
+- concise architecture audit
+- root-cause candidates
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — FIND THE REAL ROOT CAUSE OF "res.json is not a function"
+==================================================
+
+Diagnose deeply.
+
+Check all likely causes:
+
+1. A service function is receiving `res` accidentally and treating a non-Express object as Express response
+2. Controller passes wrong arguments into a service
+3. Frontend fetch/axios response object is being confused with Express `res`
+4. A custom wrapper/middleware overwrote or shadowed `res`
+5. `res` is actually request body / DTO / payload / callback arg, not Express response
+6. Async handler signature is wrong
+7. Route handler is calling a helper that expects `res`, but gets something else
+8. A promise chain returns a plain object named `res`
+9. TypeScript typings or JS naming confusion hides the bug
+10. The staff creation flow mixes controller and service responsibilities incorrectly
+
+Do not guess.
+Find the actual technical root cause.
+
+==================================================
+PHASE 3 — FIX THE RESPONSE LAYER PROFESSIONALLY
+==================================================
+
+Implement the correct separation of concerns.
+
+REQUIREMENTS:
+- Express/Nest/HTTP response handling must stay in the controller/route layer only, unless the existing architecture has a deliberate and safe response abstraction
+- service layer should return domain/application results, not write HTTP responses directly
+- repository layer should not know about HTTP response objects
+- eliminate any misuse of `res.json(...)` in the wrong layer
+- normalize success and error responses cleanly
+
+IMPORTANT:
+Do not patch around the bug with hacks.
+Fix the architectural misuse if present.
+
+==================================================
+PHASE 4 — HARDEN STAFF CREATION FLOW
+==================================================
+
+Once the bug is fixed, harden the whole manager -> create staff flow.
+
+REQUIREMENTS:
+- manager can create staff successfully
+- allowed departments remain:
+  - HOUSEKEEPING
+  - BELLMAN
+  - RECEPTION
+  - RESTAURANT
+- validation is correct
+- duplicate email/identifier protection works if appropriate
+- only manager can perform this action
+- frontend receives a clean success/error response
+- no runtime crash remains
+
+==================================================
+PHASE 5 — VALIDATION / ERROR HANDLING
+==================================================
+
+Professionalize validation and error handling.
+
+REQUIREMENTS:
+- invalid department values must be rejected safely
+- missing required fields must return clean validation errors
+- duplicate user creation must be handled gracefully
+- unauthorized access must be blocked correctly
+- backend must not return vague runtime errors
+- frontend must receive actionable, safe error messages
+
+==================================================
+PHASE 6 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Refactor the feature into a meaningful maintainable structure.
+
+REQUIREMENTS:
+- controller handles HTTP input/output
+- service handles business logic
+- repository handles persistence
+- no service should directly depend on Express response object unless there is an explicit architectural reason
+- no giant mixed route file
+- no fake architecture
+- no dead code
+- clean naming
+- meaningful modules only
+
+Suggested structure:
+- domain:
+  - UserRole
+  - StaffDepartment
+  - StaffUser
+- application:
+  - CreateStaffUser
+  - ValidateStaffCreationInput
+- infrastructure:
+  - user repository
+  - auth/guard integration
+- presentation:
+  - manager create staff form
+  - create staff API handler/controller
+
+Make the architecture actually used and meaningful.
+
+==================================================
+PHASE 7 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- manager login
+- staff login
+- guest login/logout
+- route protection
+- current dashboards
+- current staff model if already integrated
+- stable APIs
+
+This task is specifically about fixing and hardening staff creation.
+
+==================================================
+PHASE 8 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. "res.json is not a function" no longer occurs
+2. Manager can create staff successfully
+3. Staff department is saved correctly
+4. Only manager can create staff
+5. Validation errors are clean
+6. Duplicate/invalid input is handled correctly
+7. No regression in auth/session flows
+8. No regression in dashboards
+9. Response handling is now architecturally correct
+10. Overall result feels production-ready
+
+==================================================
+PHASE 9 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. Exact root cause of the error
+3. What was fixed
+4. What was refactored
+5. How response handling now works correctly
+6. Which files were changed
+7. Any schema/model changes
+8. How to test the full create-staff flow end-to-end
+
+IMPORTANT:
+- Start with inspection first
+- Then fix the bug professionally
+- Then harden the full flow
+- Keep the result SOLID, layered, safe, and production-ready
+- Do not apply a superficial patch; solve the real response-handling bug
