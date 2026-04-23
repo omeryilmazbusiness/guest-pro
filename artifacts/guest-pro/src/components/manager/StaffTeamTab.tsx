@@ -1,21 +1,18 @@
 /**
- * StaffTeamTab — Employee management operations screen.
- *
- * Manager-only. Provides a full-featured operations view of the hotel's
- * personnel: at-a-glance stats, department filtering, search, and individual
- * employee cards with inline actions.
+ * StaffTeamTab — Employee management screen (manager-only).
  *
  * Architecture:
- *   - Domain types + API calls live in lib/staff.ts (no fetch here)
- *   - Filter/sort logic is pure functions at the bottom of this file
- *   - CreateStaffModal / EditStaffModal are self-contained sub-components
- *   - Employee presence: staff do not yet send heartbeats; status shows
- *     account state (active / inactive) until real-time tracking is built
+ *   - Domain types + API calls → lib/staff.ts
+ *   - Presence model → lib/staff.ts (resolveEmployeePresence)
+ *   - Filter / sort logic → pure functions in this file
+ *   - CreateStaffModal / EditStaffModal → self-contained sub-components
+ *   - Overview bar removed — stats now live in ManagerOverviewCards (dashboard level)
  *
- * Visual language:
- *   - Department colours defined in lib/staff.ts (shared with DepartmentBadge)
- *   - Soft cards, strong hierarchy, clear empty/loading states
- *   - Mobile-first (single column) → 2-column on sm+ screens
+ * UX principles:
+ *   - Search bar with filter icon → dropdown (no always-visible chips)
+ *   - Presence badges use "In hotel / Out of hotel / Unknown / Inactive" language
+ *   - Cards scannable in < 1 second: name → dept → presence
+ *   - Mobile-first single column → 2-column on sm+
  */
 
 import { useState, useCallback, useMemo, useEffect } from "react";
@@ -33,6 +30,8 @@ import {
   MoreVertical,
   Search,
   X,
+  SlidersHorizontal,
+  Check,
 } from "lucide-react";
 import {
   Dialog,
@@ -74,11 +73,14 @@ import {
   updateStaff,
   deactivateStaff,
   staffDisplayName,
+  resolveEmployeePresence,
   STAFF_DEPARTMENTS,
   DEPARTMENT_LABELS,
   DEPARTMENT_COLOURS,
+  EMPLOYEE_PRESENCE_LABEL,
   type StaffMember,
   type StaffDepartment,
+  type StaffInfo,
 } from "@/lib/staff";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -109,20 +111,18 @@ function filterEmployees(
   return result;
 }
 
-function deptCounts(staff: StaffMember[]): Record<DeptFilter, number> {
-  const counts: Record<DeptFilter, number> = {
-    ALL: staff.filter((m) => m.isActive).length,
-    HOUSEKEEPING: 0,
-    BELLMAN: 0,
-    RECEPTION: 0,
-    RESTAURANT: 0,
-  };
+function buildStaffInfo(staff: StaffMember[]): StaffInfo {
+  const byDept: Partial<Record<StaffDepartment, number>> = {};
   for (const m of staff) {
     if (m.isActive && m.staffDepartment) {
-      counts[m.staffDepartment]++;
+      byDept[m.staffDepartment] = (byDept[m.staffDepartment] ?? 0) + 1;
     }
   }
-  return counts;
+  return {
+    total: staff.length,
+    active: staff.filter((m) => m.isActive).length,
+    byDept,
+  };
 }
 
 // ── Validation schemas ────────────────────────────────────────────────────────
@@ -157,7 +157,7 @@ function DepartmentBadge({ dept }: { dept: StaffDepartment | null }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border leading-none",
+        "inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border leading-none shrink-0",
         c.bg, c.text, c.border,
       )}
     >
@@ -190,104 +190,114 @@ function EmployeeAvatar({ member }: { member: StaffMember }) {
   );
 }
 
-/** Green / red / gray status dot with label. */
-function StatusDot({ isActive }: { isActive: boolean }) {
+/**
+ * Presence badge — uses the shared EmployeePresence vocabulary.
+ * Active staff show "Unknown" until real-time tracking is built.
+ */
+function PresenceBadge({ member }: { member: StaffMember }) {
+  const presence = resolveEmployeePresence(member);
+  const styles: Record<string, { dot: string; label: string }> = {
+    IN_HOTEL:     { dot: "bg-emerald-400", label: "text-emerald-600" },
+    OUT_OF_HOTEL: { dot: "bg-rose-400",    label: "text-rose-500" },
+    UNKNOWN:      { dot: "bg-amber-300",   label: "text-amber-600" },
+    INACTIVE:     { dot: "bg-zinc-300",    label: "text-zinc-400" },
+  };
+  const s = styles[presence] ?? styles.UNKNOWN;
   return (
-    <span className="flex items-center gap-1 leading-none">
-      <span
-        className={cn(
-          "w-1.5 h-1.5 rounded-full inline-block shrink-0",
-          isActive ? "bg-emerald-400" : "bg-zinc-300",
-        )}
-      />
-      <span className={cn("text-[10px] font-medium", isActive ? "text-emerald-600" : "text-zinc-400")}>
-        {isActive ? "Active" : "Inactive"}
+    <span className="flex items-center gap-1 leading-none shrink-0">
+      <span className={cn("w-1.5 h-1.5 rounded-full inline-block shrink-0", s.dot)} />
+      <span className={cn("text-[10px] font-medium", s.label)}>
+        {EMPLOYEE_PRESENCE_LABEL[presence]}
       </span>
     </span>
   );
 }
 
-/** Department filter chip. */
-function DeptChip({
-  label,
-  count,
-  active,
-  onClick,
-}: {
-  label: string;
-  count: number;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap border transition-all touch-manipulation",
-        active
-          ? "bg-zinc-900 text-white border-zinc-900"
-          : "bg-white text-zinc-500 border-zinc-100 hover:text-zinc-800 hover:border-zinc-200",
-      )}
-    >
-      {label}
-      {count > 0 && (
-        <span className={cn("text-[10px] font-mono", active ? "text-zinc-300" : "text-zinc-400")}>
-          {count}
-        </span>
-      )}
-    </button>
-  );
-}
+// ── Search bar with embedded filter icon ──────────────────────────────────────
 
-// ── Mini stats overview bar ───────────────────────────────────────────────────
+const DEPT_OPTIONS: { key: DeptFilter; label: string }[] = [
+  { key: "ALL",          label: "All departments" },
+  ...STAFF_DEPARTMENTS.map((d) => ({ key: d as DeptFilter, label: DEPARTMENT_LABELS[d] })),
+];
 
-function EmployeeOverviewBar({
-  staff,
-  onAddClick,
+function EmployeeSearchBar({
+  search,
+  onSearchChange,
+  deptFilter,
+  onDeptChange,
 }: {
-  staff: StaffMember[];
-  onAddClick: () => void;
+  search: string;
+  onSearchChange: (v: string) => void;
+  deptFilter: DeptFilter;
+  onDeptChange: (v: DeptFilter) => void;
 }) {
-  const active   = staff.filter((m) => m.isActive).length;
-  const inactive = staff.filter((m) => !m.isActive).length;
-  const total    = staff.length;
+  const isFiltered = deptFilter !== "ALL";
 
   return (
-    <div className="bg-white border border-zinc-100 rounded-2xl px-4 py-3.5 shadow-sm shadow-zinc-100/60 flex items-center gap-4">
-      {/* Stats */}
-      <div className="flex-1 flex items-center gap-4 min-w-0 flex-wrap">
-        <div>
-          <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest leading-none">
-            Total
-          </p>
-          <p className="text-xl font-bold text-zinc-900 mt-0.5 leading-none">{total}</p>
-        </div>
-        <div className="w-px h-7 bg-zinc-100 shrink-0" />
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-            <span className="text-[11px] font-semibold text-zinc-800">{active}</span>
-            <span className="text-[11px] text-zinc-400">active</span>
-          </div>
-          {inactive > 0 && (
-            <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 shrink-0" />
-              <span className="text-[11px] font-semibold text-zinc-800">{inactive}</span>
-              <span className="text-[11px] text-zinc-400">inactive</span>
-            </div>
-          )}
-        </div>
+    <div className="relative flex items-center">
+      {/* Search icon */}
+      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400 pointer-events-none" />
+
+      {/* Input */}
+      <Input
+        placeholder="Search by name or email…"
+        value={search}
+        onChange={(e) => onSearchChange(e.target.value)}
+        className="pl-9 pr-16 h-10 rounded-xl bg-white border-zinc-100 text-sm shadow-sm focus-visible:ring-zinc-900"
+      />
+
+      {/* Right-side controls */}
+      <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+        {/* Clear search */}
+        {search && (
+          <button
+            onClick={() => onSearchChange("")}
+            className="text-zinc-400 hover:text-zinc-700 p-1 rounded-lg transition-colors"
+            aria-label="Clear search"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        )}
+
+        {/* Filter icon → dept dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className={cn(
+                "relative p-2 rounded-lg transition-all touch-manipulation",
+                isFiltered
+                  ? "text-zinc-900 bg-zinc-100"
+                  : "text-zinc-400 hover:text-zinc-700 hover:bg-zinc-50",
+              )}
+              aria-label="Filter by department"
+              title="Filter by department"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              {/* Active filter dot */}
+              {isFiltered && (
+                <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-zinc-900" />
+              )}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="w-44 rounded-xl shadow-xl border-zinc-100"
+          >
+            {DEPT_OPTIONS.map(({ key, label }) => (
+              <DropdownMenuItem
+                key={key}
+                onClick={() => onDeptChange(key)}
+                className="flex items-center justify-between gap-2 rounded-lg cursor-pointer"
+              >
+                <span className="text-sm">{label}</span>
+                {deptFilter === key && (
+                  <Check className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-
-      {/* CTA */}
-      <Button
-        size="sm"
-        onClick={onAddClick}
-        className="h-8 px-3.5 rounded-xl text-[13px] font-medium shadow-sm shadow-zinc-900/10 shrink-0"
-      >
-        <Plus className="w-3.5 h-3.5 mr-1" />
-        Add Staff
-      </Button>
     </div>
   );
 }
@@ -307,16 +317,13 @@ function EmployeeCard({
 }) {
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
 
-  const handleDeactivate = () => {
-    setConfirmDeactivate(false);
-    onDeactivate(member);
-  };
-
   return (
     <div
       className={cn(
         "bg-white border rounded-2xl p-3.5 flex items-start gap-3 transition-opacity",
-        member.isActive ? "border-zinc-100 shadow-sm shadow-zinc-100/60" : "border-zinc-100 opacity-55",
+        member.isActive
+          ? "border-zinc-100 shadow-sm shadow-zinc-100/60"
+          : "border-zinc-100 opacity-55",
       )}
     >
       {/* Avatar */}
@@ -329,7 +336,7 @@ function EmployeeCard({
           <p className="text-sm font-semibold text-zinc-900 truncate leading-snug">
             {staffDisplayName(member)}
           </p>
-          <StatusDot isActive={member.isActive} />
+          <PresenceBadge member={member} />
         </div>
 
         {/* Email */}
@@ -343,7 +350,7 @@ function EmployeeCard({
           {confirmDeactivate ? (
             <div className="flex items-center gap-1.5 shrink-0">
               <button
-                onClick={handleDeactivate}
+                onClick={() => { setConfirmDeactivate(false); onDeactivate(member); }}
                 className="text-[11px] font-semibold text-rose-600 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-lg hover:bg-rose-100 transition-colors"
               >
                 Deactivate
@@ -633,7 +640,25 @@ function EditStaffModal({
 
 // ── Main tab export ───────────────────────────────────────────────────────────
 
-export function StaffTeamTab({ staffCount }: { staffCount?: (n: number) => void }) {
+interface StaffTeamTabProps {
+  /**
+   * Called whenever the staff list loads or changes.
+   * Allows the parent dashboard to populate the Employee overview card.
+   */
+  staffCount?: (info: StaffInfo) => void;
+  /**
+   * Controlled "create modal open" state — when provided, the parent
+   * (e.g. the overview card's + button) can open the modal externally.
+   */
+  externalCreateOpen?: boolean;
+  onExternalCreateOpenChange?: (open: boolean) => void;
+}
+
+export function StaffTeamTab({
+  staffCount,
+  externalCreateOpen,
+  onExternalCreateOpenChange,
+}: StaffTeamTabProps) {
   const queryClient = useQueryClient();
 
   // ── Remote data
@@ -643,9 +668,9 @@ export function StaffTeamTab({ staffCount }: { staffCount?: (n: number) => void 
     staleTime: 30_000,
   });
 
-  // Bubble active count to parent for the tab badge — side-effect, not select.
+  // Bubble full StaffInfo to parent overview cards — side-effect, not select.
   useEffect(() => {
-    if (staff) staffCount?.(staff.filter((m) => m.isActive).length);
+    if (staff) staffCount?.(buildStaffInfo(staff));
   }, [staff, staffCount]);
 
   // ── Mutations
@@ -666,15 +691,20 @@ export function StaffTeamTab({ staffCount }: { staffCount?: (n: number) => void 
     [queryClient],
   );
 
-  // ── Local UI state
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<StaffMember | null>(null);
-  const [deptFilter, setDeptFilter] = useState<DeptFilter>("ALL");
-  const [search, setSearch] = useState("");
+  // ── Create modal — merged internal + external controlled state
+  const [internalCreateOpen, setInternalCreateOpen] = useState(false);
+  const isCreateOpen = externalCreateOpen ?? internalCreateOpen;
+  const setCreateOpen = useCallback((v: boolean) => {
+    setInternalCreateOpen(v);
+    onExternalCreateOpenChange?.(v);
+  }, [onExternalCreateOpenChange]);
+
+  // ── Other local UI state
+  const [editTarget, setEditTarget]  = useState<StaffMember | null>(null);
+  const [deptFilter, setDeptFilter]  = useState<DeptFilter>("ALL");
+  const [search, setSearch]          = useState("");
 
   // ── Derived data
-  const counts = useMemo(() => deptCounts(staff ?? []), [staff]);
-
   const visibleStaff = useMemo(
     () => filterEmployees(staff ?? [], deptFilter, search),
     [staff, deptFilter, search],
@@ -685,68 +715,40 @@ export function StaffTeamTab({ staffCount }: { staffCount?: (n: number) => void 
 
   const hasFilter = deptFilter !== "ALL" || search.trim().length > 0;
 
-  const DEPT_CHIPS: { key: DeptFilter; label: string }[] = [
-    { key: "ALL", label: "All" },
-    ...STAFF_DEPARTMENTS.map((d) => ({ key: d as DeptFilter, label: DEPARTMENT_LABELS[d] })),
-  ];
-
   // ── Render
   return (
     <div className="space-y-4 pb-10">
 
-      {/* ── Overview bar ─────────────────────────────────────── */}
-      {isLoading ? (
-        <Skeleton className="h-[60px] rounded-2xl" />
-      ) : (
-        <EmployeeOverviewBar staff={staff ?? []} onAddClick={() => setCreateOpen(true)} />
-      )}
-
-      {/* ── Filter area ──────────────────────────────────────── */}
+      {/* ── Search bar + filter icon ──────────────────────────────── */}
       {!isLoading && (staff ?? []).length > 0 && (
-        <div className="space-y-2.5">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400 pointer-events-none" />
-            <Input
-              placeholder="Search by name or email…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 pr-8 h-9 rounded-xl bg-white border-zinc-100 text-sm shadow-sm"
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <EmployeeSearchBar
+              search={search}
+              onSearchChange={setSearch}
+              deptFilter={deptFilter}
+              onDeptChange={setDeptFilter}
             />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 p-0.5"
-                aria-label="Clear search"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            )}
           </div>
-
-          {/* Department chips */}
-          <div className="flex gap-1.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: "none" }}>
-            {DEPT_CHIPS.map(({ key, label }) => (
-              <DeptChip
-                key={key}
-                label={label}
-                count={counts[key]}
-                active={deptFilter === key}
-                onClick={() => setDeptFilter(key)}
-              />
-            ))}
-          </div>
+          <Button
+            size="sm"
+            onClick={() => setCreateOpen(true)}
+            className="h-10 px-3.5 rounded-xl text-[13px] font-medium shadow-sm shadow-zinc-900/10 shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5 mr-1" />
+            Add
+          </Button>
         </div>
       )}
 
-      {/* ── Loading skeletons ─────────────────────────────────── */}
+      {/* ── Loading skeletons ─────────────────────────────────────── */}
       {isLoading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {Array.from({ length: 4 }).map((_, i) => <EmployeeCardSkeleton key={i} />)}
         </div>
       )}
 
-      {/* ── Empty state (no staff at all) ─────────────────────── */}
+      {/* ── Empty state (no staff at all) ─────────────────────────── */}
       {!isLoading && (staff ?? []).length === 0 && (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <div className="w-12 h-12 rounded-2xl bg-zinc-100 flex items-center justify-center">
@@ -770,7 +772,7 @@ export function StaffTeamTab({ staffCount }: { staffCount?: (n: number) => void 
         </div>
       )}
 
-      {/* ── No search/filter results ──────────────────────────── */}
+      {/* ── No search/filter results ──────────────────────────────── */}
       {!isLoading && (staff ?? []).length > 0 && visibleStaff.length === 0 && (
         <div className="py-12 text-center">
           <p className="text-sm font-medium text-zinc-600">No employees match</p>
@@ -786,7 +788,7 @@ export function StaffTeamTab({ staffCount }: { staffCount?: (n: number) => void 
         </div>
       )}
 
-      {/* ── Active employees ──────────────────────────────────── */}
+      {/* ── Active employees ──────────────────────────────────────── */}
       {activeVisible.length > 0 && (
         <div className="space-y-2">
           {hasFilter && (
@@ -808,7 +810,7 @@ export function StaffTeamTab({ staffCount }: { staffCount?: (n: number) => void 
         </div>
       )}
 
-      {/* ── Inactive employees ────────────────────────────────── */}
+      {/* ── Inactive employees ────────────────────────────────────── */}
       {inactiveVisible.length > 0 && (
         <div className="space-y-2">
           <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest px-0.5">
@@ -830,7 +832,7 @@ export function StaffTeamTab({ staffCount }: { staffCount?: (n: number) => void 
 
       {/* ── Modals ───────────────────────────────────────────── */}
       <CreateStaffModal
-        open={createOpen}
+        open={isCreateOpen}
         onClose={() => setCreateOpen(false)}
         onSuccess={() => { setCreateOpen(false); invalidate(); }}
       />

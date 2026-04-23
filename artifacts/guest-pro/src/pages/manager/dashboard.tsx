@@ -80,12 +80,14 @@ import { GuestHandoffModal, type HandoffData } from "@/components/GuestHandoffMo
 import { getGuestPresences, type TrackingStatus } from "@/lib/tracking";
 import { computeTrackingSummary } from "@/lib/tracking-summary";
 import { GuestsOverviewCard } from "@/components/manager/GuestsOverviewCard";
+import { ManagerOverviewCards } from "@/components/manager/ManagerOverviewCards";
 import { StaffRequestsBoard } from "@/components/manager/StaffRequestsBoard";
 import { NewRequestAlert } from "@/components/manager/NewRequestAlert";
 import { WelcomeAreaAlertBanner } from "@/components/manager/WelcomeAreaAlertBanner";
 import { DailySummaryTab } from "@/components/manager/DailySummaryTab";
 import { QuickReportModal } from "@/components/manager/QuickReportModal";
 import { StaffTeamTab } from "@/components/manager/StaffTeamTab";
+import { type StaffInfo } from "@/lib/staff";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -110,15 +112,19 @@ function DashboardTabs({
   teamCount: number;
   isManager: boolean;
 }) {
-  const TABS: { key: DashboardTab; label: string; icon: React.FC<{ className?: string }>; count: number; managerOnly?: boolean }[] = [
-    { key: "team",     label: "Employees", icon: Briefcase, count: teamCount,    managerOnly: true },
-    { key: "guests",   label: "Guests",    icon: Users,     count: guestCount },
-    { key: "rooms",    label: "Rooms",     icon: DoorOpen,  count: roomCount },
-    { key: "requests", label: "Requests",  icon: Bell,      count: requestCount },
-    { key: "summary",  label: "Summary",   icon: TrendingUp, count: 0,           managerOnly: true },
+  const TABS: { key: DashboardTab; label: string; icon: React.FC<{ className?: string }>; count: number; managerOnly?: boolean; managerHidden?: boolean }[] = [
+    { key: "team",     label: "Employees", icon: Briefcase,  count: teamCount,    managerOnly: true },
+    { key: "guests",   label: "Guests",    icon: Users,      count: guestCount },
+    { key: "rooms",    label: "Rooms",     icon: DoorOpen,   count: roomCount,    managerHidden: true },
+    { key: "requests", label: "Requests",  icon: Bell,       count: requestCount, managerHidden: true },
+    { key: "summary",  label: "Summary",   icon: TrendingUp, count: 0,            managerOnly: true },
   ];
 
-  const visibleTabs = TABS.filter((t) => !t.managerOnly || isManager);
+  const visibleTabs = TABS.filter((t) => {
+    if (t.managerOnly && !isManager) return false;
+    if (t.managerHidden && isManager) return false;
+    return true;
+  });
 
   return (
     <div className="flex bg-zinc-100 rounded-2xl p-1 gap-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
@@ -398,8 +404,11 @@ export default function ManagerDashboard() {
     return "guests"; // real default set below via useEffect once role resolves
   });
 
-  // Active employee count — updated by StaffTeamTab via the staffCount callback
-  const [activeStaffCount, setActiveStaffCount] = useState(0);
+  // Employee overview info — updated by StaffTeamTab when list loads/changes
+  const [staffInfo, setStaffInfo] = useState<StaffInfo>({ total: 0, active: 0, byDept: {} });
+
+  // Controlled create-employee modal — can be triggered from the overview card
+  const [staffCreateOpen, setStaffCreateOpen] = useState(false);
 
   // Auto-switch to Employees tab when a manager lands without a URL tab param.
   // Uses a ref so this fires exactly once per mount.
@@ -669,22 +678,23 @@ export default function ManagerDashboard() {
       {/* ── Scrollable main content ── */}
       <main className="max-w-2xl mx-auto px-4 py-5 pb-28 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
 
-        {/* ─── Premium presence overview card (both roles) ─── */}
+        {/* ─── Presence overview ─── */}
         {!isLoading && (
-          <GuestsOverviewCard
-            summary={trackingSummary}
-            isRefreshing={presencesFetching}
-            onRefresh={handleRefreshTracking}
-            managerStats={
-              isManager
-                ? {
-                    total: stats.total,
-                    newToday: stats.newToday,
-                    roomsOccupied: stats.roomsOccupied,
-                  }
-                : undefined
-            }
-          />
+          isManager ? (
+            <ManagerOverviewCards
+              guestSummary={trackingSummary}
+              isRefreshing={presencesFetching}
+              onRefresh={handleRefreshTracking}
+              staffInfo={staffInfo}
+              onAddEmployee={() => setStaffCreateOpen(true)}
+            />
+          ) : (
+            <GuestsOverviewCard
+              summary={trackingSummary}
+              isRefreshing={presencesFetching}
+              onRefresh={handleRefreshTracking}
+            />
+          )
         )}
 
         {/* Tab switcher */}
@@ -694,7 +704,7 @@ export default function ManagerDashboard() {
           guestCount={guests?.length ?? 0}
           roomCount={allRooms.length}
           requestCount={openRequestCount}
-          teamCount={activeStaffCount}
+          teamCount={staffInfo.active}
           isManager={isManager}
         />
 
@@ -866,7 +876,11 @@ export default function ManagerDashboard() {
         ══════════════════════════════════ */}
         {activeTab === "team" && isManager && (
           <div className="animate-in fade-in duration-200">
-            <StaffTeamTab staffCount={setActiveStaffCount} />
+            <StaffTeamTab
+              staffCount={setStaffInfo}
+              externalCreateOpen={staffCreateOpen}
+              onExternalCreateOpenChange={setStaffCreateOpen}
+            />
           </div>
         )}
 

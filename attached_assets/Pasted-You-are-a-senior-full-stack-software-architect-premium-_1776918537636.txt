@@ -1,0 +1,396 @@
+You are a senior full-stack software architect, premium mobile/admin UX designer, dashboard information-architecture expert, and production-grade product engineer.
+
+Your task is to inspect, redesign, simplify, and harden the MANAGER dashboard of the existing “Guest Pro” project so that it becomes radically clearer, more compact, and more intuitive — especially for first-time managers using it on mobile.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, manager dashboard, tab/navigation structure, guest list implementation, employee/staff model, presence tracking model, staff department model, auth/session flow, role-based access logic, current design system, and responsive behavior.
+- Do NOT rebuild the app from scratch if working systems already exist.
+- Preserve working auth, manager/staff/guest flows, staff creation logic, presence tracking logic, route protection, and stable APIs.
+- Refactor only where there is real architectural, maintainability, UX, or production value.
+- The final result must be premium, calm, compact, highly understandable, mobile-first, desktop-strong, SOLID, modular, and production-ready.
+- The manager should be able to understand how to use the screen almost instantly just by looking at it, without reading instructions.
+
+PROJECT CONTEXT:
+Guest Pro currently has manager dashboard screens including guest/staff-related management.
+Now the manager dashboard must be simplified and focused around Employees.
+
+PRIMARY GOALS:
+1. Remove the Requests tab from the manager screen
+2. Remove the Rooms tab from the manager screen
+3. Make Employees the main/default selected tab
+4. Redesign the Employees list into a more visually obvious, easier-to-understand, mobile-friendly card/list system
+5. Employees must support the same presence states as guests:
+   - In hotel
+   - Out of hotel
+   - Unknown
+6. Presence Overview must be redesigned into 2 smaller but more powerful cards
+7. The design must stay minimal, soft, premium, and highly readable
+8. Search/filter UX must be simplified:
+   - remove the filter chips/options below “search by name or email”
+   - keep only the search bar
+   - add a filter icon at the far end of the search bar
+   - tapping that icon should open filter options
+9. The entire screen must maximize:
+   - compactness
+   - clarity
+   - immediate learnability
+   - first-glance understanding
+10. Keep everything future-ready and SOLID
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current manager dashboard structure
+2. Current manager tabs/navigation
+3. Current default selected tab
+4. Current Employees / Staff section if any
+5. Current Requests tab usage
+6. Current Rooms tab usage
+7. Current employee/staff model
+8. Current staff department model
+9. Current presence tracking model
+10. Current guest presence UI
+11. Current employee/staff presence UI if any
+12. Current search/filter implementation
+13. Current presence overview implementation
+14. Current mobile responsiveness
+15. Current desktop layout behavior
+16. What already works
+17. What should be preserved
+18. What is visually confusing
+19. What is architecturally weak
+20. What should be redesigned or removed
+
+Then provide:
+- concise architecture audit
+- first-glance usability gap analysis
+- employee-management gap analysis
+- employee presence gap analysis
+- search/filter UX gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — REMOVE UNUSED / DISTRACTING MANAGER TABS
+==================================================
+
+Simplify the manager dashboard.
+
+REQUIREMENTS:
+- remove Requests tab from manager screen
+- remove Rooms tab from manager screen
+- keep the manager experience focused
+- do not break request handling elsewhere in the system if requests still exist for staff/reception views
+- do not break existing routes or APIs if they are still used by other roles/features
+
+UX GOAL:
+The manager should land on the most useful screen immediately, with less cognitive overload.
+
+==================================================
+PHASE 3 — MAKE EMPLOYEES THE DEFAULT MANAGER TAB
+==================================================
+
+Implement a clear default behavior.
+
+REQUIREMENTS:
+- Employees must be the default selected tab on manager entry
+- preserve route/state behavior cleanly
+- avoid flicker or unstable default tab switching
+- maintain a professional and intentional startup state
+
+==================================================
+PHASE 4 — REDESIGN EMPLOYEES LIST FOR MAXIMUM CLARITY
+==================================================
+
+Redesign the Employees list to be easier to understand at first glance than it is today.
+
+REQUIREMENTS:
+- use a mobile-friendly card/list pattern
+- each employee must be instantly scannable
+- the list must feel visually obvious and operational
+- use strong hierarchy and compact layout
+- avoid dense, hard-to-read admin list design
+- each employee card/list item should clearly show:
+  - full name
+  - department
+  - presence status
+  - last seen or equivalent useful presence metadata if available
+
+The design should feel:
+- premium
+- soft
+- modern
+- minimal
+- obvious
+- easy to learn instantly
+
+==================================================
+PHASE 5 — EMPLOYEE PRESENCE SHOULD MATCH GUEST LOGIC
+==================================================
+
+Employees must use the same conceptual presence model as guests.
+
+REQUIREMENTS:
+- support:
+  - In hotel
+  - Out of hotel
+  - Unknown
+- use the same tracking philosophy where appropriate
+- do not duplicate tracking logic unnecessarily
+- centralize shared presence concepts if possible
+- employee presence should feel native, not copied in a messy way
+
+==================================================
+PHASE 6 — REDESIGN PRESENCE OVERVIEW INTO 2 SMALLER POWERFUL CARDS
+==================================================
+
+The current Presence Overview should be redesigned into 2 smaller but stronger cards.
+
+REQUIREMENTS:
+- split the overview into 2 compact cards
+- cards should be visually clean and extensible
+- must support more information in the future without needing a redesign
+- should still remain very simple and instantly understandable
+
+One possible direction:
+Card 1:
+- total employees
+- in hotel
+- out of hotel
+- unknown
+
+Card 2:
+- department breakdown
+- quick operational insight
+- last update / active presence summary
+- future-ready space for more overview metrics
+
+IMPORTANT:
+- keep the cards compact
+- keep the cards soft and premium
+- avoid dashboard clutter
+- prioritize first-glance comprehension
+
+==================================================
+PHASE 7 — REDESIGN SEARCH / FILTER UX
+==================================================
+
+Simplify the filtering experience.
+
+CURRENT REQUIRED CHANGE:
+- remove the visible filter options/chips currently shown below the “search by name or email” bar
+- keep only the search bar visible by default
+- add a filter icon at the far right end of the search bar
+- tapping the icon should reveal filter options
+
+REQUIREMENTS:
+- cleaner top area
+- less visual noise
+- filters available when needed
+- better compactness
+- better mobile usability
+- more premium feel
+
+The filter reveal can be:
+- popover
+- dropdown
+- bottom sheet
+- inline expansion
+depending on the current architecture and best UX choice
+
+==================================================
+PHASE 8 — FIRST-GLANCE LEARNABILITY
+==================================================
+
+This is a very high-priority requirement.
+
+Design the screen so a manager who has never seen it before can understand it just by looking.
+
+REQUIREMENTS:
+- clear naming
+- obvious grouping
+- intuitive visual priority
+- sensible defaults
+- minimal but meaningful labels
+- strong icon support
+- very low cognitive load
+- no “what does this do?” ambiguity
+
+The manager should immediately understand:
+- this is the employee screen
+- who is inside the hotel
+- who is not
+- who is unknown
+- how to search
+- how to filter
+- what each area is for
+
+==================================================
+PHASE 9 — MOBILE-FIRST, DESKTOP-STRONG DESIGN
+==================================================
+
+Design primarily for mobile, but keep desktop strong.
+
+REQUIREMENTS:
+- mobile usage must feel effortless
+- desktop must feel polished, not stretched mobile
+- spacing and composition should be intentional on both
+- cards and overview must scale gracefully
+- search/filter pattern must work well on both
+
+VISUAL GOALS:
+- modern
+- soft
+- premium
+- compact
+- minimal
+- readable
+- calm
+- operational
+
+==================================================
+PHASE 10 — DEPARTMENT VISIBILITY
+==================================================
+
+Employee department must be clearly visible and useful.
+
+Supported departments:
+- HOUSEKEEPING
+- BELLMAN
+- RECEPTION
+- RESTAURANT
+
+REQUIREMENTS:
+- department must be easy to spot
+- department styling must remain subtle and premium
+- department should integrate with filter logic cleanly
+- do not create noisy tags or heavy visual chips
+
+==================================================
+PHASE 11 — INFORMATION DENSITY WITHOUT CLUTTER
+==================================================
+
+Maximize usefulness while keeping the UI simple.
+
+REQUIREMENTS:
+- maximum compactness
+- maximum clarity
+- no clutter
+- no oversized empty spaces
+- no visually heavy cards
+- strong signal-to-noise ratio
+
+This screen should feel like:
+- compact enough for real daily use
+- calm enough to not feel stressful
+- obvious enough that no training is needed
+
+==================================================
+PHASE 12 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement everything in a meaningful, maintainable architecture.
+
+REQUIREMENTS:
+- no giant manager dashboard file
+- no duplicated guest/staff presence logic if shareable cleanly
+- no scattered filter/sort/presence mapping logic inside UI
+- centralize employee list query logic
+- centralize presence overview aggregation
+- centralize filter configuration
+- centralize status display mapping
+- no fake architecture
+- no dead code
+- clean naming
+- meaningful modules only
+
+Suggested structure:
+- domain:
+  - StaffDepartment
+  - PresenceStatus
+  - EmployeePresenceSnapshot
+  - EmployeeOverviewMetrics
+- application:
+  - GetEmployeeListView
+  - GetEmployeePresenceOverview
+  - FilterEmployees
+  - ResolveEmployeePresenceDisplay
+- infrastructure:
+  - employee repository
+  - presence repository
+  - overview aggregation service
+- presentation:
+  - ManagerEmployeesTab
+  - EmployeePresenceOverviewPrimaryCard
+  - EmployeePresenceOverviewSecondaryCard
+  - EmployeeList
+  - EmployeeCard
+  - EmployeeSearchBar
+  - EmployeeFilterPopover
+  - EmployeePresenceBadge
+
+Make the architecture actually used and meaningful.
+
+==================================================
+PHASE 13 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- manager login
+- staff login
+- guest login/logout
+- staff creation logic
+- guest tracking logic
+- route protection
+- stable APIs
+- existing dashboards where they still work
+
+This task is specifically about simplifying and hardening the manager employee screen.
+
+==================================================
+PHASE 14 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Requests tab is removed from manager screen
+2. Rooms tab is removed from manager screen
+3. Employees tab is the default selected manager tab
+4. Employees list is clearer and easier to scan
+5. Employees support In hotel / Out of hotel / Unknown
+6. Presence Overview is redesigned as 2 compact, stronger cards
+7. Search bar is simplified
+8. Filter icon opens filter options cleanly
+9. Mobile UX feels effortless and highly understandable
+10. Desktop UX feels premium and strong
+11. A first-time manager can understand the screen just by looking
+12. No regression in auth, tracking, or staff creation flows
+13. The final result feels production-ready
+
+==================================================
+PHASE 15 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was preserved
+3. What was removed
+4. What was redesigned
+5. How Employees tab now works
+6. How employee presence now works
+7. How Presence Overview was restructured
+8. How search/filter UX now works
+9. Which files were changed
+10. Any architecture refactors made
+11. How to test the full manager employees flow end-to-end
+12. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result mobile-first, desktop-strong, SOLID, modular, premium, compact, and production-ready
+- Prioritize maximum clarity, maximum compactness, and instant learnability

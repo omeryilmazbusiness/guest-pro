@@ -143,6 +143,36 @@ export async function deactivateStaff(id: number): Promise<void> {
   await apiFetch<null>(`/api/staff/${id}`, { method: "DELETE" });
 }
 
+// ── Employee presence ─────────────────────────────────────────────────────────
+//
+// Staff do not yet send heartbeats, so physical presence is always "UNKNOWN"
+// for active accounts. This type mirrors the guest TrackingStatus vocabulary
+// so the two systems can converge cleanly when staff tracking is built.
+
+export type EmployeePresence = "IN_HOTEL" | "OUT_OF_HOTEL" | "UNKNOWN" | "INACTIVE";
+
+export const EMPLOYEE_PRESENCE_LABEL: Record<EmployeePresence, string> = {
+  IN_HOTEL:    "In hotel",
+  OUT_OF_HOTEL: "Out of hotel",
+  UNKNOWN:     "Unknown",
+  INACTIVE:    "Inactive",
+};
+
+/** Resolves a staff member's conceptual presence from currently available data. */
+export function resolveEmployeePresence(member: StaffMember): EmployeePresence {
+  if (!member.isActive) return "INACTIVE";
+  // Future: check a staffPresenceMap here; for now all active = UNKNOWN
+  return "UNKNOWN";
+}
+
+// ── Staff overview info — bubbled up to dashboard overview cards ──────────────
+
+export interface StaffInfo {
+  total: number;
+  active: number;
+  byDept: Partial<Record<StaffDepartment, number>>;
+}
+
 // ── Display helpers ───────────────────────────────────────────────────────────
 
 export function staffDisplayName(member: StaffMember): string {
