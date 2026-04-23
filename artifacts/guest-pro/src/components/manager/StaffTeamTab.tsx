@@ -27,12 +27,27 @@ import {
   Pencil,
   ShieldOff,
   ShieldCheck,
+  Trash2,
   MoreVertical,
   Search,
   X,
   SlidersHorizontal,
   Check,
+  Sparkles,
+  ConciergeBell,
+  Luggage,
+  UtensilsCrossed,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -72,6 +87,7 @@ import {
   createStaff,
   updateStaff,
   deactivateStaff,
+  permanentDeleteStaff,
   staffDisplayName,
   resolveEmployeePresence,
   STAFF_DEPARTMENTS,
@@ -82,6 +98,15 @@ import {
   type StaffDepartment,
   type StaffInfo,
 } from "@/lib/staff";
+
+// ── Department icon map ───────────────────────────────────────────────────────
+
+const DEPT_ICONS: Record<StaffDepartment, React.FC<{ className?: string }>> = {
+  HOUSEKEEPING: Sparkles,
+  RECEPTION:    ConciergeBell,
+  BELLMAN:      Luggage,
+  RESTAURANT:   UtensilsCrossed,
+};
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -150,17 +175,19 @@ type EditFormValues   = z.infer<typeof editSchema>;
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-/** Coloured pill badge for a staff department. */
+/** Coloured pill badge with icon for a staff department. */
 function DepartmentBadge({ dept }: { dept: StaffDepartment | null }) {
   if (!dept) return null;
-  const c = DEPARTMENT_COLOURS[dept];
+  const c    = DEPARTMENT_COLOURS[dept];
+  const Icon = DEPT_ICONS[dept];
   return (
     <span
       className={cn(
-        "inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border leading-none shrink-0",
+        "inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border leading-none shrink-0",
         c.bg, c.text, c.border,
       )}
     >
+      <Icon className="w-2.5 h-2.5 shrink-0" />
       {DEPARTMENT_LABELS[dept]}
     </span>
   );
@@ -309,61 +336,46 @@ function EmployeeCard({
   onEdit,
   onDeactivate,
   onReactivate,
+  onPermanentDelete,
 }: {
-  member: StaffMember;
-  onEdit:       (m: StaffMember) => void;
-  onDeactivate: (m: StaffMember) => void;
-  onReactivate: (m: StaffMember) => void;
+  member:            StaffMember;
+  onEdit:            (m: StaffMember) => void;
+  onDeactivate:      (m: StaffMember) => void;
+  onReactivate:      (m: StaffMember) => void;
+  onPermanentDelete: (m: StaffMember) => void;
 }) {
-  const [confirmDeactivate, setConfirmDeactivate] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   return (
-    <div
-      className={cn(
-        "bg-white border rounded-2xl p-3.5 flex items-start gap-3 transition-opacity",
-        member.isActive
-          ? "border-zinc-100 shadow-sm shadow-zinc-100/60"
-          : "border-zinc-100 opacity-55",
-      )}
-    >
-      {/* Avatar */}
-      <EmployeeAvatar member={member} />
+    <>
+      <div
+        className={cn(
+          "bg-white border rounded-2xl p-3.5 flex items-start gap-3 transition-opacity",
+          member.isActive
+            ? "border-zinc-100 shadow-sm shadow-zinc-100/60"
+            : "border-zinc-100 opacity-55",
+        )}
+      >
+        {/* Avatar */}
+        <EmployeeAvatar member={member} />
 
-      {/* Body */}
-      <div className="flex-1 min-w-0 space-y-1">
-        {/* Name row */}
-        <div className="flex items-start justify-between gap-2">
-          <p className="text-sm font-semibold text-zinc-900 truncate leading-snug">
-            {staffDisplayName(member)}
-          </p>
-          <PresenceBadge member={member} />
-        </div>
+        {/* Body */}
+        <div className="flex-1 min-w-0 space-y-1">
+          {/* Name row */}
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-sm font-semibold text-zinc-900 truncate leading-snug">
+              {staffDisplayName(member)}
+            </p>
+            <PresenceBadge member={member} />
+          </div>
 
-        {/* Email */}
-        <p className="text-[11px] text-zinc-400 truncate">{member.email}</p>
+          {/* Email */}
+          <p className="text-[11px] text-zinc-400 truncate">{member.email}</p>
 
-        {/* Department + actions row */}
-        <div className="flex items-center justify-between gap-2 pt-0.5">
-          <DepartmentBadge dept={member.staffDepartment} />
+          {/* Department + actions row */}
+          <div className="flex items-center justify-between gap-2 pt-0.5">
+            <DepartmentBadge dept={member.staffDepartment} />
 
-          {/* Actions */}
-          {confirmDeactivate ? (
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                onClick={() => { setConfirmDeactivate(false); onDeactivate(member); }}
-                className="text-[11px] font-semibold text-rose-600 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-lg hover:bg-rose-100 transition-colors"
-              >
-                Deactivate
-              </button>
-              <button
-                onClick={() => setConfirmDeactivate(false)}
-                className="text-zinc-400 hover:text-zinc-700 p-1 rounded-lg hover:bg-zinc-50 transition-colors"
-                aria-label="Cancel"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          ) : (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="text-zinc-400 hover:text-zinc-700 p-1.5 rounded-lg hover:bg-zinc-50 transition-colors touch-manipulation shrink-0">
@@ -382,27 +394,59 @@ function EmployeeCard({
                 <DropdownMenuSeparator />
                 {member.isActive ? (
                   <DropdownMenuItem
-                    onClick={() => setConfirmDeactivate(true)}
-                    className="flex items-center gap-2 rounded-lg cursor-pointer text-rose-600 focus:text-rose-700 focus:bg-rose-50"
+                    onClick={() => onDeactivate(member)}
+                    className="flex items-center gap-2 rounded-lg cursor-pointer text-amber-700 focus:text-amber-800 focus:bg-amber-50"
                   >
                     <ShieldOff className="w-3.5 h-3.5" />
                     Deactivate
                   </DropdownMenuItem>
                 ) : (
-                  <DropdownMenuItem
-                    onClick={() => onReactivate(member)}
-                    className="flex items-center gap-2 rounded-lg cursor-pointer text-emerald-700 focus:text-emerald-800 focus:bg-emerald-50"
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    Reactivate
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => onReactivate(member)}
+                      className="flex items-center gap-2 rounded-lg cursor-pointer text-emerald-700 focus:text-emerald-800 focus:bg-emerald-50"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      Reactivate
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setDeleteOpen(true)}
+                      className="flex items-center gap-2 rounded-lg cursor-pointer text-rose-600 focus:text-rose-700 focus:bg-rose-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete permanently
+                    </DropdownMenuItem>
+                  </>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-          )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* ── Permanent delete confirmation dialog ── */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent className="max-w-sm rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete staff member?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-500">
+              <span className="font-semibold text-zinc-700">{staffDisplayName(member)}</span> will
+              be permanently removed. This cannot be undone and they will no longer be able to log in.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { setDeleteOpen(false); onPermanentDelete(member); }}
+              className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white"
+            >
+              Delete permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
@@ -684,6 +728,12 @@ export function StaffTeamTab({
     mutationFn: (id: number) => updateStaff(id, { isActive: true }),
     onSuccess: () => { toast.success("Staff member reactivated"); queryClient.invalidateQueries({ queryKey: STAFF_QUERY_KEY }); },
     onError:   (err: Error) => toast.error(err.message ?? "Failed to reactivate"),
+  });
+
+  const permanentDeleteMutation = useMutation({
+    mutationFn: permanentDeleteStaff,
+    onSuccess: () => { toast.success("Staff member permanently deleted"); queryClient.invalidateQueries({ queryKey: STAFF_QUERY_KEY }); },
+    onError:   (err: Error) => toast.error(err.message ?? "Failed to delete"),
   });
 
   const invalidate = useCallback(

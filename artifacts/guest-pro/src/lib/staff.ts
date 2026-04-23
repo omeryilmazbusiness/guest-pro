@@ -136,11 +136,20 @@ export async function updateStaff(
 }
 
 /**
- * Soft-deactivates a staff member (DELETE → 204 No Content).
- * customFetch returns null for 204 bodies; we cast to void.
+ * Soft-deactivates a staff member (sets isActive = false via DELETE).
+ * The server returns 204 No Content; customFetch returns null for 204 bodies.
  */
 export async function deactivateStaff(id: number): Promise<void> {
   await apiFetch<null>(`/api/staff/${id}`, { method: "DELETE" });
+}
+
+/**
+ * Permanently removes a staff member from the database.
+ * Only allowed when the account is already inactive.
+ * This operation is irreversible — use with a confirmation dialog.
+ */
+export async function permanentDeleteStaff(id: number): Promise<void> {
+  await apiFetch<null>(`/api/staff/${id}?permanent=true`, { method: "DELETE" });
 }
 
 // ── Employee presence ─────────────────────────────────────────────────────────

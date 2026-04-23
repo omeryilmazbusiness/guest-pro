@@ -1,0 +1,426 @@
+You are a senior full-stack software architect, premium admin/mobile UX designer, and production-grade product engineer.
+
+Your task is to inspect, redesign, simplify, and harden the MANAGER area of the existing “Guest Pro” project in a SOLID, modular, production-ready way.
+
+IMPORTANT EXECUTION RULES:
+- First inspect the existing codebase, manager dashboard, guests tab, employees tab, header action area, settings flow, staff management flow, active tracking system settings, auth/session flow, role-based access structure, and current responsive design.
+- Do NOT rebuild the project from scratch if working parts already exist.
+- Preserve working auth, manager/staff/guest flows, guest presence tracking, employee presence tracking, staff creation flow, route protection, and stable APIs.
+- Refactor only where there is real architectural, maintainability, usability, or production value.
+- The final result must be premium, calm, soft, modern, highly understandable, mobile-first, desktop-strong, SOLID, modular, and production-ready.
+- The manager should be able to understand and use the screen almost instantly just by looking at it.
+
+PROJECT CONTEXT:
+Guest Pro already has manager dashboard structures, guest-related listing, employee-related listing, and tracking logic.
+Now the manager screens must be refined to become much more intuitive, compact, and premium.
+
+PRIMARY GOALS:
+1. Improve the Guest tab search/filter UX
+2. Improve the Employees/Staff management UX
+3. Add staff inactive/delete management
+4. Add professional role icons for staff positions
+5. Turn “Quickly Report” into a visible button like “New Guest”
+6. Create a real professional Settings screen
+7. Move hotel location and Wi-Fi IP tracking configuration under a dedicated settings entry called “Active Tracking System”
+8. Keep everything highly understandable, compact, and future-ready
+
+==================================================
+PHASE 1 — INSPECT FIRST
+==================================================
+
+Before changing anything, inspect and explain:
+
+1. Current manager dashboard structure
+2. Current guest tab layout
+3. Current employees/staff tab layout
+4. Current header actions
+5. Current settings access flow
+6. Current active tracking system UI
+7. Current search/filter implementation in guest tab
+8. Current search/filter implementation in employees tab if any
+9. Current staff list / staff actions flow
+10. Current role/department model
+11. Current iconography/design system
+12. Current mobile responsiveness
+13. Current desktop layout behavior
+14. What already works
+15. What should be preserved
+16. What is visually confusing
+17. What is architecturally weak
+18. What should be redesigned
+
+Then provide:
+- concise architecture audit
+- manager UX gap analysis
+- search/filter UX gap analysis
+- staff management gap analysis
+- settings architecture gap analysis
+- exact implementation plan
+
+Do not skip inspection.
+
+==================================================
+PHASE 2 — GUEST TAB SEARCH/FILTER UX REFINEMENT
+==================================================
+
+When the Guest tab is selected:
+
+CURRENT REQUIRED CHANGE:
+- keep the “name room or key” search bar
+- remove the visible filters below it:
+  - all
+  - active
+  - expired
+- add a filter icon at the far right end of the search bar
+- tapping the filter icon should open the filter options in a professional way
+
+REQUIREMENTS:
+- the filter UI can be implemented as:
+  - popover
+  - dropdown
+  - bottom sheet
+  depending on the best UX for mobile and desktop
+- keep the search/filter area visually clean
+- reduce noise
+- maintain fast usability
+- keep the UI premium and modern
+
+Possible filter options inside the filter panel:
+- all
+- active
+- expired
+- in hotel
+- out of hotel
+- unknown
+- room number
+- country
+- check-in / check-out related filters
+
+IMPORTANT:
+Do not show the old visible filter chips below the bar anymore.
+
+==================================================
+PHASE 3 — SEARCH BAR PLACEMENT / TOOLBAR STRUCTURE
+==================================================
+
+Refine the placement of the search bar.
+
+REQUIREMENTS:
+- the search bar should not feel buried inside the cards
+- it should sit as a clean toolbar/control area
+- place it in a clear position immediately under the relevant upper section/tab context
+- it should be visually separate from the guest/employee cards
+- it should not feel awkwardly detached
+- the UI hierarchy must make it obvious:
+  - this area is for search and filtering
+  - the card list starts below it
+
+If useful:
+- keep this toolbar sticky on mobile during scrolling
+- but only if it improves usability and does not create clutter
+
+==================================================
+PHASE 4 — STAFF MANAGEMENT: INACTIVE / DELETE
+==================================================
+
+Manager must be able to manage created staff users more completely.
+
+REQUIREMENTS:
+- after staff are created, manager must be able to:
+  - mark staff as inactive
+  - delete staff
+- these actions must be safe and clear
+- do not confuse inactive vs delete
+- support proper confirmation dialogs/modals
+- keep the UX premium and minimal
+
+Suggested behavior:
+- each employee/staff card can have an action menu or detail sheet
+- available actions:
+  - edit
+  - set inactive / reactivate if supported
+  - delete
+
+STATUS MODEL:
+- active
+- inactive
+
+IMPORTANT:
+- preserve current auth/role architecture
+- do not break login/session behavior
+- do not break staff creation flow
+
+==================================================
+PHASE 5 — STAFF POSITION ICONS
+==================================================
+
+Add professional visual icons for each staff position/department.
+
+Supported departments:
+- HOUSEKEEPING
+- RECEPTION
+- BELLMAN
+- RESTAURANT
+
+REQUIREMENTS:
+- each department must have a distinct professional icon
+- icons must feel modern, soft, minimal, and premium
+- no emoji
+- no childish visuals
+- use the icons consistently in:
+  - employee cards
+  - filters if appropriate
+  - staff details if appropriate
+
+The icons should improve first-glance understanding.
+
+==================================================
+PHASE 6 — HEADER ACTION: QUICKLY REPORT BUTTON
+==================================================
+
+Refine the manager header action area.
+
+CURRENT REQUIRED CHANGE:
+- the current quickly report icon should become a visible action button
+- similar in prominence to “New Guest”
+- label must be:
+  - “Quickly Report”
+- include an icon and text
+
+REQUIREMENTS:
+- make it visually balanced with the rest of the header actions
+- modern, soft, premium button styling
+- clear hierarchy:
+  - New Guest
+  - Quickly Report
+- keep the header clean and not overloaded
+
+==================================================
+PHASE 7 — PROFESSIONAL SETTINGS SCREEN
+==================================================
+
+When Settings is clicked:
+
+REQUIREMENTS:
+- open a dedicated professional Settings screen
+- use a list-based / section-based structure
+- make it future-ready because more settings will be added later
+- every settings entry should look professional, modern, soft, and premium
+- each row/item should be:
+  - icon-based
+  - clearly labeled
+  - easy to understand
+  - tappable
+  - optionally have subtitle/help text
+
+Possible sections:
+- General
+- Hotel Information
+- Active Tracking System
+- Notifications
+- Staff Management
+- Localization / Language
+- Security / Access
+- Future Integrations
+
+IMPORTANT:
+- make the settings screen feel like a real product settings area
+- not a temporary modal with random controls
+
+==================================================
+PHASE 8 — ACTIVE TRACKING SYSTEM SETTINGS
+==================================================
+
+Move the hotel location / Wi-Fi IP configuration into a dedicated settings entry:
+
+ENTRY NAME:
+- Active Tracking System
+
+REQUIREMENTS:
+- this entry should appear in the Settings screen
+- tapping it should open a dedicated detail screen/sheet
+- the UI should be icon-based, modern, soft, and premium
+
+Inside Active Tracking System, allow editing of:
+- hotel latitude
+- hotel longitude
+- geofence radius
+- hotel Wi-Fi public IP
+- allowed network IP list if the current architecture supports it
+- validation / save flow
+- edit / update flow
+
+Also consider:
+- show current saved values cleanly
+- allow easy editing later
+- make the form intuitive
+- avoid clutter
+
+==================================================
+PHASE 9 — MANAGER INFORMATION ARCHITECTURE / LEARNABILITY
+==================================================
+
+This is a high-priority requirement.
+
+The manager should be able to open the screen on mobile and immediately understand how to use it, without asking questions and without reading instructions.
+
+REQUIREMENTS:
+- obvious grouping
+- strong visual hierarchy
+- clear labeling
+- intuitive actions
+- very low cognitive load
+- minimal but meaningful icons
+- premium compact design
+- highly understandable first-glance UX
+
+The manager should immediately understand:
+- where to search
+- where to filter
+- how to create new guest
+- how to open quickly report
+- how to open settings
+- how to manage staff
+- how to deactivate/delete staff
+- where active tracking system settings live
+
+==================================================
+PHASE 10 — MOBILE-FIRST, DESKTOP-STRONG DESIGN
+==================================================
+
+The whole manager experience must feel:
+- premium
+- soft
+- modern
+- compact
+- calm
+- very clear
+- mobile-first
+- desktop-strong
+- production-ready
+
+REQUIREMENTS:
+- mobile usage must be effortless
+- desktop must not feel like stretched mobile
+- spacing must be intentional
+- buttons and list/toolbars must scale well
+- lists/cards must remain easy to scan
+- settings screen must work well on both mobile and desktop
+
+==================================================
+PHASE 11 — SOLID / LAYERED ARCHITECTURE
+==================================================
+
+Implement this in a meaningful, maintainable, modular architecture.
+
+REQUIREMENTS:
+- no giant manager dashboard file
+- no scattered UI logic
+- separate presentation from business logic
+- centralize toolbar/search/filter config
+- centralize staff action logic
+- centralize staff department icon mapping
+- centralize settings screen item configuration
+- centralize active tracking system settings module
+- no fake architecture
+- no dead code
+- clean naming
+- meaningful modules only
+
+Suggested structure:
+- domain:
+  - StaffDepartment
+  - StaffStatus
+  - GuestFilterOption
+  - SettingsSection
+  - ActiveTrackingConfig
+- application:
+  - GetGuestListView
+  - FilterGuests
+  - UpdateStaffStatus
+  - DeleteStaffUser
+  - GetManagerSettingsSections
+  - GetActiveTrackingConfig
+  - UpdateActiveTrackingConfig
+- infrastructure:
+  - guest repository
+  - staff repository
+  - settings/config repository
+  - tracking config persistence
+- presentation:
+  - ManagerHeaderActions
+  - GuestSearchToolbar
+  - GuestFilterPopover
+  - EmployeeCard
+  - EmployeeActionMenu
+  - ManagerSettingsScreen
+  - SettingsListSection
+  - ActiveTrackingSettingsScreen
+  - StaffDepartmentIcon
+
+Make the architecture actually used and meaningful.
+
+==================================================
+PHASE 12 — DO NOT BREAK EXISTING SYSTEMS
+==================================================
+
+Preserve and do not break:
+- manager login
+- staff login
+- guest login/logout
+- staff creation flow
+- guest tracking logic
+- employee tracking logic
+- route protection
+- stable APIs
+- current dashboards where they still work
+
+This task is specifically about refining manager UI/UX and settings flow professionally.
+
+==================================================
+PHASE 13 — FINAL VERIFICATION
+==================================================
+
+Before finishing, verify all of these:
+
+1. Guest tab no longer shows all/active/expired under the search bar
+2. Search bar has a filter icon at the far end
+3. Filter options open professionally from that icon
+4. Search bar placement is cleaner and more understandable
+5. Manager can set staff inactive
+6. Manager can delete staff
+7. Each staff department has a professional icon
+8. Quickly Report is now a visible button like New Guest
+9. Settings opens a real professional settings screen
+10. Active Tracking System appears as a dedicated settings entry
+11. Hotel location / Wi-Fi IP settings are managed under Active Tracking System
+12. Mobile UX feels highly intuitive
+13. Desktop UX feels premium and strong
+14. The architecture is modular and production-ready
+15. No regression in existing flows
+
+==================================================
+PHASE 14 — FINAL DELIVERY FORMAT
+==================================================
+
+At the end, provide:
+1. Inspection summary
+2. What was preserved
+3. What was redesigned
+4. What was added
+5. How Guest tab search/filter now works
+6. How staff inactive/delete now works
+7. How staff position icons are handled
+8. How the header action area was improved
+9. How the new Settings screen works
+10. How Active Tracking System settings now work
+11. Which files were changed
+12. Any architecture refactors made
+13. How to test the full manager flow end-to-end
+14. Any future-ready extension points
+
+IMPORTANT:
+- Start with inspection first
+- Then implement professionally
+- Keep the result mobile-first, desktop-strong, SOLID, modular, premium, and production-ready
+- Prioritize maximum clarity, maximum compactness, premium quality, and instant first-glance learnability

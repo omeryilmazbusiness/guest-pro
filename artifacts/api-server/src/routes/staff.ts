@@ -188,11 +188,18 @@ router.patch("/staff/:id", requireManager, async (req, res): Promise<void> => {
 });
 
 // ---------------------------------------------------------------------------
-// DELETE /staff/:id — deactivate (soft-delete) a personnel user
+// DELETE /staff/:id — deactivate (soft) or permanently remove a personnel user
+//
+// Query params:
+//   ?permanent=true  →  hard-delete the row from the database
+//   (default)        →  soft-delete: sets isActive = false
+//
+// Managers cannot be deleted/deactivated through this endpoint.
 // ---------------------------------------------------------------------------
 router.delete("/staff/:id", requireManager, async (req, res): Promise<void> => {
   const hotelId = req.session!.hotelId;
   const id = parseInt(req.params.id, 10);
+  const isPermanent = req.query.permanent === "true";
 
   if (isNaN(id)) {
     res.status(400).json({ error: "Invalid staff ID" });
@@ -200,7 +207,7 @@ router.delete("/staff/:id", requireManager, async (req, res): Promise<void> => {
   }
 
   const [target] = await db
-    .select({ id: usersTable.id, role: usersTable.role })
+    .select({ id: usersTable.id, role: usersTable.role, isActive: usersTable.isActive })
     .from(usersTable)
     .where(and(eq(usersTable.id, id), eq(usersTable.hotelId, hotelId)));
 
@@ -210,18 +217,33 @@ router.delete("/staff/:id", requireManager, async (req, res): Promise<void> => {
   }
 
   if (target.role !== "personnel") {
-    res.status(403).json({ error: "Manager accounts cannot be deactivated through this endpoint" });
+    res.status(403).json({ error: "Manager accounts cannot be modified through this endpoint" });
     return;
   }
 
-  await db
-    .update(usersTable)
-    .set({ isActive: false })
-    .where(and(eq(usersTable.id, id), eq(usersTable.hotelId, hotelId)));
+  if (isPermanent) {
+    // Hard delete — removes the row permanently.
+    // Only allowed on inactive accounts to prevent accidental removal of active staff.
+    if (target.isActive) {
+      res.status(409).json({ error: "Deactivate the staff member before permanently deleting them" });
+      return;
+    }
+    await db
+      .delete(usersTable)
+      .where(and(eq(usersTable.id, id), eq(usersTable.hotelId, hotelId)));
 
-  logger.info({ actorId: req.session!.userId, deactivatedId: id }, "Staff member deactivated");
+    logger.info({ actorId: req.session!.userId, deletedId: id }, "Staff member permanently deleted");
+    res.status(204).send();
+  } else {
+    // Soft delete — sets isActive = false.
+    await db
+      .update(usersTable)
+      .set({ isActive: false })
+      .where(and(eq(usersTable.id, id), eq(usersTable.hotelId, hotelId)));
 
-  res.status(204).send();
+    logger.info({ actorId: req.session!.userId, deactivatedId: id }, "Staff member deactivated");
+    res.status(204).send();
+  }
 });
 
 export default router;
