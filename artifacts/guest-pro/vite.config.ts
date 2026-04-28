@@ -3,30 +3,9 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
-const rawPort = process.env.PORT;
-
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
-}
-
-const port = Number(rawPort);
-
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
-
-const basePath = process.env.BASE_PATH;
-
-if (!basePath) {
-  throw new Error(
-    "BASE_PATH environment variable is required but was not provided.",
-  );
-}
-
+const port = Number(process.env.PORT ?? "5173");
+const basePath = process.env.BASE_PATH ?? "/";
 const startUrl = basePath === "/" ? "/" : `${basePath}/`;
 
 export default defineConfig({
@@ -34,13 +13,9 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    runtimeErrorOverlay(),
     VitePWA({
       registerType: "autoUpdate",
-      devOptions: {
-        enabled: true,
-        type: "module",
-      },
+      devOptions: { enabled: true, type: "module" },
       includeAssets: ["favicon.svg", "apple-touch-icon.svg", "pwa-192.svg", "pwa-512.svg"],
       manifest: {
         name: "Guest Pro",
@@ -54,18 +29,8 @@ export default defineConfig({
         scope: basePath === "/" ? "/" : `${basePath}/`,
         id: "guestpro-app",
         icons: [
-          {
-            src: "pwa-192.svg",
-            sizes: "192x192",
-            type: "image/svg+xml",
-            purpose: "any",
-          },
-          {
-            src: "pwa-512.svg",
-            sizes: "512x512",
-            type: "image/svg+xml",
-            purpose: "any maskable",
-          },
+          { src: "pwa-192.svg", sizes: "192x192", type: "image/svg+xml", purpose: "any" },
+          { src: "pwa-512.svg", sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" },
         ],
         categories: ["travel", "lifestyle"],
       },
@@ -85,19 +50,6 @@ export default defineConfig({
         ],
       },
     }),
-    ...(process.env.NODE_ENV !== "production" &&
-    process.env.REPL_ID !== undefined
-      ? [
-          await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer({
-              root: path.resolve(import.meta.dirname, ".."),
-            }),
-          ),
-          await import("@replit/vite-plugin-dev-banner").then((m) =>
-            m.devBanner(),
-          ),
-        ]
-      : []),
   ],
   resolve: {
     alias: {
@@ -115,14 +67,14 @@ export default defineConfig({
     port,
     host: "0.0.0.0",
     allowedHosts: true,
-    fs: {
-      strict: true,
-      deny: ["**/.*"],
+    fs: { strict: true, deny: ["**/.*"] },
+    proxy: {
+      "/api": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
-  preview: {
-    port,
-    host: "0.0.0.0",
-    allowedHosts: true,
-  },
+  preview: { port, host: "0.0.0.0", allowedHosts: true },
 });

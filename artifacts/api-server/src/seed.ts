@@ -1,5 +1,5 @@
 import { db, hotelsTable, hotelBrandingTable, usersTable, guestsTable, guestKeysTable, quickActionsTable } from "@workspace/db";
-import { hashPassword, generateGuestKey } from "./lib/auth";
+import { hashPassword, generateGuestKey, generateSalt } from "./lib/auth";
 import { eq } from "drizzle-orm";
 
 async function seed() {
@@ -26,7 +26,8 @@ async function seed() {
     welcomeText: "Welcome to The Grand Hotel! How can we make your stay exceptional today?",
   });
 
-  const passwordHash = hashPassword("manager123");
+  const salt = generateSalt();
+  const passwordHash = hashPassword("manager123", salt);
   await db.insert(usersTable).values({
     hotelId: hotel.id,
     email: "manager@grandhotel.com",
