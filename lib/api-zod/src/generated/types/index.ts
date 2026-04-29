@@ -29,3 +29,7 @@ export * from "./quickAction";
 export * from "./sendMessageRequest";
 export * from "./sendMessageResponse";
 export * from "./successResponse";
+export * from "./updateGuestRequest";
+export * from "./updateGuestResponse";
+export * from "./deleteGuestResponse";
+export * from "./renewGuestKeyResponse";

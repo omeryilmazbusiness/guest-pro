@@ -32,7 +32,13 @@ import {
   isOnAllowedNetwork,
   isInGeofence,
 } from "../lib/tracking-policy";
-
+/**
+ * Safely extract a single string from an Express 5 route param.
+ * In Express 5, params can be string | string[]; parseInt expects string.
+ */
+function paramStr(val: string | string[]): string {
+  return Array.isArray(val) ? val[0] ?? "" : val;
+}
 const router: IRouter = Router();
 
 // ---------------------------------------------------------------------------
@@ -153,7 +159,7 @@ router.post("/tracking/networks", requireManager, async (req, res): Promise<void
 // ---------------------------------------------------------------------------
 router.delete("/tracking/networks/:id", requireManager, async (req, res): Promise<void> => {
   const hotelId = req.session!.hotelId;
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(paramStr(req.params.id), 10);
 
   if (isNaN(id)) {
     res.status(400).json({ error: "Invalid network rule ID" });
@@ -285,39 +291,40 @@ router.post("/tracking/heartbeat", requireGuest, async (req, res): Promise<void>
     await db.insert(guestPresenceSnapshotsTable).values(snapshotPayload);
   }
 
-  // ── Response — includes a debug block for diagnostics ────────────────────
-  // The debug block is always included (auth-protected endpoint, guest-only).
-  // It helps the manager and guest understand why a status was assigned.
+  // ── Response ─────────────────────────────────────────────────────────────
+  // Debug block is only included in non-production environments.
+  // Never expose raw IP / config details to production clients.
+  const isProduction = process.env.NODE_ENV === "production";
+
   res.json({
     status,
     sourceIp,
-    debug: {
-      guestId,
-      hotelId,
-      // Browser-reported position
-      browserLat: validLat,
-      browserLng: validLng,
-      browserAccuracyMeters: validAcc,
-      // IP resolution layers
-      resolvedSourceIp: sourceIp,
-      reqIp,
-      reqIps,
-      xForwardedFor: rawXff,
-      socketRemoteAddress: socketIp,
-      // Hotel configuration
-      hotelCenterLat: effectiveConfig.centerLat,
-      hotelCenterLng: effectiveConfig.centerLng,
-      hotelRadiusMeters: effectiveConfig.radiusMeters,
-      trackingEnabled: effectiveConfig.isEnabled,
-      allowedNetworks: networks.map((n) => n.ipOrCidr),
-      // Computed
-      distanceMeters: distanceMeters != null ? Math.round(distanceMeters) : null,
-      isInGeofence: geofenceResult,
-      isOnAllowedNetwork: networkResult,
-      unknownReason,
-      // Final
-      resolvedStatus: status,
-    },
+    ...(isProduction
+      ? {}
+      : {
+          debug: {
+            guestId,
+            hotelId,
+            browserLat: validLat,
+            browserLng: validLng,
+            browserAccuracyMeters: validAcc,
+            resolvedSourceIp: sourceIp,
+            reqIp,
+            reqIps,
+            xForwardedFor: rawXff,
+            socketRemoteAddress: socketIp,
+            hotelCenterLat: effectiveConfig.centerLat,
+            hotelCenterLng: effectiveConfig.centerLng,
+            hotelRadiusMeters: effectiveConfig.radiusMeters,
+            trackingEnabled: effectiveConfig.isEnabled,
+            allowedNetworks: networks.map((n) => n.ipOrCidr),
+            distanceMeters: distanceMeters != null ? Math.round(distanceMeters) : null,
+            isInGeofence: geofenceResult,
+            isOnAllowedNetwork: networkResult,
+            unknownReason,
+            resolvedStatus: status,
+          },
+        }),
   });
 });
 

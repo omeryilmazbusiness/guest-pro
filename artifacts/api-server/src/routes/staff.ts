@@ -20,7 +20,13 @@ import { requireManager } from "../middlewares/requireAuth";
 import { hashPassword, generateSalt } from "../lib/auth";
 import { isValidDepartment, STAFF_DEPARTMENTS } from "../lib/roles";
 import { logger } from "../lib/logger";
-
+/**
+ * Safely extract a single string from an Express 5 route param.
+ * In Express 5, params can be string | string[]; parseInt expects string.
+ */
+function paramStr(val: string | string[]): string {
+  return Array.isArray(val) ? val[0] ?? "" : val;
+}
 const router: IRouter = Router();
 
 // ── Validation schemas ─────────────────────────────────────────────────────
@@ -141,7 +147,7 @@ router.post("/staff", requireManager, async (req, res): Promise<void> => {
 // ---------------------------------------------------------------------------
 router.patch("/staff/:id", requireManager, async (req, res): Promise<void> => {
   const hotelId = req.session!.hotelId;
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(paramStr(req.params.id), 10);
 
   if (isNaN(id)) {
     res.status(400).json({ error: "Invalid staff ID" });
@@ -198,7 +204,7 @@ router.patch("/staff/:id", requireManager, async (req, res): Promise<void> => {
 // ---------------------------------------------------------------------------
 router.delete("/staff/:id", requireManager, async (req, res): Promise<void> => {
   const hotelId = req.session!.hotelId;
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(paramStr(req.params.id), 10);
   const isPermanent = req.query.permanent === "true";
 
   if (isNaN(id)) {

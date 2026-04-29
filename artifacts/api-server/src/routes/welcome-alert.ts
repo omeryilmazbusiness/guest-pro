@@ -17,7 +17,13 @@ import { db, hotelsTable, welcomeAlertsTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
 import { requireStaff } from "../middlewares/requireAuth";
 import { logger } from "../lib/logger";
-
+/**
+ * Safely extract a single string from an Express 5 route param.
+ * In Express 5, params can be string | string[]; parseInt expects string.
+ */
+function paramStr(val: string | string[]): string {
+  return Array.isArray(val) ? val[0] ?? "" : val;
+}
 const router: IRouter = Router();
 
 // ---------------------------------------------------------------------------
@@ -78,7 +84,7 @@ router.get("/welcome-alerts", requireStaff, async (req, res): Promise<void> => {
 // ---------------------------------------------------------------------------
 router.patch("/welcome-alerts/:id/status", requireStaff, async (req, res): Promise<void> => {
   const hotelId = req.session!.hotelId;
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(paramStr(req.params.id), 10);
 
   if (isNaN(id)) {
     res.status(400).json({ error: "Invalid alert ID" });

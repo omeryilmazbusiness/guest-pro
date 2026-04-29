@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
+import type { UpdateGuestRequest, UpdateGuestResponse, DeleteGuestResponse, RenewGuestKeyResponse } from "@workspace/api-zod";
 import type {
   MutationFunction,
   QueryFunction,

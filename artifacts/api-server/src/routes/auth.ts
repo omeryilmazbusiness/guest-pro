@@ -21,6 +21,12 @@ import { env } from "../config/env";
 import { logger } from "../lib/logger";
 import { lookupValidQrToken, consumeValidQrToken } from "../lib/qr-token";
 import { deriveLocaleFromCountry } from "../lib/locale";
+import {
+  saveOAuthState,
+  consumeOAuthState,
+  saveExchangeCode,
+  consumeExchangeCode,
+} from "../lib/oauth-state-store";
 import { evaluateStayAccess } from "../lib/guest-stay-policy";
 
 const router: IRouter = Router();
@@ -40,34 +46,24 @@ const loginSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
+
+
 // ---------------------------------------------------------------------------
-// Google OAuth state and exchange-code stores
+// URL helpers
 // ---------------------------------------------------------------------------
-const oauthStateStore = new Map<string, { expiresAt: number }>();
-const googleExchangeCodes = new Map<string, { token: string; expiresAt: number }>();
 
 function computeRedirectUri(req: Request): string {
   if (env.GOOGLE_REDIRECT_URI) return env.GOOGLE_REDIRECT_URI;
   const proto = (req.headers["x-forwarded-proto"] as string) ?? req.protocol;
-  const host = (req.headers["x-forwarded-host"] as string) ?? req.headers.host;
+  const host  = (req.headers["x-forwarded-host"]  as string) ?? req.headers.host;
   return `${proto}://${host}/api/auth/google/callback`;
 }
 
 function getFrontendBase(req: Request): string {
   if (env.APP_BASE_URL) return env.APP_BASE_URL;
   const proto = (req.headers["x-forwarded-proto"] as string) ?? req.protocol;
-  const host = (req.headers["x-forwarded-host"] as string) ?? req.headers.host;
+  const host  = (req.headers["x-forwarded-host"]  as string) ?? req.headers.host;
   return `${proto}://${host}`;
-}
-
-function cleanExpiredEntries() {
-  const now = Date.now();
-  for (const [k, v] of oauthStateStore) {
-    if (now > v.expiresAt) oauthStateStore.delete(k);
-  }
-  for (const [k, v] of googleExchangeCodes) {
-    if (now > v.expiresAt) googleExchangeCodes.delete(k);
-  }
 }
 
 function getClientIp(req: Request): string {
@@ -92,7 +88,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
 
   if (body.type === "manager") {
     const rateLimitKey = `manager:${body.email.toLowerCase()}`;
-    const rateCheck = checkLoginRateLimit(rateLimitKey);
+    const rateCheck = await checkLoginRateLimit(rateLimitKey);
     if (!rateCheck.allowed) {
       const waitMin = Math.ceil((rateCheck.retryAfterMs ?? 0) / 60_000);
       res.status(429).json({
@@ -103,7 +99,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
 
     const user = await authenticateManager(body.email, body.password);
     if (!user) {
-      recordFailedLogin(rateLimitKey);
+      await recordFailedLogin(rateLimitKey);
       // Audit failed attempt — fire-and-forget
       db.insert(auditLogsTable)
         .values({
@@ -120,7 +116,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
       return;
     }
 
-    clearFailedLogins(rateLimitKey);
+    await clearFailedLogins(rateLimitKey);
     // Use the user's actual DB role (manager or personnel) — never hardcode "manager"
     const staffRole = user.role;
     const token = generateToken(user.id, staffRole, user.hotelId);
@@ -314,16 +310,15 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
 // ---------------------------------------------------------------------------
 // GET /auth/google  — initiate OAuth flow
 // ---------------------------------------------------------------------------
-router.get("/auth/google", (req, res): void => {
+router.get("/auth/google", async (req, res): Promise<void> => {
   if (!env.isGoogleConfigured) {
     const frontendBase = getFrontendBase(req);
     res.redirect(`${frontendBase}/?error=google_not_configured`);
     return;
   }
 
-  cleanExpiredEntries();
   const state = crypto.randomBytes(16).toString("hex");
-  oauthStateStore.set(state, { expiresAt: Date.now() + 5 * 60 * 1000 });
+  await saveOAuthState(state);
 
   const redirectUri = computeRedirectUri(req);
   const params = new URLSearchParams({
@@ -351,11 +346,10 @@ router.get("/auth/google/callback", async (req, res): Promise<void> => {
     return;
   }
 
-  if (!state || !oauthStateStore.has(state)) {
+  if (!state || !(await consumeOAuthState(state))) {
     res.redirect(`${frontendBase}/?error=google_invalid_state`);
     return;
   }
-  oauthStateStore.delete(state);
 
   if (!code) {
     res.redirect(`${frontendBase}/?error=google_no_code`);
@@ -383,7 +377,7 @@ router.get("/auth/google/callback", async (req, res): Promise<void> => {
     // Issue a short-lived exchange code (60 s) — keeps the real token out of
     // browser history and server access logs.
     const exchangeCode = crypto.randomBytes(24).toString("hex");
-    googleExchangeCodes.set(exchangeCode, { token, expiresAt: Date.now() + 60_000 });
+    await saveExchangeCode(exchangeCode, token);
 
     db.insert(auditLogsTable)
       .values({
@@ -407,28 +401,26 @@ router.get("/auth/google/callback", async (req, res): Promise<void> => {
 // ---------------------------------------------------------------------------
 // GET /auth/google/exchange  — redeem exchange code for real token (once only)
 // ---------------------------------------------------------------------------
-router.get("/auth/google/exchange", (req, res): void => {
-  cleanExpiredEntries();
+router.get("/auth/google/exchange", async (req, res): Promise<void> => {
   const { code } = req.query as Record<string, string>;
   if (!code) {
     res.status(400).json({ error: "Exchange code required" });
     return;
   }
 
-  const entry = googleExchangeCodes.get(code);
-  googleExchangeCodes.delete(code); // single-use
-  if (!entry || Date.now() > entry.expiresAt) {
+  const token = await consumeExchangeCode(code);
+  if (!token) {
     res.status(401).json({ error: "Invalid or expired exchange code" });
     return;
   }
 
-  const session = verifyToken(entry.token);
+  const session = verifyToken(token);
   if (!session) {
     res.status(401).json({ error: "Token validation failed" });
     return;
   }
 
-  res.json({ token: entry.token });
+  res.json({ token });
 });
 
 // ---------------------------------------------------------------------------

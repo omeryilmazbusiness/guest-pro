@@ -1,7 +1,13 @@
 import type { Request, Response, NextFunction } from "express";
 import { verifyToken } from "../lib/auth";
 import { isStaffRole } from "../lib/roles";
-
+/**
+ * Safely extract a single string from an Express 5 route param.
+ * In Express 5, params can be string | string[]; parseInt expects string.
+ */
+function paramStr(val: string | string[]): string {
+  return Array.isArray(val) ? val[0] ?? "" : val;
+}
 declare global {
   namespace Express {
     interface Request {
@@ -76,8 +82,8 @@ export function requireGuest(req: Request, res: Response, next: NextFunction): v
  * Use after requireManager, requireStaff, or requireGuest.
  */
 export function requireHotelScope(req: Request, res: Response, next: NextFunction): void {
-  const paramHotelId = req.params.hotelId
-    ? parseInt(req.params.hotelId, 10)
+  const paramHotelId = paramStr(req.params.hotelId)
+    ? parseInt(paramStr(req.params.hotelId), 10)
     : NaN;
   if (isNaN(paramHotelId)) {
     next();

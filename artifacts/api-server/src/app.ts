@@ -7,12 +7,11 @@ import { env } from "./config/env";
 
 const app: Express = express();
 
-// Trust the first proxy hop so req.ip reflects the real client IP.
-// This is required for source-IP–based presence tracking.
-app.set("trust proxy", 1);
+// T-06: Trust exactly as many proxy hops as configured so req.ip always
+// reflects the real client IP regardless of the deployment topology.
+app.set("trust proxy", env.TRUST_PROXY_HOPS);
 
 // In production, only allow the configured frontend origin.
-// In development, allow all origins for convenience.
 const corsOptions: cors.CorsOptions =
   env.NODE_ENV === "production" && env.ALLOWED_ORIGIN
     ? {

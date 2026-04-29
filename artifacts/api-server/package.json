@@ -16,12 +16,14 @@
     "@workspace/integrations-gemini-ai": "workspace:*",
     "cookie-parser": "^1.4.7",
     "cors": "^2",
+    "dotenv": "^16.4.5",
     "drizzle-orm": "catalog:",
     "express": "^5",
+    "ioredis": "^5.10.1",
     "pino": "^9",
     "pino-http": "^10",
-    "zod": "catalog:",
-    "dotenv": "^16.4.5"
+    "rate-limiter-flexible": "^11.0.1",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",

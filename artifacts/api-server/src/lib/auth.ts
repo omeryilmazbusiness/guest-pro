@@ -3,6 +3,13 @@ import { db, usersTable, guestKeysTable, guestsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { env } from "../config/env";
 import { TOKEN_TTL_BY_ROLE } from "./roles";
+import {
+  loginLimiter,
+  checkLimit,
+  consumeLimit,
+  clearLimit,
+  type RateLimitResult,
+} from "./rate-limiter";
 
 // ---------------------------------------------------------------------------
 // Password hashing — per-user random salt, PBKDF2 (v3)
@@ -64,7 +71,6 @@ export function generateGuestKey(): { key: string; keyHash: string } {
 //   Staff tokens (manager, personnel) expire in 12 hours
 //   Guest tokens expire in 7 days
 // ---------------------------------------------------------------------------
-
 export function generateToken(
   userId: number,
   role: string,
@@ -119,52 +125,21 @@ export function verifyToken(
 }
 
 // ---------------------------------------------------------------------------
-// Brute-force protection — per-email/key in-memory rate limiter
-//   10 failed attempts within 15 min → 15 min lockout
+// Brute-force protection — delegated to Redis-backed rate-limiter
+// The in-memory Map has been removed; all state lives in Redis so it
+// survives process restarts and works across multiple instances.
 // ---------------------------------------------------------------------------
-const MAX_FAILURES = 10;
-const FAILURE_WINDOW_MS = 15 * 60 * 1000;
-const LOCKOUT_MS = 15 * 60 * 1000;
 
-interface FailureEntry {
-  count: number;
-  firstAt: number;
-  lockedUntil?: number;
+export async function checkLoginRateLimit(key: string): Promise<RateLimitResult> {
+  return checkLimit(loginLimiter, key);
 }
 
-const failedAttempts = new Map<string, FailureEntry>();
-
-export function checkLoginRateLimit(
-  key: string
-): { allowed: boolean; retryAfterMs?: number } {
-  const now = Date.now();
-  const entry = failedAttempts.get(key);
-  if (!entry) return { allowed: true };
-  if (entry.lockedUntil && now < entry.lockedUntil) {
-    return { allowed: false, retryAfterMs: entry.lockedUntil - now };
-  }
-  if (now - entry.firstAt > FAILURE_WINDOW_MS) {
-    failedAttempts.delete(key);
-    return { allowed: true };
-  }
-  return { allowed: true };
+export async function recordFailedLogin(key: string): Promise<void> {
+  await consumeLimit(loginLimiter, key);
 }
 
-export function recordFailedLogin(key: string): void {
-  const now = Date.now();
-  const entry = failedAttempts.get(key);
-  if (!entry || now - entry.firstAt > FAILURE_WINDOW_MS) {
-    failedAttempts.set(key, { count: 1, firstAt: now });
-    return;
-  }
-  entry.count++;
-  if (entry.count >= MAX_FAILURES) {
-    entry.lockedUntil = now + LOCKOUT_MS;
-  }
-}
-
-export function clearFailedLogins(key: string): void {
-  failedAttempts.delete(key);
+export async function clearFailedLogins(key: string): Promise<void> {
+  await clearLimit(loginLimiter, key);
 }
 
 // ---------------------------------------------------------------------------
@@ -227,7 +202,6 @@ export async function authenticateGuest(guestKey: string) {
     );
   if (!result.length) return null;
   const row = result[0];
-  // Honour expiry if set
   if (row.guestKey.expiresAt && new Date() > row.guestKey.expiresAt) return null;
   return row;
 }
@@ -268,9 +242,7 @@ export async function exchangeGoogleCode(
 
     const profileRes = await fetch(
       "https://www.googleapis.com/oauth2/v2/userinfo",
-      {
-        headers: { Authorization: `Bearer ${tokenData.access_token}` },
-      }
+      { headers: { Authorization: `Bearer ${tokenData.access_token}` } }
     );
     const profile = (await profileRes.json()) as GoogleProfile;
     return profile;
