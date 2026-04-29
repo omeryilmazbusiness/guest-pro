@@ -34,10 +34,12 @@ export const db = drizzle(pool, { schema });
 // It applies all pending SQL migration files from the migrations/ folder.
 // This is the ONLY safe way to modify the production schema.
 export async function runMigrations(): Promise<void> {
-  const migrationsFolder = path.join(
-    new URL(import.meta.url).pathname,
-    "../../../../migrations"
-  );
+  const migrationsFolder =
+    process.env.MIGRATIONS_PATH ??
+    path.resolve(
+      path.dirname(new URL(import.meta.url).pathname),
+      "../../../../migrations"
+    );
   await migrate(db, { migrationsFolder });
 }
 
