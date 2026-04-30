@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useCreateGuest } from "@workspace/api-client-react";
 import { isStaffRole } from "@/lib/permissions";
@@ -11,6 +11,7 @@ import {
   Check,
   Globe,
   CalendarDays,
+  ScanLine,
 } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -46,6 +47,10 @@ import { GuestHandoffModal } from "@/components/GuestHandoffModal";
 import type { HandoffData } from "@/components/GuestHandoffModal";
 import { todayIso, minCheckOutDate } from "@/lib/stays";
 
+import { useQrScannerGun } from "@/hooks/use-qr-scanner-gun";
+import { alpha3ToAlpha2 } from "@/lib/passport/nationality-map";
+import type { PassportData } from "@/lib/passport/types";
+
 const guestSchema = z
   .object({
     firstName: z.string().min(1, "First name is required"),
@@ -76,6 +81,7 @@ export default function CreateGuest() {
   const [handoff, setHandoff] = useState<HandoffData | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [countryOpen, setCountryOpen] = useState(false);
+  const [scannerFilled, setScannerFilled] = useState(false);
 
   const today = todayIso();
 
@@ -94,6 +100,28 @@ export default function CreateGuest() {
   const selectedCountry = form.watch("countryCode");
   const watchedCheckIn = form.watch("checkInDate");
 
+  // ── Scanner gun auto-fill ─────────────────────────────────────────────────
+  const handleScan = useCallback(
+    (data: PassportData) => {
+      const alpha2 = alpha3ToAlpha2(data.nationality);
+      form.setValue("firstName", data.firstName, { shouldValidate: true });
+      form.setValue("lastName", data.lastName, { shouldValidate: true });
+      if (alpha2) form.setValue("countryCode", alpha2, { shouldValidate: true });
+      setScannerFilled(true);
+      toast.success(`Passport scanned — ${data.firstName} ${data.lastName}`, {
+        description: alpha2 ? `Nationality: ${alpha2}` : "Nationality not matched — select manually",
+        duration: 4000,
+      });
+    },
+    [form],
+  );
+
+  const handleScanError = useCallback((_raw: string) => {
+    toast.error("QR code not recognised", { description: "Ensure it is a Guest-Pro passport QR.", duration: 3000 });
+  }, []);
+
+  useQrScannerGun({ onScan: handleScan, onError: handleScanError, enabled: isAuthenticated && !modalOpen });
+
   useEffect(() => {
     if (!isAuthenticated) {
       setLocation("/");
@@ -109,6 +137,7 @@ export default function CreateGuest() {
         onSuccess: (res) => {
           queryClient.invalidateQueries({ queryKey: getListGuestsQueryKey() });
           toast.success("Guest created successfully");
+          setScannerFilled(false);
           setHandoff({
             firstName: res.guest.firstName,
             lastName: res.guest.lastName,
@@ -140,7 +169,7 @@ export default function CreateGuest() {
   if (!isAuthenticated || !isStaffRole(user?.role)) return null;
 
   return (
-    <div className="min-h-[100dvh] bg-zinc-50/50 pb-20">
+    <div className="min-h-dvh bg-zinc-50/50 pb-20">
       <header className="bg-white border-b border-zinc-100 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 md:px-8 h-20 flex items-center gap-4">
           <Button
@@ -152,14 +181,27 @@ export default function CreateGuest() {
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div>
+          <div className="flex-1">
             <h1 className="font-serif text-xl font-medium text-zinc-900">New Guest</h1>
             <p className="text-xs text-zinc-500 font-medium">Issue a new digital key</p>
+          </div>
+          {/* Scanner ready indicator */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-50 border border-zinc-200">
+            <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60" /><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" /></span>
+            <ScanLine className="w-3.5 h-3.5 text-zinc-400" />
+            <span className="text-xs text-zinc-400 font-medium hidden sm:inline">Scanner ready</span>
           </div>
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 md:px-8 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        {scannerFilled && (
+          <div className="mb-6 flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-green-50 border border-green-200 animate-in fade-in slide-in-from-top-2 duration-300">
+            <Check className="w-4 h-4 text-green-600 shrink-0" />
+            <p className="text-sm text-green-800 font-medium">Passport data filled from QR scan — verify and complete remaining fields.</p>
+          </div>
+        )}
+
         <Card className="border-0 shadow-lg shadow-zinc-200/30 rounded-3xl overflow-hidden bg-white">
           <CardContent className="p-6 md:p-8">
             <Form {...form}>
@@ -262,7 +304,7 @@ export default function CreateGuest() {
                           </FormControl>
                         </PopoverTrigger>
                         <PopoverContent
-                          className="w-[var(--radix-popover-trigger-width)] p-0 rounded-2xl shadow-xl border-zinc-200"
+                          className="w-(--radix-popover-trigger-width) p-0 rounded-2xl shadow-xl border-zinc-200"
                           align="start"
                           sideOffset={4}
                         >
@@ -271,7 +313,7 @@ export default function CreateGuest() {
                               placeholder="Search country…"
                               className="h-12 text-base border-0 focus:ring-0"
                             />
-                            <CommandList className="max-h-[280px]">
+                            <CommandList className="max-h-70">
                               <CommandEmpty className="py-6 text-center text-sm text-zinc-400">
                                 No country found.
                               </CommandEmpty>

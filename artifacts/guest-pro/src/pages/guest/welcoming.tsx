@@ -3,31 +3,20 @@
  *
  * TRUE PUBLIC ROUTE — no auth required.
  *
- * Two-stage premium welcoming experience:
- *
  * Stage 1 — Hero (full-viewport black card):
- *   Cycling greeting loop · language selector · "Explore hotel info" button
+ *   Single registration QR + cycling multi-language "Scan QR to register" label.
+ *   Language selector persists locale for the passport-scan page.
  *
- * Stage 2 — Public info dashboard (below the fold, scrolled into view on Continue):
+ * Stage 2 — Public info dashboard (below the fold):
  *   Wi-Fi · Emergency · Dining hours · Menu · Nearby places · Support
- *   Unauthenticated visitors see a "Login to access your stay" CTA in the Support card.
- *   Authenticated guests see the "Open Concierge" button instead.
- *
- * Navigation rules (no login is ever forced):
- *   Hero button (unauthenticated)    → smooth-scroll to info dashboard
- *   Hero button (authenticated)      → navigate to /guest or /manager
- *   Info bottom CTA (unauthenticated)→ persist locale → navigate to / (login)
- *   Info bottom CTA (authenticated)  → persist locale → navigate to /guest
- *   SupportCard login btn            → persist locale → navigate to / (login)
- *   SupportCard concierge btn        → navigate to /guest/chat (auth required, page guards itself)
  */
 
 import { useState, useRef } from "react";
 import { useLocation } from "wouter";
-import { ArrowRight, ChevronDown, Globe2 } from "lucide-react";
+import { ChevronDown, Globe2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { GuestProLogo } from "@/components/GuestProLogo";
-import { GreetingLoop } from "@/components/welcoming/GreetingLoop";
+import { RegisterQrCard } from "@/components/welcoming/RegisterQrCard";
 import { LanguageSelector } from "@/components/welcoming/LanguageSelector";
 import { InfoBlocks } from "@/components/welcoming/InfoBlocks";
 import {
@@ -40,7 +29,6 @@ import type { WelcomingLocale } from "@/lib/welcoming/types";
 import { cn } from "@/lib/utils";
 
 export default function GuestWelcoming() {
-  // Auth is consulted to decide navigation destinations only — never to block access.
   const { isAuthenticated, user } = useAuth();
   const [, setLocation] = useLocation();
   const infoRef = useRef<HTMLDivElement>(null);
@@ -52,86 +40,36 @@ export default function GuestWelcoming() {
   const s = getWelcomingStrings(selectedLocale);
   const dir = selectedLocale === "ur" ? "rtl" : "ltr";
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
+  // Absolute URL so the QR works on any network / base-path deployment
+  const scanUrl = `${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, "")}/guest/passport-scan`;
 
   function scrollToInfo() {
     infoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  /** Called when an authenticated user taps any "go to dashboard" CTA. */
-  function navigateToDashboard() {
-    persistWelcomingLocale(selectedLocale);
-    markWelcomingAsSeen();
-    if (user?.role === "guest") {
-      setLocation("/guest");
-    } else {
-      setLocation("/manager");
-    }
-  }
-
-  /** Called when an unauthenticated visitor deliberately chooses to log in. */
-  function navigateToLogin() {
-    persistWelcomingLocale(selectedLocale);
-    markWelcomingAsSeen();
-    setLocation("/");
-  }
-
-  // ── Hero button handler ────────────────────────────────────────────────────
-
-  /**
-   * "Explore hotel info" / "Continue to your stay"
-   *   - Authenticated → go to dashboard immediately (they've already chosen their language before)
-   *   - Unauthenticated → reveal the public info dashboard (stay on /welcoming)
-   */
-  function handleHeroContinue() {
-    persistWelcomingLocale(selectedLocale);
-    if (isAuthenticated && user) {
-      markWelcomingAsSeen();
-      if (user.role === "guest") {
-        setLocation("/guest");
-      } else {
-        setLocation("/manager");
-      }
-    } else {
-      // Show the info dashboard — no redirect
-      scrollToInfo();
-    }
-  }
-
-  // ── Info-section button handlers ───────────────────────────────────────────
-
-  /**
-   * Bottom "Access your stay" / "Go to dashboard" CTA inside the info section.
-   * This is the only place that navigates away — and only when the user explicitly asks.
-   */
   function handleAccessStay() {
+    persistWelcomingLocale(selectedLocale);
+    markWelcomingAsSeen();
     if (isAuthenticated && user) {
-      navigateToDashboard();
+      setLocation(user.role === "guest" ? "/guest" : "/manager");
     } else {
-      navigateToLogin();
+      setLocation("/");
     }
   }
 
-  /**
-   * "Open Concierge" — requires login.
-   * For authenticated guests it goes directly to chat.
-   * For unauthenticated visitors it is replaced by the login prompt (see SupportCard).
-   */
   function handleOpenConcierge() {
     persistWelcomingLocale(selectedLocale);
     markWelcomingAsSeen();
     setLocation("/guest/chat");
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-
   return (
-    <div dir={dir} className="min-h-[100dvh] bg-stone-50 flex flex-col">
+    <div dir={dir} className="min-h-dvh bg-stone-50 flex flex-col">
 
       {/* ── STAGE 1: Hero — full viewport ─────────────────────────────────── */}
-      <section className="relative min-h-[100dvh] flex flex-col items-center justify-center px-5 py-16 md:py-20">
+      <section className="relative min-h-dvh flex flex-col items-center justify-center px-5 py-16 md:py-20">
 
-        {/* Subtle hotel stamp — top center */}
+        {/* Hotel stamp — top center */}
         <div className="absolute top-7 left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-30">
           <GuestProLogo variant="header" className="w-5 h-5 invert" />
           <span className="text-xs font-medium text-zinc-900 tracking-wide">
@@ -139,57 +77,34 @@ export default function GuestWelcoming() {
           </span>
         </div>
 
-        {/* ── Premium black card ───────────────────────────────────────────── */}
+        {/* ── Premium black card — QR only ────────────────────────────────── */}
         <div
           className={cn(
             "w-full max-w-sm",
             "bg-zinc-950 border border-zinc-800/40 rounded-3xl",
             "shadow-2xl shadow-black/25",
             "px-8 py-10 md:px-10 md:py-12",
-            "flex flex-col gap-8",
+            "flex flex-col items-center gap-6",
             "animate-in fade-in zoom-in-95 duration-700",
           )}
         >
-          {/* Cycling greeting */}
-          <GreetingLoop />
+          {/* QR code + cycling "Scan QR to register" multilang label */}
+          <RegisterQrCard scanUrl={scanUrl} />
 
-          {/* Subtitle */}
-          <div className="text-center -mt-2">
-            <p className="text-sm font-light text-zinc-400 tracking-wide">
-              {s.greetingSubtitle}
-            </p>
-          </div>
+          <div className="h-px w-full bg-zinc-800" />
 
-          {/* Divider */}
-          <div className="h-px bg-zinc-800" />
-
-          {/* Language selector */}
+          {/* Language selector persists locale so passport-scan page reads it */}
           <LanguageSelector
             selected={selectedLocale}
-            onSelect={setSelectedLocale}
+            onSelect={(l) => {
+              setSelectedLocale(l);
+              persistWelcomingLocale(l);
+            }}
             label={s.selectLanguage}
           />
-
-          {/* Hero CTA */}
-          <button
-            onClick={handleHeroContinue}
-            className={cn(
-              "w-full flex items-center justify-center gap-2",
-              "h-12 rounded-2xl",
-              "bg-white text-zinc-900",
-              "text-sm font-semibold tracking-wide",
-              "transition-all duration-150",
-              "hover:bg-zinc-100 active:scale-[0.98]",
-              "shadow-lg shadow-white/10",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
-            )}
-          >
-            {s.continueToStay}
-            <ArrowRight className="w-4 h-4" aria-hidden="true" />
-          </button>
         </div>
 
-        {/* Scroll hint — always visible, invites exploration */}
+        {/* Scroll hint */}
         <button
           onClick={scrollToInfo}
           className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 opacity-30 hover:opacity-60 transition-opacity"
@@ -213,23 +128,6 @@ export default function GuestWelcoming() {
           onOpenConcierge={handleOpenConcierge}
           onAccessStay={handleAccessStay}
         />
-
-        {/* Bottom CTA — "Access your stay" or "Go to dashboard" */}
-        <div className="flex justify-center pt-6 pb-4">
-          <button
-            onClick={handleAccessStay}
-            className={cn(
-              "flex items-center gap-2 px-7 py-3.5 rounded-2xl",
-              "bg-zinc-900 text-white text-sm font-semibold",
-              "hover:bg-zinc-700 active:scale-[0.98] transition-all duration-150",
-              "shadow-lg shadow-zinc-900/20",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400",
-            )}
-          >
-            {isAuthenticated ? s.continueToStay : s.accessYourStay}
-            <ArrowRight className="w-4 h-4" aria-hidden="true" />
-          </button>
-        </div>
       </section>
     </div>
   );

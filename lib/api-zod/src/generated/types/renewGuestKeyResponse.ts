@@ -6,5 +6,5 @@ export interface RenewGuestKeyResponse {
   guest: Pick<Guest, "id" | "firstName" | "lastName" | "roomNumber">;
   guestKey: string;
   qrLoginUrl: string;
-  expiresAt: string;
+  qrTokenExpiresAt: string;
 }

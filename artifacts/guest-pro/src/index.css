@@ -156,3 +156,42 @@
   animation: shimmer-sweep 1.6s ease-in-out infinite;
 }
 
+
+/**
+ * passport-scan-line — scanning beam that sweeps top→bottom inside the passport frame.
+ */
+@keyframes passport-scan-line {
+  0%   { top: 8%;  opacity: 0; }
+  5%   { opacity: 1; }
+  95%  { opacity: 1; }
+  100% { top: 92%; opacity: 0; }
+}
+
+/**
+ * register-label-slide — used by RegisterQrCard for "Scan QR to register" subtitle.
+ * Vertical slide-in/out to distinguish from greeting-slide (horizontal).
+ */
+@keyframes register-label-slide {
+  0%   { opacity: 0; transform: translateY(6px);  }
+  12%  { opacity: 1; transform: translateY(0);    }
+  80%  { opacity: 1; transform: translateY(0);    }
+  95%  { opacity: 0; transform: translateY(-6px); }
+  100% { opacity: 0; transform: translateY(-6px); }
+}
+
+.passport-scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(74, 222, 128, 0.6) 20%,
+    rgba(74, 222, 128, 1) 50%,
+    rgba(74, 222, 128, 0.6) 80%,
+    transparent 100%
+  );
+  animation: passport-scan-line 2.2s ease-in-out infinite;
+  pointer-events: none;
+}

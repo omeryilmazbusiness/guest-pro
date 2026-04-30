@@ -149,10 +149,15 @@ export interface WelcomingStrings {
   placeTypeBazaar: string;
   placeTypeRestaurant: string;
   placeTypeOther: string;
+  /** Black card QR subtitle — cycling scroll text */
   registerQrLabel: string;
+  /** Passport scan page instruction */
   scanInstruction: string;
+  /** Passport scan page title */
   scanTitle: string;
+  /** Result page — show to reception */
   showReception: string;
+  /** Result page — wait message */
   waitMessage: string;
 }
 
@@ -193,6 +198,16 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
     placeTypeBazaar:      "Grand Bazaar",
     placeTypeRestaurant:  "Restaurant",
     placeTypeOther:       "Place",
+    registerQrLabel:     "Scan QR to register",
+    scanInstruction:     "Place your passport inside the frame",
+    scanTitle:           "Passport Scan",
+    showReception:       "Show this QR to reception",
+    waitMessage:         "Please wait while we check you in",
+    registerQrLabel:     "Scan QR to register",
+    scanInstruction:     "Place your passport inside the frame",
+    scanTitle:           "Passport Scan",
+    showReception:       "Show this QR to reception",
+    waitMessage:         "Please wait while we check you in",
     registerQrLabel:     "Scan QR to register",
     scanInstruction:     "Place your passport inside the frame",
     scanTitle:           "Passport Scan",
@@ -240,6 +255,16 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
     scanTitle:           "Pasaport Tarama",
     showReception:       "Bu QR kodu resepsiyona gösterin",
     waitMessage:         "Giriş işleminiz yapılırken lütfen bekleyin",
+    registerQrLabel:     "Kayıt için QR kodu okut",
+    scanInstruction:     "Pasaportunuzu çerçeve içine yerleştirin",
+    scanTitle:           "Pasaport Tarama",
+    showReception:       "Bu QR kodu resepsiyona gösterin",
+    waitMessage:         "Giriş işleminiz yapılırken lütfen bekleyin",
+    registerQrLabel:     "Kayit icin QR kodu okut",
+    scanInstruction:     "Pasaportunuzu cerceve icine yerleştirin",
+    scanTitle:           "Pasaport Tarama",
+    showReception:       "Bu QR kodu resepsiyona gosterin",
+    waitMessage:         "Giris isleminiz yapilirken lutfen bekleyin",
   },
   ru: {
     selectLanguage:       "Выберите язык",
@@ -277,6 +302,16 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
     placeTypeBazaar:      "Гранд-базар",
     placeTypeRestaurant:  "Ресторан",
     placeTypeOther:       "Место",
+    registerQrLabel:     "Сканируйте QR для регистрации",
+    scanInstruction:     "Поместите паспорт в рамку",
+    scanTitle:           "Сканирование паспорта",
+    showReception:       "Покажите этот QR-код на ресепшн",
+    waitMessage:         "Пожалуйста, ожидайте регистрации",
+    registerQrLabel:     "Сканируйте QR для регистрации",
+    scanInstruction:     "Поместите паспорт в рамку",
+    scanTitle:           "Сканирование паспорта",
+    showReception:       "Покажите этот QR-код на ресепшн",
+    waitMessage:         "Пожалуйста, ожидайте регистрации",
     registerQrLabel:     "Сканируйте QR для регистрации",
     scanInstruction:     "Поместите паспорт в рамку",
     scanTitle:           "Сканирование паспорта",
@@ -322,7 +357,17 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
     registerQrLabel:     "पंजीकरण के लिए QR स्कैन करें",
     scanInstruction:     "अपना पासपोर्ट फ्रेम के अंदर रखें",
     scanTitle:           "पासपोर्ट स्कैन",
-    showReception:       "यह QR कोġ रिसेप्शन को दिखाएं",
+    showReception:       "यह QR कोड रिसेप्शन को दिखाएं",
+    waitMessage:         "कृपया चेक-इन के दौरान प्रतीक्षा करें",
+    registerQrLabel:     "पंजीकरण के लिए QR स्कैन करें",
+    scanInstruction:     "अपना पासपोर्ट फ्रेम के अंदर रखें",
+    scanTitle:           "पासपोर्ट स्कैन",
+    showReception:       "यह QR कोड रिसेप्शन को दिखाएं",
+    waitMessage:         "कृपया चेक-इन के दौरान प्रतीक्षा करें",
+    registerQrLabel:     "पंजीकरण के लिए QR स्कैन करें",
+    scanInstruction:     "अपना पासपोर्ट फ्रेम के अंदर रखें",
+    scanTitle:           "पासपोर्ट स्कैन",
+    showReception:       "यह QR कोड रिसेप्शन को दिखाएं",
     waitMessage:         "कृपया चेक-इन के दौरान प्रतीक्षा करें",
   },
   ur: {
@@ -366,6 +411,16 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
     scanTitle:           "پاسپورٹ اسکین",
     showReception:       "یہ QR کوڈ ریسپشن کو دکھائیں",
     waitMessage:         "چیک ان کے دوران برائے کرم انتظار کریں",
+    registerQrLabel:     "رجسٹریشن کے لیے QR اسکین کریں",
+    scanInstruction:     "اپنا پاسپورٹ فریم کے اندر رکھیں",
+    scanTitle:           "پاسپورٹ اسکین",
+    showReception:       "یہ QR کوڈ ریسپشن کو دکھائیں",
+    waitMessage:         "چیک ان کے دوران برائے کرم انتظار کریں",
+    registerQrLabel:     "رجسٹریشن کے لیے QR اسکین کریں",
+    scanInstruction:     "اپنا پاسپورٹ فریم کے اندر رکھیں",
+    scanTitle:           "پاسپورٹ اسکین",
+    showReception:       "یہ QR کوڈ ریسپشن کو دکھائیں",
+    waitMessage:         "چیک ان کے دوران برائے کرم انتظار کریں",
   },
   ja: {
     selectLanguage:       "言語を選択してください",
@@ -403,6 +458,16 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
     placeTypeBazaar:      "グランドバザール",
     placeTypeRestaurant:  "レストラン",
     placeTypeOther:       "場所",
+    registerQrLabel:     "QRコードをスキャンして登録",
+    scanInstruction:     "パスポートをフレーム内に置いてください",
+    scanTitle:           "パスポートスキャン",
+    showReception:       "このQRコードをフロントに見せてください",
+    waitMessage:         "チェックイン処理中です、お待ちください",
+    registerQrLabel:     "QRコードをスキャンして登録",
+    scanInstruction:     "パスポートをフレーム内に置いてください",
+    scanTitle:           "パスポートスキャン",
+    showReception:       "このQRコードをフロントに見せてください",
+    waitMessage:         "チェックイン処理中です、お待ちください",
     registerQrLabel:     "QRコードをスキャンして登録",
     scanInstruction:     "パスポートをフレーム内に置いてください",
     scanTitle:           "パスポートスキャン",
