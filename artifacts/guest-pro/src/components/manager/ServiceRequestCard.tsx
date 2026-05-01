@@ -68,6 +68,14 @@ const TYPE_CONFIG: Record<ServiceRequestType, TypeConfig> = {
 
 // ─── Status cycle: open → in_progress → resolved (one-way; resolved is terminal) ──
 
+
+const FALLBACK_CONFIG: TypeConfig = {
+  icon: Layers,
+  label: 'Talep',
+  iconBg: 'bg-zinc-100',
+  iconColor: 'text-zinc-400',
+  borderColor: 'border-zinc-100',
+};
 const STATUS_NEXT: Record<ServiceRequestStatus, ServiceRequestStatus | null> = {
   open: "in_progress",
   in_progress: "resolved",
@@ -118,7 +126,7 @@ export function ServiceRequestCard({
   const [isExpanded, setIsExpanded] = useState(false);
   const [deleteState, setDeleteState] = useState<"idle" | "confirming" | "deleting">("idle");
 
-  const config = TYPE_CONFIG[request.requestType];
+  const config = TYPE_CONFIG[request.requestType] ?? FALLBACK_CONFIG;
   const Icon = config.icon;
   const StatusIcon = STATUS_ICONS[status];
   const nextStatus = STATUS_NEXT[status];

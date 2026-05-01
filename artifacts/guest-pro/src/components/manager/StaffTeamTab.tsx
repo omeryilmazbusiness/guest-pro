@@ -178,7 +178,8 @@ type EditFormValues   = z.infer<typeof editSchema>;
 /** Coloured pill badge with icon for a staff department. */
 function DepartmentBadge({ dept }: { dept: StaffDepartment | null }) {
   if (!dept) return null;
-  const c    = DEPARTMENT_COLOURS[dept];
+  const c = DEPARTMENT_COLOURS[dept as keyof typeof DEPARTMENT_COLOURS];
+  if (!c) return null;
   const Icon = DEPT_ICONS[dept];
   return (
     <span
@@ -202,7 +203,8 @@ function EmployeeAvatar({ member }: { member: StaffMember }) {
       .toUpperCase() || "?";
 
   const dept = member.staffDepartment;
-  const ring = dept ? DEPARTMENT_COLOURS[dept].border.replace("border-", "ring-") : "ring-zinc-100";
+  const deptColours = dept ? DEPARTMENT_COLOURS[dept] : undefined;
+  const ring = deptColours ? deptColours.border.replace("border-", "ring-") : "ring-zinc-100";
 
   return (
     <div
@@ -854,6 +856,7 @@ export function StaffTeamTab({
                 onEdit={setEditTarget}
                 onDeactivate={(m) => deactivateMutation.mutate(m.id)}
                 onReactivate={(m) => reactivateMutation.mutate(m.id)}
+                onPermanentDelete={(m) => permanentDeleteMutation.mutate(m.id)}
               />
             ))}
           </div>
@@ -874,6 +877,7 @@ export function StaffTeamTab({
                 onEdit={setEditTarget}
                 onDeactivate={(m) => deactivateMutation.mutate(m.id)}
                 onReactivate={(m) => reactivateMutation.mutate(m.id)}
+                onPermanentDelete={(m) => permanentDeleteMutation.mutate(m.id)}
               />
             ))}
           </div>
