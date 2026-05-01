@@ -3,56 +3,64 @@ import { useAuth } from "@/hooks/use-auth";
 import { getTranslations, type GuestTranslations } from "@/lib/i18n";
 import { uiLocaleFromVoiceLocale, dirFromUiLocale } from "@/lib/locale";
 import { getRawPersistedWelcomingLocale } from "@/lib/welcoming/welcoming-locale";
-import { welcVoiceLocale } from "@/lib/welcoming/languages";
+import { getWelcomingLanguage } from "@/lib/welcoming/languages";
 
 export interface LocaleContext {
-  /** BCP 47 voice locale, e.g. "tr-TR". Used for TTS + STT + Gemini language. */
   voiceLocale: string;
-  /** Short UI locale code, e.g. "tr". Used for translation dictionary lookup. */
   uiLocale: string;
-  /** Text direction derived from locale. */
   dir: "ltr" | "rtl";
-  /** Ready-to-use translation object for the guest's locale. */
   t: GuestTranslations;
 }
 
-/** Fallback voice locale — Turkish (hotel default). */
-const DEFAULT_VOICE_LOCALE = "tr-TR";
+const DEFAULT_VOICE_LOCALE = "en-US";
 
 /**
- * Reads the guest's language from their profile and returns a fully-typed
- * locale context including the translation dictionary and text direction.
+ * Returns the active locale context for the current guest.
  *
- * If the guest has completed the welcoming flow and chosen a language,
- * that choice (stored in localStorage) overrides the profile default so
- * the preference is immediately reflected without an API round-trip.
- *
- * Also sets document.dir and document.lang for correct RTL rendering.
+ * Priority order (highest wins):
+ *   1. Authenticated guest -> user.language from DB
+ *      Set at guest creation from countryCode via deriveLocaleFromCountry().
+ *      This is the ONLY authoritative source when a guest is logged in.
+ *      Kiosk localStorage is completely ignored so that a Russian guest is
+ *      never shown Turkish just because the lobby kiosk had Turkish selected.
+ *   2. Unauthenticated (passport-scan, welcoming kiosk) -> welcoming localStorage
+ *      Lets passport-scan use the language the operator selected on /welcoming.
+ *   3. Hard fallback -> en-US
  */
 export function useLocale(): LocaleContext {
   const { user } = useAuth();
 
-  // Welcoming locale override: if the guest explicitly picked a language on
-  // /welcoming, use that; otherwise fall back to the profile voice locale.
-  const welcomingLocale = getRawPersistedWelcomingLocale();
   let voiceLocale: string;
   let uiLocale: string;
-  if (welcomingLocale) {
-    uiLocale   = welcomingLocale;
-    voiceLocale = welcVoiceLocale(welcomingLocale as "tr" | "en" | "ru" | "hi" | "ur" | "ja");
-  } else {
-    voiceLocale = user?.language ?? DEFAULT_VOICE_LOCALE;
+
+  if (user?.language) {
+    // Priority 1: authenticated guest - DB language is authoritative
+    voiceLocale = user.language;
     uiLocale    = uiLocaleFromVoiceLocale(voiceLocale);
+  } else {
+    // Priority 2: unauthenticated - kiosk welcoming locale
+    const welcomingLocale = getRawPersistedWelcomingLocale();
+    if (welcomingLocale) {
+      // getWelcomingLanguage already falls back to English for unknown locales —
+      // no unsafe cast needed. We look up the entry directly.
+      const entry = getWelcomingLanguage(welcomingLocale);
+      uiLocale    = entry.uiLocale;
+      voiceLocale = entry.voiceLocale;
+    } else {
+      // Priority 3: hard fallback
+      voiceLocale = DEFAULT_VOICE_LOCALE;
+      uiLocale    = uiLocaleFromVoiceLocale(voiceLocale);
+    }
   }
 
   const dir = dirFromUiLocale(uiLocale);
-  const t = getTranslations(uiLocale);
+  const t   = getTranslations(uiLocale);
 
   useEffect(() => {
-    document.documentElement.dir = dir;
+    document.documentElement.dir  = dir;
     document.documentElement.lang = uiLocale;
     return () => {
-      document.documentElement.dir = "ltr";
+      document.documentElement.dir  = "ltr";
       document.documentElement.lang = "en";
     };
   }, [dir, uiLocale]);

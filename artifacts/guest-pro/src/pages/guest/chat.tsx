@@ -72,6 +72,15 @@ export default function GuestChat() {
   const [isCreatingRequest, setIsCreatingRequest] = useState(false);
   const [detectedLanguage, setDetectedLanguage] = useState<string>(voiceLocale);
 
+  // Sync detectedLanguage when voiceLocale resolves from the async /auth/me call.
+  // On first render user.language is not yet loaded, so voiceLocale starts as
+  // the fallback (en-US or kiosk locale). This effect fires once when the real
+  // DB locale (e.g. "ru-RU") arrives, ensuring AI receives the correct language.
+  // After that voiceLocale is stable, so voice-detection overrides are preserved.
+  useEffect(() => {
+    setDetectedLanguage(voiceLocale);
+  }, [voiceLocale]);
+
   const autoSendFiredRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
