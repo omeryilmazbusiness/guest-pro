@@ -30,7 +30,7 @@ import {
 import { createServiceRequest } from "@/lib/service-requests";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Message } from "@workspace/api-client-react/generated/api.schemas";
+import type { Message, QuickAction } from "@workspace/api-client-react";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { ShimmerBubble } from "@/components/chat/ShimmerBubble";
 import { OptimisticUserBubble } from "@/components/chat/OptimisticUserBubble";
@@ -94,7 +94,7 @@ export default function GuestChat() {
     isLoading: messagesLoading,
     refetch: refetchMessages,
   } = useGetChatMessages(sessionId!, {
-    query: { enabled: !!sessionId },
+    query: { enabled: !!sessionId, queryKey: ["chat-messages", sessionId] },
   });
 
   // ── Voice conversation hook ──────────────────────────────────────────────
@@ -243,14 +243,15 @@ export default function GuestChat() {
           setPendingUserMessage(null);
           refetchMessages();
         },
-        onError: (err: { data?: { quotaExceeded?: boolean; error?: string } }) => {
+        onError: (err: unknown) => {
           setPendingUserMessage(null);
-          if (err.data?.quotaExceeded) {
+          const errData = (err as { data?: { quotaExceeded?: boolean; error?: string } | null })?.data;
+          if (errData?.quotaExceeded) {
             setQuotaExceeded(true);
             // Can't continue conversation if quota exceeded
             if (conv.isActive) conv.stopConversation();
           } else {
-            toast.error(err.data?.error || t.sendFailed);
+            toast.error(errData?.error || t.sendFailed);
             setInputValue(trimmed);
             // Voice: transition back to listening after error
             if (conv.isActive) conv.retryListening();
@@ -530,7 +531,7 @@ export default function GuestChat() {
               {/* Quick actions (empty state only) */}
               {!messagesLoading && !hasMessages && quickActions && quickActions.length > 0 && (
                 <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none snap-x">
-                  {quickActions.map((action: { id: number; icon?: string; label: string }) => {
+                  {quickActions.map((action: QuickAction) => {
                     const IconComponent = ICON_MAP[action.icon ?? ""] ?? MapPin;
                     return (
                       <button
