@@ -68,8 +68,8 @@ async function bootstrap(): Promise<void> {
     process.exit(1);
   }
 
-  server = app.listen(port, () => {
-    logger.info({ port }, "Server listening");
+  server = app.listen(port, "0.0.0.0", () => {
+    logger.info({ port, host: "0.0.0.0" }, `Server listening on 0.0.0.0:${port}`);
     startScheduler();
   });
 
