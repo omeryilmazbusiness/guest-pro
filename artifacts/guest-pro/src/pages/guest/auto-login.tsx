@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { guestQrLogin } from "@workspace/api-client-react";
 import { Loader2, ShieldX, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { markWelcomingAsSeen } from "@/lib/welcoming/welcoming-locale";
 
 type Status = "loading" | "success" | "error";
 
@@ -69,6 +70,7 @@ export default function GuestAutoLogin() {
     guestQrLogin({ token: rawToken })
       .then((res) => {
         setToken(res.token);
+        markWelcomingAsSeen();
         setStatus("success");
         // Brief success pause so the guest sees the confirmation before redirect
         setTimeout(() => setLocation("/guest"), 1200);
