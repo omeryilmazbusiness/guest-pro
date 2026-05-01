@@ -1,11 +1,16 @@
 /**
  * GuestWelcoming — /welcoming
  *
- * TRUE PUBLIC ROUTE — no auth required.
+ * TRUE PUBLIC ROUTE — no auth required, NO auth awareness.
+ * This is a hotel kiosk/lobby display screen.
+ *
+ * It MUST NEVER read or act on any existing auth session (localStorage token).
+ * Guest authentication happens exclusively via:
+ *   - /guest/auto-login  (one-time QR scan token)
+ *   - /                  (guest key login)
  *
  * Stage 1 — Hero (full-viewport black card):
  *   Single registration QR + cycling multi-language "Scan QR to register" label.
- *   Language selector persists locale for the passport-scan page.
  *
  * Stage 2 — Public info dashboard (below the fold):
  *   Wi-Fi · Emergency · Dining hours · Menu · Nearby places · Support
@@ -14,7 +19,6 @@
 import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { ChevronDown, Globe2 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
 import { GuestProLogo } from "@/components/GuestProLogo";
 import { RegisterQrCard } from "@/components/welcoming/RegisterQrCard";
 import { LanguageSelector } from "@/components/welcoming/LanguageSelector";
@@ -22,14 +26,15 @@ import { InfoBlocks } from "@/components/welcoming/InfoBlocks";
 import {
   getPersistedWelcomingLocale,
   persistWelcomingLocale,
-  markWelcomingAsSeen,
 } from "@/lib/welcoming/welcoming-locale";
 import { getWelcomingStrings, HOTEL_CONFIG } from "@/lib/welcoming/hotel-content";
 import type { WelcomingLocale } from "@/lib/welcoming/types";
 import { cn } from "@/lib/utils";
 
 export default function GuestWelcoming() {
-  const { isAuthenticated, user } = useAuth();
+  // ⚠️ NO useAuth here — public kiosk must NEVER read localStorage auth token.
+  // Any visitor — authenticated or not — sees exactly the same public content.
+  // Buttons on this page only redirect to the login page (/), never to /guest/chat.
   const [, setLocation] = useLocation();
   const infoRef = useRef<HTMLDivElement>(null);
 
@@ -47,20 +52,10 @@ export default function GuestWelcoming() {
     infoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function handleAccessStay() {
-    persistWelcomingLocale(selectedLocale);
-    markWelcomingAsSeen();
-    if (isAuthenticated && user) {
-      setLocation(user.role === "guest" ? "/guest" : "/manager");
-    } else {
-      setLocation("/");
-    }
-  }
-
-  function handleOpenConcierge() {
-    persistWelcomingLocale(selectedLocale);
-    markWelcomingAsSeen();
-    setLocation("/guest/chat");
+  // The only action the support card can take is directing guests to the
+  // login page. This page NEVER performs or inherits any login or chat access.
+  function handleGoToLogin() {
+    setLocation("/");
   }
 
   return (
@@ -88,12 +83,8 @@ export default function GuestWelcoming() {
             "animate-in fade-in zoom-in-95 duration-700",
           )}
         >
-          {/* QR code + cycling "Scan QR to register" multilang label */}
           <RegisterQrCard scanUrl={scanUrl} />
-
           <div className="h-px w-full bg-zinc-800" />
-
-          {/* Language selector persists locale so passport-scan page reads it */}
           <LanguageSelector
             selected={selectedLocale}
             onSelect={(l) => {
@@ -120,13 +111,18 @@ export default function GuestWelcoming() {
         ref={infoRef}
         className="w-full max-w-3xl mx-auto px-5 py-12 md:py-16 flex flex-col gap-6"
       >
+        {/*
+          isAuthenticated is hardcoded false — this is a public kiosk display.
+          No existing localStorage token can ever grant concierge/chat access.
+          Both callbacks redirect to the login page (/), never to /guest/chat.
+        */}
         <InfoBlocks
           config={HOTEL_CONFIG}
           s={s}
           locale={selectedLocale}
-          isAuthenticated={isAuthenticated}
-          onOpenConcierge={handleOpenConcierge}
-          onAccessStay={handleAccessStay}
+          isAuthenticated={false}
+          onOpenConcierge={handleGoToLogin}
+          onAccessStay={handleGoToLogin}
         />
       </section>
     </div>

@@ -26,7 +26,6 @@ import {
   ChevronDown,
   Trash2,
   Loader2,
-  Globe,
 } from "lucide-react";
 import { GuestProLogo } from "@/components/GuestProLogo";
 import { toast } from "sonner";
@@ -39,7 +38,6 @@ import { useTrackingHeartbeat } from "@/hooks/use-tracking-heartbeat";
 import { StayKeyCard } from "@/components/guest/StayKeyCard";
 import { ServiceQuickActions, type QuickActionMode } from "@/components/guest/ServiceQuickActions";
 import { listMyRequests, deleteMyServiceRequest, type ServiceRequest } from "@/lib/service-requests";
-import { hasSeenWelcoming } from "@/lib/welcoming/welcoming-locale";
 import { buildDisplaySummary } from "@/lib/request-display";
 
 // ─── Request history — grouped stacked-card system ────────────────────────────
@@ -313,8 +311,8 @@ export default function GuestHome() {
     enabled: isAuthenticated && user?.role === "guest",
   });
 
-  // Redirect guard — runs only once (useRef prevents double-fire in StrictMode)
-  const welcomingCheckRef = useRef(false);
+  // Auth redirect guard — /welcoming is a public kiosk and must NEVER
+  // be part of the authenticated guest flow.
   useEffect(() => {
     if (!isAuthenticated) {
       setLocation("/");
@@ -322,15 +320,6 @@ export default function GuestHome() {
     }
     if (user?.role !== "guest") {
       setLocation("/manager");
-      return;
-    }
-    // First-time guests are sent to the welcoming screen before the dashboard.
-    // The welcoming page calls markWelcomingAsSeen(), so this redirect fires once.
-    if (!welcomingCheckRef.current) {
-      welcomingCheckRef.current = true;
-      if (!hasSeenWelcoming()) {
-        setLocation("/welcoming");
-      }
     }
   }, [isAuthenticated, user, setLocation]);
 
@@ -407,14 +396,6 @@ export default function GuestHome() {
             </span>
           </div>
           <div className="flex items-center gap-0.5">
-            <button
-              onClick={() => setLocation("/welcoming")}
-              className="text-zinc-400 hover:text-zinc-700 transition-colors p-2"
-              aria-label="Change language"
-              title="Change language"
-            >
-              <Globe className="w-4 h-4" />
-            </button>
             <button
               onClick={handleLogout}
               className="text-zinc-400 hover:text-zinc-700 transition-colors p-2 -mr-2"
@@ -565,7 +546,7 @@ export default function GuestHome() {
             </h3>
             <div className="grid grid-cols-2 gap-3">
               {quickActions.map(
-                (action: { id: number; icon?: string; label: string }) => {
+                (action: { id: number; icon?: string | null; label: string }) => {
                   const IconComponent = ICON_MAP[action.icon ?? ""] ?? MapPin;
                   return (
                     <button
