@@ -1,6 +1,14 @@
 [build]
 builder = "dockerfile"
 dockerfilePath = "Dockerfile"
+watchPatterns = [
+  "artifacts/api-server/**",
+  "artifacts/guest-pro/**",
+  "lib/**",
+  "Dockerfile",
+  "pnpm-lock.yaml",
+  "pnpm-workspace.yaml"
+]
 
 [deploy]
 healthcheckPath = "/api/healthz"
