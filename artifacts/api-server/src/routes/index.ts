@@ -9,6 +9,7 @@ import requestsRouter from "./requests";
 import analyticsRouter from "./analytics";
 import welcomeAlertRouter from "./welcome-alert";
 import staffRouter from "./staff";
+import restaurantRouter from "./restaurant";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(requestsRouter);
 router.use(analyticsRouter);
 router.use(welcomeAlertRouter);
 router.use(staffRouter);
+router.use(restaurantRouter);
 
 export default router;

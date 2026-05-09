@@ -119,7 +119,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     await clearFailedLogins(rateLimitKey);
     // Use the user's actual DB role (manager or personnel) — never hardcode "manager"
     const staffRole = user.role;
-    const token = generateToken(user.id, staffRole, user.hotelId);
+    const token = generateToken(user.id, staffRole, user.hotelId, undefined, user.staffDepartment ?? null);
 
     db.insert(auditLogsTable)
       .values({
@@ -250,6 +250,7 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
       roomNumber: null,
       guestId: null,
       hotelId: user.hotelId,
+      staffDepartment: user.staffDepartment ?? null,
     });
     return;
   }

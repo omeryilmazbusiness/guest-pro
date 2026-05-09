@@ -1,7 +1,8 @@
 /**
  * Welcome-area alert types and API fetch helpers.
- * Used by the manager dashboard to display anonymous guest help requests.
+ * Uses customFetch so the Bearer token is automatically attached.
  */
+import { customFetch } from "@workspace/api-client-react";
 
 export interface WelcomeAlert {
   id: number;
@@ -14,17 +15,13 @@ export interface WelcomeAlert {
 }
 
 export async function listWelcomeAlerts(): Promise<WelcomeAlert[]> {
-  const res = await fetch("/api/welcome-alerts");
-  if (!res.ok) throw new Error("Failed to fetch welcome alerts");
-  return res.json() as Promise<WelcomeAlert[]>;
+  return customFetch<WelcomeAlert[]>("/api/welcome-alerts");
 }
 
 export async function acknowledgeWelcomeAlert(id: number): Promise<WelcomeAlert> {
-  const res = await fetch(`/api/welcome-alerts/${id}/status`, {
+  return customFetch<WelcomeAlert>(`/api/welcome-alerts/${id}/status`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status: "acknowledged" }),
   });
-  if (!res.ok) throw new Error("Failed to acknowledge alert");
-  return res.json() as Promise<WelcomeAlert>;
 }

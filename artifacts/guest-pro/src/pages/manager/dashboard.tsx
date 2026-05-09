@@ -46,6 +46,7 @@ import {
   TrendingUp,
   FileText,
   Briefcase,
+  ChefHat,
 } from "lucide-react";
 import {
   useListGuests,
@@ -364,7 +365,7 @@ export default function ManagerDashboard() {
 
   // ── Data
   const { data: guests, isLoading } = useListGuests({
-    query: { enabled: isAuthenticated && isStaffRole(user?.role) },
+    query: { queryKey: ["guests", "list"], enabled: isAuthenticated && isStaffRole(user?.role) },
   });
 
   // ── Presence data (tracking) — refetch every 60 s while dashboard is open.
@@ -587,7 +588,7 @@ export default function ManagerDashboard() {
   if (!isAuthenticated || !isStaffRole(user?.role)) return null;
 
   return (
-    <div className="min-h-[100dvh] bg-zinc-50/60">
+    <div className="min-h-dvh bg-zinc-50/60">
 
       {/* ── Sticky header (56px) ── */}
       <header className="bg-white border-b border-zinc-100 sticky top-0 z-20">
@@ -600,7 +601,7 @@ export default function ManagerDashboard() {
               <span className="font-serif text-base font-medium text-zinc-900 block leading-none">
                 Guest Pro
               </span>
-              <span className="text-[10px] text-zinc-400 font-medium leading-none truncate block max-w-[160px]">
+              <span className="text-[10px] text-zinc-400 font-medium leading-none truncate block max-w-40">
                 {roleLabel(user.role)} · {user.firstName} {user.lastName}
               </span>
             </div>
@@ -616,6 +617,18 @@ export default function ManagerDashboard() {
               >
                 <Plus className="w-3.5 h-3.5 mr-1" />
                 New Guest
+              </Button>
+            )}
+            {isManager && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setLocation("/restaurant")}
+                className="w-8 h-8 rounded-xl text-zinc-400 hover:text-amber-600 hover:bg-amber-50 touch-manipulation"
+                aria-label="Restaurant Dashboard"
+                title="Restaurant Dashboard"
+              >
+                <ChefHat className="w-3.5 h-3.5" />
               </Button>
             )}
             {isManager && (

@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
 import path from "path";
+import { fileURLToPath } from "url";
 import * as schema from "./schema";
 
 const { Pool } = pg;
@@ -37,8 +38,8 @@ export async function runMigrations(): Promise<void> {
   const migrationsFolder =
     process.env.MIGRATIONS_PATH ??
     path.resolve(
-      path.dirname(new URL(import.meta.url).pathname),
-      "../../../../migrations"
+      path.dirname(fileURLToPath(import.meta.url)),
+      "../../../lib/db/migrations"
     );
   await migrate(db, { migrationsFolder });
 }

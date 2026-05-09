@@ -16,6 +16,7 @@ declare global {
         role: string;
         hotelId: number;
         guestId?: number;
+        staffDepartment?: string | null;
       };
     }
   }

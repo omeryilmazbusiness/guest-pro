@@ -100,8 +100,14 @@ export default function Login() {
   // Redirect already-authenticated users
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (user.role === "manager" || user.role === "personnel") setLocation("/manager");
-      else setLocation("/guest");
+      if (user.role === "manager") setLocation("/manager");
+      else if (user.role === "personnel") {
+        // Restaurant personnel go to the dedicated restaurant dashboard
+        if (user.staffDepartment === "RESTAURANT") setLocation("/restaurant");
+        else setLocation("/manager");
+      } else {
+        setLocation("/guest");
+      }
     }
   }, [isAuthenticated, user, setLocation]);
 
@@ -154,7 +160,10 @@ export default function Login() {
         onSuccess: (res) => {
           setToken(res.token);
           toast.success("Welcome back");
-          setLocation("/manager");
+          const dept = res.user?.staffDepartment;
+          const role = res.user?.role;
+          if (role === "personnel" && dept === "RESTAURANT") setLocation("/restaurant");
+          else setLocation("/manager");
         },
         onError: (err) => {
           const msg = err.data?.error ?? "Sign-in failed. Please check your credentials.";

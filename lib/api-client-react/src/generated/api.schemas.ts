@@ -74,6 +74,8 @@ export interface CurrentUser {
   countryCode?: string | null;
   /** @nullable */
   language?: string | null;
+  /** @nullable */
+  staffDepartment?: string | null;
 }
 
 export interface LoginResponse {

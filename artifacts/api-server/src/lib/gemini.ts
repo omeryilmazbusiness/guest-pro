@@ -108,3 +108,90 @@ export async function generateConciergeResponse(
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Restaurant care analysis
+// Analyses CARE_PROFILE_UPDATE requests and returns food/nutrition-relevant
+// actionable insights for restaurant staff.
+// ---------------------------------------------------------------------------
+
+export interface CareRequestSummary {
+  roomNumber: string;
+  guestName: string;
+  summary: string;
+  structuredData?: Record<string, unknown> | null;
+}
+
+export async function analyzeGuestCareForRestaurant(
+  careRequests: CareRequestSummary[]
+): Promise<string[]> {
+  if (careRequests.length === 0) return [];
+
+  const requestsText = careRequests
+    .map(
+      (r) =>
+        `Oda ${r.roomNumber} (${r.guestName}): ${r.summary}${
+          r.structuredData ? " | Detay: " + JSON.stringify(r.structuredData) : ""
+        }`
+    )
+    .join("\n");
+
+  const prompt = `Sen 5 yıldızlı bir otel restoranının baş aşçısına yardım eden uzman bir beslenme danışmanısın.
+
+Aşağıda otel misafirlerinin "Care About Me" (beni önemse) profillerinden elde edilen veriler verilmiştir.
+Bu profilleri derinlemesine analiz et ve restoran ekibine SOMUT, UYGULANABİLİR yemek hazırlama önerileri sun.
+
+ANALIZ EDİLECEK KATEGORİLER:
+1. Gıda alerjileri (gluten, laktoz, fıstık, kabuklu deniz ürünleri vb.)
+2. Diyet kısıtlamaları (diyabet, hipertansiyon, kalp hastalığı, böbrek hastalığı vb.)
+3. Beslenme tercihleri (vejetaryen, vegan, helal, koşer vb.)
+4. Kişisel tercihler (sevilen/sevilmeyen yiyecekler, baharatlar, pişirme şekli)
+5. Sağlık durumları (hamilelik, emzirme, ameliyat sonrası, ilaç kullanımı)
+6. Kültürel/dini gereksinimler
+
+HER ÖNERİ İÇİN FORMAT:
+"Oda [NO] ([İSİM]): [Durum] → [Somut Yemek Hazırlama Önerisi]"
+
+ÖRNEKLER:
+"Oda 101 (Ali Yıldız): Çölyak hastalığı → Tüm ekmek ve makarnayı glutensiz alternatifle değiştirin; ortak yüzey kontaminasyonuna dikkat edin"
+"Oda 203 (Sara Demir): Tip-2 diyabet → Şeker yerine stevia kullanın; tam tahıllı seçenekler sunun; porsiyon bilgisi etiketleyin"
+"Oda 315 (John Smith): Vegan + fıstık alerjisi → Hayvansal ürün içermeyen menü hazırlayın; fıstık yağı yerine zeytinyağı kullanın"
+"Oda 412 (Mei Wang): Düşük sodyum diyet (hipertansiyon) → Tuz miktarını yarıya indirin; soya sosu yerine düşük sodyumlu alternatif kullanın"
+
+KURALLAR:
+- SADECE yiyecek, içecek ve beslenme ile ilgili verileri dahil et
+- Oda ve yemek ilişkisini NET belirt
+- Her öneri pratik ve mutfakta uygulanabilir olsun
+- Türkçe yaz, profesyonel ama anlaşılır ol
+- Maksimum 20 madde döndür
+- İlgisiz profilleri (oda tercihi, ulaşım, sıcaklık vb.) tamamen atla
+- Eğer hiç ilgili bildirim yoksa boş liste döndür: []
+
+MİSAFİR PROFİLLERİ:
+${requestsText}
+
+SADECE JSON dizisi döndür, başka hiçbir metin ekleme:`;
+
+  try {
+    const result = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      config: { temperature: 0.15, maxOutputTokens: 2048 },
+    });
+
+    const raw = result.text?.trim() ?? "[]";
+    const cleaned = raw
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/```\s*$/i, "")
+      .trim();
+    const parsed = JSON.parse(cleaned);
+    if (Array.isArray(parsed)) {
+      return parsed.filter((item): item is string => typeof item === "string");
+    }
+    return [];
+  } catch (err) {
+    console.error("[analyzeGuestCareForRestaurant] AI error", err);
+    return [];
+  }
+}

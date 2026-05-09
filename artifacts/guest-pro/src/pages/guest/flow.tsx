@@ -28,6 +28,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useLocale } from "@/hooks/use-locale";
 import { createServiceRequest, type ServiceRequestType } from "@/lib/service-requests";
+import { useGuestMenu, type GuestMenuCategory, type GuestMenuItem } from "@/hooks/use-guest-menu";
 import type { GuestTranslations } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -53,44 +54,28 @@ interface WizardStep {
   noCustomInput?: boolean;
 }
 
-// ─── Turkish food menu items ───────────────────────────────────────────────────
-
-const FOOD_MENU_RAW: Record<string, { value: string; subtitle: string; icon: LucideIcon }[]> = {
-  breakfast: [
-    { value: "Serpme Kahvaltı", subtitle: "Peynir, zeytin, bal, reçel", icon: UtensilsCrossed },
-    { value: "Omlet", subtitle: "Seçiminize göre iç malzeme", icon: Utensils },
-    { value: "Avokado Tost", subtitle: "Ekşi maya ekmek, haşlanmış yumurta", icon: Utensils },
-    { value: "Taze Meyve Tabağı", subtitle: "Mevsim meyveleri", icon: Leaf },
-  ],
-  light: [
-    { value: "Ekmeğe Yumurta", subtitle: "El yapımı ekmek", icon: Utensils },
-    { value: "Peynirli Sandviç", subtitle: "Izgara peynirli sandviç", icon: Utensils },
-    { value: "Günün Çorbası", subtitle: "Şefin günlük seçimi", icon: Utensils },
-    { value: "Salata", subtitle: "Tercih ettiğiniz sos ile", icon: Leaf },
-  ],
-  main: [
-    { value: "Izgara Tavuk", subtitle: "Mevsim sebzeli", icon: UtensilsCrossed },
-    { value: "Şefin Makarnası", subtitle: "Günlük özel makarna", icon: UtensilsCrossed },
-    { value: "Tavada Balık", subtitle: "Günün balığı", icon: UtensilsCrossed },
-    { value: "Vejetaryen Tabak", subtitle: "Mevsim sebze & tahıl", icon: Leaf },
-  ],
-  drinks: [
-    { value: "Türk Çayı", subtitle: "Demlik çay", icon: Coffee },
-    { value: "Kahve", subtitle: "Türk kahvesi veya filtre", icon: Coffee },
-    { value: "Taze Portakal Suyu", subtitle: "Taze sıkılmış", icon: Coffee },
-    { value: "Su / Maden Suyu", subtitle: "Sade veya köpüklü", icon: Coffee },
-  ],
-};
+// ─── Menu data comes from useGuestMenu hook (live API) ───────────────────────
 
 // ─── Step builders (i18n-driven) ──────────────────────────────────────────────
 
-function buildFoodSteps(t: GuestTranslations): WizardStep[] {
-  const categories: StepOption[] = [
-    { value: "breakfast", label: t.flowCatBreakfast, subtitle: t.flowCatBreakfastHint, icon: Sunrise },
-    { value: "light", label: t.flowCatLight, subtitle: t.flowCatLightHint, icon: Leaf },
-    { value: "main", label: t.flowCatMain, subtitle: t.flowCatMainHint, icon: UtensilsCrossed },
-    { value: "drinks", label: t.flowCatDrinks, subtitle: t.flowCatDrinksHint, icon: Coffee },
-  ];
+function buildFoodSteps(
+  t: GuestTranslations,
+  liveCategories?: { key: string; label: string; icon: LucideIcon }[]
+): WizardStep[] {
+  // Use live API categories when available, fall back to static defaults
+  const categories: StepOption[] =
+    liveCategories && liveCategories.length > 0
+      ? liveCategories.map((c) => ({
+          value: c.key,
+          label: c.label,
+          icon: c.icon,
+        }))
+      : [
+          { value: "BREAKFAST", label: t.flowCatBreakfast, subtitle: t.flowCatBreakfastHint, icon: Sunrise },
+          { value: "MAIN_COURSE", label: t.flowCatMain, subtitle: t.flowCatMainHint, icon: UtensilsCrossed },
+          { value: "SALAD", label: t.flowCatLight, subtitle: t.flowCatLightHint, icon: Leaf },
+          { value: "BEVERAGE", label: t.flowCatDrinks, subtitle: t.flowCatDrinksHint, icon: Coffee },
+        ];
 
   const quantities: StepOption[] = [
     { value: "1", label: t.flowQty1, icon: Utensils },
@@ -112,7 +97,7 @@ function buildFoodSteps(t: GuestTranslations): WizardStep[] {
       question: t.flowFoodItemQ,
       subtitle: t.flowFoodItemHint,
       type: "select",
-      options: [],
+      options: [], // populated dynamically from live menu in currentStep resolver
       noCustomInput: true,
     },
     { id: "quantity", question: t.flowFoodQuantityQ, type: "select", options: quantities },
@@ -226,7 +211,7 @@ interface FlowConfig {
   successMessage: string;
 }
 
-function buildFlowConfig(t: GuestTranslations, mode: FlowMode): FlowConfig {
+function buildFlowConfig(t: GuestTranslations, mode: FlowMode, liveCategories?: { key: string; label: string; icon: LucideIcon }[]): FlowConfig {
   const base: Record<FlowMode, Omit<FlowConfig, "steps" | "label" | "successMessage">> = {
     food: {
       requestType: "FOOD_ORDER",
@@ -261,7 +246,7 @@ function buildFlowConfig(t: GuestTranslations, mode: FlowMode): FlowConfig {
   };
 
   const steps: Record<FlowMode, WizardStep[]> = {
-    food: buildFoodSteps(t),
+    food: buildFoodSteps(t, liveCategories),
     support: buildSupportSteps(t),
     care: buildCareSteps(t),
   };
@@ -594,7 +579,11 @@ export default function GuidedFlowPage() {
       ? rawMode
       : "support";
 
-  const config = buildFlowConfig(t, mode);
+  // ── Live menu data (DAILY today + ROOM_SERVICE merged) ──────────────────
+  const { categories: liveCategories, itemsByCategory, isLoading: menuLoading } =
+    useGuestMenu();
+
+  const config = buildFlowConfig(t, mode, mode === "food" ? liveCategories : undefined);
   const steps = config.steps;
 
   const [stepIndex, setStepIndex] = useState(0);
@@ -617,13 +606,20 @@ export default function GuidedFlowPage() {
   const currentStep: WizardStep = (() => {
     if (stepIndex >= steps.length) return steps[steps.length - 1];
     const step = steps[stepIndex];
+    // Populate item options dynamically from live API data
     if (step.id === "item" && mode === "food") {
-      const category = answers.category ?? "breakfast";
-      const raw = FOOD_MENU_RAW[category] ?? [];
-      return {
-        ...step,
-        options: raw.map((item) => ({ ...item, label: item.value })),
-      };
+      const category = answers.category ?? "";
+      const liveItems = category ? (itemsByCategory[category] ?? []) : [];
+      const options: StepOption[] =
+        liveItems.length > 0
+          ? liveItems.map((item) => ({
+              value: item.name,
+              label: item.name,
+              subtitle: item.description ?? item.portionInfo ?? item.allergenNotes ?? undefined,
+              icon: Utensils,
+            }))
+          : [{ value: "__empty__", label: menuLoading ? "Yükleniyor…" : "Menüde ürün yok", icon: Utensils }];
+      return { ...step, options };
     }
     return step;
   })();

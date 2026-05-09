@@ -75,11 +75,12 @@ export function generateToken(
   userId: number,
   role: string,
   hotelId: number,
-  guestId?: number
+  guestId?: number,
+  staffDepartment?: string | null
 ): string {
   const now = Date.now();
   const exp = now + (TOKEN_TTL_BY_ROLE[role] ?? TOKEN_TTL_BY_ROLE.manager);
-  const payload = JSON.stringify({ userId, role, hotelId, guestId, iat: now, exp });
+  const payload = JSON.stringify({ userId, role, hotelId, guestId, staffDepartment: staffDepartment ?? null, iat: now, exp });
   const sig = crypto
     .createHmac("sha256", env.SESSION_SECRET!)
     .update(payload)
@@ -89,7 +90,7 @@ export function generateToken(
 
 export function verifyToken(
   token: string
-): { userId: number; role: string; hotelId: number; guestId?: number } | null {
+): { userId: number; role: string; hotelId: number; guestId?: number; staffDepartment?: string | null } | null {
   try {
     const dotIdx = token.indexOf(".");
     if (dotIdx === -1) return null;
@@ -114,6 +115,7 @@ export function verifyToken(
       role: string;
       hotelId: number;
       guestId?: number;
+      staffDepartment?: string | null;
       iat: number;
       exp?: number;
     };
