@@ -248,7 +248,7 @@ export function RestaurantStockTab() {
           <PackageSearch className="w-4 h-4 text-zinc-500" />
           <h2 className="text-[14px] font-semibold text-zinc-700">Stok Takibi</h2>
           {lowCount > 0 && (
-            <span className="text-[11px] font-bold text-white bg-amber-400 rounded-full min-w-[18px] h-[18px] px-1.5 flex items-center justify-center leading-none">
+            <span className="text-[11px] font-bold text-white bg-amber-400 rounded-full min-w-4.5 h-4.5 px-1.5 flex items-center justify-center leading-none">
               {lowCount}
             </span>
           )}

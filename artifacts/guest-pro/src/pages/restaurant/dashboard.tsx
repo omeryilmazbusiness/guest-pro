@@ -13,11 +13,14 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth.tsx";
+import { useStaffLocale } from "@/hooks/use-staff-locale";
+import { tStaff } from "@/lib/staff-i18n";
 import { useLogout } from "@workspace/api-client-react";
 import { toast } from "sonner";
 import {
   UtensilsCrossed, PackageSearch, Heart, LogOut, ChefHat, Bell,
 } from "lucide-react";
+import { LanguagePicker } from "@/components/ui/LanguagePicker";
 import { RestaurantOrdersTab }     from "@/components/restaurant/RestaurantOrdersTab";
 import { RestaurantMenuTab }       from "@/components/restaurant/RestaurantMenuTab";
 import { RestaurantStockTab }      from "@/components/restaurant/RestaurantStockTab";
@@ -29,25 +32,33 @@ type RestaurantTab = "orders" | "menu" | "stock" | "care";
 
 const TABS: {
   key: RestaurantTab;
-  label: string;
   icon: React.FC<{ className?: string }>;
 }[] = [
-  { key: "orders", label: "Siparişler", icon: Bell },
-  { key: "menu",   label: "Menü",       icon: UtensilsCrossed },
-  { key: "stock",  label: "Stok",       icon: PackageSearch },
-  { key: "care",   label: "Care",       icon: Heart },
+  { key: "orders", icon: Bell },
+  { key: "menu",   icon: UtensilsCrossed },
+  { key: "stock",  icon: PackageSearch },
+  { key: "care",   icon: Heart },
 ];
 
 function TabBar({
   active,
   onChange,
+  t,
 }: {
   active: RestaurantTab;
-  onChange: (t: RestaurantTab) => void;
+  onChange: (tab: RestaurantTab) => void;
+  t: ReturnType<typeof useStaffLocale>["t"];
 }) {
+  const LABELS: Record<RestaurantTab, string> = {
+    orders: t.tabOrders,
+    menu:   t.tabMenu,
+    stock:  t.tabStock,
+    care:   t.tabCare,
+  };
   return (
     <div className="flex bg-zinc-100 rounded-2xl p-1 gap-1">
-      {TABS.map(({ key, label, icon: Icon }) => {
+      {TABS.map(({ key, icon: Icon }) => {
+        const label = LABELS[key];
         const isActive = active === key;
         return (
           <button
@@ -74,6 +85,7 @@ export default function RestaurantDashboard() {
   const { user, isAuthenticated, logoutAuth } = useAuth();
   const [, setLocation] = useLocation();
   const logoutMutation = useLogout();
+  const { t, locale, dir, setLocale } = useStaffLocale();
 
   const [activeTab, setActiveTab] = useState<RestaurantTab>("orders");
 
@@ -93,7 +105,7 @@ export default function RestaurantDashboard() {
   const handleLogout = () => {
     logoutAuth();
     logoutMutation.mutate(undefined);
-    toast.success("Logged out");
+    toast.success(t.loggedOut);
   };
 
   if (!isAuthenticated || !user) return null;
@@ -101,7 +113,7 @@ export default function RestaurantDashboard() {
   const displayName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email || "Restaurant";
 
   return (
-    <div className="min-h-dvh bg-zinc-50/60">
+    <div className="min-h-dvh bg-zinc-50/60" dir={dir}>
 
       {/* ── Sticky header ── */}
       <header className="bg-white border-b border-zinc-100 sticky top-0 z-20">
@@ -112,7 +124,7 @@ export default function RestaurantDashboard() {
             </div>
             <div className="min-w-0">
               <span className="font-serif text-base font-medium text-zinc-900 block leading-none">
-                Restoran
+                {t.restaurantTitle}
               </span>
               <span className="text-[10px] text-zinc-400 font-medium leading-none truncate block max-w-40">
                 {displayName}
@@ -121,13 +133,16 @@ export default function RestaurantDashboard() {
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
+            {/* ── Language picker ── */}
+            <LanguagePicker locale={locale} onLocaleChange={setLocale} dir={dir} />
+
             {/* Link back to main dashboard for managers */}
             {user.role === "manager" && (
               <button
                 onClick={() => setLocation("/manager")}
                 className="text-[11px] text-zinc-400 hover:text-zinc-700 px-2 py-1 rounded-lg hover:bg-zinc-50 transition-all"
               >
-                ← Dashboard
+                {t.backToDashboard}
               </button>
             )}
             <button
@@ -145,7 +160,7 @@ export default function RestaurantDashboard() {
       <main className="max-w-2xl mx-auto px-4 py-5 pb-24 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
 
         {/* Tab bar */}
-        <TabBar active={activeTab} onChange={setActiveTab} />
+        <TabBar active={activeTab} onChange={setActiveTab} t={t} />
 
         {/* Tab content */}
         {activeTab === "orders" && (

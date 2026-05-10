@@ -58,11 +58,14 @@ import {
   type Guest,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useStaffLocale } from "@/hooks/use-staff-locale";
+import { tStaff, type StaffTranslations } from "@/lib/staff-i18n";
 import { isStaffRole, can, Permission, roleLabel } from "@/lib/permissions";
 import { filterGuests, extractRoomNumbers, countByStatus } from "@/lib/guests";
 import { aggregateRooms, filterRooms } from "@/lib/rooms";
 import { type StayStatus } from "@/lib/stays";
 import { GuestProLogo } from "@/components/GuestProLogo";
+import { LanguagePicker } from "@/components/ui/LanguagePicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -104,6 +107,7 @@ function DashboardTabs({
   requestCount,
   teamCount,
   isManager,
+  t,
 }: {
   active: DashboardTab;
   onChange: (tab: DashboardTab) => void;
@@ -112,13 +116,14 @@ function DashboardTabs({
   requestCount: number;
   teamCount: number;
   isManager: boolean;
+  t: StaffTranslations;
 }) {
   const TABS: { key: DashboardTab; label: string; icon: React.FC<{ className?: string }>; count: number; managerOnly?: boolean; managerHidden?: boolean }[] = [
-    { key: "team",     label: "Employees", icon: Briefcase,  count: teamCount,    managerOnly: true },
-    { key: "guests",   label: "Guests",    icon: Users,      count: guestCount },
-    { key: "rooms",    label: "Rooms",     icon: DoorOpen,   count: roomCount,    managerHidden: true },
-    { key: "requests", label: "Requests",  icon: Bell,       count: requestCount, managerHidden: true },
-    { key: "summary",  label: "Summary",   icon: TrendingUp, count: 0,            managerOnly: true },
+    { key: "team",     label: t.tabTeam,     icon: Briefcase,  count: teamCount,    managerOnly: true },
+    { key: "guests",   label: t.tabGuests,   icon: Users,      count: guestCount },
+    { key: "rooms",    label: t.tabRooms,    icon: DoorOpen,   count: roomCount,    managerHidden: true },
+    { key: "requests", label: t.tabRequests, icon: Bell,       count: requestCount, managerHidden: true },
+    { key: "summary",  label: t.tabSummary,  icon: TrendingUp, count: 0,            managerOnly: true },
   ];
 
   const visibleTabs = TABS.filter((t) => {
@@ -175,6 +180,7 @@ function StickyGuestFilterBar({
   statusFilter,
   onStatusChange,
   statusCounts,
+  t,
 }: {
   search: string;
   onSearchChange: (v: string) => void;
@@ -184,12 +190,13 @@ function StickyGuestFilterBar({
   statusFilter: StayStatus | "all";
   onStatusChange: (v: StayStatus | "all") => void;
   statusCounts: Record<"active" | "upcoming" | "expired" | "no_dates", number>;
+  t: StaffTranslations;
 }) {
   const STATUS_OPTIONS: { value: StayStatus | "all"; label: string; count?: number }[] = [
-    { value: "all", label: "All" },
-    { value: "active", label: "Active", count: statusCounts.active },
-    { value: "upcoming", label: "Upcoming", count: statusCounts.upcoming },
-    { value: "expired", label: "Expired", count: statusCounts.expired },
+    { value: "all", label: t.statusAll },
+    { value: "active", label: t.statusActive, count: statusCounts.active },
+    { value: "upcoming", label: t.statusUpcoming, count: statusCounts.upcoming },
+    { value: "expired", label: t.statusExpired, count: statusCounts.expired },
   ];
 
   const hasAnyStatusFilter = statusCounts.upcoming > 0 || statusCounts.expired > 0;
@@ -203,7 +210,7 @@ function StickyGuestFilterBar({
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
             <Input
               data-testid="input-search"
-              placeholder="Name, room, or key…"
+              placeholder={t.searchPlaceholder}
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               className="pl-10 pr-8 h-10 rounded-2xl bg-white border-zinc-200 focus-visible:ring-zinc-900 text-sm shadow-sm"
@@ -222,15 +229,15 @@ function StickyGuestFilterBar({
             <Select value={roomFilter} onValueChange={onRoomChange}>
               <SelectTrigger className="h-10 w-auto rounded-2xl border-zinc-200 bg-white text-sm font-medium focus:ring-zinc-900 px-3 gap-1.5 shrink-0 shadow-sm">
                 <DoorOpen className="w-4 h-4 text-zinc-400" />
-                <SelectValue placeholder="Room" />
+                <SelectValue placeholder={t.room} />
               </SelectTrigger>
               <SelectContent className="rounded-2xl border-zinc-200 shadow-xl">
                 <SelectItem value="__all__" className="rounded-xl text-sm font-medium">
-                  All Rooms
+                  {t.allRooms}
                 </SelectItem>
                 {rooms.map((r) => (
                   <SelectItem key={r} value={r} className="rounded-xl text-sm font-mono font-medium">
-                    Room {r}
+                    {t.room} {r}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -291,9 +298,11 @@ function StickyGuestFilterBar({
 function StickyRoomFilterBar({
   search,
   onSearchChange,
+  t,
 }: {
   search: string;
   onSearchChange: (v: string) => void;
+  t: StaffTranslations;
 }) {
   return (
     <div className="sticky top-14 z-10 bg-zinc-50/95 backdrop-blur-sm border-b border-zinc-200/60">
@@ -301,7 +310,7 @@ function StickyRoomFilterBar({
         <div className="relative">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
           <Input
-            placeholder="Search room number…"
+            placeholder={t.searchRoomPlaceholder}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             className="pl-10 pr-8 h-10 rounded-2xl bg-white border-zinc-200 focus-visible:ring-zinc-900 text-sm shadow-sm"
@@ -362,6 +371,7 @@ export default function ManagerDashboard() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const logoutMutation = useLogout();
+  const { t, locale, dir, setLocale } = useStaffLocale();
 
   // ── Data
   const { data: guests, isLoading } = useListGuests({
@@ -511,7 +521,7 @@ export default function ManagerDashboard() {
   const handleLogout = () => {
     logoutAuth();
     logoutMutation.mutate(undefined);
-    toast.success("Logged out");
+    toast.success(t.loggedOut);
   };
 
   const handleNavigateCreate = () => setLocation("/manager/guests/new");
@@ -531,11 +541,11 @@ export default function ManagerDashboard() {
       { id, data },
       {
         onSuccess: () => {
-          toast.success("Guest updated");
+          toast.success(t.guestUpdated);
           setEditingGuest(null);
           invalidateGuests();
         },
-        onError: () => toast.error("Failed to update guest"),
+        onError: () => toast.error(t.failedUpdateGuest),
       }
     );
   };
@@ -545,11 +555,11 @@ export default function ManagerDashboard() {
       { id },
       {
         onSuccess: () => {
-          toast.success("Guest removed");
+          toast.success(t.guestRemoved);
           setDeletingGuest(null);
           invalidateGuests();
         },
-        onError: () => toast.error("Failed to remove guest"),
+        onError: () => toast.error(t.failedRemoveGuest),
       }
     );
   };
@@ -569,9 +579,9 @@ export default function ManagerDashboard() {
             qrTokenExpiresAt: res.qrTokenExpiresAt,
           });
           setHandoffOpen(true);
-          toast.success("Key renewed");
+          toast.success(t.keyRenewed);
         },
-        onError: () => toast.error("Failed to renew key"),
+        onError: () => toast.error(t.failedRenewKey),
       }
     );
   };
@@ -588,7 +598,7 @@ export default function ManagerDashboard() {
   if (!isAuthenticated || !isStaffRole(user?.role)) return null;
 
   return (
-    <div className="min-h-dvh bg-zinc-50/60">
+    <div className="min-h-dvh bg-zinc-50/60" dir={dir}>
 
       {/* ── Sticky header (56px) ── */}
       <header className="bg-white border-b border-zinc-100 sticky top-0 z-20">
@@ -616,17 +626,20 @@ export default function ManagerDashboard() {
                 className="h-8 px-3.5 rounded-xl text-[13px] font-medium shadow-sm shadow-zinc-900/10 hidden sm:flex"
               >
                 <Plus className="w-3.5 h-3.5 mr-1" />
-                New Guest
+                {t.newGuest}
               </Button>
             )}
+            {/* ── Language picker ── */}
+            <LanguagePicker locale={locale} onLocaleChange={setLocale} dir={dir} />
+
             {isManager && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setLocation("/restaurant")}
                 className="w-8 h-8 rounded-xl text-zinc-400 hover:text-amber-600 hover:bg-amber-50 touch-manipulation"
-                aria-label="Restaurant Dashboard"
-                title="Restaurant Dashboard"
+                aria-label={t.restaurantDashboard}
+                title={t.restaurantDashboard}
               >
                 <ChefHat className="w-3.5 h-3.5" />
               </Button>
@@ -637,8 +650,8 @@ export default function ManagerDashboard() {
                 size="icon"
                 onClick={() => setQuickReportOpen(true)}
                 className="w-8 h-8 rounded-xl text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 touch-manipulation"
-                aria-label="Quick Report"
-                title="Quick Report"
+                aria-label={t.quickReport}
+                title={t.quickReport}
               >
                 <FileText className="w-3.5 h-3.5" />
               </Button>
@@ -649,7 +662,7 @@ export default function ManagerDashboard() {
                 size="icon"
                 onClick={() => setLocation("/manager/settings")}
                 className="w-8 h-8 rounded-xl text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 touch-manipulation"
-                aria-label="Settings"
+                aria-label={t.settings}
               >
                 <Settings className="w-3.5 h-3.5" />
               </Button>
@@ -660,7 +673,7 @@ export default function ManagerDashboard() {
               size="icon"
               onClick={handleLogout}
               className="w-8 h-8 rounded-xl text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 touch-manipulation"
-              aria-label="Log out"
+              aria-label={t.logout}
             >
               <LogOut className="w-3.5 h-3.5" />
             </Button>
@@ -679,12 +692,14 @@ export default function ManagerDashboard() {
           statusFilter={statusFilter}
           onStatusChange={setStatusFilter}
           statusCounts={statusCounts}
+          t={t}
         />
       )}
       {activeTab === "rooms" && (
         <StickyRoomFilterBar
           search={roomSearch}
           onSearchChange={setRoomSearch}
+          t={t}
         />
       )}
 
@@ -719,6 +734,7 @@ export default function ManagerDashboard() {
           requestCount={openRequestCount}
           teamCount={staffInfo.active}
           isManager={isManager}
+          t={t}
         />
 
         {/* ══════════════════════════════════
@@ -732,8 +748,8 @@ export default function ManagerDashboard() {
               <div className="flex items-center justify-between px-1">
                 <p className="text-xs text-zinc-400 font-medium">
                   {filteredGuests.length === guests.length
-                    ? `${guests.length} guest${guests.length !== 1 ? "s" : ""} · newest first`
-                    : `${filteredGuests.length} of ${guests.length} guests`}
+                    ? tStaff(t.guestsNewestFirst, { n: guests.length })
+                    : tStaff(t.guestsFiltered, { n: filteredGuests.length, total: guests.length })}
                 </p>
                 {guestHasFilters && (
                   <button
@@ -741,7 +757,7 @@ export default function ManagerDashboard() {
                     className="text-xs text-zinc-400 hover:text-zinc-700 flex items-center gap-1 touch-manipulation"
                   >
                     <X className="w-3 h-3" />
-                    Clear
+                    {t.clearFilters}
                   </button>
                 )}
               </div>
@@ -756,10 +772,8 @@ export default function ManagerDashboard() {
                   <Users className="w-10 h-10 text-zinc-200 mx-auto mb-3" />
                   {guests && guests.length > 0 ? (
                     <>
-                      <p className="text-sm font-medium text-zinc-700 mb-1">No matches</p>
-                      <p className="text-xs text-zinc-400 mb-4">
-                        Try different search or room filter.
-                      </p>
+                      <p className="text-sm font-medium text-zinc-700 mb-1">{t.noMatches}</p>
+                      <p className="text-xs text-zinc-400 mb-4">{t.tryDifferentSearch}</p>
                       <button
                         onClick={clearGuestFilters}
                         className="text-xs text-zinc-500 underline underline-offset-2"
@@ -769,17 +783,15 @@ export default function ManagerDashboard() {
                     </>
                   ) : (
                     <>
-                      <p className="text-sm font-medium text-zinc-700 mb-1">No guests yet</p>
-                      <p className="text-xs text-zinc-400 mb-5">
-                        Check in your first guest to get started.
-                      </p>
+                      <p className="text-sm font-medium text-zinc-700 mb-1">{t.noGuestsYet}</p>
+                      <p className="text-xs text-zinc-400 mb-5">{t.checkInFirstGuest}</p>
                       {canCreate && (
                         <button
                           onClick={handleNavigateCreate}
                           className="inline-flex items-center gap-1.5 bg-zinc-900 text-white rounded-2xl px-5 py-2.5 text-sm font-medium active:scale-95 transition-all touch-manipulation"
                         >
                           <Plus className="w-4 h-4" />
-                          Check In Guest
+                          {t.checkInGuest}
                         </button>
                       )}
                     </>
@@ -815,8 +827,8 @@ export default function ManagerDashboard() {
               <div className="px-1">
                 <p className="text-xs text-zinc-400 font-medium">
                   {filteredRooms.length === allRooms.length
-                    ? `${allRooms.length} room${allRooms.length !== 1 ? "s" : ""} occupied`
-                    : `${filteredRooms.length} of ${allRooms.length} rooms`}
+                    ? tStaff(t.roomsOccupied, { n: allRooms.length })
+                    : tStaff(t.roomsFiltered, { n: filteredRooms.length, total: allRooms.length })}
                 </p>
               </div>
             )}
@@ -833,10 +845,8 @@ export default function ManagerDashboard() {
                 <DoorOpen className="w-10 h-10 text-zinc-200 mx-auto mb-3" />
                 {allRooms.length > 0 ? (
                   <>
-                    <p className="text-sm font-medium text-zinc-700 mb-1">No rooms match</p>
-                    <p className="text-xs text-zinc-400 mb-4">
-                      Try a different room number or filter.
-                    </p>
+                    <p className="text-sm font-medium text-zinc-700 mb-1">{t.noRoomsMatch}</p>
+                    <p className="text-xs text-zinc-400 mb-4">{t.tryDifferentRoom}</p>
                     <button
                       onClick={clearRoomFilters}
                       className="text-xs text-zinc-500 underline underline-offset-2"
@@ -846,10 +856,8 @@ export default function ManagerDashboard() {
                   </>
                 ) : (
                   <>
-                    <p className="text-sm font-medium text-zinc-700 mb-1">No rooms yet</p>
-                    <p className="text-xs text-zinc-400">
-                      Rooms appear automatically when guests are checked in.
-                    </p>
+                    <p className="text-sm font-medium text-zinc-700 mb-1">{t.noRoomsYet}</p>
+                    <p className="text-xs text-zinc-400">{t.roomsAutomatic}</p>
                   </>
                 )}
               </div>
@@ -908,7 +916,7 @@ export default function ManagerDashboard() {
             className="flex items-center gap-2 bg-zinc-900 text-white rounded-2xl px-5 py-3.5 text-sm font-semibold shadow-2xl shadow-zinc-900/30 hover:bg-zinc-800 active:scale-95 transition-all touch-manipulation"
           >
             <Plus className="w-4 h-4" />
-            New Guest
+            {t.newGuest}
           </button>
         </div>
       )}
@@ -918,7 +926,7 @@ export default function ManagerDashboard() {
         <div className="fixed inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="bg-white rounded-3xl border border-zinc-100 shadow-2xl px-10 py-8 flex flex-col items-center gap-3">
             <Loader2 className="w-7 h-7 text-zinc-400 animate-spin" />
-            <p className="text-sm font-medium text-zinc-600">Renewing key…</p>
+            <p className="text-sm font-medium text-zinc-600">{t.renewingKey}</p>
           </div>
         </div>
       )}

@@ -1,0 +1,584 @@
+/**
+ * Staff-facing i18n — Manager · Personnel · Restaurant dashboards.
+ *
+ * Supported locales: en | tr | ar
+ * Separate from guest i18n (GuestTranslations) which lives in i18n.ts.
+ *
+ * Usage:
+ *   const { t } = useStaffLocale();
+ *   <p>{t.tabGuests}</p>
+ */
+
+export type StaffLocale = "en" | "tr" | "ar";
+
+export interface StaffTranslations {
+  // ── Global ────────────────────────────────────────────────────────────────
+  logout: string;
+  loggedOut: string;
+  settings: string;
+  save: string;
+  cancel: string;
+  language: string;
+
+  // ── Manager header ────────────────────────────────────────────────────────
+  newGuest: string;
+  restaurantDashboard: string;
+  quickReport: string;
+  renewingKey: string;
+  keyRenewed: string;
+  failedRenewKey: string;
+  guestUpdated: string;
+  failedUpdateGuest: string;
+  guestRemoved: string;
+  failedRemoveGuest: string;
+
+  // ── Dashboard tabs ────────────────────────────────────────────────────────
+  tabGuests: string;
+  tabRooms: string;
+  tabRequests: string;
+  tabSummary: string;
+  tabTeam: string;
+
+  // ── Guest filter bar ──────────────────────────────────────────────────────
+  searchPlaceholder: string;
+  searchRoomPlaceholder: string;
+  allRooms: string;
+  room: string;
+  clearSearch: string;
+  clearFilters: string;
+
+  // ── Status chips ──────────────────────────────────────────────────────────
+  statusAll: string;
+  statusActive: string;
+  statusUpcoming: string;
+  statusExpired: string;
+
+  // ── Guest list ────────────────────────────────────────────────────────────
+  guestsNewestFirst: string; // {n}
+  guestsFiltered: string;    // {n} {total}
+  noMatches: string;
+  tryDifferentSearch: string;
+  noGuestsYet: string;
+  checkInFirstGuest: string;
+  checkInGuest: string;
+
+  // ── Room list ─────────────────────────────────────────────────────────────
+  roomsOccupied: string;   // {n}
+  roomsFiltered: string;   // {n} {total}
+  noRoomsMatch: string;
+  tryDifferentRoom: string;
+  noRoomsYet: string;
+  roomsAutomatic: string;
+
+  // ── Restaurant header ─────────────────────────────────────────────────────
+  restaurantTitle: string;
+  backToDashboard: string;
+
+  // ── Restaurant tabs ───────────────────────────────────────────────────────
+  tabOrders: string;
+  tabMenu: string;
+  tabStock: string;
+  tabCare: string;
+
+  // ── Orders tab ────────────────────────────────────────────────────────────
+  ordersTitle: string;
+  orderStatusOpen: string;
+  orderStatusInProgress: string;
+  orderStatusResolved: string;
+  advanceToInProgress: string;
+  advanceToResolved: string;
+  noOrders: string;
+  orderMarked: string;      // {label}
+  orderUpdateFailed: string;
+
+  // ── Shared form actions ──────────────────────────────────────────────────
+  add: string;
+  nameRequired: string;
+  addFailed: string;
+  deleted: string;
+  deleteFailed: string;
+  updateFailed: string;
+  confirmDelete: string;
+
+  // ── Menu tab ─────────────────────────────────────────────────────────────
+  menuItemAdded: string;
+  addToDailyMenu: string;
+  addToRoomServiceMenu: string;
+  placeholderFoodName: string;
+  placeholderDescription: string;
+  placeholderPrice: string;
+  placeholderAllergen: string;
+  placeholderPortion: string;
+  makeInactive: string;
+  makeActive: string;
+  noMenuForDate: string;
+  roomServiceMenuEmpty: string;
+  dailyMenuTab: string;
+  roomServiceTab: string;
+
+  // ── Menu category labels ─────────────────────────────────────────────────
+  catBreakfast: string;
+  catSoup: string;
+  catSalad: string;
+  catAppetizer: string;
+  catMainCourse: string;
+  catDessert: string;
+  catBeverage: string;
+  catSnack: string;
+  catOther: string;
+
+  // ── Stock tab ────────────────────────────────────────────────────────────
+  stockTitle: string;
+  newStockItem: string;
+  stockItemAdded: string;
+  quantityUpdateFailed: string;
+  confirmDeleteStock: string;
+  tagOutOfStock: string;
+  tagLowStock: string;
+  thresholdLabel: string;
+  lowStockSummary: string;
+  noStockItems: string;
+  noStockItemsHint: string;
+  placeholderProductName: string;
+  placeholderUnit: string;
+  placeholderCurrentQty: string;
+  placeholderLowStockThreshold: string;
+  placeholderNotes: string;
+
+  // ── Care tab ─────────────────────────────────────────────────────────────
+  careTitle: string;
+  careRefreshBtn: string;
+  careRefreshing: string;
+  careRefreshed: string;
+  careRefreshFailed: string;
+  careBannerDescription: string;
+  careLastAnalysis: string;
+  careNoInsights: string;
+  careNoInsightsHint: string;
+  careRoomLabel: string;
+}
+
+// ── Dictionaries ──────────────────────────────────────────────────────────────
+
+const en: StaffTranslations = {
+  logout: "Log out",
+  loggedOut: "Logged out",
+  settings: "Settings",
+  save: "Save",
+  cancel: "Cancel",
+  language: "Language",
+
+  newGuest: "New Guest",
+  restaurantDashboard: "Restaurant Dashboard",
+  quickReport: "Quick Report",
+  renewingKey: "Renewing key…",
+  keyRenewed: "Key renewed",
+  failedRenewKey: "Failed to renew key",
+  guestUpdated: "Guest updated",
+  failedUpdateGuest: "Failed to update guest",
+  guestRemoved: "Guest removed",
+  failedRemoveGuest: "Failed to remove guest",
+
+  tabGuests: "Guests",
+  tabRooms: "Rooms",
+  tabRequests: "Requests",
+  tabSummary: "Summary",
+  tabTeam: "Employees",
+
+  searchPlaceholder: "Name, room, or key…",
+  searchRoomPlaceholder: "Search room number…",
+  allRooms: "All Rooms",
+  room: "Room",
+  clearSearch: "Clear search",
+  clearFilters: "Clear",
+
+  statusAll: "All",
+  statusActive: "Active",
+  statusUpcoming: "Upcoming",
+  statusExpired: "Expired",
+
+  guestsNewestFirst: "{n} guests · newest first",
+  guestsFiltered: "{n} of {total} guests",
+  noMatches: "No matches",
+  tryDifferentSearch: "Try different search or room filter.",
+  noGuestsYet: "No guests yet",
+  checkInFirstGuest: "Check in your first guest to get started.",
+  checkInGuest: "Check In Guest",
+
+  roomsOccupied: "{n} rooms occupied",
+  roomsFiltered: "{n} of {total} rooms",
+  noRoomsMatch: "No rooms match",
+  tryDifferentRoom: "Try a different room number or filter.",
+  noRoomsYet: "No rooms yet",
+  roomsAutomatic: "Rooms appear automatically when guests are checked in.",
+
+  restaurantTitle: "Restaurant",
+  backToDashboard: "← Dashboard",
+
+  tabOrders: "Orders",
+  tabMenu: "Menu",
+  tabStock: "Stock",
+  tabCare: "Care",
+
+  ordersTitle: "Food Orders",
+  orderStatusOpen: "Open",
+  orderStatusInProgress: "Preparing",
+  orderStatusResolved: "Completed",
+  advanceToInProgress: "Start Preparing",
+  advanceToResolved: "Mark Delivered",
+  noOrders: "No orders",
+  orderMarked: "Marked as {label}",
+  orderUpdateFailed: "Failed to update status",
+  add: "Add",
+  nameRequired: "Name is required",
+  addFailed: "Could not add",
+  deleted: "Deleted",
+  deleteFailed: "Could not delete",
+  updateFailed: "Could not update",
+  confirmDelete: "Delete \"{name}\"?",
+
+  menuItemAdded: "Menu item added",
+  addToDailyMenu: "Add to Daily Menu",
+  addToRoomServiceMenu: "Add to Room Service Menu",
+  placeholderFoodName: "Food name *",
+  placeholderDescription: "Description (optional)",
+  placeholderPrice: "Price (e.g. 85.00)",
+  placeholderAllergen: "Allergen info (optional)",
+  placeholderPortion: "Portion / calorie info (optional)",
+  makeInactive: "Make inactive",
+  makeActive: "Make active",
+  noMenuForDate: "No menu added for this date",
+  roomServiceMenuEmpty: "Room service menu is empty",
+  dailyMenuTab: "📅 Daily Menu",
+  roomServiceTab: "🛎 Room Service",
+
+  catBreakfast: "Breakfast",
+  catSoup: "Soup",
+  catSalad: "Salad",
+  catAppetizer: "Appetizer",
+  catMainCourse: "Main Course",
+  catDessert: "Dessert",
+  catBeverage: "Beverage",
+  catSnack: "Snack",
+  catOther: "Other",
+
+  stockTitle: "Stock Tracking",
+  newStockItem: "New Stock Item",
+  stockItemAdded: "Stock item added",
+  quantityUpdateFailed: "Could not update quantity",
+  confirmDeleteStock: "Remove \"{name}\" from stock?",
+  tagOutOfStock: "Out of stock",
+  tagLowStock: "Low",
+  thresholdLabel: "threshold:",
+  lowStockSummary: "{n} items with low / out-of-stock alert",
+  noStockItems: "No stock items",
+  noStockItemsHint: "Click Add to start tracking stock.",
+  placeholderProductName: "Product name *",
+  placeholderUnit: "Unit (pcs, kg, litre…)",
+  placeholderCurrentQty: "Current quantity",
+  placeholderLowStockThreshold: "Low-stock alert threshold",
+  placeholderNotes: "Notes (optional)",
+
+  careTitle: "Care Recommendations",
+  careRefreshBtn: "Refresh with AI",
+  careRefreshing: "Analyzing…",
+  careRefreshed: "Recommendations updated",
+  careRefreshFailed: "Analysis failed",
+  careBannerDescription: "This list is analyzed by AI from Care About Me profiles submitted by guests. Only food and nutrition related recommendations are shown.",
+  careLastAnalysis: "Last analysis: {n} care profiles reviewed · {date}",
+  careNoInsights: "No recommendations yet",
+  careNoInsightsHint: "When guests start filling in Care About Me, the AI will analyze them. Click Refresh to analyze existing profiles.",
+  careRoomLabel: "Room",
+};
+
+const tr: StaffTranslations = {
+  logout: "Çıkış yap",
+  loggedOut: "Çıkış yapıldı",
+  settings: "Ayarlar",
+  save: "Kaydet",
+  cancel: "İptal",
+  language: "Dil",
+
+  newGuest: "Yeni Misafir",
+  restaurantDashboard: "Restoran Paneli",
+  quickReport: "Hızlı Rapor",
+  renewingKey: "Anahtar yenileniyor…",
+  keyRenewed: "Anahtar yenilendi",
+  failedRenewKey: "Anahtar yenilenemedi",
+  guestUpdated: "Misafir güncellendi",
+  failedUpdateGuest: "Misafir güncellenemedi",
+  guestRemoved: "Misafir silindi",
+  failedRemoveGuest: "Misafir silinemedi",
+
+  tabGuests: "Misafirler",
+  tabRooms: "Odalar",
+  tabRequests: "Talepler",
+  tabSummary: "Özet",
+  tabTeam: "Çalışanlar",
+
+  searchPlaceholder: "Ad, oda veya anahtar…",
+  searchRoomPlaceholder: "Oda numarası ara…",
+  allRooms: "Tüm Odalar",
+  room: "Oda",
+  clearSearch: "Aramayı temizle",
+  clearFilters: "Temizle",
+
+  statusAll: "Tümü",
+  statusActive: "Aktif",
+  statusUpcoming: "Yaklaşan",
+  statusExpired: "Süresi Dolmuş",
+
+  guestsNewestFirst: "{n} misafir · en yeni önce",
+  guestsFiltered: "{total} misafirden {n} tanesi",
+  noMatches: "Eşleşme yok",
+  tryDifferentSearch: "Farklı bir arama veya oda filtresi deneyin.",
+  noGuestsYet: "Henüz misafir yok",
+  checkInFirstGuest: "Başlamak için ilk misafirinizi giriş yaptırın.",
+  checkInGuest: "Misafir Girişi",
+
+  roomsOccupied: "{n} oda dolu",
+  roomsFiltered: "{total} odadan {n} tanesi",
+  noRoomsMatch: "Oda bulunamadı",
+  tryDifferentRoom: "Farklı bir oda numarası veya filtre deneyin.",
+  noRoomsYet: "Henüz oda yok",
+  roomsAutomatic: "Misafir girişi yapıldığında odalar otomatik görünür.",
+
+  restaurantTitle: "Restoran",
+  backToDashboard: "← Panel",
+
+  tabOrders: "Siparişler",
+  tabMenu: "Menü",
+  tabStock: "Stok",
+  tabCare: "Bakım",
+
+  ordersTitle: "Yemek Siparişleri",
+  orderStatusOpen: "Açık",
+  orderStatusInProgress: "Hazırlanıyor",
+  orderStatusResolved: "Tamamlandı",
+  advanceToInProgress: "İşleme Al",
+  advanceToResolved: "Teslim Edildi",
+  noOrders: "Sipariş yok",
+  orderMarked: "{label} olarak işaretlendi",
+  orderUpdateFailed: "Durum güncellenemedi",
+  add: "Ekle",
+  nameRequired: "İsim zorunludur",
+  addFailed: "Eklenemedi",
+  deleted: "Silindi",
+  deleteFailed: "Silinemedi",
+  updateFailed: "Güncellenemedi",
+  confirmDelete: "\"{name}\" silinsin mi?",
+
+  menuItemAdded: "Menü öğesi eklendi",
+  addToDailyMenu: "Günlük Menüye Ekle",
+  addToRoomServiceMenu: "Oda Servisi Menüsüne Ekle",
+  placeholderFoodName: "Yemek adı *",
+  placeholderDescription: "Açıklama (opsiyonel)",
+  placeholderPrice: "Fiyat (örn: 85.00)",
+  placeholderAllergen: "Alerjen bilgisi (opsiyonel)",
+  placeholderPortion: "Porsiyon / kalori bilgisi (opsiyonel)",
+  makeInactive: "Pasif yap",
+  makeActive: "Aktif yap",
+  noMenuForDate: "Bu tarih için menü eklenmemiş",
+  roomServiceMenuEmpty: "Oda servisi menüsü boş",
+  dailyMenuTab: "📅 Günlük Menü",
+  roomServiceTab: "🛎 Oda Servisi",
+
+  catBreakfast: "Kahvaltı",
+  catSoup: "Çorba",
+  catSalad: "Salata",
+  catAppetizer: "Başlangıç",
+  catMainCourse: "Ana Yemek",
+  catDessert: "Tatlı",
+  catBeverage: "İçecek",
+  catSnack: "Atışturmalık",
+  catOther: "Diğer",
+
+  stockTitle: "Stok Takibi",
+  newStockItem: "Yeni Stok Kalemi",
+  stockItemAdded: "Stok kalemi eklendi",
+  quantityUpdateFailed: "Miktar güncellenemedi",
+  confirmDeleteStock: "\"{name}\" stoktan çıkarılsın mı?",
+  tagOutOfStock: "Tükendi",
+  tagLowStock: "Düşük",
+  thresholdLabel: "eşik:",
+  lowStockSummary: "{n} üründe düşük/tükenmiş stok uyardısı var",
+  noStockItems: "Stok kalemi yok",
+  noStockItemsHint: "Ekle butonuna basarak stok takibine başlayın.",
+  placeholderProductName: "Ürün adı *",
+  placeholderUnit: "Birim (adet, kg, litre…)",
+  placeholderCurrentQty: "Mevcut miktar",
+  placeholderLowStockThreshold: "Düşük stok uyardı eşiği",
+  placeholderNotes: "Notlar (opsiyonel)",
+
+  careTitle: "Care Önerileri",
+  careRefreshBtn: "AI ile Yenile",
+  careRefreshing: "Analiz ediliyor…",
+  careRefreshed: "Öneriler güncellendi",
+  careRefreshFailed: "Analiz yapılamadı",
+  careBannerDescription: "Bu liste misafirlerin gönderdiği Care About Me profillerinden yapay zeka tarafından analiz edilmektedir. Yalnızca yiyecek ve beslenmeyle ilgili öneriler listelenir.",
+  careLastAnalysis: "Son analiz: {n} care profili incelendi · {date}",
+  careNoInsights: "Henüz öneri yok",
+  careNoInsightsHint: "Misafirler Care About Me doldurmaya başladığında AI analiz edecek. Yenile butonuna basarak mevcut profilleri analiz edebilirsiniz.",
+  careRoomLabel: "Oda",
+};
+
+const ar: StaffTranslations = {
+  logout: "تسجيل الخروج",
+  loggedOut: "تم تسجيل الخروج",
+  settings: "الإعدادات",
+  save: "حفظ",
+  cancel: "إلغاء",
+  language: "اللغة",
+
+  newGuest: "ضيف جديد",
+  restaurantDashboard: "لوحة المطعم",
+  quickReport: "تقرير سريع",
+  renewingKey: "جارٍ تجديد المفتاح…",
+  keyRenewed: "تم تجديد المفتاح",
+  failedRenewKey: "فشل تجديد المفتاح",
+  guestUpdated: "تم تحديث بيانات الضيف",
+  failedUpdateGuest: "فشل تحديث بيانات الضيف",
+  guestRemoved: "تمت إزالة الضيف",
+  failedRemoveGuest: "فشل إزالة الضيف",
+
+  tabGuests: "الضيوف",
+  tabRooms: "الغرف",
+  tabRequests: "الطلبات",
+  tabSummary: "الملخص",
+  tabTeam: "الموظفون",
+
+  searchPlaceholder: "الاسم أو الغرفة أو المفتاح…",
+  searchRoomPlaceholder: "ابحث عن رقم الغرفة…",
+  allRooms: "جميع الغرف",
+  room: "غرفة",
+  clearSearch: "مسح البحث",
+  clearFilters: "مسح",
+
+  statusAll: "الكل",
+  statusActive: "نشط",
+  statusUpcoming: "قادم",
+  statusExpired: "منتهٍ",
+
+  guestsNewestFirst: "{n} ضيف · الأحدث أولاً",
+  guestsFiltered: "{n} من أصل {total} ضيف",
+  noMatches: "لا توجد نتائج",
+  tryDifferentSearch: "جرّب بحثاً أو فلتر غرفة مختلفاً.",
+  noGuestsYet: "لا يوجد ضيوف بعد",
+  checkInFirstGuest: "سجّل دخول ضيفك الأول للبدء.",
+  checkInGuest: "تسجيل دخول ضيف",
+
+  roomsOccupied: "{n} غرفة مشغولة",
+  roomsFiltered: "{n} من أصل {total} غرفة",
+  noRoomsMatch: "لا توجد غرف مطابقة",
+  tryDifferentRoom: "جرّب رقم غرفة أو فلتراً مختلفاً.",
+  noRoomsYet: "لا توجد غرف بعد",
+  roomsAutomatic: "تظهر الغرف تلقائياً عند تسجيل دخول الضيوف.",
+
+  restaurantTitle: "المطعم",
+  backToDashboard: "→ لوحة التحكم",
+
+  tabOrders: "الطلبات",
+  tabMenu: "القائمة",
+  tabStock: "المخزون",
+  tabCare: "الرعاية",
+
+  ordersTitle: "طلبات الطعام",
+  orderStatusOpen: "مفتوح",
+  orderStatusInProgress: "قيد التحضير",
+  orderStatusResolved: "مكتمل",
+  advanceToInProgress: "ابدأ التحضير",
+  advanceToResolved: "تم التسليم",
+  noOrders: "لا توجد طلبات",
+  orderMarked: "تم التحديد كـ {label}",
+  orderUpdateFailed: "فشل تحديث الحالة",
+  add: "إضافة",
+  nameRequired: "الاسم مطلوب",
+  addFailed: "فشلت الإضافة",
+  deleted: "تم الحذف",
+  deleteFailed: "فشل الحذف",
+  updateFailed: "فشل التحديث",
+  confirmDelete: "حذف \"{name}\"?",
+
+  menuItemAdded: "تمت إضافة عنصر القائمة",
+  addToDailyMenu: "أضف إلى القائمة اليومية",
+  addToRoomServiceMenu: "أضف إلى قائمة خدمة الغرف",
+  placeholderFoodName: "اسم الطعام *",
+  placeholderDescription: "وصف (اختياري)",
+  placeholderPrice: "السعر (مثلاً: 85.00)",
+  placeholderAllergen: "معلومات الحساسية (اختياري)",
+  placeholderPortion: "معلومات الحصة / السعرات (اختياري)",
+  makeInactive: "جعله غير نشط",
+  makeActive: "جعله نشطاً",
+  noMenuForDate: "لا توجد قائمة لهذا التاريخ",
+  roomServiceMenuEmpty: "قائمة خدمة الغرف فارغة",
+  dailyMenuTab: "📅 القائمة اليومية",
+  roomServiceTab: "🛎 خدمة الغرف",
+
+  catBreakfast: "الإفطار",
+  catSoup: "الشوربة",
+  catSalad: "السلطة",
+  catAppetizer: "المقبلات",
+  catMainCourse: "الطبق الرئيسي",
+  catDessert: "الحلوى",
+  catBeverage: "المشروبات",
+  catSnack: "الوجبات الخفيفة",
+  catOther: "أخرى",
+
+  stockTitle: "تتبع المخزون",
+  newStockItem: "عنصر مخزون جديد",
+  stockItemAdded: "تمت إضافة عنصر المخزون",
+  quantityUpdateFailed: "فشل تحديث الكمية",
+  confirmDeleteStock: "إزالة \"{name}\" من المخزون?",
+  tagOutOfStock: "نفد المخزون",
+  tagLowStock: "منخفض",
+  thresholdLabel: "الحد:",
+  lowStockSummary: "{n} عنصر بتحذير مخزون منخفض/نافد",
+  noStockItems: "لا توجد عناصر مخزون",
+  noStockItemsHint: "اضغط إضافة لبدء تتبع المخزون.",
+  placeholderProductName: "اسم المنتج *",
+  placeholderUnit: "الوحدة (قطعة، كغم، لتر…)",
+  placeholderCurrentQty: "الكمية الحالية",
+  placeholderLowStockThreshold: "حد تنبيه انخفاض المخزون",
+  placeholderNotes: "ملاحظات (اختياري)",
+
+  careTitle: "توصيات الرعاية",
+  careRefreshBtn: "تحديث بالذكاء الاصطناعي",
+  careRefreshing: "جارٍ التحليل…",
+  careRefreshed: "تم تحديث التوصيات",
+  careRefreshFailed: "فشل التحليل",
+  careBannerDescription: "تُحلَّل هذه القائمة بواسطة الذكاء الاصطناعي من ملفات Care About Me.",
+  careLastAnalysis: "آخر تحليل: تمت مراجعة {n} ملف · {date}",
+  careNoInsights: "لا توجد توصيات بعد",
+  careNoInsightsHint: "عندما يبدأ الضيوف في ملء Care About Me، سيقوم الذكاء الاصطناعي بتحليلها.",
+  careRoomLabel: "غرفة",
+};
+
+const DICT: Record<StaffLocale, StaffTranslations> = { en, tr, ar };
+
+/** Get the staff translation dictionary for the given locale. Falls back to English. */
+export function getStaffTranslations(locale: string): StaffTranslations {
+  return DICT[locale as StaffLocale] ?? DICT.en;
+}
+
+/** Inline template substitution: replace {key} placeholders. */
+export function tStaff(template: string, vars: Record<string, string | number>): string {
+  return Object.entries(vars).reduce(
+    (s, [k, v]) => s.replaceAll(`{${k}}`, String(v)),
+    template
+  );
+}
+
+/** Locale-aware menu category label map derived from t. */
+export function getMenuCategoryLabels(t: StaffTranslations): Record<string, string> {
+  return {
+    BREAKFAST:   t.catBreakfast,
+    SOUP:        t.catSoup,
+    SALAD:       t.catSalad,
+    APPETIZER:   t.catAppetizer,
+    MAIN_COURSE: t.catMainCourse,
+    DESSERT:     t.catDessert,
+    BEVERAGE:    t.catBeverage,
+    SNACK:       t.catSnack,
+    OTHER:       t.catOther,
+  };
+}

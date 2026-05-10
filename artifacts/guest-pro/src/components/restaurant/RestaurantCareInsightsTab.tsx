@@ -89,7 +89,7 @@ export function RestaurantCareInsightsTab() {
         <div className="flex flex-col items-center py-12 bg-white rounded-2xl border border-zinc-100 gap-3">
           <Heart className="w-8 h-8 text-zinc-200" />
           <p className="text-[13px] font-medium text-zinc-600">Henüz öneri yok</p>
-          <p className="text-[11px] text-zinc-400 text-center max-w-[220px]">
+          <p className="text-[11px] text-zinc-400 text-center max-w-55">
             Misafirler Care About Me doldurmaya başladığında AI analiz edecek.
             Yenile butonuna basarak mevcut profilleri analiz edebilirsiniz.
           </p>

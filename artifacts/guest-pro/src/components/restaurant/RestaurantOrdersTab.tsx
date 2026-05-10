@@ -1,7 +1,7 @@
 /**
  * RestaurantOrdersTab
  * Displays FOOD_ORDER service requests with status management.
- * Auto-refreshes every 30s — mirrors StaffRequestsBoard pattern.
+ * Auto-refreshes every 30s. Uses useStaffLocale for EN/TR/AR translations.
  */
 import { useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,8 +9,6 @@ import { toast } from "sonner";
 import {
   RefreshCw,
   Inbox,
-  Clock,
-  CheckCircle2,
   ChevronDown,
   ChevronUp,
   UtensilsCrossed,
@@ -23,43 +21,54 @@ import {
   type FoodOrder,
   type OrderStatus,
 } from "@/lib/restaurant";
+import { useStaffLocale } from "@/hooks/use-staff-locale";
+import { tStaff, type StaffTranslations } from "@/lib/staff-i18n";
 
-// ── Status config ─────────────────────────────────────────────────────────────
-
-const STATUS_CONFIG: Record<
+const STATUS_VISUAL: Record<
   OrderStatus,
-  { label: string; dotClass: string; badgeBg: string; badgeText: string; next: OrderStatus | null; nextLabel: string }
+  { dotClass: string; badgeBg: string; badgeText: string; next: OrderStatus | null }
 > = {
-  open:        { label: "Açık",       dotClass: "bg-red-400",     badgeBg: "bg-red-50",     badgeText: "text-red-600",     next: "in_progress", nextLabel: "İşleme Al" },
-  in_progress: { label: "Hazırlanıyor", dotClass: "bg-amber-400", badgeBg: "bg-amber-50",   badgeText: "text-amber-700",   next: "resolved",    nextLabel: "Teslim Edildi" },
-  resolved:    { label: "Tamamlandı", dotClass: "bg-emerald-400", badgeBg: "bg-emerald-50", badgeText: "text-emerald-700", next: null,          nextLabel: "" },
+  open:        { dotClass: "bg-red-400",     badgeBg: "bg-red-50",     badgeText: "text-red-600",     next: "in_progress" },
+  in_progress: { dotClass: "bg-amber-400",   badgeBg: "bg-amber-50",   badgeText: "text-amber-700",   next: "resolved"    },
+  resolved:    { dotClass: "bg-emerald-400", badgeBg: "bg-emerald-50", badgeText: "text-emerald-700", next: null          },
 };
 
-// ── Single order card ─────────────────────────────────────────────────────────
+function getStatusLabel(status: OrderStatus, t: StaffTranslations): string {
+  if (status === "open")        return t.orderStatusOpen;
+  if (status === "in_progress") return t.orderStatusInProgress;
+  return t.orderStatusResolved;
+}
+
+function getNextLabel(status: OrderStatus, t: StaffTranslations): string {
+  if (status === "open")        return t.advanceToInProgress;
+  if (status === "in_progress") return t.advanceToResolved;
+  return "";
+}
 
 function OrderCard({
   order,
   onStatusChange,
+  t,
 }: {
   order: FoodOrder;
   onStatusChange: (updated: FoodOrder) => void;
+  t: StaffTranslations;
 }) {
   const [isUpdating, setIsUpdating] = useState(false);
-  const config = STATUS_CONFIG[order.status];
-  const time = new Date(order.createdAt).toLocaleTimeString("tr-TR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const visual    = STATUS_VISUAL[order.status];
+  const label     = getStatusLabel(order.status, t);
+  const nextLabel = getNextLabel(order.status, t);
+  const time      = new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   const handleAdvance = async () => {
-    if (!config.next) return;
+    if (!visual.next) return;
     setIsUpdating(true);
     try {
-      const updated = await updateOrderStatus(order.id, config.next);
+      const updated = await updateOrderStatus(order.id, visual.next);
       onStatusChange(updated);
-      toast.success(config.nextLabel + " olarak işaretlendi");
+      toast.success(tStaff(t.orderMarked, { label: nextLabel }));
     } catch {
-      toast.error("Durum güncellenemedi");
+      toast.error(t.orderUpdateFailed);
     } finally {
       setIsUpdating(false);
     }
@@ -67,18 +76,16 @@ function OrderCard({
 
   return (
     <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-4 space-y-3">
-      {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <div className={`w-2 h-2 rounded-full shrink-0 ${config.dotClass}`} />
-          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${config.badgeBg} ${config.badgeText}`}>
-            {config.label}
+          <div className={`w-2 h-2 rounded-full shrink-0 ${visual.dotClass}`} />
+          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${visual.badgeBg} ${visual.badgeText}`}>
+            {label}
           </span>
         </div>
         <span className="text-[11px] text-zinc-400 font-mono shrink-0">{time}</span>
       </div>
 
-      {/* Guest info */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1.5 text-[13px] font-semibold text-zinc-800">
           <User className="w-3.5 h-3.5 text-zinc-400" />
@@ -86,48 +93,47 @@ function OrderCard({
         </div>
         <div className="flex items-center gap-1 text-[12px] text-zinc-500">
           <MapPin className="w-3 h-3" />
-          Oda {order.roomNumber}
+          {order.roomNumber}
         </div>
       </div>
 
-      {/* Order summary */}
       <p className="text-[13px] text-zinc-600 leading-relaxed bg-zinc-50 rounded-xl px-3 py-2.5">
         {order.summary}
       </p>
 
-      {/* Action button */}
-      {config.next && (
+      {visual.next && (
         <button
           onClick={handleAdvance}
           disabled={isUpdating}
-          className={`w-full h-9 rounded-xl text-[13px] font-semibold transition-all active:scale-[0.98] touch-manipulation
-            ${order.status === "open"
+          className={`w-full h-9 rounded-xl text-[13px] font-semibold transition-all active:scale-[0.98] touch-manipulation ${
+            order.status === "open"
               ? "bg-zinc-900 text-white hover:bg-zinc-800"
               : "bg-emerald-600 text-white hover:bg-emerald-700"
-            } disabled:opacity-60`}
+          } disabled:opacity-60`}
         >
-          {isUpdating ? "…" : config.nextLabel}
+          {isUpdating ? "…" : nextLabel}
         </button>
       )}
     </div>
   );
 }
 
-// ── Group section ─────────────────────────────────────────────────────────────
-
 function OrderGroup({
   status,
   orders,
   defaultExpanded,
   onStatusChange,
+  t,
 }: {
   status: OrderStatus;
   orders: FoodOrder[];
   defaultExpanded: boolean;
   onStatusChange: (updated: FoodOrder) => void;
+  t: StaffTranslations;
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
-  const config = STATUS_CONFIG[status];
+  const visual = STATUS_VISUAL[status];
+  const label  = getStatusLabel(status, t);
 
   return (
     <div className="space-y-2">
@@ -136,11 +142,13 @@ function OrderGroup({
         className="w-full flex items-center justify-between bg-white rounded-2xl border border-zinc-100 px-4 py-3 shadow-sm hover:border-zinc-200 transition-all"
       >
         <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${config.dotClass}`} />
-          <span className="text-[13px] font-semibold text-zinc-700">{config.label}</span>
+          <div className={`w-2 h-2 rounded-full ${visual.dotClass}`} />
+          <span className="text-[13px] font-semibold text-zinc-700">{label}</span>
           <span className="text-[11px] font-mono text-zinc-400">({orders.length})</span>
         </div>
-        {expanded ? <ChevronUp className="w-4 h-4 text-zinc-400" /> : <ChevronDown className="w-4 h-4 text-zinc-300" />}
+        {expanded
+          ? <ChevronUp className="w-4 h-4 text-zinc-400" />
+          : <ChevronDown className="w-4 h-4 text-zinc-300" />}
       </button>
 
       {expanded && (
@@ -148,11 +156,11 @@ function OrderGroup({
           {orders.length === 0 ? (
             <div className="flex flex-col items-center py-8 bg-white rounded-2xl border border-zinc-100 gap-2">
               <Inbox className="w-5 h-5 text-zinc-200" />
-              <p className="text-[12px] text-zinc-400">Sipariş yok</p>
+              <p className="text-[12px] text-zinc-400">{t.noOrders}</p>
             </div>
           ) : (
             orders.map((o) => (
-              <OrderCard key={o.id} order={o} onStatusChange={onStatusChange} />
+              <OrderCard key={o.id} order={o} onStatusChange={onStatusChange} t={t} />
             ))
           )}
         </div>
@@ -161,10 +169,9 @@ function OrderGroup({
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
-
 export function RestaurantOrdersTab() {
   const queryClient = useQueryClient();
+  const { t } = useStaffLocale();
 
   const { data: orders, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["restaurant-orders"],
@@ -182,22 +189,20 @@ export function RestaurantOrdersTab() {
     [queryClient]
   );
 
-  const all = orders ?? [];
+  const all        = orders ?? [];
   const openOrders = all.filter((o) => o.status === "open");
   const inProgress = all.filter((o) => o.status === "in_progress");
-  const resolved = all.filter((o) => o.status === "resolved");
-
-  const openCount = openOrders.length + inProgress.length;
+  const resolved   = all.filter((o) => o.status === "resolved");
+  const openCount  = openOrders.length + inProgress.length;
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <UtensilsCrossed className="w-4 h-4 text-amber-500" />
-          <h2 className="text-[14px] font-semibold text-zinc-700">Yemek Siparişleri</h2>
+          <h2 className="text-[14px] font-semibold text-zinc-700">{t.ordersTitle}</h2>
           {openCount > 0 && (
-            <span className="text-[11px] font-bold text-white bg-red-400 rounded-full min-w-[18px] h-[18px] px-1.5 flex items-center justify-center leading-none">
+            <span className="text-[11px] font-bold text-white bg-red-400 rounded-full min-w-4.5 h-4.5 px-1.5 flex items-center justify-center leading-none">
               {openCount}
             </span>
           )}
@@ -219,9 +224,9 @@ export function RestaurantOrdersTab() {
         </div>
       ) : (
         <div className="space-y-3">
-          <OrderGroup status="open"        orders={openOrders} defaultExpanded={true}  onStatusChange={handleStatusChange} />
-          <OrderGroup status="in_progress" orders={inProgress} defaultExpanded={true}  onStatusChange={handleStatusChange} />
-          <OrderGroup status="resolved"    orders={resolved}   defaultExpanded={false} onStatusChange={handleStatusChange} />
+          <OrderGroup status="open"        orders={openOrders} defaultExpanded={true}  onStatusChange={handleStatusChange} t={t} />
+          <OrderGroup status="in_progress" orders={inProgress} defaultExpanded={true}  onStatusChange={handleStatusChange} t={t} />
+          <OrderGroup status="resolved"    orders={resolved}   defaultExpanded={false} onStatusChange={handleStatusChange} t={t} />
         </div>
       )}
     </div>
