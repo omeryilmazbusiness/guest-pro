@@ -82,14 +82,17 @@ export function PassportScanStage({ locale, strings }: PassportScanStageProps) {
       )}
 
       {isLocked && passportData && (
-        <div className="absolute inset-0 z-20 bg-zinc-950/95 backdrop-blur-sm flex flex-col items-center justify-center px-5 overflow-y-auto">
-          <ScanResult
-            data={passportData}
-            showReceptionLabel={strings.showReception}
-            waitLabel={strings.waitMessage}
-            scanAgainLabel={strings.scanAgain}
-            onReset={handleScanAgain}
-          />
+        <div className="absolute inset-0 z-20 bg-black flex flex-col items-center justify-center px-5 overflow-y-auto">
+          <div className="passport-welcome-vignette pointer-events-none" aria-hidden="true" />
+          <div className="relative z-10 w-full py-8">
+            <ScanResult
+              data={passportData}
+              showReceptionLabel={strings.showReception}
+              waitLabel={strings.waitMessage}
+              scanAgainLabel={strings.scanAgain}
+              onReset={handleScanAgain}
+            />
+          </div>
         </div>
       )}
 

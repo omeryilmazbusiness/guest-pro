@@ -5,6 +5,11 @@
 import { parse } from "mrz";
 import type { PassportData } from "./types";
 import { TD3_LINE_LEN } from "./ocr-preprocess";
+import {
+  parseNamesFromTd3Line1,
+  repairTd3Line1NameField,
+  sanitizeMrzNamePart,
+} from "./mrz-names";
 
 // ── Public result types ──────────────────────────────────────────────────────
 
@@ -35,11 +40,6 @@ function parseMrzDate(yymmdd: string, isBirth: boolean): string {
       ? 2000 + yy
       : 1900 + yy;
   return `${year}-${mm}-${dd}`;
-}
-
-function toTitleCase(s: string): string {
-  if (!s) return "";
-  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 }
 
 function cleanMrzLine(line: string): string {
@@ -73,18 +73,35 @@ function nationalityFromLine2(line2: string): string {
 
 type MrzFields = ReturnType<typeof parse>["fields"];
 
+function parseMrzWithLines(lines: [string, string]) {
+  try {
+    const strict = parse(lines, { autocorrect: false });
+    if (strict.valid) return strict;
+  } catch {
+    /* fall through */
+  }
+  try {
+    return parse(lines, { autocorrect: true });
+  } catch {
+    return parse(lines, { autocorrect: false });
+  }
+}
+
 function fieldsToPassport(
   fields: MrzFields,
   lines: [string, string],
   relaxed: boolean,
 ): PassportData | null {
-  const firstName = (fields.firstName ?? "")
-    .split(" ")
-    .filter(Boolean)
-    .map(toTitleCase)
-    .join(" ");
+  const namesFromLine = parseNamesFromTd3Line1(lines[0]);
 
-  const lastName = toTitleCase(fields.lastName ?? "");
+  const parserFirst = sanitizeMrzNamePart(
+    (fields.firstName ?? "").replace(/</g, " "),
+  );
+  const parserLast = sanitizeMrzNamePart(fields.lastName ?? "");
+
+  const firstName = namesFromLine?.firstName || parserFirst;
+  const lastName = namesFromLine?.lastName || parserLast;
+
   const passportNumber = (fields.documentNumber ?? "").replace(/</g, "").trim();
   const nationality =
     (fields.nationality ?? "").toUpperCase().replace(/</g, "") ||
@@ -114,6 +131,17 @@ function fieldsToPassport(
   };
 }
 
+function scoreMrzLine(line: string): number {
+  const s = cleanMrzLine(line);
+  let score = 0;
+  if (s.length >= 38 && s.length <= 46) score += 2;
+  if (/^P[A-Z0-9<]{2}/.test(s)) score += 4;
+  if (/^[A-Z0-9<]{30,}$/.test(s)) score += 1;
+  const angleCount = (s.match(/</g) ?? []).length;
+  if (angleCount >= 2) score += 1;
+  return score;
+}
+
 // ── Public API ───────────────────────────────────────────────────────────────
 
 export function extractMrzLines(ocrText: string): string[] | null {
@@ -122,14 +150,22 @@ export function extractMrzLines(ocrText: string): string[] | null {
     .map((l) => cleanMrzLine(l))
     .filter((l) => l.length >= 30 && /^[A-Z0-9<]+$/.test(l));
 
+  if (lines.length < 2) return null;
+
+  let bestPair: [string, string] | null = null;
+  let bestScore = -1;
+
   for (let i = 0; i < lines.length - 1; i++) {
-    if (lines[i].length >= 38 && lines[i + 1].length >= 38) {
-      return [lines[i], lines[i + 1]];
+    const score = scoreMrzLine(lines[i]!) + scoreMrzLine(lines[i + 1]!);
+    if (score > bestScore) {
+      bestScore = score;
+      bestPair = [lines[i]!, lines[i + 1]!];
     }
   }
 
-  if (lines.length >= 2) return [lines[0], lines[1]];
-  return null;
+  if (bestPair) return bestPair;
+
+  return [lines[0]!, lines[1]!];
 }
 
 /**
@@ -147,12 +183,12 @@ export function assessMrzText(ocrText: string): MrzAssessResult {
   }
 
   const lines: [string, string] = [
-    normalizeTd3Line(rawLines[0]),
+    repairTd3Line1NameField(rawLines[0]),
     normalizeTd3Line(rawLines[1]),
   ];
 
   try {
-    const result = parse(lines, { autocorrect: true });
+    const result = parseMrzWithLines(lines);
 
     if (result.valid) {
       const data = fieldsToPassport(result.fields, lines, false);

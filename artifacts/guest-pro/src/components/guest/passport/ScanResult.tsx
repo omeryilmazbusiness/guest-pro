@@ -1,20 +1,15 @@
 /**
- * ScanResult
- *
- * Renders the guest-facing result screen after a successful passport scan:
- *  - A large QR code that encodes the PassportQrPayload JSON
- *  - Guest's name & nationality as a readable summary
- *  - "Show this QR to reception" instruction label
- *  - A "Scan again" button to restart
- *
- * Single Responsibility: display only. No camera, no OCR.
+ * ScanResult — premium black QR success screen after passport scan.
  */
 
 import { QRCodeSVG } from "qrcode.react";
 import { encodePassportQr } from "@/lib/passport/types";
 import type { PassportData } from "@/lib/passport/types";
+import { KioskBrandHeader } from "@/components/kiosk/KioskBrandHeader";
+import { PremiumCtaButton } from "@/components/guest/passport/onboarding/primitives/PremiumCtaButton";
 import { cn } from "@/lib/utils";
-import { RefreshCw } from "lucide-react";
+
+const QR_SIZE = 248;
 
 interface ScanResultProps {
   data: PassportData;
@@ -22,6 +17,7 @@ interface ScanResultProps {
   waitLabel: string;
   scanAgainLabel?: string;
   onReset: () => void;
+  className?: string;
 }
 
 export function ScanResult({
@@ -30,53 +26,57 @@ export function ScanResult({
   waitLabel,
   scanAgainLabel = "Scan again",
   onReset,
+  className,
 }: ScanResultProps) {
   const qrValue = encodePassportQr(data);
 
   return (
-    <div className="passport-onboarding flex flex-col items-center gap-7 w-full animate-in fade-in zoom-in-95 duration-500 select-none">
+    <div
+      className={cn(
+        "passport-onboarding flex flex-col items-center w-full max-w-md mx-auto",
+        "passport-luxury-enter select-none",
+        className,
+      )}
+    >
+      <KioskBrandHeader variant="embedded" className="pb-2" />
 
-      {/* ── QR Code ─────────────────────────────────────────────────────── */}
-      <div className="rounded-3xl bg-white p-5 shadow-2xl shadow-black/40">
-        <QRCodeSVG
-          value={qrValue}
-          size={220}
-          level="M"
-          bgColor="#ffffff"
-          fgColor="#09090b"
-          includeMargin={false}
-        />
+      <div className="flex flex-col items-center gap-8 w-full mt-4">
+        <div className="welcoming-qr-block" aria-label="Guest registration QR code">
+          <QRCodeSVG
+            value={qrValue}
+            size={QR_SIZE}
+            level="M"
+            bgColor="#ffffff"
+            fgColor="#0a0a0a"
+            includeMargin={false}
+          />
+        </div>
+
+        <div className="text-center space-y-2 px-4">
+          <p className="passport-luxury-title text-[1.35rem] sm:text-[1.5rem] text-white/95 leading-snug">
+            {data.firstName}
+          </p>
+          <p className="passport-luxury-title text-[1.15rem] sm:text-[1.25rem] text-white/70 tracking-wide">
+            {data.lastName}
+          </p>
+          <p className="passport-luxury-body text-[13px] text-white/45 pt-1">
+            {data.nationality} · {data.dateOfBirth}
+          </p>
+        </div>
+
+        <div className="w-full max-w-sm text-center space-y-2 px-2">
+          <p className="passport-luxury-label text-white/55">{showReceptionLabel}</p>
+          <p className="passport-luxury-body text-[13px] text-white/40 leading-relaxed">
+            {waitLabel}
+          </p>
+        </div>
+
+        <div className="w-full max-w-sm pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+          <PremiumCtaButton variant="outline" onClick={onReset}>
+            {scanAgainLabel}
+          </PremiumCtaButton>
+        </div>
       </div>
-
-      {/* ── Guest summary ───────────────────────────────────────────────── */}
-      <div className="text-center space-y-1">
-        <p className="passport-luxury-title text-white text-lg">
-          {data.firstName} {data.lastName}
-        </p>
-        <p className="passport-luxury-body text-zinc-400 text-sm">
-          {data.nationality} · {data.dateOfBirth}
-        </p>
-      </div>
-
-      {/* ── Instructions ────────────────────────────────────────────────── */}
-      <div className="rounded-2xl bg-zinc-800/60 border border-zinc-700/50 px-6 py-4 text-center space-y-1 w-full max-w-xs">
-        <p className="passport-luxury-title text-white text-sm">{showReceptionLabel}</p>
-        <p className="passport-luxury-body text-zinc-400 text-xs">{waitLabel}</p>
-      </div>
-
-      {/* ── Scan again ──────────────────────────────────────────────────── */}
-      <button
-        onClick={onReset}
-        className={cn(
-          "flex items-center gap-2 px-5 py-2.5 rounded-xl",
-          "bg-zinc-800 hover:bg-zinc-700 active:scale-95",
-          "passport-luxury-cta text-zinc-300 text-sm font-medium transition-all duration-150 normal-case tracking-normal",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500",
-        )}
-      >
-        <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
-        {scanAgainLabel}
-      </button>
     </div>
   );
 }

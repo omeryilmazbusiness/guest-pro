@@ -16,6 +16,7 @@ import {
   normalizeTd3Line,
   parseMrzText,
 } from "./mrz-parser";
+import { collapseOcrStutter, parseNamesFromTd3Line1 } from "./mrz-names";
 import { encodePassportQr, decodePassportQr, PASSPORT_QR_VERSION } from "./types";
 
 const SAMPLE_OCR = `
@@ -72,6 +73,37 @@ describe("mrz-parser", () => {
 
   it("returns no_text for garbage input", () => {
     assert.equal(assessMrzText("hello").status, "no_text");
+  });
+
+  it("collapses OCR letter stutter in names", () => {
+    assert.equal(collapseOcrStutter("MARRRRIA"), "MARIA");
+    assert.equal(collapseOcrStutter("ANNAAA"), "ANNA");
+    assert.equal(collapseOcrStutter("ERRRIKSSSON"), "ERIKSSON");
+    assert.equal(collapseOcrStutter("ERIKSSON"), "ERIKSSON");
+  });
+
+  it("parses names from TD3 line 1 with OCR noise", () => {
+    const names = parseNamesFromTd3Line1(
+      "P<UTOERRRIKSSSON<<ANNAAA<MARRRRIA<<<<<<<<<<<<<",
+    );
+    assert.ok(names);
+    assert.equal(names!.lastName, "Eriksson");
+    assert.ok(
+      names!.firstName.toLowerCase().includes("maria") ||
+        names!.firstName.toLowerCase().includes("anna"),
+    );
+    assert.ok(names!.firstName.toLowerCase().includes("maria"));
+  });
+
+  it("assesses OCR with stuttered line 1 names", () => {
+    const noisy = `
+P<UTOERRRIKSSSON<<ANNAAA<MARRRRIA<<<<<<<<<<<<<
+L898902C<3UTO7408122F1204159ZEIA184226B<<<<<
+`;
+    const r = assessMrzText(noisy);
+    assert.ok(r.data);
+    assert.equal(r.data!.lastName, "Eriksson");
+    assert.ok(!/(.)\1{2,}/i.test(r.data!.firstName.replace(/\s/g, "")));
   });
 });
 

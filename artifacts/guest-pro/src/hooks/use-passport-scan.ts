@@ -249,7 +249,7 @@ export function usePassportScan(): UsePassportScanReturn {
       const worker = await Tesseract.createWorker("eng", 1);
       await worker.setParameters({
         tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<",
-        tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
+        tessedit_pageseg_mode: PSM.SPARSE_TEXT,
       });
       workerRef.current = worker;
 
