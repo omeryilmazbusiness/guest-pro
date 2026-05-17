@@ -22,7 +22,6 @@ export default function PassportScanPage() {
     return (
       <WelcomeLanguageStep
         hotelName={HOTEL_CONFIG.name}
-        tapHint={strings.welcomeTapHint}
         onSelect={selectLanguage}
       />
     );

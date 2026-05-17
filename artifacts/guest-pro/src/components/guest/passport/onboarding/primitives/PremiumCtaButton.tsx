@@ -24,7 +24,7 @@ export function PremiumCtaButton({
       onClick={onClick}
       className={cn(
         "passport-luxury-cta w-full flex items-center justify-center gap-2",
-        "py-3.5 rounded-sm",
+        "py-3.5 rounded-2xl",
         "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40",
         "active:scale-[0.99]",
         variant === "solid" &&

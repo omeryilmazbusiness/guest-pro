@@ -22,7 +22,7 @@ export function ConsentStep({ locale, strings, onAccept }: ConsentStepProps) {
     <PassportOnboardingShell dir={dir} variant="compact">
       <div className="flex-1 flex flex-col min-h-0 px-5 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))] passport-luxury-enter">
         <header className="text-center mb-4 pt-2">
-          <div className="mx-auto w-11 h-11 flex items-center justify-center border border-white/10 mb-4">
+          <div className="mx-auto w-11 h-11 flex items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] mb-4">
             <Shield className="w-5 h-5 text-white/60" strokeWidth={1.25} />
           </div>
           <p className="passport-luxury-label mb-2">{strings.consentTitle}</p>
@@ -31,7 +31,7 @@ export function ConsentStep({ locale, strings, onAccept }: ConsentStepProps) {
           </p>
         </header>
 
-        <div className="flex-1 overflow-y-auto min-h-0 passport-luxury-card rounded-sm px-4 py-4">
+        <div className="flex-1 overflow-y-auto min-h-0 passport-luxury-card rounded-2xl px-4 py-4">
           <ul className="space-y-3.5">
             {strings.consentBullets.map((bullet, i) => (
               <li

@@ -7,6 +7,7 @@ import {
   PASSPORT_WELCOME_LANGUAGES,
   formatWelcome,
 } from "@/lib/passport/onboarding/languages";
+import { getPassportOnboardingStrings } from "@/lib/passport/onboarding/content";
 import type { PassportOnboardingLocale } from "@/lib/passport/onboarding/types";
 import { PassportOnboardingShell } from "./PassportOnboardingShell";
 import { PremiumTypewriter } from "./primitives/PremiumTypewriter";
@@ -14,20 +15,16 @@ import { cn } from "@/lib/utils";
 
 interface WelcomeLanguageStepProps {
   hotelName: string;
-  tapHint: string;
   onSelect: (locale: PassportOnboardingLocale) => void;
 }
 
-export function WelcomeLanguageStep({
-  hotelName,
-  tapHint,
-  onSelect,
-}: WelcomeLanguageStepProps) {
+export function WelcomeLanguageStep({ hotelName, onSelect }: WelcomeLanguageStepProps) {
   const [index, setIndex] = useState(0);
   const [showLang, setShowLang] = useState(false);
 
   const current = PASSPORT_WELCOME_LANGUAGES[index];
   const welcomeText = formatWelcome(current.welcomeTemplate, hotelName);
+  const tapHint = getPassportOnboardingStrings(current.locale).welcomeTapHint;
 
   const advanceCycle = useCallback(() => {
     setShowLang(false);
@@ -97,10 +94,17 @@ export function WelcomeLanguageStep({
         </div>
 
         <p
+          key={`tap-hint-${index}`}
+          dir={current.dir}
+          lang={current.locale}
           className={cn(
-            "mt-16 passport-luxury-body text-[12px] text-center max-w-xs tracking-[0.08em]",
-            "text-white/35 transition-opacity duration-700",
+            "mt-16 passport-luxury-body text-[12px] text-center max-w-xs tracking-[0.04em]",
+            "text-white/40 transition-all duration-[900ms] ease-out",
+            showLang ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2",
           )}
+          style={
+            showLang ? { animation: "passport-lang-fade 0.9s ease-out forwards" } : undefined
+          }
         >
           {tapHint}
         </p>

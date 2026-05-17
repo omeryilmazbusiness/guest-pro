@@ -70,6 +70,14 @@ export function PassportScanStage({ locale, strings }: PassportScanStageProps) {
           instructionText={strings.scanInstruction}
           hotelName={HOTEL_CONFIG.name}
           scanTitle={strings.scanTitle}
+          statusLabels={{
+            scanStatusRequesting: strings.scanStatusRequesting,
+            scanStatusScanning: strings.scanStatusScanning,
+            scanStatusReading: strings.scanStatusReading,
+            scanStatusSuccess: strings.scanStatusSuccess,
+            scanStatusError: strings.scanStatusError,
+            scanAlignError: strings.scanAlignError,
+          }}
         />
       )}
 

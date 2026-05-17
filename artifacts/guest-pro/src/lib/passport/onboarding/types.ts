@@ -32,6 +32,12 @@ export interface PassportOnboardingStrings {
   consentAccept: string;
   scanTitle: string;
   scanInstruction: string;
+  scanStatusRequesting: string;
+  scanStatusScanning: string;
+  scanStatusReading: string;
+  scanStatusSuccess: string;
+  scanStatusError: string;
+  scanAlignError: string;
   showReception: string;
   waitMessage: string;
   scanAgain: string;
