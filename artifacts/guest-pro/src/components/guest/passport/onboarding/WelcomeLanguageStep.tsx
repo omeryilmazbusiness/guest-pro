@@ -1,15 +1,15 @@
 /**
- * Step 1 — cycling "Welcome to {hotel}" in TR → EN → AR → UR; tap to select.
+ * Step 1 — luxury black welcome, typewriter + tap to select language.
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   PASSPORT_WELCOME_LANGUAGES,
-  PASSPORT_ONBOARDING_CYCLE_MS,
   formatWelcome,
 } from "@/lib/passport/onboarding/languages";
 import type { PassportOnboardingLocale } from "@/lib/passport/onboarding/types";
 import { PassportOnboardingShell } from "./PassportOnboardingShell";
+import { PremiumTypewriter } from "./primitives/PremiumTypewriter";
 import { cn } from "@/lib/utils";
 
 interface WelcomeLanguageStepProps {
@@ -24,75 +24,84 @@ export function WelcomeLanguageStep({
   onSelect,
 }: WelcomeLanguageStepProps) {
   const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    const t = setInterval(() => {
-      setIndex((i) => (i + 1) % PASSPORT_WELCOME_LANGUAGES.length);
-    }, PASSPORT_ONBOARDING_CYCLE_MS);
-    return () => clearInterval(t);
-  }, []);
+  const [showLang, setShowLang] = useState(false);
 
   const current = PASSPORT_WELCOME_LANGUAGES[index];
   const welcomeText = formatWelcome(current.welcomeTemplate, hotelName);
 
+  const advanceCycle = useCallback(() => {
+    setShowLang(false);
+    setIndex((i) => (i + 1) % PASSPORT_WELCOME_LANGUAGES.length);
+  }, []);
+
+  useEffect(() => {
+    setShowLang(false);
+    const t = window.setTimeout(() => setShowLang(true), 720);
+    return () => window.clearTimeout(t);
+  }, [index]);
+
   return (
-    <PassportOnboardingShell dir={current.dir} showLogo={false}>
+    <PassportOnboardingShell dir={current.dir} showLogo={false} variant="welcome">
       <button
         type="button"
         onClick={() => onSelect(current.locale)}
         className={cn(
-          "flex-1 flex flex-col items-center justify-center px-8 pb-[max(2rem,env(safe-area-inset-bottom))]",
-          "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950",
+          "flex-1 flex flex-col items-center justify-center px-6",
+          "pb-[max(2.5rem,env(safe-area-inset-bottom))]",
+          "cursor-pointer focus-visible:outline-none",
+          "focus-visible:ring-1 focus-visible:ring-white/25 focus-visible:ring-offset-4 focus-visible:ring-offset-black",
         )}
         aria-label={`${welcomeText}. ${tapHint}`}
       >
-        <div className="w-full max-w-md flex flex-col items-center gap-10 select-none">
-          <div className="relative h-40 w-full flex items-center justify-center overflow-hidden">
-            <h1
-              key={`welcome-${index}`}
+        <div className="w-full max-w-lg flex flex-col items-center gap-12 select-none min-h-[42vh] justify-center">
+          <div className="w-full min-h-[7.5rem] flex items-center justify-center">
+            <PremiumTypewriter
+              key={`tw-${index}-${current.locale}`}
+              text={welcomeText}
               dir={current.dir}
               lang={current.locale}
-              className={cn(
-                "absolute text-center font-light tracking-tight text-white",
-                "text-3xl sm:text-4xl md:text-[2.75rem] leading-tight",
-                "drop-shadow-[0_8px_32px_rgba(255,255,255,0.12)]",
-              )}
-              style={{
-                animation: `passport-welcome-slide ${PASSPORT_ONBOARDING_CYCLE_MS}ms ease-in-out forwards`,
-              }}
-            >
-              {welcomeText}
-            </h1>
+              locale={current.locale}
+              onCycleComplete={advanceCycle}
+            />
           </div>
 
-          <div className="relative h-6 w-full flex items-center justify-center overflow-hidden">
+          <div className="flex flex-col items-center gap-5">
             <span
-              key={`lang-${index}`}
+              className={cn(
+                "passport-luxury-label transition-all duration-[900ms] ease-out",
+                showLang ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2",
+              )}
               dir={current.dir}
-              className="absolute text-[11px] font-semibold tracking-[0.35em] uppercase text-zinc-500"
-              style={{
-                animation: `passport-welcome-slide ${PASSPORT_ONBOARDING_CYCLE_MS}ms ease-in-out forwards`,
-              }}
+              style={
+                showLang
+                  ? { animation: "passport-lang-fade 0.9s ease-out forwards" }
+                  : undefined
+              }
             >
               {current.label}
             </span>
-          </div>
 
-          <div className="flex gap-2 mt-4">
-            {PASSPORT_WELCOME_LANGUAGES.map((lang, i) => (
-              <span
-                key={lang.locale}
-                className={cn(
-                  "h-1 rounded-full transition-all duration-500",
-                  i === index ? "w-8 bg-white" : "w-2 bg-zinc-700",
-                )}
-                aria-hidden="true"
-              />
-            ))}
+            <div className="flex gap-2.5">
+              {PASSPORT_WELCOME_LANGUAGES.map((lang, i) => (
+                <span
+                  key={lang.locale}
+                  className={cn(
+                    "h-px rounded-full transition-all duration-700 ease-out",
+                    i === index ? "w-10 bg-white/80" : "w-3 bg-white/15",
+                  )}
+                  aria-hidden="true"
+                />
+              ))}
+            </div>
           </div>
         </div>
 
-        <p className="mt-14 text-sm text-zinc-500 text-center max-w-xs font-medium tracking-wide animate-pulse">
+        <p
+          className={cn(
+            "mt-16 text-[11px] text-center max-w-xs tracking-[0.12em]",
+            "text-white/30 font-light transition-opacity duration-700",
+          )}
+        >
           {tapHint}
         </p>
       </button>

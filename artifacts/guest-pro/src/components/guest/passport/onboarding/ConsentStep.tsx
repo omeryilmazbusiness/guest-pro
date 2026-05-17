@@ -1,13 +1,13 @@
 /**
- * Step 3 — Privacy & permissions consent before camera.
+ * Step 3 — compact privacy consent before camera.
  */
 
-import { Shield, ChevronRight } from "lucide-react";
+import { Shield } from "lucide-react";
 import type { PassportOnboardingStrings } from "@/lib/passport/onboarding/types";
 import type { PassportOnboardingLocale } from "@/lib/passport/onboarding/types";
 import { getPassportLanguageEntry } from "@/lib/passport/onboarding/languages";
 import { PassportOnboardingShell } from "./PassportOnboardingShell";
-import { cn } from "@/lib/utils";
+import { PremiumCtaButton } from "./primitives/PremiumCtaButton";
 
 interface ConsentStepProps {
   locale: PassportOnboardingLocale;
@@ -19,31 +19,32 @@ export function ConsentStep({ locale, strings, onAccept }: ConsentStepProps) {
   const dir = getPassportLanguageEntry(locale).dir;
 
   return (
-    <PassportOnboardingShell dir={dir}>
-      <div className="flex-1 flex flex-col min-h-0 px-5 pt-6 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <header className="text-center mb-6 animate-in fade-in duration-500">
-          <div className="mx-auto w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4">
-            <Shield className="w-7 h-7 text-white" strokeWidth={1.5} />
+    <PassportOnboardingShell dir={dir} variant="compact" showLogo>
+      <div className="flex-1 flex flex-col min-h-0 px-5 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))] passport-luxury-enter">
+        <header className="text-center mb-4 pt-2">
+          <div className="mx-auto w-11 h-11 flex items-center justify-center border border-white/10 mb-4">
+            <Shield className="w-5 h-5 text-white/60" strokeWidth={1.25} />
           </div>
-          <h2 className="text-xl font-semibold text-white tracking-tight">
-            {strings.consentTitle}
-          </h2>
-          <p className="mt-2 text-sm text-zinc-400 max-w-sm mx-auto leading-relaxed">
+          <p className="passport-luxury-label mb-2">{strings.consentTitle}</p>
+          <p className="passport-luxury-body max-w-sm mx-auto text-[12px]">
             {strings.consentIntro}
           </p>
         </header>
 
-        <div
-          className={cn(
-            "flex-1 overflow-y-auto min-h-0 rounded-2xl border border-zinc-800/80",
-            "bg-zinc-900/50 backdrop-blur-sm px-5 py-5",
-          )}
-        >
-          <ul className="space-y-4">
-            {strings.consentBullets.map((bullet) => (
-              <li key={bullet} className="flex gap-3 text-sm text-zinc-300 leading-relaxed">
+        <div className="flex-1 overflow-y-auto min-h-0 passport-luxury-card rounded-sm px-4 py-4">
+          <ul className="space-y-3.5">
+            {strings.consentBullets.map((bullet, i) => (
+              <li
+                key={bullet}
+                className="flex gap-3 text-[12px] text-white/55 leading-relaxed"
+                style={{
+                  animationDelay: `${80 + i * 50}ms`,
+                  animation:
+                    "passport-luxury-reveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) backwards",
+                }}
+              >
                 <span
-                  className="shrink-0 mt-2 w-1.5 h-1.5 rounded-full bg-white/60"
+                  className="shrink-0 mt-2 w-1 h-1 bg-white/40 rotate-45"
                   aria-hidden="true"
                 />
                 <span>{bullet}</span>
@@ -52,21 +53,9 @@ export function ConsentStep({ locale, strings, onAccept }: ConsentStepProps) {
           </ul>
         </div>
 
-        <button
-          type="button"
-          onClick={onAccept}
-          className={cn(
-            "mt-6 w-full flex items-center justify-center gap-2",
-            "py-4 rounded-2xl text-sm font-semibold",
-            "bg-white text-zinc-950",
-            "hover:bg-zinc-100 active:scale-[0.98] transition-all duration-150",
-            "shadow-[0_8px_32px_rgba(255,255,255,0.12)]",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50",
-          )}
-        >
-          {strings.consentAccept}
-          <ChevronRight className="w-4 h-4" aria-hidden="true" />
-        </button>
+        <div className="mt-5 pt-2">
+          <PremiumCtaButton onClick={onAccept}>{strings.consentAccept}</PremiumCtaButton>
+        </div>
       </div>
     </PassportOnboardingShell>
   );
