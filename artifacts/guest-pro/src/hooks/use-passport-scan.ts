@@ -1,11 +1,5 @@
 /**
- * usePassportScan
- *
- * Camera + Tesseract MRZ pipeline:
- *  1. getUserMedia (rear camera, with fallback)
- *  2. Bind stream to <video> (retries when ref mounts — fixes black screen)
- *  3. OCR the MRZ band inside the passport frame every OCR_INTERVAL_MS
- *  4. On valid parse → status "locked" + PassportData
+ * usePassportScan — camera stream, MRZ OCR loop, frame feedback, stable lock.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -14,22 +8,33 @@ import {
   computePassportFrameRect,
   viewportRectToVideoCrop,
 } from "@/lib/passport/frame-geometry";
-import { parseMrzText } from "@/lib/passport/mrz-parser";
+import { assessMrzText } from "@/lib/passport/mrz-parser";
+import { preprocessMrzFrame } from "@/lib/passport/ocr-preprocess";
 import type { PassportData } from "@/lib/passport/types";
 
 export type ScanStatus = "idle" | "requesting" | "scanning" | "locked" | "error";
+
+/** Frame border colour driven by latest MRZ assessment */
+export type FrameFeedback = "neutral" | "reading" | "success" | "error";
 
 export interface UsePassportScanReturn {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   status: ScanStatus;
+  frameFeedback: FrameFeedback;
   passportData: PassportData | null;
   errorMessage: string | null;
   start: () => Promise<void>;
   reset: () => void;
 }
 
-const OCR_INTERVAL_MS = 1_200;
+const OCR_INTERVAL_MS = 1_400;
+/** Consecutive matching reads before QR lock (reduces false positives) */
+const STABLE_READS_REQUIRED = 2;
+
+function dataFingerprint(data: PassportData): string {
+  return `${data.passportNumber}|${data.lastName}|${data.dateOfBirth}|${data.nationality}`;
+}
 
 async function requestCameraStream(): Promise<MediaStream> {
   const preferred: MediaStreamConstraints = {
@@ -59,13 +64,29 @@ export function usePassportScan(): UsePassportScanReturn {
   const workerRef = useRef<Tesseract.Worker | null>(null);
   const isProcessingRef = useRef(false);
   const scanningActiveRef = useRef(false);
+  const stableFingerprintRef = useRef<string | null>(null);
+  const stableCountRef = useRef(0);
 
   const [status, setStatus] = useState<ScanStatus>("idle");
+  const [frameFeedback, setFrameFeedback] = useState<FrameFeedback>("neutral");
   const [passportData, setPassportData] = useState<PassportData | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const lockWithData = useCallback((data: PassportData) => {
+    scanningActiveRef.current = false;
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    setPassportData(data);
+    setFrameFeedback("success");
+    setStatus("locked");
+  }, []);
+
   const stopAll = useCallback(() => {
     scanningActiveRef.current = false;
+    stableFingerprintRef.current = null;
+    stableCountRef.current = 0;
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
@@ -80,9 +101,7 @@ export function usePassportScan(): UsePassportScanReturn {
     }
     isProcessingRef.current = false;
     const video = videoRef.current;
-    if (video) {
-      video.srcObject = null;
-    }
+    if (video) video.srcObject = null;
   }, []);
 
   useEffect(() => () => stopAll(), [stopAll]);
@@ -92,9 +111,7 @@ export function usePassportScan(): UsePassportScanReturn {
     const stream = streamRef.current;
     if (!video || !stream) return false;
 
-    if (video.srcObject !== stream) {
-      video.srcObject = stream;
-    }
+    if (video.srcObject !== stream) video.srcObject = stream;
 
     try {
       await video.play();
@@ -104,11 +121,53 @@ export function usePassportScan(): UsePassportScanReturn {
     }
   }, []);
 
-  // Attach stream when <video> mounts after status → scanning (fixes black screen)
   useEffect(() => {
     if (status !== "scanning" && status !== "requesting") return;
     void bindVideoStream();
   }, [status, bindVideoStream]);
+
+  const applyAssessment = useCallback(
+    (assessed: ReturnType<typeof assessMrzText>) => {
+      switch (assessed.status) {
+        case "no_text":
+          setFrameFeedback("neutral");
+          stableFingerprintRef.current = null;
+          stableCountRef.current = 0;
+          break;
+
+        case "no_mrz":
+        case "invalid":
+          setFrameFeedback("error");
+          stableFingerprintRef.current = null;
+          stableCountRef.current = 0;
+          break;
+
+        case "valid_checksum":
+          if (assessed.data) lockWithData(assessed.data);
+          break;
+
+        case "valid_fields": {
+          if (!assessed.data) {
+            setFrameFeedback("error");
+            break;
+          }
+          setFrameFeedback("success");
+          const fp = dataFingerprint(assessed.data);
+          if (fp === stableFingerprintRef.current) {
+            stableCountRef.current += 1;
+          } else {
+            stableFingerprintRef.current = fp;
+            stableCountRef.current = 1;
+          }
+          if (stableCountRef.current >= STABLE_READS_REQUIRED) {
+            lockWithData(assessed.data);
+          }
+          break;
+        }
+      }
+    },
+    [lockWithData],
+  );
 
   const captureAndOcr = useCallback(async () => {
     if (isProcessingRef.current || !scanningActiveRef.current) return;
@@ -123,6 +182,8 @@ export function usePassportScan(): UsePassportScanReturn {
     if (!videoW || !videoH) return;
 
     isProcessingRef.current = true;
+    setFrameFeedback("reading");
+
     try {
       const viewportW = window.innerWidth;
       const viewportH = window.innerHeight;
@@ -139,38 +200,16 @@ export function usePassportScan(): UsePassportScanReturn {
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
       if (!ctx) return;
 
-      canvas.width = crop.sw;
-      canvas.height = crop.sh;
-      ctx.drawImage(video, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, crop.sw, crop.sh);
-
-      // Boost contrast for MRZ OCR
-      const imageData = ctx.getImageData(0, 0, crop.sw, crop.sh);
-      const px = imageData.data;
-      for (let i = 0; i < px.length; i += 4) {
-        const lum = 0.299 * px[i]! + 0.587 * px[i + 1]! + 0.114 * px[i + 2]!;
-        const v = lum > 140 ? 255 : lum < 90 ? 0 : lum > 115 ? 255 : 0;
-        px[i] = px[i + 1] = px[i + 2] = v;
-      }
-      ctx.putImageData(imageData, 0, 0);
+      preprocessMrzFrame(ctx, video, crop);
 
       const { data } = await workerRef.current.recognize(canvas);
-      const result = parseMrzText(data.text);
-
-      if (result) {
-        scanningActiveRef.current = false;
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-        setPassportData(result);
-        setStatus("locked");
-      }
+      applyAssessment(assessMrzText(data.text));
     } catch {
-      // per-frame OCR errors are non-fatal
+      setFrameFeedback("error");
     } finally {
       isProcessingRef.current = false;
     }
-  }, []);
+  }, [applyAssessment]);
 
   const beginOcrLoop = useCallback(() => {
     if (intervalRef.current) return;
@@ -183,20 +222,24 @@ export function usePassportScan(): UsePassportScanReturn {
   const start = useCallback(async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
       setStatus("error");
-      setErrorMessage("Camera is not supported in this browser. Use HTTPS and a modern browser.");
+      setErrorMessage(
+        "Camera is not supported in this browser. Use HTTPS and a modern browser.",
+      );
       return;
     }
 
     setStatus("requesting");
+    setFrameFeedback("neutral");
     setErrorMessage(null);
     setPassportData(null);
     scanningActiveRef.current = false;
+    stableFingerprintRef.current = null;
+    stableCountRef.current = 0;
 
     try {
       const stream = await requestCameraStream();
       streamRef.current = stream;
 
-      // Move to scanning so <video> is rendered, then bind via effect + immediate attempt
       setStatus("scanning");
       scanningActiveRef.current = true;
 
@@ -230,6 +273,7 @@ export function usePassportScan(): UsePassportScanReturn {
   const reset = useCallback(() => {
     stopAll();
     setStatus("idle");
+    setFrameFeedback("neutral");
     setPassportData(null);
     setErrorMessage(null);
   }, [stopAll]);
@@ -238,6 +282,7 @@ export function usePassportScan(): UsePassportScanReturn {
     videoRef,
     canvasRef,
     status,
+    frameFeedback,
     passportData,
     errorMessage,
     start,

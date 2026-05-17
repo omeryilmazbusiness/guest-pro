@@ -23,6 +23,7 @@ export default function PassportScanPage() {
     videoRef,
     canvasRef,
     status,
+    frameFeedback,
     passportData,
     errorMessage,
     start,
@@ -60,6 +61,7 @@ export default function PassportScanPage() {
       {showCamera && !isLocked && (
         <PassportScanOverlay
           status={status}
+          frameFeedback={frameFeedback}
           instructionText={s.scanInstruction}
           hotelName={HOTEL_CONFIG.name}
           scanTitle={s.scanTitle}

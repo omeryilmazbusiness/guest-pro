@@ -1,108 +1,176 @@
 /**
- * mrz-parser.ts
- *
- * Thin, testable wrapper around the `mrz` npm package.
- * Accepts raw OCR text (multi-line) and returns a PassportData or null.
- *
- * Responsibilities (Single Responsibility):
- *  - Extract MRZ lines from raw OCR output
- *  - Parse with the mrz library
- *  - Normalise dates to YYYY-MM-DD
- *  - Return typed PassportData or null on failure
+ * mrz-parser.ts — MRZ extraction and PassportData mapping from OCR text.
  */
 
 import { parse } from "mrz";
 import type { PassportData } from "./types";
+import { TD3_LINE_LEN } from "./ocr-preprocess";
+
+// ── Public result types ──────────────────────────────────────────────────────
+
+export type MrzAssessStatus =
+  | "no_text"
+  | "no_mrz"
+  | "invalid"
+  | "valid_checksum"
+  | "valid_fields";
+
+export interface MrzAssessResult {
+  status: MrzAssessStatus;
+  data: PassportData | null;
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-/**
- * MRZ dates are encoded as YYMMDD.
- * For date-of-birth: years >= 30 are treated as 19xx (born before 2030).
- * For expiry: years < 30 are treated as 20xx (expiring after 2000).
- */
 function parseMrzDate(yymmdd: string, isBirth: boolean): string {
   if (!yymmdd || yymmdd.length !== 6) return "";
   const yy = parseInt(yymmdd.slice(0, 2), 10);
   const mm = yymmdd.slice(2, 4);
   const dd = yymmdd.slice(4, 6);
   const year = isBirth
-    ? yy >= 30 ? 1900 + yy : 2000 + yy
-    : yy < 30 ? 2000 + yy : 1900 + yy;
+    ? yy >= 30
+      ? 1900 + yy
+      : 2000 + yy
+    : yy < 30
+      ? 2000 + yy
+      : 1900 + yy;
   return `${year}-${mm}-${dd}`;
 }
 
-/** Capitalise first letter, lowercase the rest — for name segments */
 function toTitleCase(s: string): string {
   if (!s) return "";
   return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 }
 
-/** Clean OCR noise from a potential MRZ line */
 function cleanMrzLine(line: string): string {
-  // Replace common OCR mistakes: O→0 in numeric fields is handled by mrz lib
-  return line.replace(/\s+/g, "").toUpperCase();
+  return line
+    .replace(/\s+/g, "")
+    .toUpperCase()
+    .replace(/«|»/g, "<");
+}
+
+/** Pad or trim to TD3 line length (44). */
+export function normalizeTd3Line(line: string): string {
+  let s = cleanMrzLine(line);
+  if (s.length > TD3_LINE_LEN) s = s.slice(0, TD3_LINE_LEN);
+  if (s.length < TD3_LINE_LEN) s = s.padEnd(TD3_LINE_LEN, "<");
+  return s;
+}
+
+function mapSex(sex: string | null | undefined): string {
+  if (!sex) return "";
+  const s = sex.toLowerCase();
+  if (s === "male" || s === "m") return "M";
+  if (s === "female" || s === "f") return "F";
+  return "X";
+}
+
+/** Nationality (alpha-3) from TD3 line 2 when parser leaves it null */
+function nationalityFromLine2(line2: string): string {
+  if (line2.length < 13) return "";
+  return line2.slice(10, 13).replace(/</g, "");
+}
+
+type MrzFields = ReturnType<typeof parse>["fields"];
+
+function fieldsToPassport(
+  fields: MrzFields,
+  lines: [string, string],
+  relaxed: boolean,
+): PassportData | null {
+  const firstName = (fields.firstName ?? "")
+    .split(" ")
+    .filter(Boolean)
+    .map(toTitleCase)
+    .join(" ");
+
+  const lastName = toTitleCase(fields.lastName ?? "");
+  const passportNumber = (fields.documentNumber ?? "").replace(/</g, "").trim();
+  const nationality =
+    (fields.nationality ?? "").toUpperCase().replace(/</g, "") ||
+    nationalityFromLine2(lines[1]);
+
+  if (!lastName || !firstName) return null;
+  if (!passportNumber || passportNumber.length < 6) return null;
+  if (!nationality || nationality.length !== 3) {
+    if (!relaxed) return null;
+    if (nationality.length < 3) return null;
+  }
+
+  const dateOfBirth = parseMrzDate(fields.birthDate ?? "", true);
+  const expiryDate = parseMrzDate(fields.expirationDate ?? "", false);
+
+  if (!relaxed && (!dateOfBirth || !expiryDate)) return null;
+  if (relaxed && !dateOfBirth) return null;
+
+  return {
+    firstName,
+    lastName,
+    nationality,
+    dateOfBirth,
+    passportNumber,
+    expiryDate: expiryDate || "",
+    gender: mapSex(fields.sex),
+  };
 }
 
 // ── Public API ───────────────────────────────────────────────────────────────
 
-/**
- * Extract two or three consecutive MRZ lines from raw OCR text.
- * TD3 (passport) = 2 lines of 44 chars each.
- */
 export function extractMrzLines(ocrText: string): string[] | null {
   const lines = ocrText
     .split("\n")
     .map((l) => cleanMrzLine(l))
     .filter((l) => l.length >= 30 && /^[A-Z0-9<]+$/.test(l));
 
-  // Find two consecutive lines of ~44 chars (TD3 passport format)
   for (let i = 0; i < lines.length - 1; i++) {
-    if (lines[i].length >= 40 && lines[i + 1].length >= 40) {
+    if (lines[i].length >= 38 && lines[i + 1].length >= 38) {
       return [lines[i], lines[i + 1]];
     }
   }
 
-  // Fallback: any two MRZ-looking lines
   if (lines.length >= 2) return [lines[0], lines[1]];
-
   return null;
 }
 
 /**
- * Parse raw OCR text → PassportData.
- * Returns null if no valid MRZ found or parsing fails.
+ * Assess OCR output — drives frame colour and lock logic.
  */
-export function parseMrzText(ocrText: string): PassportData | null {
-  const mrzLines = extractMrzLines(ocrText);
-  if (!mrzLines) return null;
+export function assessMrzText(ocrText: string): MrzAssessResult {
+  const trimmed = ocrText.replace(/\s/g, "");
+  if (trimmed.length < 24) {
+    return { status: "no_text", data: null };
+  }
+
+  const rawLines = extractMrzLines(ocrText);
+  if (!rawLines) {
+    return { status: "no_mrz", data: null };
+  }
+
+  const lines: [string, string] = [
+    normalizeTd3Line(rawLines[0]),
+    normalizeTd3Line(rawLines[1]),
+  ];
 
   try {
-    const result = parse(mrzLines);
-    if (!result.valid) return null;
+    const result = parse(lines, { autocorrect: true });
 
-    const fields = result.fields;
+    if (result.valid) {
+      const data = fieldsToPassport(result.fields, lines, false);
+      if (data) return { status: "valid_checksum", data };
+    }
 
-    const firstName = (fields.firstName ?? "")
-      .split(" ")
-      .filter(Boolean)
-      .map(toTitleCase)
-      .join(" ");
+    const relaxed = fieldsToPassport(result.fields, lines, true);
+    if (relaxed) return { status: "valid_fields", data: relaxed };
 
-    const lastName = toTitleCase(fields.lastName ?? "");
-
-    if (!firstName || !lastName) return null;
-
-    return {
-      firstName,
-      lastName,
-      nationality: (fields.nationality ?? "").toUpperCase(),
-      dateOfBirth: parseMrzDate(fields.birthDate ?? "", true),
-      passportNumber: fields.documentNumber ?? "",
-      expiryDate: parseMrzDate(fields.expirationDate ?? "", false),
-      gender: fields.sex ?? "",
-    };
+    return { status: "invalid", data: null };
   } catch {
-    return null;
+    return { status: "invalid", data: null };
   }
+}
+
+/** @deprecated Use assessMrzText — kept for tests */
+export function parseMrzText(ocrText: string): PassportData | null {
+  const r = assessMrzText(ocrText);
+  if (r.status === "valid_checksum" || r.status === "valid_fields") return r.data;
+  return null;
 }

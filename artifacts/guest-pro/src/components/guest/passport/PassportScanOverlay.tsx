@@ -1,5 +1,5 @@
 /**
- * PassportScanOverlay — full-viewport HUD with horizontal passport cutout.
+ * PassportScanOverlay — full-viewport HUD with dynamic frame feedback.
  */
 
 import { useEffect, useState, type CSSProperties } from "react";
@@ -8,12 +8,13 @@ import {
   MRZ_BAND_FRAC,
   type FrameRect,
 } from "@/lib/passport/frame-geometry";
-import type { ScanStatus } from "@/hooks/use-passport-scan";
+import type { FrameFeedback, ScanStatus } from "@/hooks/use-passport-scan";
 import { GuestProLogo } from "@/components/GuestProLogo";
 import { cn } from "@/lib/utils";
 
 interface PassportScanOverlayProps {
   status: ScanStatus;
+  frameFeedback: FrameFeedback;
   instructionText: string;
   hotelName: string;
   scanTitle: string;
@@ -22,6 +23,36 @@ interface PassportScanOverlayProps {
 const CORNER = 34;
 const STROKE = 3;
 const MASK_ALPHA = "rgba(0,0,0,0.64)";
+
+const FRAME_STYLES: Record<
+  FrameFeedback,
+  { ring: string; corner: string; mrz: string; glow: string }
+> = {
+  neutral: {
+    ring: "ring-2 ring-white/75",
+    corner: "bg-white",
+    mrz: "border-white/30 bg-white/[0.04]",
+    glow: "",
+  },
+  reading: {
+    ring: "ring-2 ring-white/90",
+    corner: "bg-white",
+    mrz: "border-white/40 bg-white/[0.06]",
+    glow: "",
+  },
+  success: {
+    ring: "ring-[3px] ring-emerald-400",
+    corner: "bg-emerald-400",
+    mrz: "border-emerald-400/80 bg-emerald-400/10",
+    glow: "shadow-[0_0_32px_8px_rgba(52,211,153,0.4)]",
+  },
+  error: {
+    ring: "ring-[3px] ring-red-500",
+    corner: "bg-red-500",
+    mrz: "border-red-500/70 bg-red-500/10",
+    glow: "shadow-[0_0_28px_6px_rgba(239,68,68,0.35)]",
+  },
+};
 
 function useFrameRect(): FrameRect {
   const [rect, setRect] = useState<FrameRect>(() =>
@@ -47,8 +78,13 @@ function useFrameRect(): FrameRect {
   return rect;
 }
 
-function CornerGuides({ rect, locked }: { rect: FrameRect; locked: boolean }) {
-  const bar = locked ? "bg-emerald-400" : "bg-white";
+function CornerGuides({
+  rect,
+  cornerClass,
+}: {
+  rect: FrameRect;
+  cornerClass: string;
+}) {
   const { x, y, width: w, height: h } = rect;
 
   const bars: CSSProperties[] = [
@@ -67,7 +103,10 @@ function CornerGuides({ rect, locked }: { rect: FrameRect; locked: boolean }) {
       {bars.map((style, i) => (
         <div
           key={i}
-          className={cn("absolute rounded-sm pointer-events-none", bar)}
+          className={cn(
+            "absolute rounded-sm pointer-events-none transition-colors duration-300",
+            cornerClass,
+          )}
           style={style}
           aria-hidden="true"
         />
@@ -76,16 +115,25 @@ function CornerGuides({ rect, locked }: { rect: FrameRect; locked: boolean }) {
   );
 }
 
+function statusLabel(status: ScanStatus, frameFeedback: FrameFeedback): string {
+  if (status === "requesting") return "Starting camera…";
+  if (frameFeedback === "success") return "✓ Passport read";
+  if (frameFeedback === "error") return "Align MRZ lines";
+  if (frameFeedback === "reading") return "Reading…";
+  return "Scanning";
+}
+
 export function PassportScanOverlay({
   status,
+  frameFeedback,
   instructionText,
   hotelName,
   scanTitle,
 }: PassportScanOverlayProps) {
   const rect = useFrameRect();
   const isScanning = status === "scanning";
-  const isLocked = status === "locked";
   const isRequesting = status === "requesting";
+  const styles = FRAME_STYLES[frameFeedback];
 
   const { x, y, width, height } = rect;
   const mrzTop = y + height * (1 - MRZ_BAND_FRAC);
@@ -106,14 +154,13 @@ export function PassportScanOverlay({
         aria-hidden="true"
       />
 
-      <CornerGuides rect={rect} locked={isLocked} />
+      <CornerGuides rect={rect} cornerClass={styles.corner} />
 
       <div
         className={cn(
-          "absolute rounded-2xl pointer-events-none transition-all duration-500",
-          isLocked
-            ? "ring-[3px] ring-emerald-400 shadow-[0_0_32px_8px_rgba(52,211,153,0.35)]"
-            : "ring-2 ring-white/75",
+          "absolute rounded-2xl pointer-events-none transition-all duration-300",
+          styles.ring,
+          styles.glow,
         )}
         style={{ left: x, top: y, width, height }}
         aria-hidden="true"
@@ -121,10 +168,8 @@ export function PassportScanOverlay({
 
       <div
         className={cn(
-          "absolute rounded-lg border border-dashed pointer-events-none transition-colors duration-300",
-          isLocked
-            ? "border-emerald-400/70 bg-emerald-400/5"
-            : "border-white/30 bg-white/[0.04]",
+          "absolute rounded-lg border border-dashed pointer-events-none transition-all duration-300",
+          styles.mrz,
         )}
         style={{
           left: x + mrzInset,
@@ -135,7 +180,7 @@ export function PassportScanOverlay({
         aria-hidden="true"
       />
 
-      {isScanning && (
+      {isScanning && frameFeedback !== "error" && (
         <div
           className="absolute overflow-hidden rounded-lg"
           style={{
@@ -150,26 +195,6 @@ export function PassportScanOverlay({
         </div>
       )}
 
-      {isLocked && (
-        <div
-          className="absolute flex items-center justify-center animate-in zoom-in-50 duration-300"
-          style={{ left: x, top: y, width, height }}
-        >
-          <div className="rounded-full bg-emerald-400/20 p-4 backdrop-blur-sm">
-            <svg
-              className="w-10 h-10 text-emerald-400"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2.5}
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-        </div>
-      )}
-
       <header className="absolute top-0 inset-x-0 pt-[max(1rem,env(safe-area-inset-top))] px-5 flex flex-col items-center gap-2">
         <div className="flex items-center gap-2 opacity-70">
           <GuestProLogo variant="header" className="w-5 h-5 invert" />
@@ -180,29 +205,28 @@ export function PassportScanOverlay({
         <h1 className="text-lg font-semibold text-white tracking-wide">{scanTitle}</h1>
       </header>
 
-      {(isScanning || isLocked || isRequesting) && (
+      {(isScanning || isRequesting) && (
         <div
           className={cn(
-            "absolute right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-md",
-            isLocked
-              ? "bg-emerald-400 text-zinc-900"
-              : "bg-black/50 text-white border border-white/10",
+            "absolute right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-md transition-colors duration-300",
+            frameFeedback === "success" && "bg-emerald-400 text-zinc-900",
+            frameFeedback === "error" && "bg-red-500/90 text-white",
+            (frameFeedback === "neutral" || frameFeedback === "reading") &&
+              "bg-black/50 text-white border border-white/10",
           )}
           style={{ top: Math.max(12, y - 44) }}
         >
-          {isRequesting ? (
-            "Starting camera…"
-          ) : isLocked ? (
-            "✓ Detected"
-          ) : (
-            <>
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
-              </span>
-              Scanning
-            </>
+          {frameFeedback === "reading" ? (
+            <span className="relative flex h-3 w-3">
+              <span className="absolute inset-0 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+            </span>
+          ) : frameFeedback === "error" ? null : (
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+            </span>
           )}
+          {statusLabel(status, frameFeedback)}
         </div>
       )}
 
@@ -210,10 +234,15 @@ export function PassportScanOverlay({
         <p
           className={cn(
             "text-sm font-medium text-center tracking-wide max-w-xs transition-colors duration-300",
-            isLocked ? "text-emerald-400" : "text-white/90",
+            frameFeedback === "success" && "text-emerald-400",
+            frameFeedback === "error" && "text-red-400",
+            (frameFeedback === "neutral" || frameFeedback === "reading") &&
+              "text-white/90",
           )}
         >
-          {instructionText}
+          {frameFeedback === "error"
+            ? "Move closer — MRZ lines must be clear at the bottom"
+            : instructionText}
         </p>
       </footer>
     </div>
