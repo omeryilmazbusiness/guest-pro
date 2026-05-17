@@ -31,6 +31,7 @@ import { createServiceRequest, type ServiceRequestType } from "@/lib/service-req
 import { useGuestMenu, type GuestMenuCategory, type GuestMenuItem } from "@/hooks/use-guest-menu";
 import type { GuestTranslations } from "@/lib/i18n";
 import { toast } from "sonner";
+import { GuestNearbySection } from "@/components/guest/GuestNearbySection";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -878,6 +879,10 @@ export default function GuidedFlowPage() {
               steps={steps}
             />
           )}
+
+          <div className="mt-10 pt-2">
+            <GuestNearbySection />
+          </div>
         </div>
       </main>
 

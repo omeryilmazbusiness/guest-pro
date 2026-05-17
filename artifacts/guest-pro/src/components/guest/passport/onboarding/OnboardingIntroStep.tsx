@@ -39,10 +39,9 @@ export function OnboardingIntroStep({
   const dir = getPassportLanguageEntry(locale).dir;
 
   return (
-    <PassportOnboardingShell dir={dir} variant="compact" showLogo>
+    <PassportOnboardingShell dir={dir} variant="compact">
       <div className="flex-1 flex flex-col min-h-0 px-5 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))] passport-luxury-enter">
         <header className="text-center mb-5 pt-2">
-          <p className="passport-luxury-label mb-3">Guest Pro</p>
           <h2 className="passport-luxury-title text-2xl">{strings.introTitle}</h2>
           <p className="mt-2 passport-luxury-body max-w-xs mx-auto">{strings.introSubtitle}</p>
         </header>
@@ -66,10 +65,10 @@ export function OnboardingIntroStep({
                   <Icon className="w-4 h-4 text-white/70" strokeWidth={1.25} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[13px] text-white/90 font-medium tracking-wide">
+                  <p className="passport-luxury-title text-[14px] text-white/90">
                     {item.title}
                   </p>
-                  <p className="mt-0.5 text-[11px] text-white/40 leading-relaxed">{item.body}</p>
+                  <p className="mt-0.5 passport-luxury-body text-[12px] text-white/45">{item.body}</p>
                 </div>
               </li>
             );

@@ -48,7 +48,7 @@ export function PassportScanStage({ locale, strings }: PassportScanStageProps) {
   }
 
   return (
-    <div dir={dir} className="fixed inset-0 bg-zinc-950 overflow-hidden touch-none z-30">
+    <div dir={dir} className="passport-onboarding fixed inset-0 bg-zinc-950 overflow-hidden touch-none z-30">
       <video
         ref={videoRef}
         playsInline
@@ -92,8 +92,8 @@ export function PassportScanStage({ locale, strings }: PassportScanStageProps) {
               <AlertTriangle className="w-8 h-8 text-red-400" />
             </div>
             <div className="space-y-2">
-              <p className="text-white font-semibold">Camera unavailable</p>
-              <p className="text-zinc-400 text-sm leading-relaxed">
+              <p className="passport-luxury-title text-white">Camera unavailable</p>
+              <p className="passport-luxury-body text-zinc-400 text-sm">
                 {errorMessage ?? "Please allow camera access and try again."}
               </p>
             </div>

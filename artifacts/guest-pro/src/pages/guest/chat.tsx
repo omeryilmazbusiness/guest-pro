@@ -39,6 +39,7 @@ import { VoiceConversationPanel } from "@/components/chat/VoiceConversationPanel
 import { useVoiceConversation } from "@/hooks/use-voice-conversation";
 import { VoiceDiagnosticsLogger } from "@/lib/voice/diagnostics";
 import { tFmt } from "@/lib/i18n";
+import { GuestNearbySection } from "@/components/guest/GuestNearbySection";
 
 const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   "map-pin": MapPin,
@@ -507,6 +508,10 @@ export default function GuestChat() {
             <div ref={messagesEndRef} className="h-2" />
           </div>
         )}
+
+        <div className="mt-8 pt-6 border-t border-zinc-100">
+          <GuestNearbySection />
+        </div>
       </main>
 
       {/* Bottom area — voice panel OR text input */}

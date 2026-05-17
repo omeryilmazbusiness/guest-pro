@@ -1,5 +1,5 @@
 /**
- * PremiumTypewriter — slow character reveal with luxury 3D italic typography.
+ * PremiumTypewriter — slow character reveal with Manrope luxury typography.
  */
 
 import { useEffect, useState } from "react";

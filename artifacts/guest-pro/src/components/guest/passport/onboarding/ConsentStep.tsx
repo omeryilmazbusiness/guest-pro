@@ -19,7 +19,7 @@ export function ConsentStep({ locale, strings, onAccept }: ConsentStepProps) {
   const dir = getPassportLanguageEntry(locale).dir;
 
   return (
-    <PassportOnboardingShell dir={dir} variant="compact" showLogo>
+    <PassportOnboardingShell dir={dir} variant="compact">
       <div className="flex-1 flex flex-col min-h-0 px-5 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))] passport-luxury-enter">
         <header className="text-center mb-4 pt-2">
           <div className="mx-auto w-11 h-11 flex items-center justify-center border border-white/10 mb-4">
@@ -36,7 +36,7 @@ export function ConsentStep({ locale, strings, onAccept }: ConsentStepProps) {
             {strings.consentBullets.map((bullet, i) => (
               <li
                 key={bullet}
-                className="flex gap-3 text-[12px] text-white/55 leading-relaxed"
+                className="flex gap-3 passport-luxury-body text-[12px] text-white/55"
                 style={{
                   animationDelay: `${80 + i * 50}ms`,
                   animation:

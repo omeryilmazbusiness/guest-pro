@@ -16,7 +16,6 @@
 import {
   Wifi,
   Phone,
-  MapPin,
   MessageSquare,
   Clock,
   Copy,
@@ -33,13 +32,13 @@ import {
   ChefHat,
   AlertCircle,
   CheckCircle2,
-  ChevronRight,
 } from "lucide-react";
 import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import type { HotelConfig, WelcomingStrings } from "@/lib/welcoming/hotel-content";
 import type { NearbyPlace, MenuSection } from "@/lib/welcoming/types";
 import { NearbyPlaceModal } from "./NearbyPlaceModal";
+import { NearbyPlacesCard } from "./NearbyPlacesCard";
 import { callForWelcomeSupport } from "@/lib/welcoming/welcome-support";
 
 // ── Shared card shell ─────────────────────────────────────────────────────────
@@ -330,79 +329,6 @@ function MenuCard({ config, s }: { config: HotelConfig; s: WelcomingStrings }) {
   );
 }
 
-// ── Nearby places card ────────────────────────────────────────────────────────
-
-const PLACE_ICON: Record<NearbyPlace["type"], string> = {
-  market:     "bg-teal-50 text-teal-600",
-  pharmacy:   "bg-rose-50 text-rose-600",
-  bazaar:     "bg-amber-50 text-amber-600",
-  restaurant: "bg-orange-50 text-orange-600",
-  other:      "bg-zinc-100 text-zinc-500",
-};
-
-type PlaceLabelKey =
-  | "placeTypeMarket"
-  | "placeTypePharmacy"
-  | "placeTypeBazaar"
-  | "placeTypeRestaurant"
-  | "placeTypeOther";
-
-const TYPE_TO_LABEL_KEY: Record<NearbyPlace["type"], PlaceLabelKey> = {
-  market:     "placeTypeMarket",
-  pharmacy:   "placeTypePharmacy",
-  bazaar:     "placeTypeBazaar",
-  restaurant: "placeTypeRestaurant",
-  other:      "placeTypeOther",
-};
-
-function NearbyCard({
-  config,
-  s,
-  onSelectPlace,
-}: {
-  config: HotelConfig;
-  s: WelcomingStrings;
-  onSelectPlace: (place: NearbyPlace) => void;
-}) {
-  return (
-    <InfoCard>
-      <CardHeader icon={MapPin} label={s.nearbySection} iconClass="text-teal-600" iconBg="bg-teal-50" />
-      <div className="flex flex-col gap-1">
-        {config.nearbyPlaces.map((place) => {
-          const typeLabel = s[TYPE_TO_LABEL_KEY[place.type]];
-          const hasMap = Boolean(place.coords);
-          return (
-            <button
-              key={place.name}
-              onClick={() => onSelectPlace(place)}
-              className="flex items-center gap-3 py-2 px-1 rounded-xl hover:bg-zinc-50 active:bg-zinc-100 transition-colors text-left w-full group"
-            >
-              <span
-                className={cn(
-                  "w-7 h-7 rounded-xl flex items-center justify-center shrink-0 text-[10px] font-bold",
-                  PLACE_ICON[place.type] ?? PLACE_ICON.other,
-                )}
-              >
-                {typeLabel[0]}
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-zinc-900 truncate">{place.name}</p>
-                <p className="text-[11px] text-zinc-400">{typeLabel}</p>
-              </div>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span className="text-[11px] font-medium text-zinc-400">{place.distance}</span>
-                {hasMap && (
-                  <ChevronRight className="w-3.5 h-3.5 text-zinc-300 group-hover:text-zinc-500 transition-colors" />
-                )}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    </InfoCard>
-  );
-}
-
 // ── Support card ──────────────────────────────────────────────────────────────
 
 function SupportCard({
@@ -504,7 +430,7 @@ export function InfoBlocks({
 
         {/* Nearby row */}
         <SectionHeading label={s.nearbySection} />
-        <NearbyCard config={config} s={s} onSelectPlace={handleSelectPlace} />
+        <NearbyPlacesCard config={config} s={s} onSelectPlace={handleSelectPlace} />
 
         {/* Support — full width */}
         <SectionHeading label={s.helpSection} />

@@ -2,7 +2,7 @@
  * PassportOnboardingShell — pure black luxury canvas (welcome | compact).
  */
 
-import { GuestProLogo } from "@/components/GuestProLogo";
+import { KioskBrandHeader } from "@/components/kiosk/KioskBrandHeader";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
@@ -12,7 +12,7 @@ interface PassportOnboardingShellProps {
   children: ReactNode;
   dir?: "ltr" | "rtl";
   className?: string;
-  showLogo?: boolean;
+  showHeader?: boolean;
   variant?: OnboardingShellVariant;
 }
 
@@ -20,7 +20,7 @@ export function PassportOnboardingShell({
   children,
   dir = "ltr",
   className,
-  showLogo = true,
+  showHeader = true,
   variant = "compact",
 }: PassportOnboardingShellProps) {
   const isWelcome = variant === "welcome";
@@ -29,7 +29,7 @@ export function PassportOnboardingShell({
     <div
       dir={dir}
       className={cn(
-        "fixed inset-0 z-40 overflow-hidden flex flex-col",
+        "passport-onboarding fixed inset-0 z-40 overflow-hidden flex flex-col",
         "bg-black",
         className,
       )}
@@ -49,16 +49,7 @@ export function PassportOnboardingShell({
         />
       )}
 
-      {showLogo && (
-        <div
-          className={cn(
-            "relative z-10 flex justify-center",
-            isWelcome ? "pt-[max(1.5rem,env(safe-area-inset-top))] opacity-25" : "pt-[max(0.75rem,env(safe-area-inset-top))] opacity-30",
-          )}
-        >
-          <GuestProLogo variant="header" className="w-5 h-5 invert" />
-        </div>
-      )}
+      {showHeader && <KioskBrandHeader variant="embedded" />}
 
       <div className="relative z-10 flex-1 flex flex-col min-h-0">{children}</div>
     </div>

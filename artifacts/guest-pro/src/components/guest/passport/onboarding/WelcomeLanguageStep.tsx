@@ -41,7 +41,7 @@ export function WelcomeLanguageStep({
   }, [index]);
 
   return (
-    <PassportOnboardingShell dir={current.dir} showLogo={false} variant="welcome">
+    <PassportOnboardingShell dir={current.dir} variant="welcome">
       <button
         type="button"
         onClick={() => onSelect(current.locale)}
@@ -98,8 +98,8 @@ export function WelcomeLanguageStep({
 
         <p
           className={cn(
-            "mt-16 text-[11px] text-center max-w-xs tracking-[0.12em]",
-            "text-white/30 font-light transition-opacity duration-700",
+            "mt-16 passport-luxury-body text-[12px] text-center max-w-xs tracking-[0.08em]",
+            "text-white/35 transition-opacity duration-700",
           )}
         >
           {tapHint}

@@ -36,6 +36,7 @@ import { useInstallPrompt } from "@/hooks/use-install-prompt";
 import { InstallSheet } from "@/components/InstallSheet";
 import { useTrackingHeartbeat } from "@/hooks/use-tracking-heartbeat";
 import { StayKeyCard } from "@/components/guest/StayKeyCard";
+import { GuestNearbySection } from "@/components/guest/GuestNearbySection";
 import { ServiceQuickActions, type QuickActionMode } from "@/components/guest/ServiceQuickActions";
 import { listMyRequests, deleteMyServiceRequest, type ServiceRequest } from "@/lib/service-requests";
 import { buildDisplaySummary } from "@/lib/request-display";
@@ -596,7 +597,11 @@ export default function GuestHome() {
           </div>
         </section>
 
-        <p className="text-center text-[12px] text-zinc-300 px-4">
+        <section className="mb-7">
+          <GuestNearbySection />
+        </section>
+
+        <p className="text-center text-[12px] text-zinc-300 px-4 pb-2">
           {branding?.appName || "Guest Pro"} · {t.footerText}
         </p>
       </main>

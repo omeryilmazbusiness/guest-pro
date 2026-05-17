@@ -195,14 +195,12 @@ export function PassportScanOverlay({
         </div>
       )}
 
-      <header className="absolute top-0 inset-x-0 pt-[max(1rem,env(safe-area-inset-top))] px-5 flex flex-col items-center gap-2">
-        <div className="flex items-center gap-2 opacity-70">
-          <GuestProLogo variant="header" className="w-5 h-5 invert" />
-          <span className="text-[11px] font-medium text-white/80 tracking-widest uppercase">
-            {hotelName}
-          </span>
+      <header className="passport-onboarding absolute top-0 inset-x-0 pt-[max(1rem,env(safe-area-inset-top))] px-5 pb-3 flex flex-col items-center gap-2">
+        <div className="flex items-center gap-2">
+          <GuestProLogo variant="header" className="w-6 h-6 invert opacity-85" />
+          <span className="kiosk-brand-hotel-name text-white/55">{hotelName}</span>
         </div>
-        <h1 className="text-lg font-semibold text-white tracking-wide">{scanTitle}</h1>
+        <h1 className="passport-luxury-title text-lg">{scanTitle}</h1>
       </header>
 
       {(isScanning || isRequesting) && (
@@ -233,7 +231,7 @@ export function PassportScanOverlay({
       <footer className="absolute inset-x-0 bottom-0 px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] flex justify-center">
         <p
           className={cn(
-            "text-sm font-medium text-center tracking-wide max-w-xs transition-colors duration-300",
+            "passport-onboarding passport-luxury-body text-sm font-medium text-center max-w-xs transition-colors duration-300",
             frameFeedback === "success" && "text-emerald-400",
             frameFeedback === "error" && "text-red-400",
             (frameFeedback === "neutral" || frameFeedback === "reading") &&
