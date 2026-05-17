@@ -168,6 +168,17 @@
 }
 
 /**
+ * passport-welcome-slide — luxury fade for cycling welcome text on passport onboarding.
+ */
+@keyframes passport-welcome-slide {
+  0%   { opacity: 0; transform: translateY(12px) scale(0.98); filter: blur(4px); }
+  10%  { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  82%  { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  95%  { opacity: 0; transform: translateY(-10px) scale(0.99); filter: blur(3px); }
+  100% { opacity: 0; transform: translateY(-10px) scale(0.99); filter: blur(3px); }
+}
+
+/**
  * register-label-slide — used by RegisterQrCard for "Scan QR to register" subtitle.
  * Vertical slide-in/out to distinguish from greeting-slide (horizontal).
  */
