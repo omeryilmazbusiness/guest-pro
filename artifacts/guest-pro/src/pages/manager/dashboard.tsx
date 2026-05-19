@@ -43,9 +43,7 @@ import {
   Bell,
   X,
   Settings,
-  TrendingUp,
   FileText,
-  Briefcase,
   ChefHat,
 } from "lucide-react";
 import {
@@ -64,18 +62,9 @@ import { isStaffRole, can, Permission, roleLabel } from "@/lib/permissions";
 import { filterGuests, extractRoomNumbers, countByStatus } from "@/lib/guests";
 import { aggregateRooms, filterRooms } from "@/lib/rooms";
 import { type StayStatus } from "@/lib/stays";
-import { GuestProLogo } from "@/components/GuestProLogo";
-import { LanguagePicker } from "@/components/ui/LanguagePicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { GuestCard } from "@/components/manager/GuestCard";
 import { RoomCard } from "@/components/manager/RoomCard";
 import { GuestEditModal } from "@/components/manager/GuestEditModal";
@@ -85,210 +74,21 @@ import { getGuestPresences, type TrackingStatus } from "@/lib/tracking";
 import { computeTrackingSummary } from "@/lib/tracking-summary";
 import { GuestsOverviewCard } from "@/components/manager/GuestsOverviewCard";
 import { ManagerOverviewCards } from "@/components/manager/ManagerOverviewCards";
+import { ManagerDashboardHeader } from "@/components/manager/ManagerDashboardHeader";
+import { ManagerAnimatedTabs } from "@/components/manager/ManagerAnimatedTabs";
+import { ManagerTabPanel } from "@/components/manager/ManagerTabPanel";
+import { GuestDetailSheet } from "@/components/manager/GuestDetailSheet";
+import type { ManagerDashboardTab } from "@/lib/manager-dashboard-nav";
 import { StaffRequestsBoard } from "@/components/manager/StaffRequestsBoard";
 import { NewRequestAlert } from "@/components/manager/NewRequestAlert";
 import { WelcomeAreaAlertBanner } from "@/components/manager/WelcomeAreaAlertBanner";
 import { DailySummaryTab } from "@/components/manager/DailySummaryTab";
 import { QuickReportModal } from "@/components/manager/QuickReportModal";
 import { StaffTeamTab } from "@/components/manager/StaffTeamTab";
+import { GuestSearchFilterBar } from "@/components/manager/GuestSearchFilterBar";
+import { CreateGuestSheet } from "@/components/manager/CreateGuestSheet";
 import { type StaffInfo } from "@/lib/staff";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type DashboardTab = "guests" | "rooms" | "requests" | "summary" | "team";
-
-// ─── Tab switcher ─────────────────────────────────────────────────────────────
-
-function DashboardTabs({
-  active,
-  onChange,
-  guestCount,
-  roomCount,
-  requestCount,
-  teamCount,
-  isManager,
-  t,
-}: {
-  active: DashboardTab;
-  onChange: (tab: DashboardTab) => void;
-  guestCount: number;
-  roomCount: number;
-  requestCount: number;
-  teamCount: number;
-  isManager: boolean;
-  t: StaffTranslations;
-}) {
-  const TABS: { key: DashboardTab; label: string; icon: React.FC<{ className?: string }>; count: number; managerOnly?: boolean; managerHidden?: boolean }[] = [
-    { key: "team",     label: t.tabTeam,     icon: Briefcase,  count: teamCount,    managerOnly: true },
-    { key: "guests",   label: t.tabGuests,   icon: Users,      count: guestCount },
-    { key: "rooms",    label: t.tabRooms,    icon: DoorOpen,   count: roomCount,    managerHidden: true },
-    { key: "requests", label: t.tabRequests, icon: Bell,       count: requestCount, managerHidden: true },
-    { key: "summary",  label: t.tabSummary,  icon: TrendingUp, count: 0,            managerOnly: true },
-  ];
-
-  const visibleTabs = TABS.filter((t) => {
-    if (t.managerOnly && !isManager) return false;
-    if (t.managerHidden && isManager) return false;
-    return true;
-  });
-
-  return (
-    <div className="flex bg-zinc-100 rounded-2xl p-1 gap-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-      {visibleTabs.map(({ key, label, icon: Icon, count }) => {
-        const isActive = active === key;
-        return (
-          <button
-            key={key}
-            onClick={() => onChange(key)}
-            className={`flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl text-[13px] font-semibold transition-all touch-manipulation shrink-0 ${
-              isActive
-                ? "bg-white text-zinc-900 shadow-sm"
-                : "text-zinc-500 hover:text-zinc-700"
-            }`}
-            aria-selected={isActive}
-          >
-            <Icon className="w-3.5 h-3.5" />
-            {label}
-            {count > 0 && (
-              <span
-                className={`text-[11px] font-mono px-1.5 py-0.5 rounded-md ${
-                  isActive ? "bg-zinc-100 text-zinc-600" : "bg-zinc-200 text-zinc-500"
-                }`}
-              >
-                {count}
-              </span>
-            )}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-// ─── Sticky guest filter bar ──────────────────────────────────────────────────
-//
-// Rendered as a sibling of <main>, sticky at top-14 (below the 56px header).
-// Contains search, room dropdown, and stay-status filter chips.
-// backdrop-blur + border-b provide visual elevation when scrolled.
-
-function StickyGuestFilterBar({
-  search,
-  onSearchChange,
-  roomFilter,
-  onRoomChange,
-  rooms,
-  statusFilter,
-  onStatusChange,
-  statusCounts,
-  t,
-}: {
-  search: string;
-  onSearchChange: (v: string) => void;
-  roomFilter: string;
-  onRoomChange: (v: string) => void;
-  rooms: string[];
-  statusFilter: StayStatus | "all";
-  onStatusChange: (v: StayStatus | "all") => void;
-  statusCounts: Record<"active" | "upcoming" | "expired" | "no_dates", number>;
-  t: StaffTranslations;
-}) {
-  const STATUS_OPTIONS: { value: StayStatus | "all"; label: string; count?: number }[] = [
-    { value: "all", label: t.statusAll },
-    { value: "active", label: t.statusActive, count: statusCounts.active },
-    { value: "upcoming", label: t.statusUpcoming, count: statusCounts.upcoming },
-    { value: "expired", label: t.statusExpired, count: statusCounts.expired },
-  ];
-
-  const hasAnyStatusFilter = statusCounts.upcoming > 0 || statusCounts.expired > 0;
-
-  return (
-    <div className="sticky top-14 z-10 bg-zinc-50/95 backdrop-blur-sm border-b border-zinc-200/60">
-      <div className="max-w-2xl mx-auto px-4 pt-3 pb-2 space-y-2">
-        {/* Search + room dropdown row */}
-        <div className="flex gap-2 items-stretch">
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
-            <Input
-              data-testid="input-search"
-              placeholder={t.searchPlaceholder}
-              value={search}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-10 pr-8 h-10 rounded-2xl bg-white border-zinc-200 focus-visible:ring-zinc-900 text-sm shadow-sm"
-            />
-            {search && (
-              <button
-                onClick={() => onSearchChange("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 p-0.5"
-                aria-label="Clear search"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-          {rooms.length > 0 && (
-            <Select value={roomFilter} onValueChange={onRoomChange}>
-              <SelectTrigger className="h-10 w-auto rounded-2xl border-zinc-200 bg-white text-sm font-medium focus:ring-zinc-900 px-3 gap-1.5 shrink-0 shadow-sm">
-                <DoorOpen className="w-4 h-4 text-zinc-400" />
-                <SelectValue placeholder={t.room} />
-              </SelectTrigger>
-              <SelectContent className="rounded-2xl border-zinc-200 shadow-xl">
-                <SelectItem value="__all__" className="rounded-xl text-sm font-medium">
-                  {t.allRooms}
-                </SelectItem>
-                {rooms.map((r) => (
-                  <SelectItem key={r} value={r} className="rounded-xl text-sm font-mono font-medium">
-                    {t.room} {r}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
-
-        {/* Status chip row — only shown when non-default statuses exist */}
-        {hasAnyStatusFilter && (
-          <div className="flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-            {STATUS_OPTIONS.filter(
-              (o) =>
-                o.value === "all" ||
-                o.value === "active" ||
-                (o.value === "upcoming" && statusCounts.upcoming > 0) ||
-                (o.value === "expired" && statusCounts.expired > 0)
-            ).map((opt) => {
-              const isActive = statusFilter === opt.value;
-              const chipStyle =
-                isActive
-                  ? opt.value === "expired"
-                    ? "bg-red-700 text-white border-red-700"
-                    : opt.value === "upcoming"
-                      ? "bg-sky-700 text-white border-sky-700"
-                      : "bg-zinc-900 text-white border-zinc-900"
-                  : "bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300";
-              return (
-                <button
-                  key={opt.value}
-                  onClick={() => onStatusChange(opt.value)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold border transition-all touch-manipulation shrink-0 ${chipStyle}`}
-                >
-                  {opt.label}
-                  {opt.count !== undefined && opt.count > 0 && (
-                    <span
-                      className={`text-[10px] font-mono px-1 py-0 rounded ${
-                        isActive ? "bg-white/20 text-inherit" : "bg-zinc-100 text-zinc-500"
-                      }`}
-                    >
-                      {opt.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 // ─── Sticky rooms filter bar ──────────────────────────────────────────────────
 //
@@ -409,7 +209,7 @@ export default function ManagerDashboard() {
   const renewKeyMutation = useRenewGuestKey();
 
   // ── Tab (reads ?tab= from URL for deep-linking; defaults to "team" for managers)
-  const [activeTab, setActiveTab] = useState<DashboardTab>(() => {
+  const [activeTab, setActiveTab] = useState<ManagerDashboardTab>(() => {
     const param = new URLSearchParams(window.location.search).get("tab");
     if (param === "guests" || param === "rooms" || param === "requests" || param === "summary" || param === "team") return param;
     return "guests"; // real default set below via useEffect once role resolves
@@ -461,6 +261,8 @@ export default function ManagerDashboard() {
   const [deletingGuest, setDeletingGuest] = useState<Guest | null>(null);
   const [handoff, setHandoff] = useState<HandoffData | null>(null);
   const [handoffOpen, setHandoffOpen] = useState(false);
+  const [detailGuest, setDetailGuest] = useState<Guest | null>(null);
+  const [createGuestOpen, setCreateGuestOpen] = useState(false);
 
   // ── Auth guard
   useEffect(() => {
@@ -524,7 +326,7 @@ export default function ManagerDashboard() {
     toast.success(t.loggedOut);
   };
 
-  const handleNavigateCreate = () => setLocation("/manager/guests/new");
+  const handleNavigateCreate = () => setCreateGuestOpen(true);
 
   const handleEdit = async (
     id: number,
@@ -601,47 +403,47 @@ export default function ManagerDashboard() {
     <div className="min-h-dvh bg-zinc-50/60" dir={dir}>
 
       {/* ── Sticky header (56px) ── */}
-      <header className="bg-white border-b border-zinc-100 sticky top-0 z-20">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-white border border-zinc-100 shadow-sm flex items-center justify-center shrink-0">
-              <GuestProLogo variant="header" className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <span className="font-serif text-base font-medium text-zinc-900 block leading-none">
-                Guest Pro
-              </span>
-              <span className="text-[10px] text-zinc-400 font-medium leading-none truncate block max-w-40">
-                {roleLabel(user.role)} · {user.firstName} {user.lastName}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5 shrink-0">
+      <ManagerDashboardHeader
+        appName="Guest Pro"
+        roleLine={`${roleLabel(user.role)} · ${user.firstName} ${user.lastName}`}
+        t={t}
+        locale={locale}
+        dir={dir}
+        onLocaleChange={setLocale}
+        isManager={isManager}
+        guestCount={guests?.length ?? 0}
+        roomCount={allRooms.length}
+        requestCount={openRequestCount}
+        teamCount={staffInfo.active}
+        canCreateGuest={canCreate}
+        onTabChange={setActiveTab}
+        onCreateGuest={handleNavigateCreate}
+        onQuickReport={() => setQuickReportOpen(true)}
+        onSettings={() => setLocation("/manager/settings")}
+        onRestaurant={() => setLocation("/restaurant")}
+        rightSlot={
+          <>
             {canCreate && (
               <Button
                 data-testid="button-create-guest-desktop"
                 onClick={handleNavigateCreate}
                 size="sm"
-                className="h-8 px-3.5 rounded-xl text-[13px] font-medium shadow-sm shadow-zinc-900/10 hidden sm:flex"
+                className="hidden h-8 rounded-xl px-3.5 text-[13px] font-medium shadow-sm shadow-zinc-900/10 sm:flex"
               >
-                <Plus className="w-3.5 h-3.5 mr-1" />
+                <Plus className="mr-1 h-3.5 w-3.5" />
                 {t.newGuest}
               </Button>
             )}
-            {/* ── Language picker ── */}
-            <LanguagePicker locale={locale} onLocaleChange={setLocale} dir={dir} />
-
             {isManager && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setLocation("/restaurant")}
-                className="w-8 h-8 rounded-xl text-zinc-400 hover:text-amber-600 hover:bg-amber-50 touch-manipulation"
+                className="hidden h-8 w-8 rounded-xl text-zinc-400 hover:bg-amber-50 hover:text-amber-600 touch-manipulation sm:flex"
                 aria-label={t.restaurantDashboard}
                 title={t.restaurantDashboard}
               >
-                <ChefHat className="w-3.5 h-3.5" />
+                <ChefHat className="h-3.5 w-3.5" />
               </Button>
             )}
             {isManager && (
@@ -649,11 +451,11 @@ export default function ManagerDashboard() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setQuickReportOpen(true)}
-                className="w-8 h-8 rounded-xl text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 touch-manipulation"
+                className="hidden h-8 w-8 rounded-xl text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 touch-manipulation sm:flex"
                 aria-label={t.quickReport}
                 title={t.quickReport}
               >
-                <FileText className="w-3.5 h-3.5" />
+                <FileText className="h-3.5 w-3.5" />
               </Button>
             )}
             {isManager && (
@@ -661,10 +463,10 @@ export default function ManagerDashboard() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setLocation("/manager/settings")}
-                className="w-8 h-8 rounded-xl text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 touch-manipulation"
+                className="hidden h-8 w-8 rounded-xl text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 touch-manipulation sm:flex"
                 aria-label={t.settings}
               >
-                <Settings className="w-3.5 h-3.5" />
+                <Settings className="h-3.5 w-3.5" />
               </Button>
             )}
             <Button
@@ -672,29 +474,16 @@ export default function ManagerDashboard() {
               variant="ghost"
               size="icon"
               onClick={handleLogout}
-              className="w-8 h-8 rounded-xl text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 touch-manipulation"
+              className="h-8 w-8 rounded-xl text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 touch-manipulation"
               aria-label={t.logout}
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="h-3.5 w-3.5" />
             </Button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       {/* ── Sticky filter bars — below header, tab-conditional ── */}
-      {activeTab === "guests" && (
-        <StickyGuestFilterBar
-          search={guestSearch}
-          onSearchChange={setGuestSearch}
-          roomFilter={roomFilter}
-          onRoomChange={setRoomFilter}
-          rooms={roomNumbers}
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-          statusCounts={statusCounts}
-          t={t}
-        />
-      )}
       {activeTab === "rooms" && (
         <StickyRoomFilterBar
           search={roomSearch}
@@ -715,6 +504,9 @@ export default function ManagerDashboard() {
               onRefresh={handleRefreshTracking}
               staffInfo={staffInfo}
               onAddEmployee={() => setStaffCreateOpen(true)}
+              onGuestsPress={() => setActiveTab("guests")}
+              onEmployeesPress={() => setActiveTab("team")}
+              t={t}
             />
           ) : (
             <GuestsOverviewCard
@@ -726,7 +518,7 @@ export default function ManagerDashboard() {
         )}
 
         {/* Tab switcher */}
-        <DashboardTabs
+        <ManagerAnimatedTabs
           active={activeTab}
           onChange={setActiveTab}
           guestCount={guests?.length ?? 0}
@@ -737,11 +529,24 @@ export default function ManagerDashboard() {
           t={t}
         />
 
+        <ManagerTabPanel tabKey={activeTab}>
+
         {/* ══════════════════════════════════
             GUESTS TAB
         ══════════════════════════════════ */}
         {activeTab === "guests" && (
-          <div className="space-y-3 animate-in fade-in duration-200">
+          <div className="space-y-3">
+            <GuestSearchFilterBar
+              search={guestSearch}
+              onSearchChange={setGuestSearch}
+              roomFilter={roomFilter}
+              onRoomChange={setRoomFilter}
+              rooms={roomNumbers}
+              statusFilter={statusFilter}
+              onStatusChange={setStatusFilter}
+              statusCounts={statusCounts}
+              t={t}
+            />
 
             {/* Count + clear */}
             {!isLoading && guests && (guestHasFilters || guests.length > 0) && (
@@ -808,6 +613,7 @@ export default function ManagerDashboard() {
                     onEdit={setEditingGuest}
                     onDelete={setDeletingGuest}
                     onRenew={handleRenewKey}
+                    onSelect={setDetailGuest}
                     trackingStatus={presenceMap.get(guest.id)}
                   />
                 ))
@@ -896,15 +702,14 @@ export default function ManagerDashboard() {
             TEAM TAB (manager-only)
         ══════════════════════════════════ */}
         {activeTab === "team" && isManager && (
-          <div className="animate-in fade-in duration-200">
-            <StaffTeamTab
-              staffCount={setStaffInfo}
-              externalCreateOpen={staffCreateOpen}
-              onExternalCreateOpenChange={setStaffCreateOpen}
-            />
-          </div>
+          <StaffTeamTab
+            staffCount={setStaffInfo}
+            externalCreateOpen={staffCreateOpen}
+            onExternalCreateOpenChange={setStaffCreateOpen}
+          />
         )}
 
+        </ManagerTabPanel>
       </main>
 
       {/* ── Mobile FAB ── */}
@@ -930,6 +735,26 @@ export default function ManagerDashboard() {
           </div>
         </div>
       )}
+
+      <CreateGuestSheet
+        open={createGuestOpen}
+        onClose={() => setCreateGuestOpen(false)}
+        onCreated={invalidateGuests}
+      />
+
+      <GuestDetailSheet
+        guest={detailGuest}
+        open={!!detailGuest}
+        onClose={() => setDetailGuest(null)}
+        trackingStatus={detailGuest ? presenceMap.get(detailGuest.id) : undefined}
+        canEdit={canEdit}
+        canDelete={canDelete}
+        canRenew={canRenew}
+        onEdit={setEditingGuest}
+        onDelete={setDeletingGuest}
+        onRenew={handleRenewKey}
+        t={t}
+      />
 
       {/* ── Modals ── */}
       <GuestEditModal
@@ -957,7 +782,7 @@ export default function ManagerDashboard() {
           onCreateAnother={() => {
             setHandoffOpen(false);
             setHandoff(null);
-            setLocation("/manager/guests/new");
+            setCreateGuestOpen(true);
           }}
         />
       )}

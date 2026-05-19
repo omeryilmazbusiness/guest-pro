@@ -61,8 +61,8 @@ export function GuestTrackingBadge({
       title={cfg.title}
       aria-label={cfg.title}
     >
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dotClass} shrink-0`} />
-      <span className="text-[10px] font-medium text-zinc-500 leading-none">
+      <span className={`h-2 w-2 rounded-full ${cfg.dotClass} shrink-0`} />
+      <span className="text-[11px] font-medium text-zinc-600 leading-none">
         {cfg.label}
       </span>
     </span>

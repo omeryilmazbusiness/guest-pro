@@ -52,6 +52,8 @@ export interface GuestCardProps {
   onEdit: (g: Guest) => void;
   onDelete: (g: Guest) => void;
   onRenew: (g: Guest) => void;
+  /** Opens centered detail sheet when the card body is tapped. */
+  onSelect?: (g: Guest) => void;
   /** Optional tracking status — only shown when tracking is active. */
   trackingStatus?: TrackingStatus;
 }
@@ -138,6 +140,7 @@ export function GuestCard({
   onEdit,
   onDelete,
   onRenew,
+  onSelect,
   trackingStatus,
 }: GuestCardProps) {
   // Cast to access new date/extension fields (client types may lag schema)
@@ -174,8 +177,16 @@ export function GuestCard({
   return (
     <div
       data-testid={`card-guest-${guest.id}`}
-      className={`bg-white rounded-2xl border border-zinc-100 shadow-sm hover:shadow-md hover:border-zinc-200 active:scale-[0.99] transition-all duration-150 px-4 py-3.5 flex items-start gap-3 touch-manipulation ${cardAccent}`}
+      className={`bg-white rounded-2xl border border-zinc-100 shadow-sm hover:shadow-md hover:border-zinc-200 transition-all duration-150 px-4 py-3.5 flex items-start gap-3 ${cardAccent}`}
     >
+      <button
+        type="button"
+        onClick={onSelect ? () => onSelect(guest) : undefined}
+        disabled={!onSelect}
+        className={`flex min-w-0 flex-1 items-start gap-3 text-left touch-manipulation ${
+          onSelect ? "active:scale-[0.99] cursor-pointer" : "cursor-default"
+        }`}
+      >
       {/* Avatar */}
       <GuestAvatar firstName={guest.firstName} lastName={guest.lastName} />
 
@@ -230,9 +241,10 @@ export function GuestCard({
           </span>
         </div>
       </div>
+      </button>
 
       {/* Actions */}
-      <div className="flex items-center gap-1.5 shrink-0">
+      <div className="flex items-center gap-1.5 shrink-0 self-center">
         {hasKey && <CopyKeyButton guestKey={guest.guestKey!} />}
 
         {hasAnyAction && (

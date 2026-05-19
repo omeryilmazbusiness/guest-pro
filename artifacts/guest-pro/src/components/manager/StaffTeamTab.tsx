@@ -5,7 +5,7 @@
  *   - Domain types + API calls → lib/staff.ts
  *   - Presence model → lib/staff.ts (resolveEmployeePresence)
  *   - Filter / sort logic → pure functions in this file
- *   - CreateStaffModal / EditStaffModal → self-contained sub-components
+ *   - CreateStaffSheet / EditStaffModal → add & edit flows
  *   - Overview bar removed — stats now live in ManagerOverviewCards (dashboard level)
  *
  * UX principles:
@@ -82,9 +82,11 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useStaffLocale } from "@/hooks/use-staff-locale";
+import { EmployeeDetailSheet } from "@/components/manager/EmployeeDetailSheet";
+import { CreateStaffSheet } from "@/components/manager/CreateStaffSheet";
 import {
   listStaff,
-  createStaff,
   updateStaff,
   deactivateStaff,
   permanentDeleteStaff,
@@ -152,16 +154,6 @@ function buildStaffInfo(staff: StaffMember[]): StaffInfo {
 
 // ── Validation schemas ────────────────────────────────────────────────────────
 
-const createSchema = z.object({
-  firstName:       z.string().min(1, "First name is required").max(80),
-  lastName:        z.string().min(1, "Last name is required").max(80),
-  email:           z.string().email("Enter a valid email address"),
-  password:        z.string().min(8, "Password must be at least 8 characters"),
-  staffDepartment: z.enum(STAFF_DEPARTMENTS, {
-    errorMap: () => ({ message: "Select a department" }),
-  }),
-});
-
 const editSchema = z.object({
   firstName:       z.string().min(1, "First name is required").max(80),
   lastName:        z.string().min(1, "Last name is required").max(80),
@@ -170,8 +162,7 @@ const editSchema = z.object({
   }),
 });
 
-type CreateFormValues = z.infer<typeof createSchema>;
-type EditFormValues   = z.infer<typeof editSchema>;
+type EditFormValues = z.infer<typeof editSchema>;
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -335,12 +326,14 @@ function EmployeeSearchBar({
 
 function EmployeeCard({
   member,
+  onSelect,
   onEdit,
   onDeactivate,
   onReactivate,
   onPermanentDelete,
 }: {
   member:            StaffMember;
+  onSelect?:         (m: StaffMember) => void;
   onEdit:            (m: StaffMember) => void;
   onDeactivate:      (m: StaffMember) => void;
   onReactivate:      (m: StaffMember) => void;
@@ -356,7 +349,21 @@ function EmployeeCard({
           member.isActive
             ? "border-zinc-100 shadow-sm shadow-zinc-100/60"
             : "border-zinc-100 opacity-55",
+          onSelect && "cursor-pointer hover:border-zinc-200 active:scale-[0.99]",
         )}
+        role={onSelect ? "button" : undefined}
+        tabIndex={onSelect ? 0 : undefined}
+        onClick={onSelect ? () => onSelect(member) : undefined}
+        onKeyDown={
+          onSelect
+            ? (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onSelect(member);
+                }
+              }
+            : undefined
+        }
       >
         {/* Avatar */}
         <EmployeeAvatar member={member} />
@@ -380,7 +387,11 @@ function EmployeeCard({
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="text-zinc-400 hover:text-zinc-700 p-1.5 rounded-lg hover:bg-zinc-50 transition-colors touch-manipulation shrink-0">
+                <button
+                  type="button"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-zinc-400 hover:text-zinc-700 p-1.5 rounded-lg hover:bg-zinc-50 transition-colors touch-manipulation shrink-0"
+                >
                   <MoreVertical className="w-3.5 h-3.5" />
                   <span className="sr-only">Actions for {staffDisplayName(member)}</span>
                 </button>
@@ -467,117 +478,6 @@ function EmployeeCardSkeleton() {
   );
 }
 
-// ── Create staff modal ────────────────────────────────────────────────────────
-
-function CreateStaffModal({
-  open,
-  onClose,
-  onSuccess,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-}) {
-  const form = useForm<CreateFormValues>({
-    resolver: zodResolver(createSchema),
-    defaultValues: { firstName: "", lastName: "", email: "", password: "", staffDepartment: undefined },
-  });
-
-  const mutation = useMutation({
-    mutationFn: createStaff,
-    onSuccess: () => { toast.success("Staff member added"); form.reset(); onSuccess(); },
-    onError: (err: Error) => toast.error(err.message ?? "Failed to create staff member"),
-  });
-
-  function handleClose() {
-    if (mutation.isPending) return;
-    form.reset();
-    onClose();
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Add Staff Member</DialogTitle>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <FormField control={form.control} name="firstName" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>First Name</FormLabel>
-                  <FormControl><Input placeholder="Sarah" autoComplete="off" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="lastName" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Last Name</FormLabel>
-                  <FormControl><Input placeholder="Yılmaz" autoComplete="off" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
-            <FormField control={form.control} name="email" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input type="email" placeholder="sarah@grandhotel.com" autoComplete="off" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="password" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Temporary Password</FormLabel>
-                <FormControl>
-                  <Input type="password" placeholder="Min. 8 characters" autoComplete="new-password" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="staffDepartment" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Department</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select department" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {STAFF_DEPARTMENTS.map((dept) => {
-                      const c = DEPARTMENT_COLOURS[dept];
-                      return (
-                        <SelectItem key={dept} value={dept}>
-                          <span className="flex items-center gap-2">
-                            <span className={cn("w-2 h-2 rounded-full inline-block", c.bg.replace("-50", "-400"))} />
-                            {DEPARTMENT_LABELS[dept]}
-                          </span>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <DialogFooter className="pt-2">
-              <Button type="button" variant="outline" onClick={handleClose} disabled={mutation.isPending}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
-                Add Member
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 // ── Edit staff modal ──────────────────────────────────────────────────────────
 
@@ -706,6 +606,7 @@ export function StaffTeamTab({
   onExternalCreateOpenChange,
 }: StaffTeamTabProps) {
   const queryClient = useQueryClient();
+  const { t } = useStaffLocale();
 
   // ── Remote data
   const { data: staff, isLoading } = useQuery({
@@ -753,6 +654,7 @@ export function StaffTeamTab({
 
   // ── Other local UI state
   const [editTarget, setEditTarget]  = useState<StaffMember | null>(null);
+  const [detailMember, setDetailMember] = useState<StaffMember | null>(null);
   const [deptFilter, setDeptFilter]  = useState<DeptFilter>("ALL");
   const [search, setSearch]          = useState("");
 
@@ -853,6 +755,7 @@ export function StaffTeamTab({
               <EmployeeCard
                 key={member.id}
                 member={member}
+                onSelect={setDetailMember}
                 onEdit={setEditTarget}
                 onDeactivate={(m) => deactivateMutation.mutate(m.id)}
                 onReactivate={(m) => reactivateMutation.mutate(m.id)}
@@ -874,6 +777,7 @@ export function StaffTeamTab({
               <EmployeeCard
                 key={member.id}
                 member={member}
+                onSelect={setDetailMember}
                 onEdit={setEditTarget}
                 onDeactivate={(m) => deactivateMutation.mutate(m.id)}
                 onReactivate={(m) => reactivateMutation.mutate(m.id)}
@@ -885,7 +789,7 @@ export function StaffTeamTab({
       )}
 
       {/* ── Modals ───────────────────────────────────────────── */}
-      <CreateStaffModal
+      <CreateStaffSheet
         open={isCreateOpen}
         onClose={() => setCreateOpen(false)}
         onSuccess={() => { setCreateOpen(false); invalidate(); }}
@@ -894,6 +798,17 @@ export function StaffTeamTab({
         member={editTarget}
         onClose={() => setEditTarget(null)}
         onSuccess={() => { setEditTarget(null); invalidate(); }}
+      />
+
+      <EmployeeDetailSheet
+        member={detailMember}
+        open={!!detailMember}
+        onClose={() => setDetailMember(null)}
+        onEdit={setEditTarget}
+        onDeactivate={(m) => deactivateMutation.mutate(m.id)}
+        onReactivate={(m) => reactivateMutation.mutate(m.id)}
+        onPermanentDelete={(m) => permanentDeleteMutation.mutate(m.id)}
+        t={t}
       />
     </div>
   );

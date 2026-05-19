@@ -20,7 +20,78 @@ export interface StaffTranslations {
   cancel: string;
   language: string;
 
-  // ── Manager header ────────────────────────────────────────────────────────
+  // ── Manager header & nav ──────────────────────────────────────────────────
+  navMenuOpen: string;
+  navMenuTitle: string;
+  overviewGuests: string;
+  overviewEmployees: string;
+  overviewGuestSingular: string;
+  overviewGuestPlural: string;
+  overviewRefresh: string;
+  overviewAddEmployee: string;
+  overviewNoEmployees: string;
+  overviewActiveShort: string;
+  overviewInactive: string;
+  overviewTrackingPending: string;
+  overviewGuestKey: string;
+  presenceIn: string;
+  presenceOut: string;
+  presenceUnknown: string;
+  filterGuests: string;
+  filterByRoom: string;
+  filterByStatus: string;
+  guestDetails: string;
+  employeeDetails: string;
+  editGuest: string;
+  editEmployee: string;
+  renewKeyAction: string;
+  copyKeyAction: string;
+  removeGuestAction: string;
+  copyKeyDone: string;
+  copyKeyFailed: string;
+  deactivateEmployee: string;
+  reactivateEmployee: string;
+  deleteEmployeePerm: string;
+
+  addStaffMember: string;
+  addStaffSubtitle: string;
+  addStaffMemberBtn: string;
+  staffFirstName: string;
+  staffLastName: string;
+  staffEmail: string;
+  staffTempPassword: string;
+  staffDepartment: string;
+  staffMemberAdded: string;
+  failedCreateStaff: string;
+  staffFirstNameRequired: string;
+  staffLastNameRequired: string;
+  staffEmailInvalid: string;
+  staffPasswordMin: string;
+  staffDeptRequired: string;
+
+  addGuestSubtitle: string;
+  guestRoomNumber: string;
+  guestCountry: string;
+  guestCountrySearch: string;
+  guestCountryEmpty: string;
+  stayDatesSection: string;
+  stayOptional: string;
+  guestCheckIn: string;
+  guestCheckOut: string;
+  generateKeyQrBtn: string;
+  guestCreatedSuccess: string;
+  failedCreateGuest: string;
+  guestFirstNameRequired: string;
+  guestLastNameRequired: string;
+  guestRoomRequired: string;
+  guestCountryRequired: string;
+  checkoutAfterCheckin: string;
+  passportScanned: string;
+  passportNationalityManual: string;
+  passportScannedHint: string;
+  passportQrError: string;
+  scannerReadyShort: string;
+
   newGuest: string;
   restaurantDashboard: string;
   quickReport: string;
@@ -168,6 +239,77 @@ const en: StaffTranslations = {
   cancel: "Cancel",
   language: "Language",
 
+  navMenuOpen: "Open menu",
+  navMenuTitle: "Dashboard",
+  overviewGuests: "Guests",
+  overviewEmployees: "Staff",
+  overviewGuestSingular: "registered guest",
+  overviewGuestPlural: "registered guests",
+  overviewRefresh: "Refresh presence",
+  overviewAddEmployee: "Add employee",
+  overviewNoEmployees: "No employees yet",
+  overviewActiveShort: "active",
+  overviewInactive: "Inactive",
+  overviewTrackingPending: "Presence tracking pending",
+  overviewGuestKey: "Access key",
+  presenceIn: "In hotel",
+  presenceOut: "Out of hotel",
+  presenceUnknown: "Unknown",
+  filterGuests: "Filter guests",
+  filterByRoom: "Room",
+  filterByStatus: "Stay status",
+  guestDetails: "Guest details",
+  employeeDetails: "Employee details",
+  editGuest: "Edit guest",
+  editEmployee: "Edit employee",
+  renewKeyAction: "Renew key & QR",
+  copyKeyAction: "Copy access key",
+  removeGuestAction: "Remove guest",
+  copyKeyDone: "Key copied",
+  copyKeyFailed: "Copy failed",
+  deactivateEmployee: "Deactivate",
+  reactivateEmployee: "Reactivate",
+  deleteEmployeePerm: "Delete permanently",
+
+  addStaffMember: "Add team member",
+  addStaffSubtitle: "Create login credentials and assign a department.",
+  addStaffMemberBtn: "Add member",
+  staffFirstName: "First name",
+  staffLastName: "Last name",
+  staffEmail: "Work email",
+  staffTempPassword: "Temporary password",
+  staffDepartment: "Department",
+  staffMemberAdded: "Team member added",
+  failedCreateStaff: "Could not add team member",
+  staffFirstNameRequired: "First name is required",
+  staffLastNameRequired: "Last name is required",
+  staffEmailInvalid: "Enter a valid email",
+  staffPasswordMin: "Password must be at least 8 characters",
+  staffDeptRequired: "Select a department",
+
+  addGuestSubtitle: "Issue a digital key and QR login for the guest.",
+  guestRoomNumber: "Room number",
+  guestCountry: "Country",
+  guestCountrySearch: "Search country…",
+  guestCountryEmpty: "No country found",
+  stayDatesSection: "Stay dates",
+  stayOptional: "optional",
+  guestCheckIn: "Check-in",
+  guestCheckOut: "Check-out",
+  generateKeyQrBtn: "Generate key & QR",
+  guestCreatedSuccess: "Guest checked in",
+  failedCreateGuest: "Failed to create guest",
+  guestFirstNameRequired: "First name is required",
+  guestLastNameRequired: "Last name is required",
+  guestRoomRequired: "Room number is required",
+  guestCountryRequired: "Country is required",
+  checkoutAfterCheckin: "Check-out must be after check-in",
+  passportScanned: "Passport scanned",
+  passportNationalityManual: "Select nationality manually",
+  passportScannedHint: "Passport data filled — verify and complete remaining fields.",
+  passportQrError: "QR code not recognised",
+  scannerReadyShort: "Scanner ready",
+
   newGuest: "New Guest",
   restaurantDashboard: "Restaurant Dashboard",
   quickReport: "Quick Report",
@@ -299,6 +441,77 @@ const tr: StaffTranslations = {
   cancel: "İptal",
   language: "Dil",
 
+  navMenuOpen: "Menüyü aç",
+  navMenuTitle: "Panel",
+  overviewGuests: "Misafirler",
+  overviewEmployees: "Çalışanlar",
+  overviewGuestSingular: "kayıtlı misafir",
+  overviewGuestPlural: "kayıtlı misafir",
+  overviewRefresh: "Konumu yenile",
+  overviewAddEmployee: "Çalışan ekle",
+  overviewNoEmployees: "Henüz çalışan yok",
+  overviewActiveShort: "aktif",
+  overviewInactive: "Pasif",
+  overviewTrackingPending: "Konum takibi bekleniyor",
+  overviewGuestKey: "Erişim anahtarı",
+  presenceIn: "Otelde",
+  presenceOut: "Otel dışında",
+  presenceUnknown: "Bilinmiyor",
+  filterGuests: "Misafirleri filtrele",
+  filterByRoom: "Oda",
+  filterByStatus: "Konaklama durumu",
+  guestDetails: "Misafir detayı",
+  employeeDetails: "Çalışan detayı",
+  editGuest: "Misafiri düzenle",
+  editEmployee: "Çalışanı düzenle",
+  renewKeyAction: "Anahtar ve QR yenile",
+  copyKeyAction: "Anahtarı kopyala",
+  removeGuestAction: "Misafiri kaldır",
+  copyKeyDone: "Anahtar kopyalandı",
+  copyKeyFailed: "Kopyalama başarısız",
+  deactivateEmployee: "Pasifleştir",
+  reactivateEmployee: "Yeniden aktifleştir",
+  deleteEmployeePerm: "Kalıcı olarak sil",
+
+  addStaffMember: "Çalışan ekle",
+  addStaffSubtitle: "Giriş bilgilerini oluşturun ve departman atayın.",
+  addStaffMemberBtn: "Üye ekle",
+  staffFirstName: "Ad",
+  staffLastName: "Soyad",
+  staffEmail: "İş e-postası",
+  staffTempPassword: "Geçici şifre",
+  staffDepartment: "Departman",
+  staffMemberAdded: "Çalışan eklendi",
+  failedCreateStaff: "Çalışan eklenemedi",
+  staffFirstNameRequired: "Ad zorunludur",
+  staffLastNameRequired: "Soyad zorunludur",
+  staffEmailInvalid: "Geçerli bir e-posta girin",
+  staffPasswordMin: "Şifre en az 8 karakter olmalı",
+  staffDeptRequired: "Departman seçin",
+
+  addGuestSubtitle: "Misafir için dijital anahtar ve QR girişi oluşturun.",
+  guestRoomNumber: "Oda numarası",
+  guestCountry: "Ülke",
+  guestCountrySearch: "Ülke ara…",
+  guestCountryEmpty: "Ülke bulunamadı",
+  stayDatesSection: "Konaklama tarihleri",
+  stayOptional: "opsiyonel",
+  guestCheckIn: "Giriş",
+  guestCheckOut: "Çıkış",
+  generateKeyQrBtn: "Anahtar ve QR oluştur",
+  guestCreatedSuccess: "Misafir girişi yapıldı",
+  failedCreateGuest: "Misafir oluşturulamadı",
+  guestFirstNameRequired: "Ad zorunludur",
+  guestLastNameRequired: "Soyad zorunludur",
+  guestRoomRequired: "Oda numarası zorunludur",
+  guestCountryRequired: "Ülke seçin",
+  checkoutAfterCheckin: "Çıkış tarihi girişten sonra olmalı",
+  passportScanned: "Pasaport tarandı",
+  passportNationalityManual: "Uyruğu manuel seçin",
+  passportScannedHint: "Pasaport verileri dolduruldu — kontrol edip kalan alanları tamamlayın.",
+  passportQrError: "QR kodu tanınmadı",
+  scannerReadyShort: "Tarayıcı hazır",
+
   newGuest: "Yeni Misafir",
   restaurantDashboard: "Restoran Paneli",
   quickReport: "Hızlı Rapor",
@@ -429,6 +642,77 @@ const ar: StaffTranslations = {
   save: "حفظ",
   cancel: "إلغاء",
   language: "اللغة",
+
+  navMenuOpen: "فتح القائمة",
+  navMenuTitle: "لوحة التحكم",
+  overviewGuests: "الضيوف",
+  overviewEmployees: "الموظفون",
+  overviewGuestSingular: "ضيف مسجل",
+  overviewGuestPlural: "ضيوف مسجلون",
+  overviewRefresh: "تحديث الحضور",
+  overviewAddEmployee: "إضافة موظف",
+  overviewNoEmployees: "لا يوجد موظفون بعد",
+  overviewActiveShort: "نشط",
+  overviewInactive: "غير نشط",
+  overviewTrackingPending: "تتبع الحضور قيد الانتظار",
+  overviewGuestKey: "مفتاح الوصول",
+  presenceIn: "في الفندق",
+  presenceOut: "خارج الفندق",
+  presenceUnknown: "غير معروف",
+  filterGuests: "تصفية الضيوف",
+  filterByRoom: "الغرفة",
+  filterByStatus: "حالة الإقامة",
+  guestDetails: "تفاصيل الضيف",
+  employeeDetails: "تفاصيل الموظف",
+  editGuest: "تعديل الضيف",
+  editEmployee: "تعديل الموظف",
+  renewKeyAction: "تجديد المفتاح ورمز QR",
+  copyKeyAction: "نسخ مفتاح الوصول",
+  removeGuestAction: "إزالة الضيف",
+  copyKeyDone: "تم نسخ المفتاح",
+  copyKeyFailed: "فشل النسخ",
+  deactivateEmployee: "إلغاء التفعيل",
+  reactivateEmployee: "إعادة التفعيل",
+  deleteEmployeePerm: "حذف نهائي",
+
+  addStaffMember: "إضافة موظف",
+  addStaffSubtitle: "أنشئ بيانات الدخول وعيّن القسم.",
+  addStaffMemberBtn: "إضافة",
+  staffFirstName: "الاسم الأول",
+  staffLastName: "اسم العائلة",
+  staffEmail: "البريد الإلكتروني",
+  staffTempPassword: "كلمة مرور مؤقتة",
+  staffDepartment: "القسم",
+  staffMemberAdded: "تمت إضافة الموظف",
+  failedCreateStaff: "تعذرت إضافة الموظف",
+  staffFirstNameRequired: "الاسم الأول مطلوب",
+  staffLastNameRequired: "اسم العائلة مطلوب",
+  staffEmailInvalid: "أدخل بريداً إلكترونياً صالحاً",
+  staffPasswordMin: "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
+  staffDeptRequired: "اختر القسم",
+
+  addGuestSubtitle: "إصدار مفتاح رقمي ورمز QR لتسجيل دخول الضيف.",
+  guestRoomNumber: "رقم الغرفة",
+  guestCountry: "البلد",
+  guestCountrySearch: "ابحث عن بلد…",
+  guestCountryEmpty: "لم يُعثر على بلد",
+  stayDatesSection: "تواريخ الإقامة",
+  stayOptional: "اختياري",
+  guestCheckIn: "تسجيل الوصول",
+  guestCheckOut: "تسجيل المغادرة",
+  generateKeyQrBtn: "إنشاء المفتاح ورمز QR",
+  guestCreatedSuccess: "تم تسجيل الضيف",
+  failedCreateGuest: "تعذر إنشاء الضيف",
+  guestFirstNameRequired: "الاسم الأول مطلوب",
+  guestLastNameRequired: "اسم العائلة مطلوب",
+  guestRoomRequired: "رقم الغرفة مطلوب",
+  guestCountryRequired: "البلد مطلوب",
+  checkoutAfterCheckin: "يجب أن يكون المغادرة بعد الوصول",
+  passportScanned: "تم مسح جواز السفر",
+  passportNationalityManual: "اختر الجنسية يدوياً",
+  passportScannedHint: "تم ملء بيانات جواز السفر — راجع وأكمل الحقول المتبقية.",
+  passportQrError: "رمز QR غير معروف",
+  scannerReadyShort: "الماسح جاهز",
 
   newGuest: "ضيف جديد",
   restaurantDashboard: "لوحة المطعم",
