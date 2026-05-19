@@ -1,4 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { IOS_EASE, PAGE_ENTER } from "@/components/login/login-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useLogin } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
@@ -27,6 +29,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { LoginModeSwitcher } from "@/components/login/LoginModeSwitcher";
+import { LoginTabPanel, getLoginSlideDirection } from "@/components/login/LoginTabPanel";
+import type { LoginMode } from "@/components/login/login-mode";
 
 // ---------------------------------------------------------------------------
 // Schemas
@@ -82,10 +87,12 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const loginMutation = useLogin();
 
-  const [mode, setMode] = useState<"guest" | "manager">("guest");
+  const [mode, setMode] = useState<LoginMode>("guest");
+  const [slideDirection, setSlideDirection] = useState(0);
   const [showGuestKey, setShowGuestKey] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const reduceMotion = useReducedMotion();
 
 
   const managerForm = useForm<ManagerForm>({
@@ -114,13 +121,14 @@ export default function Login() {
 
   // Switch tab and clean up stale state
   const switchMode = useCallback(
-    (next: "guest" | "manager") => {
+    (next: LoginMode) => {
       if (next === mode) return;
+      setSlideDirection(getLoginSlideDirection(mode, next));
       setMode(next);
       setFormError(null);
       loginMutation.reset();
     },
-    [mode, loginMutation]
+    [mode, loginMutation],
   );
 
   // Show full-page loading while the session is being restored from token
@@ -182,14 +190,32 @@ export default function Login() {
   // ---------------------------------------------------------------------------
   return (
     <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-zinc-50/50 px-4 py-10 md:py-16">
-      <div className="w-full max-w-sm mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <motion.div
+        className="w-full max-w-sm mx-auto space-y-8"
+        initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={reduceMotion ? { duration: 0.01 } : PAGE_ENTER}
+      >
 
-        {/* Brand header */}
-        <header className="text-center space-y-4">
+        <motion.header
+          className="text-center space-y-4"
+          initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={reduceMotion ? { duration: 0.01 } : { ...PAGE_ENTER, delay: 0.05 }}
+        >
           <div className="flex flex-col items-center gap-5">
-            <div className="inline-flex items-center justify-center w-[88px] h-[88px] rounded-[28px] bg-white shadow-md shadow-zinc-200/60 border border-zinc-100/80">
+            <motion.div
+              className="inline-flex items-center justify-center w-[88px] h-[88px] rounded-[28px] bg-white shadow-md shadow-zinc-200/60 border border-zinc-100/80"
+              initial={reduceMotion ? false : { opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={
+                reduceMotion
+                  ? { duration: 0.01 }
+                  : { type: "spring", stiffness: 420, damping: 28, delay: 0.08 }
+              }
+            >
               <GuestProLogo variant="login" />
-            </div>
+            </motion.div>
             <div className="space-y-1.5">
               <h1 className="text-3xl font-serif tracking-tight text-zinc-900">
                 Guest Pro
@@ -199,71 +225,46 @@ export default function Login() {
               </p>
             </div>
           </div>
-        </header>
+        </motion.header>
 
-        {/* Card */}
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 14, scale: 0.985 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={
+            reduceMotion
+              ? { duration: 0.01 }
+              : { duration: 0.55, ease: IOS_EASE, delay: 0.12 }
+          }
+        >
         <Card className="border border-zinc-100 shadow-xl shadow-zinc-200/40 rounded-3xl bg-white">
 
-          {/* Tab bar */}
-          <div
-            role="tablist"
-            aria-label="Login type"
-            className="flex p-2 bg-zinc-50 rounded-t-3xl border-b border-zinc-100"
-          >
-            <button
-              role="tab"
-              aria-selected={mode === "guest"}
-              aria-controls="panel-guest"
-              id="tab-guest"
-              data-testid="tab-guest"
-              type="button"
-              onClick={() => switchMode("guest")}
-              className={`flex-1 py-3 text-sm font-medium rounded-2xl transition-all duration-200 ${
-                mode === "guest"
-                  ? "bg-white text-zinc-900 shadow-sm"
-                  : "text-zinc-500 hover:text-zinc-700 active:text-zinc-900"
-              }`}
-            >
-              Guest Key
-            </button>
-            <button
-              role="tab"
-              aria-selected={mode === "manager"}
-              aria-controls="panel-manager"
-              id="tab-manager"
-              data-testid="tab-manager"
-              type="button"
-              onClick={() => switchMode("manager")}
-              className={`flex-1 py-3 text-sm font-medium rounded-2xl transition-all duration-200 ${
-                mode === "manager"
-                  ? "bg-white text-zinc-900 shadow-sm"
-                  : "text-zinc-500 hover:text-zinc-700 active:text-zinc-900"
-              }`}
-            >
-              Staff
-            </button>
+          <div className="rounded-t-3xl border-b border-zinc-100 bg-zinc-50 px-2 pb-2 pt-2">
+            <LoginModeSwitcher mode={mode} onModeChange={switchMode} />
           </div>
 
           <CardContent className="p-6 md:p-8">
 
             {/* Shared inline error banner */}
-            {formError && (
-              <div
-                role="alert"
-                className="mb-5 flex items-start gap-3 rounded-2xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700"
-              >
-                <Info className="w-4 h-4 mt-0.5 shrink-0 text-red-500" aria-hidden="true" />
-                <span>{formError}</span>
-              </div>
-            )}
+            <AnimatePresence initial={false}>
+              {formError && (
+                <motion.div
+                  key="login-error"
+                  role="alert"
+                  initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  animate={{ opacity: 1, height: "auto", marginBottom: 20 }}
+                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  transition={{ duration: 0.28, ease: IOS_EASE }}
+                  className="flex items-start gap-3 overflow-hidden rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700"
+                >
+                  <Info className="w-4 h-4 mt-0.5 shrink-0 text-red-500" aria-hidden="true" />
+                  <span>{formError}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            {/* ── Guest panel ── */}
-            {mode === "guest" && (
-              <div
-                id="panel-guest"
-                role="tabpanel"
-                aria-labelledby="tab-guest"
-              >
+            <LoginTabPanel mode={mode} slideDirection={slideDirection}>
+            {mode === "guest" ? (
+              <>
                 <Form {...guestForm}>
                   <form
                     onSubmit={guestForm.handleSubmit(onSubmitGuest)}
@@ -291,7 +292,7 @@ export default function Login() {
                                 autoCapitalize="none"
                                 autoCorrect="off"
                                 spellCheck={false}
-                                className="pl-12 pr-12 h-14 text-base rounded-2xl bg-zinc-50 border-zinc-200 focus-visible:ring-zinc-900 transition-all placeholder:text-zinc-400 font-mono tracking-widest"
+                                className="pl-12 pr-12 h-14 text-base rounded-2xl bg-zinc-50 border-zinc-200 focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-2 transition-all placeholder:text-zinc-400 font-mono tracking-widest"
                                 {...field}
                               />
                               <RevealToggle
@@ -329,18 +330,9 @@ export default function Login() {
                   <br />
                   Contact the front desk if you need assistance.
                 </p>
-              </div>
-            )}
-
-            {/* ── Manager / Staff panel ── */}
-            {mode === "manager" && (
-              <div
-                id="panel-manager"
-                role="tabpanel"
-                aria-labelledby="tab-manager"
-                className="space-y-5"
-              >
-                {/* Email + password form */}
+              </>
+            ) : (
+              <div className="space-y-5">
                 <Form {...managerForm}>
                   <form
                     onSubmit={managerForm.handleSubmit(onSubmitManager)}
@@ -367,7 +359,7 @@ export default function Login() {
                                 type="email"
                                 autoComplete="email"
                                 inputMode="email"
-                                className="pl-12 h-14 rounded-2xl bg-zinc-50 border-zinc-200 focus-visible:ring-zinc-900 transition-all placeholder:text-zinc-400"
+                                className="pl-12 h-14 rounded-2xl bg-zinc-50 border-zinc-200 focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-2 transition-all placeholder:text-zinc-400"
                                 {...field}
                               />
                             </div>
@@ -395,7 +387,7 @@ export default function Login() {
                                 placeholder="Password"
                                 type={showPassword ? "text" : "password"}
                                 autoComplete="current-password"
-                                className="pl-12 pr-12 h-14 rounded-2xl bg-zinc-50 border-zinc-200 focus-visible:ring-zinc-900 transition-all placeholder:text-zinc-400"
+                                className="pl-12 pr-12 h-14 rounded-2xl bg-zinc-50 border-zinc-200 focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-2 transition-all placeholder:text-zinc-400"
                                 {...field}
                               />
                               <RevealToggle
@@ -427,12 +419,13 @@ export default function Login() {
                     </Button>
                   </form>
                 </Form>
-
               </div>
             )}
+            </LoginTabPanel>
           </CardContent>
         </Card>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }
