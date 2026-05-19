@@ -34,7 +34,9 @@ export function KioskBrandHeader({
           variant="header"
           className={cn("invert", isFixed ? "w-7 h-7 opacity-90" : "w-6 h-6 opacity-80")}
         />
-        <span className="kiosk-brand-hotel-name">{HOTEL_CONFIG.name}</span>
+        <span className="kiosk-brand-hotel-name truncate max-w-[min(72vw,14rem)] sm:max-w-none">
+          {HOTEL_CONFIG.name}
+        </span>
       </div>
       {isFixed && (
         <div

@@ -1,7 +1,8 @@
 /**
  * GuestWelcoming — /welcoming
  *
- * Kiosk registration entry: fixed brand header + premium QR hero.
+ * Kiosk registration entry: fixed brand header + responsive QR hero.
+ * Optimized for mobile viewports (no horizontal overflow, scroll when needed).
  */
 
 import { KioskBrandHeader } from "@/components/kiosk/KioskBrandHeader";
@@ -11,8 +12,8 @@ export default function GuestWelcoming() {
   const scanUrl = `${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, "")}/guest/passport-scan`;
 
   return (
-    <div className="min-h-dvh flex flex-col bg-black overflow-hidden relative">
-      <div className="passport-welcome-vignette" aria-hidden="true" />
+    <div className="welcoming-screen">
+      <div className="passport-welcome-vignette pointer-events-none" aria-hidden="true" />
       <div
         className="pointer-events-none absolute inset-0 backdrop-blur-[1px]"
         aria-hidden="true"
@@ -20,9 +21,9 @@ export default function GuestWelcoming() {
 
       <KioskBrandHeader variant="fixed" />
 
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center w-full max-w-[480px] mx-auto px-5 sm:px-6 pt-[max(4.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      <main className="welcoming-screen__main">
         <RegisterQrCard scanUrl={scanUrl} />
-      </div>
+      </main>
     </div>
   );
 }

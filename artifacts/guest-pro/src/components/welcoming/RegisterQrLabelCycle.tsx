@@ -24,7 +24,7 @@ export function RegisterQrLabelCycle() {
 
   return (
     <div
-      className="relative w-full min-h-[6rem] sm:min-h-[6.75rem] flex items-center justify-center overflow-hidden px-5"
+      className="relative w-full min-h-[4.75rem] sm:min-h-[6rem] md:min-h-[6.75rem] flex items-center justify-center overflow-hidden px-3 sm:px-5"
       aria-live="polite"
       aria-label="registration instruction"
     >
