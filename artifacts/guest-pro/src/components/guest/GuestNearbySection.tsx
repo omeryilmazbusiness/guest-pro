@@ -1,5 +1,5 @@
 /**
- * GuestNearbySection — nearby places at the bottom of guest dashboard screens.
+ * GuestNearbySection — nearby places at the bottom of the guest dashboard (/guest) only.
  */
 
 import { useState, useCallback } from "react";
