@@ -55,14 +55,50 @@ function chargeDateFromRequest(createdAt: Date): string {
   return createdAt.toISOString().slice(0, 10);
 }
 
-function foodStructuredData(data: Record<string, unknown> | null) {
-  if (!data) return {};
+interface FoodStructuredData {
+  menuItemId: number | null;
+  itemName: string | null;
+  category: string | null;
+  quantity: number;
+  unitPrice: string | null;
+  currency: string;
+  menuType: string | null;
+}
+
+const EMPTY_FOOD_DATA: FoodStructuredData = {
+  menuItemId: null,
+  itemName: null,
+  category: null,
+  quantity: 1,
+  unitPrice: null,
+  currency: "TRY",
+  menuType: null,
+};
+
+function foodStructuredData(data: Record<string, unknown> | null): FoodStructuredData {
+  if (!data) return EMPTY_FOOD_DATA;
   return {
-    menuItemId: typeof data.menuItemId === "number" ? data.menuItemId : Number(data.menuItemId) || null,
-    itemName: typeof data.itemName === "string" ? data.itemName : typeof data.item === "string" ? data.item : null,
+    menuItemId:
+      typeof data.menuItemId === "number"
+        ? data.menuItemId
+        : Number(data.menuItemId) || null,
+    itemName:
+      typeof data.itemName === "string"
+        ? data.itemName
+        : typeof data.item === "string"
+          ? data.item
+          : null,
     category: typeof data.category === "string" ? data.category : null,
-    quantity: typeof data.quantity === "number" ? data.quantity : parseInt(String(data.quantity ?? "1"), 10) || 1,
-    unitPrice: data.unitPrice != null ? String(data.unitPrice) : data.priceAmount != null ? String(data.priceAmount) : null,
+    quantity:
+      typeof data.quantity === "number"
+        ? data.quantity
+        : parseInt(String(data.quantity ?? "1"), 10) || 1,
+    unitPrice:
+      data.unitPrice != null
+        ? String(data.unitPrice)
+        : data.priceAmount != null
+          ? String(data.priceAmount)
+          : null,
     currency: typeof data.currency === "string" ? data.currency : "TRY",
     menuType: typeof data.menuType === "string" ? data.menuType : null,
   };
@@ -140,7 +176,8 @@ async function syncFoodOrderFolio(request: ServiceRequest): Promise<void> {
   const data = foodStructuredData(request.structuredData as Record<string, unknown> | null);
   const qty = Math.max(1, data.quantity);
   const itemLabel =
-    data.itemName ?? request.summary.replace(/^[^:]+:\s*/, "").trim() || "Food order";
+    data.itemName ??
+    (request.summary.replace(/^[^:]+:\s*/, "").trim() || "Food order");
 
   const price = await resolveMenuPrice(
     request.hotelId,

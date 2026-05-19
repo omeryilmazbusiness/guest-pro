@@ -5,13 +5,14 @@ import pg from "pg";
 const { Pool } = pg;
 import { sql } from "drizzle-orm";
 import * as readline from "readline/promises";
+import type { Interface } from "readline/promises";
 import { stdin as input, stdout as output } from "process";
 
 const PBKDF2_ITERATIONS = 100_000;
 const PBKDF2_KEYLEN = 32;
 const PBKDF2_DIGEST = "sha256";
 
-function hashPassword(password) {
+function hashPassword(password: string): string {
   const salt = crypto.randomBytes(16).toString("hex");
   const hash = crypto
     .pbkdf2Sync(password, salt, PBKDF2_ITERATIONS, PBKDF2_KEYLEN, PBKDF2_DIGEST)
@@ -19,7 +20,7 @@ function hashPassword(password) {
   return "pbkdf2v3:" + salt + ":" + hash;
 }
 
-function slugify(name) {
+function slugify(name: string): string {
   return name.toLowerCase()
     .replace(/\s+/g, "-")
     .replace(/[^a-z0-9-]/g, "")
@@ -27,11 +28,11 @@ function slugify(name) {
     .replace(/^-|-$/g, "");
 }
 
-async function ask(rl, question) {
+async function ask(rl: Interface, question: string): Promise<string> {
   return (await rl.question(question)).trim();
 }
 
-async function askRequired(rl, question) {
+async function askRequired(rl: Interface, question: string): Promise<string> {
   let answer = "";
   while (!answer) {
     answer = await ask(rl, question);

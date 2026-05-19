@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
-import type { Message } from "@workspace/api-client-react/generated/api.schemas";
+import type { Message } from "@workspace/api-client-react";
 
 interface MessageBubbleProps {
   message: Message;

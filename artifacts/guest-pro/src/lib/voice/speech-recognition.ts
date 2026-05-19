@@ -33,13 +33,6 @@ export interface SpeechSessionOptions {
   onEnd: () => void;
 }
 
-declare global {
-  interface Window {
-    SpeechRecognition: typeof SpeechRecognition;
-    webkitSpeechRecognition: typeof SpeechRecognition;
-  }
-}
-
 export interface SpeechSession {
   start: () => void;
   stop: () => void;
