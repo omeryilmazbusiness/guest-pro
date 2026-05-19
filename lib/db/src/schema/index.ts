@@ -10,3 +10,4 @@ export * from "./service-requests";
 export * from "./daily-summaries";
 export * from "./welcome-alerts";
 export * from "./restaurant";
+export * from "./guest-folio";

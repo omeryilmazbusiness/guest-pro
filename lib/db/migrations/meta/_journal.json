@@ -15,6 +15,13 @@
       "when": 1777496200000,
       "tag": "0001_restaurant",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777496300000,
+      "tag": "0002_guest_folio",
+      "breakpoints": true
     }
   ]
 }

@@ -248,6 +248,21 @@ export interface GuestTranslations {
   reqDeleteLabel: string;
   reqDeleteConfirm: string;
   reqDeletedToast: string;
+
+  // ── Daily bill (folio) ────────────────────────────────────────────────────
+  billSection: string;
+  billCardTitle: string;
+  billCardSubtitleToday: string;
+  billCardSubtitleAmount: string; // {amount}
+  billSheetTitle: string;
+  billRoomLabel: string; // {room}
+  billSubtotal: string;
+  billRoomChargeNote: string;
+  billEmptyTitle: string;
+  billEmptySubtitle: string;
+  billToday: string;
+  billYesterday: string;
+  billClose: string;
 }
 
 type SupportedLocale = "en" | "tr" | "ar" | "ru" | "de" | "fr" | "es";
@@ -468,6 +483,20 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqDeleteLabel: "Remove",
     reqDeleteConfirm: "Delete?",
     reqDeletedToast: "Request removed",
+
+    billSection: "Your stay",
+    billCardTitle: "Today's bill",
+    billCardSubtitleToday: "Tap to view charges for today",
+    billCardSubtitleAmount: "Today · {amount}",
+    billSheetTitle: "Daily bill",
+    billRoomLabel: "Room {room}",
+    billSubtotal: "Total",
+    billRoomChargeNote: "Charges are added to your room account. Final invoice at checkout.",
+    billEmptyTitle: "No charges yet",
+    billEmptySubtitle: "Food orders and minibar services with a listed price will appear here.",
+    billToday: "Today",
+    billYesterday: "Yesterday",
+    billClose: "Close",
   },
 
   // ── Turkish ───────────────────────────────────────────────────────────────
@@ -685,6 +714,20 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqDeleteLabel: "Kaldır",
     reqDeleteConfirm: "Sil?",
     reqDeletedToast: "Talep kaldırıldı",
+
+    billSection: "Konaklamanız",
+    billCardTitle: "Günün hesabı",
+    billCardSubtitleToday: "Bugünkü harcamalarınızı görüntüleyin",
+    billCardSubtitleAmount: "Bugün · {amount}",
+    billSheetTitle: "Günlük hesap",
+    billRoomLabel: "Oda {room}",
+    billSubtotal: "Toplam",
+    billRoomChargeNote: "Ücretler oda hesabınıza işlenir. Kesin fatura çıkışta verilir.",
+    billEmptyTitle: "Henüz harcama yok",
+    billEmptySubtitle: "Fiyatı tanımlı yemek siparişleri ve minibar hizmetleri burada listelenir.",
+    billToday: "Bugün",
+    billYesterday: "Dün",
+    billClose: "Kapat",
   },
 
   // ── Arabic ────────────────────────────────────────────────────────────────
@@ -902,6 +945,20 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqDeleteLabel: "إزالة",
     reqDeleteConfirm: "حذف؟",
     reqDeletedToast: "تمت إزالة الطلب",
+
+    billSection: "إقامتك",
+    billCardTitle: "فاتورة اليوم",
+    billCardSubtitleToday: "اضغط لعرض مصروفات اليوم",
+    billCardSubtitleAmount: "اليوم · {amount}",
+    billSheetTitle: "الفاتورة اليومية",
+    billRoomLabel: "غرفة {room}",
+    billSubtotal: "المجموع",
+    billRoomChargeNote: "تُضاف الرسوم إلى حساب غرفتك. الفاتورة النهائية عند المغادرة.",
+    billEmptyTitle: "لا مصروفات بعد",
+    billEmptySubtitle: "ستظهر هنا طلبات الطعام وخدمات الميني بار ذات السعر المحدد.",
+    billToday: "اليوم",
+    billYesterday: "أمس",
+    billClose: "إغلاق",
   },
 
   // ── Russian ───────────────────────────────────────────────────────────────
@@ -1119,6 +1176,20 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqDeleteLabel: "Удалить",
     reqDeleteConfirm: "Удалить?",
     reqDeletedToast: "Запрос удалён",
+
+    billSection: "Ваше пребывание",
+    billCardTitle: "Счёт за сегодня",
+    billCardSubtitleToday: "Нажмите, чтобы увидеть расходы за день",
+    billCardSubtitleAmount: "Сегодня · {amount}",
+    billSheetTitle: "Дневной счёт",
+    billRoomLabel: "Номер {room}",
+    billSubtotal: "Итого",
+    billRoomChargeNote: "Списания идут на счёт номера. Окончательный счёт при выезде.",
+    billEmptyTitle: "Расходов пока нет",
+    billEmptySubtitle: "Здесь появятся заказы еды и мини-бар с указанной ценой.",
+    billToday: "Сегодня",
+    billYesterday: "Вчера",
+    billClose: "Закрыть",
   },
 
   // ── German ────────────────────────────────────────────────────────────────
@@ -1336,6 +1407,20 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqDeleteLabel: "Entfernen",
     reqDeleteConfirm: "Löschen?",
     reqDeletedToast: "Anfrage entfernt",
+
+    billSection: "Ihr Aufenthalt",
+    billCardTitle: "Tagesrechnung",
+    billCardSubtitleToday: "Tippen für die heutigen Kosten",
+    billCardSubtitleAmount: "Heute · {amount}",
+    billSheetTitle: "Tagesrechnung",
+    billRoomLabel: "Zimmer {room}",
+    billSubtotal: "Gesamt",
+    billRoomChargeNote: "Gebühren werden dem Zimmerkonto belastet. Endrechnung bei Abreise.",
+    billEmptyTitle: "Noch keine Kosten",
+    billEmptySubtitle: "Essensbestellungen und Minibar mit Preis erscheinen hier.",
+    billToday: "Heute",
+    billYesterday: "Gestern",
+    billClose: "Schließen",
   },
 
   // ── French ────────────────────────────────────────────────────────────────
@@ -1553,6 +1638,20 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqDeleteLabel: "Supprimer",
     reqDeleteConfirm: "Supprimer ?",
     reqDeletedToast: "Demande supprimée",
+
+    billSection: "Votre séjour",
+    billCardTitle: "Note du jour",
+    billCardSubtitleToday: "Voir les dépenses du jour",
+    billCardSubtitleAmount: "Aujourd'hui · {amount}",
+    billSheetTitle: "Note quotidienne",
+    billRoomLabel: "Chambre {room}",
+    billSubtotal: "Total",
+    billRoomChargeNote: "Les frais sont portés au compte chambre. Facture finale au départ.",
+    billEmptyTitle: "Aucune dépense",
+    billEmptySubtitle: "Les commandes et le minibar tarifés apparaîtront ici.",
+    billToday: "Aujourd'hui",
+    billYesterday: "Hier",
+    billClose: "Fermer",
   },
 
   // ── Spanish ───────────────────────────────────────────────────────────────
@@ -1770,6 +1869,20 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqDeleteLabel: "Eliminar",
     reqDeleteConfirm: "¿Eliminar?",
     reqDeletedToast: "Solicitud eliminada",
+
+    billSection: "Tu estancia",
+    billCardTitle: "Cuenta del día",
+    billCardSubtitleToday: "Toca para ver los gastos de hoy",
+    billCardSubtitleAmount: "Hoy · {amount}",
+    billSheetTitle: "Cuenta diaria",
+    billRoomLabel: "Habitación {room}",
+    billSubtotal: "Total",
+    billRoomChargeNote: "Los cargos se añaden a la cuenta de la habitación. Factura final al salir.",
+    billEmptyTitle: "Sin gastos aún",
+    billEmptySubtitle: "Los pedidos de comida y minibar con precio aparecerán aquí.",
+    billToday: "Hoy",
+    billYesterday: "Ayer",
+    billClose: "Cerrar",
   },
 };
 

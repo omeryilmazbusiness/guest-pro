@@ -319,17 +319,44 @@ function buildSummary(
 function buildStructuredData(
   mode: FlowMode,
   answers: Record<string, string>,
-  customInputs: Record<string, string>
+  customInputs: Record<string, string>,
+  answerLabels: Record<string, string> = {},
+  itemsByCategory?: Record<string, GuestMenuItem[]>,
 ) {
   const pick = (key: string) => customInputs[key]?.trim() || answers[key] || null;
 
   const base = { originalLanguage: navigator.language };
 
   if (mode === "food") {
+    const menuItemId = parseInt(answers.item ?? "", 10);
+    const categoryKey = pick("category");
+    let itemName = answerLabels.item || null;
+    let unitPrice: string | null = null;
+    let currency = "TRY";
+    let menuType: string | null = null;
+
+    if (Number.isFinite(menuItemId) && itemsByCategory) {
+      const inCategory = categoryKey ? (itemsByCategory[categoryKey] ?? []) : [];
+      const allItems = inCategory.length > 0 ? inCategory : Object.values(itemsByCategory).flat();
+      const found = allItems.find((i) => i.id === menuItemId);
+      if (found) {
+        itemName = found.name;
+        unitPrice = found.priceAmount;
+        currency = found.currency;
+        menuType = found.menuType;
+      }
+    }
+
     return {
       ...base,
-      category: pick("category"),
-      item: pick("item"),
+      category: categoryKey,
+      menuItemId: Number.isFinite(menuItemId) ? menuItemId : null,
+      itemName,
+      item: itemName,
+      unitPrice,
+      priceAmount: unitPrice,
+      currency,
+      menuType,
       quantity: parseInt(pick("quantity") ?? "1", 10),
       note: pick("note"),
     };
@@ -614,9 +641,12 @@ export default function GuidedFlowPage() {
       const options: StepOption[] =
         liveItems.length > 0
           ? liveItems.map((item) => ({
-              value: item.name,
+              value: String(item.id),
               label: item.name,
-              subtitle: item.description ?? item.portionInfo ?? item.allergenNotes ?? undefined,
+              subtitle:
+                item.priceAmount != null
+                  ? `₺${item.priceAmount}`
+                  : (item.description ?? item.portionInfo ?? item.allergenNotes ?? undefined),
               icon: Utensils,
             }))
           : [{ value: "__empty__", label: menuLoading ? "Yükleniyor…" : "Menüde ürün yok", icon: Utensils }];
@@ -700,7 +730,13 @@ export default function GuidedFlowPage() {
     setIsCreating(true);
     try {
       const summary = buildSummary(mode, answers, customInputs, t, answerLabels);
-      const structuredData = buildStructuredData(mode, answers, customInputs);
+      const structuredData = buildStructuredData(
+        mode,
+        answers,
+        customInputs,
+        answerLabels,
+        mode === "food" ? itemsByCategory : undefined,
+      );
       await createServiceRequest({
         requestType: config.requestType,
         summary,

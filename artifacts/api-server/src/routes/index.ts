@@ -10,6 +10,7 @@ import analyticsRouter from "./analytics";
 import welcomeAlertRouter from "./welcome-alert";
 import staffRouter from "./staff";
 import restaurantRouter from "./restaurant";
+import folioRouter from "./folio";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(analyticsRouter);
 router.use(welcomeAlertRouter);
 router.use(staffRouter);
 router.use(restaurantRouter);
+router.use(folioRouter);
 
 export default router;

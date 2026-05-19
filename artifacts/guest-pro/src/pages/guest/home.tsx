@@ -37,6 +37,7 @@ import { InstallSheet } from "@/components/InstallSheet";
 import { useTrackingHeartbeat } from "@/hooks/use-tracking-heartbeat";
 import { StayKeyCard } from "@/components/guest/StayKeyCard";
 import { GuestNearbySection } from "@/components/guest/GuestNearbySection";
+import { DailyBillCard } from "@/components/guest/DailyBillCard";
 import { ServiceQuickActions, type QuickActionMode } from "@/components/guest/ServiceQuickActions";
 import { listMyRequests, deleteMyServiceRequest, type ServiceRequest } from "@/lib/service-requests";
 import { buildDisplaySummary } from "@/lib/request-display";
@@ -513,6 +514,11 @@ export default function GuestHome() {
             firstName={user.firstName ?? undefined}
             lastName={user.lastName ?? undefined}
           />
+        </section>
+
+        {/* ── Daily bill (folio) ── */}
+        <section className="mb-7">
+          <DailyBillCard />
         </section>
 
         {/* ── Hızlı Hizmetler — Service Quick Actions ── */}

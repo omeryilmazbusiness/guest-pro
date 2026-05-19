@@ -5,6 +5,7 @@ import { serviceRequestsTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
 import { requireGuest, requireStaff } from "../middlewares/requireAuth";
 import { logger } from "../lib/logger";
+import { syncFolioFromServiceRequest } from "../lib/folio";
 import type { ServiceRequestType } from "@workspace/db";
 /**
  * Safely extract a single string from an Express 5 route param.
@@ -64,6 +65,13 @@ router.post("/requests", requireGuest, async (req, res): Promise<void> => {
     .returning();
 
   logger.info({ requestId: request.id, guestId, requestType }, "Service request created");
+
+  try {
+    await syncFolioFromServiceRequest(request);
+  } catch (err) {
+    logger.error({ err, requestId: request.id }, "Folio sync failed after request create");
+  }
+
   res.status(201).json(request);
 });
 
