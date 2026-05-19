@@ -14,6 +14,8 @@
 export interface GuestTranslations {
   // ── Global ─────────────────────────────────────────────────────────────
   cancel: string;
+  navMenuTitle: string;
+  navMenuOpen: string;
   logout: string;
   logoutSuccess: string;
   room: string;
@@ -33,8 +35,19 @@ export interface GuestTranslations {
   askSomethingSubtitle: string;
 
   staySection: string;
+  stayAboutTitle: string;
+  guestKeyLabel: string;
+  copyKey: string;
+  keyCopied: string;
+  noActiveKey: string;
   stayActive: string;
   chatLink: string;
+  nearbyTapHint: string;
+  nearbySearchPlaceholder: string;
+  nearbyFilterAll: string;
+  nearbyViewAll: string; // {count}
+  nearbyNoResults: string;
+  nearbyBackToList: string;
 
   quickActionsSection: string;
   touchToAsk: string;
@@ -83,11 +96,12 @@ export interface GuestTranslations {
 
   iosStep1Title: string;
   iosStep1Hint: string;
-  iosPadStep2Title: string;
-  iosPadStep2Hint: string;
+  iosStep2Title: string;
+  iosStep2Hint: string;
   iosStep3Title: string;
   iosStep3Hint: string;
   iosStep4Title: string;
+  iosStep4Hint: string;
 
   // ── Guided Flow — navigation buttons ────────────────────────────────────
   flowConfirm: string;
@@ -240,6 +254,33 @@ export interface GuestTranslations {
   quickActionCareTitle: string;
   quickActionCareSubtitle: string;
 
+  hotelConnectSection: string;
+  receptionLiveTitle: string;
+  receptionLiveSubtitle: string;
+  receptionLiveBadge: string;
+  receptionLiveCta: string;
+  morePlusTitle: string;
+  morePlusSubtitle: string;
+  comingSoonTitle: string;
+  comingSoonBody: string;
+  comingSoonClose: string;
+
+  atYourServiceHotelAbout: string;
+  atYourServiceGuestProAbout: string;
+  atYourServiceGuestProDesc: string;
+  atYourServiceWifi: string;
+  atYourServiceEmergency: string;
+  feedbackSectionTitle: string;
+  feedbackRatingLabel: string;
+  feedbackCommentPlaceholder: string;
+  feedbackSubmit: string;
+  complaintSectionTitle: string;
+  complaintPlaceholder: string;
+  complaintSubmit: string;
+  feedbackSuccessToast: string;
+  complaintSuccessToast: string;
+  feedbackSubmitting: string;
+
   // ── My Requests ───────────────────────────────────────────────────────────
   myRequestsTitle: string;
   myRequestsSubtitle: string;
@@ -289,6 +330,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
   // ── English ──────────────────────────────────────────────────────────────
   en: {
     cancel: "Cancel",
+    navMenuTitle: "Menu",
+    navMenuOpen: "Open menu",
     logout: "Log out",
     logoutSuccess: "Safe travels!",
     room: "Room",
@@ -307,8 +350,19 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     askSomethingSubtitle: "Anything about your stay",
 
     staySection: "Your Stay",
+    stayAboutTitle: "About your stay",
+    guestKeyLabel: "Guest key",
+    copyKey: "Copy",
+    keyCopied: "Copied",
+    noActiveKey: "No active key on file",
     stayActive: "Stay active",
     chatLink: "Chat",
+    nearbyTapHint: "Tap to browse nearby places",
+    nearbySearchPlaceholder: "Search places…",
+    nearbyFilterAll: "All",
+    nearbyViewAll: "View all {count} places",
+    nearbyNoResults: "No places match your search",
+    nearbyBackToList: "All places",
 
     quickActionsSection: "Quick Actions",
     touchToAsk: "Touch to ask →",
@@ -351,13 +405,14 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     installNow: "Add to Home Screen",
     installLater: "Later",
     installDontShow: "Don't show again",
-    iosStep1Title: "Tap the Share icon",
-    iosStep1Hint: "At the bottom of Safari",
-    iosPadStep2Title: "Tap \"View More\"",
-    iosPadStep2Hint: "Scroll down in the share menu",
-    iosStep3Title: "Add to Home Screen",
-    iosStep3Hint: "Tap \"Add to Home Screen\"",
-    iosStep4Title: "Tap Add",
+    iosStep1Title: "Tap the ⋯ menu",
+    iosStep1Hint: "Bottom of Safari (three dots)",
+    iosStep2Title: "Tap Share",
+    iosStep2Hint: "In the menu that opens",
+    iosStep3Title: "Tap View More",
+    iosStep3Hint: "Scroll down in the share sheet if needed",
+    iosStep4Title: "Tap Add to Home Screen",
+    iosStep4Hint: "Then tap Add to confirm",
 
     flowConfirm: "Confirm",
     flowEditContinue: "Continue editing",
@@ -494,6 +549,33 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     quickActionCareTitle: "Care About Me",
     quickActionCareSubtitle: "Your preferences",
 
+    hotelConnectSection: "Hotel",
+    receptionLiveTitle: "Reception",
+    receptionLiveSubtitle: "Chat live with our front desk team",
+    receptionLiveBadge: "Live",
+    receptionLiveCta: "Open chat",
+    morePlusTitle: "More+",
+    morePlusSubtitle: "Activities & hotel extras",
+    comingSoonTitle: "Coming soon",
+    comingSoonBody: "We're preparing new experiences for you. Check back shortly.",
+    comingSoonClose: "Got it",
+
+    atYourServiceHotelAbout: "Your hotel",
+    atYourServiceGuestProAbout: "Guest Pro",
+    atYourServiceGuestProDesc: "AI concierge for your stay — ask anything, anytime.",
+    atYourServiceWifi: "Wi‑Fi",
+    atYourServiceEmergency: "Emergency",
+    feedbackSectionTitle: "Share your experience",
+    feedbackRatingLabel: "Rate your stay",
+    feedbackCommentPlaceholder: "Tell us what you enjoyed…",
+    feedbackSubmit: "Send feedback",
+    complaintSectionTitle: "Complaints & suggestions",
+    complaintPlaceholder: "How can we improve your stay?",
+    complaintSubmit: "Send message",
+    feedbackSuccessToast: "Thank you — your feedback was sent.",
+    complaintSuccessToast: "Thank you — we received your message.",
+    feedbackSubmitting: "Sending…",
+
     myRequestsTitle: "My Requests",
     myRequestsSubtitle: "Track your service requests",
     myRequestsEmpty: "No requests yet",
@@ -537,6 +619,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
   // ── Turkish ───────────────────────────────────────────────────────────────
   tr: {
     cancel: "İptal",
+    navMenuTitle: "Menü",
+    navMenuOpen: "Menüyü aç",
     logout: "Çıkış yap",
     logoutSuccess: "Güvenli yolculuklar!",
     room: "Oda",
@@ -555,8 +639,19 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     askSomethingSubtitle: "Konaklamanız hakkında her şey",
 
     staySection: "Konaklamanız",
+    stayAboutTitle: "Konaklamanız hakkında",
+    guestKeyLabel: "Misafir anahtarı",
+    copyKey: "Kopyala",
+    keyCopied: "Kopyalandı",
+    noActiveKey: "Aktif anahtar bulunamadı",
     stayActive: "Konaklama aktif",
     chatLink: "Chat",
+    nearbyTapHint: "Yakın yerleri görmek için dokunun",
+    nearbySearchPlaceholder: "Yer ara…",
+    nearbyFilterAll: "Tümü",
+    nearbyViewAll: "Tüm yerler ({count})",
+    nearbyNoResults: "Aramanızla eşleşen yer yok",
+    nearbyBackToList: "Tüm yerlere dön",
 
     quickActionsSection: "Hızlı İstekler",
     touchToAsk: "Sormak için dokun →",
@@ -599,13 +694,14 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     installNow: "Ana Ekrana Ekle",
     installLater: "Sonra",
     installDontShow: "Bir daha gösterme",
-    iosStep1Title: "Share ikonuna dokunun",
-    iosStep1Hint: "Safari'nin alt kısmında",
-    iosPadStep2Title: "\"View More\" seçeneğine dokunun",
-    iosPadStep2Hint: "Paylaşım menüsünde aşağı kaydırın",
-    iosStep3Title: "Ana Ekrana Ekle",
-    iosStep3Hint: "\"Ana Ekrana Ekle\" seçeneğine dokunun",
-    iosStep4Title: "Ekle'ye dokunun",
+    iosStep1Title: "⋯ menüsüne dokunun",
+    iosStep1Hint: "Safari'nin alt kısmındaki üç nokta",
+    iosStep2Title: "Paylaş'a dokunun",
+    iosStep2Hint: "Açılan menüden",
+    iosStep3Title: "View More'a dokunun",
+    iosStep3Hint: "Gerekirse paylaşım sayfasında aşağı kaydırın",
+    iosStep4Title: "Ana Ekrana Ekle'ye dokunun",
+    iosStep4Hint: "Ardından Ekle ile onaylayın",
 
     flowConfirm: "Onaylıyorum",
     flowEditContinue: "Düzenlemeye devam et",
@@ -742,6 +838,33 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     quickActionCareTitle: "Care About Me",
     quickActionCareSubtitle: "Tercihleriniz",
 
+    hotelConnectSection: "Otel",
+    receptionLiveTitle: "Resepsiyon",
+    receptionLiveSubtitle: "Resepsiyon ekibiyle canlı sohbet",
+    receptionLiveBadge: "Canlı",
+    receptionLiveCta: "Sohbeti aç",
+    morePlusTitle: "More+",
+    morePlusSubtitle: "Aktiviteler ve otel ekstraları",
+    comingSoonTitle: "Çok yakında",
+    comingSoonBody: "Sizin için yeni deneyimler hazırlıyoruz. Kısa süre içinde tekrar bakın.",
+    comingSoonClose: "Tamam",
+
+    atYourServiceHotelAbout: "Oteliniz",
+    atYourServiceGuestProAbout: "Guest Pro",
+    atYourServiceGuestProDesc: "Konaklamanız için AI concierge — istediğiniz zaman sorun.",
+    atYourServiceWifi: "Wi‑Fi",
+    atYourServiceEmergency: "Acil",
+    feedbackSectionTitle: "Deneyiminizi paylaşın",
+    feedbackRatingLabel: "Konaklamanızı değerlendirin",
+    feedbackCommentPlaceholder: "Nelerden memnun kaldınız?",
+    feedbackSubmit: "Geri bildirim gönder",
+    complaintSectionTitle: "Şikayet ve öneriler",
+    complaintPlaceholder: "Konaklamanızı nasıl iyileştirebiliriz?",
+    complaintSubmit: "Mesaj gönder",
+    feedbackSuccessToast: "Teşekkürler — geri bildiriminiz iletildi.",
+    complaintSuccessToast: "Teşekkürler — mesajınız alındı.",
+    feedbackSubmitting: "Gönderiliyor…",
+
     myRequestsTitle: "Taleplerim",
     myRequestsSubtitle: "Taleplerinizi takip edin",
     myRequestsEmpty: "Henüz talep yok",
@@ -785,6 +908,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
   // ── Arabic ────────────────────────────────────────────────────────────────
   ar: {
     cancel: "إلغاء",
+    navMenuTitle: "القائمة",
+    navMenuOpen: "فتح القائمة",
     logout: "تسجيل الخروج",
     logoutSuccess: "رحلة موفقة!",
     room: "غرفة",
@@ -803,8 +928,20 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     askSomethingSubtitle: "كل شيء عن إقامتك",
 
     staySection: "إقامتك",
+    stayAboutTitle: "حول إقامتك",
+    guestKeyLabel: "مفتاح الضيف",
+    copyKey: "نسخ",
+    keyCopied: "تم النسخ",
+    noActiveKey: "لا يوجد مفتاح نشط",
     stayActive: "الإقامة نشطة",
     chatLink: "محادثة",
+    nearbyTapHint: "اضغط لتصفح الأماكن القريبة",
+    nearbySearchPlaceholder: "ابحث عن أماكن…",
+    nearbyFilterAll: "الكل",
+    nearbyViewAll: "عرض كل الأماكن ({count})",
+    nearbyNoResults: "لا توجد نتائج",
+    nearbyBackToList: "جميع الأماكن",
+
 
     quickActionsSection: "الإجراءات السريعة",
     touchToAsk: "اضغط للسؤال ←",
@@ -847,13 +984,14 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     installNow: "إضافة إلى الشاشة الرئيسية",
     installLater: "لاحقاً",
     installDontShow: "لا تُظهر مرة أخرى",
-    iosStep1Title: "اضغط على أيقونة المشاركة",
-    iosStep1Hint: "في أسفل Safari",
-    iosPadStep2Title: "اضغط \"عرض المزيد\"",
-    iosPadStep2Hint: "مرر للأسفل في قائمة المشاركة",
-    iosStep3Title: "إضافة إلى الشاشة الرئيسية",
-    iosStep3Hint: "اضغط \"إضافة إلى الشاشة الرئيسية\"",
-    iosStep4Title: "اضغط إضافة",
+    iosStep1Title: "اضغط على ⋯",
+    iosStep1Hint: "أسفل Safari (ثلاث نقاط)",
+    iosStep2Title: "اضغط مشاركة",
+    iosStep2Hint: "من القائمة",
+    iosStep3Title: "اضغط عرض المزيد",
+    iosStep3Hint: "مرر للأسفل إن لزم",
+    iosStep4Title: "اضغط إضافة إلى الشاشة الرئيسية",
+    iosStep4Hint: "ثم اضغط إضافة للتأكيد",
 
     flowConfirm: "تأكيد",
     flowEditContinue: "مواصلة التعديل",
@@ -990,6 +1128,34 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     quickActionCareTitle: "اعتنِ بي",
     quickActionCareSubtitle: "تفضيلاتك",
 
+
+    hotelConnectSection: "الفندق",
+    receptionLiveTitle: "الاستقبال",
+    receptionLiveSubtitle: "تحدث مباشرة مع فريق الاستقبال",
+    receptionLiveBadge: "مباشر",
+    receptionLiveCta: "فتح المحادثة",
+    morePlusTitle: "More+",
+    morePlusSubtitle: "الأنشطة وخدمات إضافية",
+    comingSoonTitle: "قريباً",
+    comingSoonBody: "نُعد تجارب جديدة لك. عد قريباً.",
+    comingSoonClose: "حسناً",
+
+    atYourServiceHotelAbout: "فندقك",
+    atYourServiceGuestProAbout: "Guest Pro",
+    atYourServiceGuestProDesc: "كونسيرج ذكي لإقامتك — اسأل في أي وقت.",
+    atYourServiceWifi: "واي فاي",
+    atYourServiceEmergency: "طوارئ",
+    feedbackSectionTitle: "شارك تجربتك",
+    feedbackRatingLabel: "قيّم إقامتك",
+    feedbackCommentPlaceholder: "أخبرنا بما أعجبك…",
+    feedbackSubmit: "إرسال التقييم",
+    complaintSectionTitle: "شكاوى واقتراحات",
+    complaintPlaceholder: "كيف نُحسّن إقامتك؟",
+    complaintSubmit: "إرسال الرسالة",
+    feedbackSuccessToast: "شكراً — تم إرسال ملاحظاتك.",
+    complaintSuccessToast: "شكراً — استلمنا رسالتك.",
+    feedbackSubmitting: "جارٍ الإرسال…",
+
     myRequestsTitle: "طلباتي",
     myRequestsSubtitle: "تتبع طلبات الخدمة",
     myRequestsEmpty: "لا توجد طلبات بعد",
@@ -1033,6 +1199,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
   // ── Russian ───────────────────────────────────────────────────────────────
   ru: {
     cancel: "Отмена",
+    navMenuTitle: "Меню",
+    navMenuOpen: "Открыть меню",
     logout: "Выйти",
     logoutSuccess: "Счастливого пути!",
     room: "Номер",
@@ -1051,8 +1219,20 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     askSomethingSubtitle: "Всё о вашем пребывании",
 
     staySection: "Ваше пребывание",
+    stayAboutTitle: "О вашем проживании",
+    guestKeyLabel: "Ключ гостя",
+    copyKey: "Копировать",
+    keyCopied: "Скопировано",
+    noActiveKey: "Активный ключ не найден",
     stayActive: "Проживание активно",
     chatLink: "Чат",
+    nearbyTapHint: "Нажмите, чтобы просмотреть места рядом",
+    nearbySearchPlaceholder: "Поиск мест…",
+    nearbyFilterAll: "Все",
+    nearbyViewAll: "Все места ({count})",
+    nearbyNoResults: "Ничего не найдено",
+    nearbyBackToList: "Все места",
+
 
     quickActionsSection: "Быстрые действия",
     touchToAsk: "Нажмите, чтобы спросить →",
@@ -1095,13 +1275,14 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     installNow: "Добавить на главный экран",
     installLater: "Позже",
     installDontShow: "Больше не показывать",
-    iosStep1Title: "Нажмите значок «Поделиться»",
-    iosStep1Hint: "Внизу Safari",
-    iosPadStep2Title: "Нажмите «Ещё»",
-    iosPadStep2Hint: "Прокрутите вниз в меню «Поделиться»",
-    iosStep3Title: "На экран «Домой»",
-    iosStep3Hint: "Нажмите «На экран Домой»",
-    iosStep4Title: "Нажмите «Добавить»",
+    iosStep1Title: "Нажмите ⋯",
+    iosStep1Hint: "Внизу Safari (три точки)",
+    iosStep2Title: "Нажмите «Поделиться»",
+    iosStep2Hint: "В открывшемся меню",
+    iosStep3Title: "Нажмите «Ещё»",
+    iosStep3Hint: "Прокрутите вниз при необходимости",
+    iosStep4Title: "«На экран Домой»",
+    iosStep4Hint: "Затем нажмите «Добавить»",
 
     flowConfirm: "Подтвердить",
     flowEditContinue: "Продолжить редактирование",
@@ -1238,6 +1419,34 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     quickActionCareTitle: "Позаботьтесь обо мне",
     quickActionCareSubtitle: "Ваши предпочтения",
 
+
+    hotelConnectSection: "Отель",
+    receptionLiveTitle: "Ресепшн",
+    receptionLiveSubtitle: "Живой чат с командой ресепшн",
+    receptionLiveBadge: "Онлайн",
+    receptionLiveCta: "Открыть чат",
+    morePlusTitle: "More+",
+    morePlusSubtitle: "Активности и доп. услуги",
+    comingSoonTitle: "Скоро",
+    comingSoonBody: "Мы готовим новые возможности. Загляните позже.",
+    comingSoonClose: "Понятно",
+
+    atYourServiceHotelAbout: "Ваш отель",
+    atYourServiceGuestProAbout: "Guest Pro",
+    atYourServiceGuestProDesc: "AI-консьерж для проживания — спрашивайте в любое время.",
+    atYourServiceWifi: "Wi‑Fi",
+    atYourServiceEmergency: "Экстренно",
+    feedbackSectionTitle: "Поделитесь впечатлениями",
+    feedbackRatingLabel: "Оцените проживание",
+    feedbackCommentPlaceholder: "Что вам понравилось…",
+    feedbackSubmit: "Отправить отзыв",
+    complaintSectionTitle: "Жалобы и предложения",
+    complaintPlaceholder: "Как улучшить ваше пребывание?",
+    complaintSubmit: "Отправить",
+    feedbackSuccessToast: "Спасибо — отзыв отправлен.",
+    complaintSuccessToast: "Спасибо — сообщение получено.",
+    feedbackSubmitting: "Отправка…",
+
     myRequestsTitle: "Мои запросы",
     myRequestsSubtitle: "Отслеживайте свои запросы",
     myRequestsEmpty: "Запросов пока нет",
@@ -1281,6 +1490,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
   // ── German ────────────────────────────────────────────────────────────────
   de: {
     cancel: "Abbrechen",
+    navMenuTitle: "Menü",
+    navMenuOpen: "Menü öffnen",
     logout: "Abmelden",
     logoutSuccess: "Gute Reise!",
     room: "Zimmer",
@@ -1299,8 +1510,20 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     askSomethingSubtitle: "Alles über Ihren Aufenthalt",
 
     staySection: "Ihr Aufenthalt",
+    stayAboutTitle: "Über Ihren Aufenthalt",
+    guestKeyLabel: "Gastschlüssel",
+    copyKey: "Kopieren",
+    keyCopied: "Kopiert",
+    noActiveKey: "Kein aktiver Schlüssel",
     stayActive: "Aufenthalt aktiv",
     chatLink: "Chat",
+    nearbyTapHint: "Tippen, um Orte in der Nähe zu durchsuchen",
+    nearbySearchPlaceholder: "Orte suchen…",
+    nearbyFilterAll: "Alle",
+    nearbyViewAll: "Alle {count} Orte",
+    nearbyNoResults: "Keine Treffer",
+    nearbyBackToList: "Alle Orte",
+
 
     quickActionsSection: "Schnellaktionen",
     touchToAsk: "Tippen zum Fragen →",
@@ -1343,13 +1566,14 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     installNow: "Zum Startbildschirm hinzufügen",
     installLater: "Später",
     installDontShow: "Nicht mehr anzeigen",
-    iosStep1Title: "Tippen Sie auf das Teilen-Symbol",
-    iosStep1Hint: "Am unteren Rand von Safari",
-    iosPadStep2Title: "Tippen Sie auf \"Mehr anzeigen\"",
-    iosPadStep2Hint: "Im Teilen-Menü nach unten scrollen",
-    iosStep3Title: "Zum Home-Bildschirm",
-    iosStep3Hint: "Tippen Sie auf \"Zum Home-Bildschirm\"",
-    iosStep4Title: "Auf \"Hinzufügen\" tippen",
+    iosStep1Title: "Tippen Sie auf ⋯",
+    iosStep1Hint: "Unten in Safari (drei Punkte)",
+    iosStep2Title: "Tippen Sie auf Teilen",
+    iosStep2Hint: "Im geöffneten Menü",
+    iosStep3Title: "Tippen Sie auf Mehr anzeigen",
+    iosStep3Hint: "Ggf. im Teilen-Blatt nach unten scrollen",
+    iosStep4Title: "Zum Home-Bildschirm",
+    iosStep4Hint: "Dann auf Hinzufügen tippen",
 
     flowConfirm: "Bestätigen",
     flowEditContinue: "Weiter bearbeiten",
@@ -1486,6 +1710,34 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     quickActionCareTitle: "Kümmere dich um mich",
     quickActionCareSubtitle: "Ihre Präferenzen",
 
+
+    hotelConnectSection: "Hotel",
+    receptionLiveTitle: "Rezeption",
+    receptionLiveSubtitle: "Live-Chat mit unserem Rezeptionsteam",
+    receptionLiveBadge: "Live",
+    receptionLiveCta: "Chat öffnen",
+    morePlusTitle: "More+",
+    morePlusSubtitle: "Aktivitäten & Extras",
+    comingSoonTitle: "Demnächst",
+    comingSoonBody: "Neue Erlebnisse sind in Vorbereitung. Schauen Sie bald wieder vorbei.",
+    comingSoonClose: "Verstanden",
+
+    atYourServiceHotelAbout: "Ihr Hotel",
+    atYourServiceGuestProAbout: "Guest Pro",
+    atYourServiceGuestProDesc: "KI-Concierge für Ihren Aufenthalt — jederzeit fragen.",
+    atYourServiceWifi: "WLAN",
+    atYourServiceEmergency: "Notfall",
+    feedbackSectionTitle: "Teilen Sie Ihre Erfahrung",
+    feedbackRatingLabel: "Aufenthalt bewerten",
+    feedbackCommentPlaceholder: "Was hat Ihnen gefallen…",
+    feedbackSubmit: "Feedback senden",
+    complaintSectionTitle: "Beschwerden & Vorschläge",
+    complaintPlaceholder: "Wie können wir verbessern?",
+    complaintSubmit: "Nachricht senden",
+    feedbackSuccessToast: "Danke — Feedback gesendet.",
+    complaintSuccessToast: "Danke — Nachricht erhalten.",
+    feedbackSubmitting: "Wird gesendet…",
+
     myRequestsTitle: "Meine Anfragen",
     myRequestsSubtitle: "Ihre Serviceanfragen verfolgen",
     myRequestsEmpty: "Noch keine Anfragen",
@@ -1529,6 +1781,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
   // ── French ────────────────────────────────────────────────────────────────
   fr: {
     cancel: "Annuler",
+    navMenuTitle: "Menu",
+    navMenuOpen: "Ouvrir le menu",
     logout: "Se déconnecter",
     logoutSuccess: "Bon voyage !",
     room: "Chambre",
@@ -1547,8 +1801,20 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     askSomethingSubtitle: "Tout sur votre séjour",
 
     staySection: "Votre séjour",
+    stayAboutTitle: "À propos de votre séjour",
+    guestKeyLabel: "Clé invité",
+    copyKey: "Copier",
+    keyCopied: "Copié",
+    noActiveKey: "Aucune clé active",
     stayActive: "Séjour actif",
     chatLink: "Chat",
+    nearbyTapHint: "Appuyez pour parcourir les lieux à proximité",
+    nearbySearchPlaceholder: "Rechercher…",
+    nearbyFilterAll: "Tout",
+    nearbyViewAll: "Voir les {count} lieux",
+    nearbyNoResults: "Aucun résultat",
+    nearbyBackToList: "Tous les lieux",
+
 
     quickActionsSection: "Actions rapides",
     touchToAsk: "Appuyer pour demander →",
@@ -1591,13 +1857,14 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     installNow: "Ajouter à l'écran d'accueil",
     installLater: "Plus tard",
     installDontShow: "Ne plus afficher",
-    iosStep1Title: "Appuyez sur l'icône Partager",
-    iosStep1Hint: "En bas de Safari",
-    iosPadStep2Title: "Appuyez sur \"Voir plus\"",
-    iosPadStep2Hint: "Faites défiler vers le bas dans le menu de partage",
-    iosStep3Title: "Sur l'écran d'accueil",
-    iosStep3Hint: "Appuyez sur \"Sur l'écran d'accueil\"",
-    iosStep4Title: "Appuyez sur Ajouter",
+    iosStep1Title: "Appuyez sur ⋯",
+    iosStep1Hint: "En bas de Safari (trois points)",
+    iosStep2Title: "Appuyez sur Partager",
+    iosStep2Hint: "Dans le menu",
+    iosStep3Title: "Appuyez sur Voir plus",
+    iosStep3Hint: "Faites défiler si besoin",
+    iosStep4Title: "Sur l'écran d'accueil",
+    iosStep4Hint: "Puis appuyez sur Ajouter",
 
     flowConfirm: "Confirmer",
     flowEditContinue: "Continuer à modifier",
@@ -1734,6 +2001,34 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     quickActionCareTitle: "Prenez soin de moi",
     quickActionCareSubtitle: "Vos préférences",
 
+
+    hotelConnectSection: "Hôtel",
+    receptionLiveTitle: "Réception",
+    receptionLiveSubtitle: "Chat en direct avec la réception",
+    receptionLiveBadge: "En direct",
+    receptionLiveCta: "Ouvrir le chat",
+    morePlusTitle: "More+",
+    morePlusSubtitle: "Activités et extras",
+    comingSoonTitle: "Bientôt",
+    comingSoonBody: "De nouvelles expériences arrivent. Revenez bientôt.",
+    comingSoonClose: "Compris",
+
+    atYourServiceHotelAbout: "Votre hôtel",
+    atYourServiceGuestProAbout: "Guest Pro",
+    atYourServiceGuestProDesc: "Concierge IA pour votre séjour — demandez à tout moment.",
+    atYourServiceWifi: "Wi‑Fi",
+    atYourServiceEmergency: "Urgence",
+    feedbackSectionTitle: "Partagez votre expérience",
+    feedbackRatingLabel: "Notez votre séjour",
+    feedbackCommentPlaceholder: "Ce que vous avez apprécié…",
+    feedbackSubmit: "Envoyer l'avis",
+    complaintSectionTitle: "Réclamations et suggestions",
+    complaintPlaceholder: "Comment améiorer votre séjour ?",
+    complaintSubmit: "Envoyer",
+    feedbackSuccessToast: "Merci — avis envoyé.",
+    complaintSuccessToast: "Merci — message reçu.",
+    feedbackSubmitting: "Envoi…",
+
     myRequestsTitle: "Mes demandes",
     myRequestsSubtitle: "Suivez vos demandes de service",
     myRequestsEmpty: "Aucune demande pour l'instant",
@@ -1777,6 +2072,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
   // ── Spanish ───────────────────────────────────────────────────────────────
   es: {
     cancel: "Cancelar",
+    navMenuTitle: "Menú",
+    navMenuOpen: "Abrir menú",
     logout: "Cerrar sesión",
     logoutSuccess: "¡Buen viaje!",
     room: "Habitación",
@@ -1795,8 +2092,20 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     askSomethingSubtitle: "Todo sobre tu estancia",
 
     staySection: "Tu estancia",
+    stayAboutTitle: "Sobre tu estancia",
+    guestKeyLabel: "Clave de huésped",
+    copyKey: "Copiar",
+    keyCopied: "Copiado",
+    noActiveKey: "Sin clave activa",
     stayActive: "Estancia activa",
     chatLink: "Chat",
+    nearbyTapHint: "Toca para ver lugares cercanos",
+    nearbySearchPlaceholder: "Buscar lugares…",
+    nearbyFilterAll: "Todos",
+    nearbyViewAll: "Ver los {count} lugares",
+    nearbyNoResults: "Sin resultados",
+    nearbyBackToList: "Todos los lugares",
+
 
     quickActionsSection: "Acciones rápidas",
     touchToAsk: "Toca para preguntar →",
@@ -1839,13 +2148,14 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     installNow: "Añadir a la pantalla de inicio",
     installLater: "Más tarde",
     installDontShow: "No mostrar de nuevo",
-    iosStep1Title: "Toca el icono Compartir",
-    iosStep1Hint: "En la parte inferior de Safari",
-    iosPadStep2Title: "Toca \"Ver más\"",
-    iosPadStep2Hint: "Desplázate hacia abajo en el menú de compartir",
-    iosStep3Title: "Añadir a inicio",
-    iosStep3Hint: "Toca \"Añadir a pantalla de inicio\"",
-    iosStep4Title: "Toca Añadir",
+    iosStep1Title: "Toca ⋯",
+    iosStep1Hint: "Abajo en Safari (tres puntos)",
+    iosStep2Title: "Toca Compartir",
+    iosStep2Hint: "En el menú",
+    iosStep3Title: "Toca Ver más",
+    iosStep3Hint: "Desplázate si hace falta",
+    iosStep4Title: "Añadir a pantalla de inicio",
+    iosStep4Hint: "Luego toca Añadir",
 
     flowConfirm: "Confirmar",
     flowEditContinue: "Continuar editando",
@@ -1981,6 +2291,34 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     quickActionSupportSubtitle: "¿Hay algún problema?",
     quickActionCareTitle: "Cuídame",
     quickActionCareSubtitle: "Tus preferencias",
+
+
+    hotelConnectSection: "Hotel",
+    receptionLiveTitle: "Recepción",
+    receptionLiveSubtitle: "Chat en vivo con recepción",
+    receptionLiveBadge: "En vivo",
+    receptionLiveCta: "Abrir chat",
+    morePlusTitle: "More+",
+    morePlusSubtitle: "Actividades y extras",
+    comingSoonTitle: "Próximamente",
+    comingSoonBody: "Preparamos nuevas experiencias. Vuelve pronto.",
+    comingSoonClose: "Entendido",
+
+    atYourServiceHotelAbout: "Tu hotel",
+    atYourServiceGuestProAbout: "Guest Pro",
+    atYourServiceGuestProDesc: "Conserje IA para tu estancia — pregunta cuando quieras.",
+    atYourServiceWifi: "Wi‑Fi",
+    atYourServiceEmergency: "Emergencia",
+    feedbackSectionTitle: "Comparte tu experiencia",
+    feedbackRatingLabel: "Valora tu estancia",
+    feedbackCommentPlaceholder: "Cuéntanos qué disfrutaste…",
+    feedbackSubmit: "Enviar opinión",
+    complaintSectionTitle: "Quejas y sugerencias",
+    complaintPlaceholder: "¿Cómo mejorar tu estancia?",
+    complaintSubmit: "Enviar mensaje",
+    feedbackSuccessToast: "Gracias — opinión enviada.",
+    complaintSuccessToast: "Gracias — mensaje recibido.",
+    feedbackSubmitting: "Enviando…",
 
     myRequestsTitle: "Mis solicitudes",
     myRequestsSubtitle: "Sigue tus solicitudes de servicio",

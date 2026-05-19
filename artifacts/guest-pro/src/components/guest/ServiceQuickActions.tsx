@@ -1,4 +1,6 @@
-import { UtensilsCrossed, Bell, Heart } from "lucide-react";
+import { UtensilsCrossed, Bell, Heart, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { dash } from "@/lib/guest-dashboard-ui";
 import type { GuestTranslations } from "@/lib/i18n";
 
 export type QuickActionMode = "food" | "support" | "care";
@@ -6,8 +8,9 @@ export type QuickActionMode = "food" | "support" | "care";
 type ActionConfig = {
   mode: QuickActionMode;
   icon: React.FC<{ className?: string }>;
+  cardBg: string;
   accent: string;
-  iconBg: string;
+  iconWrap: string;
   iconColor: string;
 };
 
@@ -15,23 +18,26 @@ const ACTION_CONFIGS: ActionConfig[] = [
   {
     mode: "food",
     icon: UtensilsCrossed,
-    accent: "border-amber-100",
-    iconBg: "bg-amber-50 border-amber-100",
-    iconColor: "text-amber-500",
+    cardBg: "bg-gradient-to-br from-white via-white to-orange-50/50",
+    accent: "bg-orange-400/70",
+    iconWrap: "bg-orange-50 border-orange-100/90",
+    iconColor: "text-orange-600",
   },
   {
     mode: "support",
     icon: Bell,
-    accent: "border-yellow-100",
-    iconBg: "bg-yellow-50 border-yellow-100",
-    iconColor: "text-yellow-500",
+    cardBg: "bg-gradient-to-br from-white via-white to-sky-50/50",
+    accent: "bg-sky-400/70",
+    iconWrap: "bg-sky-50 border-sky-100/90",
+    iconColor: "text-sky-600",
   },
   {
     mode: "care",
     icon: Heart,
-    accent: "border-rose-100",
-    iconBg: "bg-rose-50 border-rose-100",
-    iconColor: "text-rose-400",
+    cardBg: "bg-gradient-to-br from-white via-white to-rose-50/50",
+    accent: "bg-rose-400/70",
+    iconWrap: "bg-rose-50 border-rose-100/90",
+    iconColor: "text-rose-500",
   },
 ];
 
@@ -53,30 +59,37 @@ export function ServiceQuickActions({ onAction, t }: ServiceQuickActionsProps) {
   };
 
   return (
-    <section>
-      <h3 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-3 px-1">
-        {t.quickActionsSection}
-      </h3>
-      <div className="grid grid-cols-3 gap-2.5">
+    <section aria-label={t.quickActionsSection}>
+      <h3 className={dash.sectionTitle}>{t.quickActionsSection}</h3>
+      <div className={cn("flex flex-col", dash.rowGap)}>
         {ACTION_CONFIGS.map((action) => {
           const Icon = action.icon;
           return (
             <button
               key={action.mode}
+              type="button"
               onClick={() => onAction(action.mode)}
-              className={`bg-white border ${action.accent} rounded-2xl px-3 py-4 flex flex-col items-center text-center shadow-sm active:scale-[0.96] hover:shadow-md transition-all duration-150 group`}
+              className={cn(dash.lightCard, action.cardBg, "w-full text-left group")}
             >
-              <div
-                className={`w-10 h-10 rounded-xl border ${action.iconBg} flex items-center justify-center mb-3 transition-transform group-active:scale-95`}
-              >
-                <Icon className={`w-5 h-5 ${action.iconColor}`} />
-              </div>
-              <p className="text-[13px] font-semibold text-zinc-800 leading-tight">
-                {titles[action.mode]}
-              </p>
-              <p className="text-[11px] text-zinc-400 mt-0.5 leading-tight">
-                {subtitles[action.mode]}
-              </p>
+              <span className="relative flex items-center gap-2.5 px-3 py-2.5">
+                <span
+                  className={cn("absolute left-0 top-2 bottom-2 w-[3px] rounded-full", action.accent)}
+                  aria-hidden
+                />
+                <span
+                  className={cn(
+                    "ml-0.5 w-9 h-9 rounded-xl border flex items-center justify-center shrink-0",
+                    action.iconWrap,
+                  )}
+                >
+                  <Icon className={cn("w-4 h-4", action.iconColor)} />
+                </span>
+                <span className="flex-1 min-w-0">
+                  <p className={dash.title}>{titles[action.mode]}</p>
+                  <p className={cn(dash.subtitle, "mt-0.5")}>{subtitles[action.mode]}</p>
+                </span>
+                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-zinc-500 shrink-0 transition-colors" />
+              </span>
             </button>
           );
         })}

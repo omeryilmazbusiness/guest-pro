@@ -13,6 +13,7 @@ import {
   Info,
 } from "lucide-react";
 import { GuestProLogo } from "@/components/GuestProLogo";
+import { markFreshGuestLogin } from "@/hooks/use-install-prompt";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -141,6 +142,7 @@ export default function Login() {
       {
         onSuccess: (res) => {
           setToken(res.token);
+          markFreshGuestLogin();
           toast.success("Welcome to your stay");
           setLocation("/guest");
         },

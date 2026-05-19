@@ -16,6 +16,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useSearch } from "wouter";
 import { GuestProLogo } from "@/components/GuestProLogo";
+import { markFreshGuestLogin } from "@/hooks/use-install-prompt";
 import { useAuth } from "@/hooks/use-auth";
 import { guestQrLogin } from "@workspace/api-client-react";
 import { Loader2, ShieldX, CheckCircle2 } from "lucide-react";
@@ -69,6 +70,7 @@ export default function GuestAutoLogin() {
     guestQrLogin({ token: rawToken })
       .then((res) => {
         setToken(res.token);
+        markFreshGuestLogin();
         setStatus("success");
         // Brief success pause so the guest sees the confirmation before redirect
         setTimeout(() => setLocation("/guest"), 1200);

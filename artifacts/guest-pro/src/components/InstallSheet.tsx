@@ -1,6 +1,15 @@
-import { Download, X } from "lucide-react";
+/**
+ * InstallSheet — centered guide to add Guest Pro to the home screen (iOS / manual).
+ */
+
+import { useEffect } from "react";
+import { createPortal } from "react-dom";
+import { Download, X, Ellipsis, Share2, ChevronsDown, PlusSquare } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { UseInstallPromptReturn } from "@/hooks/use-install-prompt";
 import { useLocale } from "@/hooks/use-locale";
+
+const MODAL_EASE = "duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]";
 
 interface Props {
   install: UseInstallPromptReturn;
@@ -11,7 +20,6 @@ export function InstallSheet({ install }: Props) {
     showSheet,
     canNativeInstall,
     isIOS,
-    isIPad,
     triggerInstall,
     dismiss,
     dismissPermanent,
@@ -19,90 +27,172 @@ export function InstallSheet({ install }: Props) {
 
   const { t } = useLocale();
 
+  useEffect(() => {
+    if (!showSheet) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") dismiss();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [showSheet, dismiss]);
+
   if (!showSheet) return null;
 
-  return (
-    <>
-      <div
-        className="fixed inset-0 z-40 bg-black/25 backdrop-blur-[2px] animate-in fade-in duration-200"
+  return createPortal(
+    <div
+      className={cn(
+        "fixed inset-0 z-[120] flex items-center justify-center",
+        "px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]",
+      )}
+      role="presentation"
+    >
+      <button
+        type="button"
+        className={cn("absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in", MODAL_EASE)}
+        aria-label={t.cancel}
         onClick={dismiss}
-        aria-hidden="true"
       />
-
       <div
         role="dialog"
         aria-modal="true"
         aria-label={t.installTitle}
-        className="fixed bottom-0 inset-x-0 z-50 animate-in slide-in-from-bottom duration-300"
+        className={cn(
+          "relative z-10 flex w-full max-w-[min(100%,22rem)] max-h-[min(90dvh,560px)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl",
+          "animate-in fade-in zoom-in-95",
+          MODAL_EASE,
+        )}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-white rounded-t-[28px] shadow-2xl">
-          {/* Handle */}
-          <div className="flex justify-center pt-3 pb-1">
-            <div className="w-10 h-1 rounded-full bg-zinc-200" />
-          </div>
-
-          <div className="px-6 pt-4 pb-10">
-            {/* App identity row */}
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3.5">
-                <div className="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center shadow-md shadow-zinc-900/20 shrink-0">
-                  <AppIcon />
-                </div>
-                <div>
-                  <p className="text-[18px] font-semibold text-zinc-900 leading-tight">
-                    {t.installTitle}
-                  </p>
-                  <p className="text-[13px] text-zinc-400 mt-0.5">Guest Pro · AI Concierge</p>
-                </div>
-              </div>
-              <button
-                onClick={dismiss}
-                className="p-1.5 text-zinc-300 hover:text-zinc-500 transition-colors -mr-1"
-                aria-label={t.cancel}
-              >
-                <X className="w-5 h-5" />
-              </button>
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-zinc-100 px-5 py-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-zinc-900 shadow-md shadow-zinc-900/20">
+              <AppIcon />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[17px] font-semibold leading-snug text-zinc-900">{t.installTitle}</p>
+              <p className="mt-0.5 text-[12px] text-zinc-500">Guest Pro · AI Concierge</p>
             </div>
-
-            <p className="text-[14px] text-zinc-500 leading-relaxed mb-6">
-              {t.installSubtitle}
-            </p>
-
-            {canNativeInstall ? (
-              <NativeInstallCTA
-                installNow={t.installNow}
-                installLater={t.installLater}
-                onInstall={triggerInstall}
-                onDismiss={dismiss}
-              />
-            ) : isIOS ? (
-              <IOSInstructions isIPad={isIPad} onDismiss={dismiss} t={t} />
-            ) : (
-              <FallbackInstructions onDismiss={dismiss} t={t} />
-            )}
-
-            <button
-              onClick={dismissPermanent}
-              className="w-full text-center text-[12px] text-zinc-300 hover:text-zinc-400 transition-colors mt-5 py-1"
-            >
-              {t.installDontShow}
-            </button>
           </div>
+          <button
+            type="button"
+            onClick={dismiss}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
+            aria-label={t.cancel}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+          <p className="mb-4 text-[14px] leading-relaxed text-zinc-600">{t.installSubtitle}</p>
+
+          {canNativeInstall && !isIOS ? (
+            <NativeInstallCTA
+              installNow={t.installNow}
+              installLater={t.installLater}
+              onInstall={triggerInstall}
+              onDismiss={dismiss}
+            />
+          ) : (
+            <HomeScreenSteps t={t} />
+          )}
+
+          <button
+            type="button"
+            onClick={dismissPermanent}
+            className="mt-4 w-full py-1 text-center text-[12px] text-zinc-400 transition-colors hover:text-zinc-600"
+          >
+            {t.installDontShow}
+          </button>
+        </div>
+
+        <div className="shrink-0 border-t border-zinc-100 px-5 py-3">
+          <button
+            type="button"
+            onClick={dismiss}
+            className="w-full rounded-xl bg-zinc-100 py-3 text-[15px] font-medium text-zinc-600 transition-colors hover:bg-zinc-200 active:scale-[0.99]"
+          >
+            {t.installLater}
+          </button>
         </div>
       </div>
-    </>
+    </div>,
+    document.body,
+  );
+}
+
+function HomeScreenSteps({ t }: { t: ReturnType<typeof useLocale>["t"] }) {
+  const steps = [
+    {
+      icon: Ellipsis,
+      title: t.iosStep1Title,
+      hint: t.iosStep1Hint,
+      iconClass: "text-zinc-700",
+      iconBg: "bg-zinc-100",
+    },
+    {
+      icon: Share2,
+      title: t.iosStep2Title,
+      hint: t.iosStep2Hint,
+      iconClass: "text-blue-600",
+      iconBg: "bg-blue-50",
+    },
+    {
+      icon: ChevronsDown,
+      title: t.iosStep3Title,
+      hint: t.iosStep3Hint,
+      iconClass: "text-blue-600",
+      iconBg: "bg-blue-50",
+    },
+    {
+      icon: PlusSquare,
+      title: t.iosStep4Title,
+      hint: t.iosStep4Hint,
+      iconClass: "text-emerald-600",
+      iconBg: "bg-emerald-50",
+    },
+  ] as const;
+
+  return (
+    <ol className="space-y-2">
+      {steps.map((step, index) => {
+        const Icon = step.icon;
+        return (
+          <li key={step.title}>
+            <div className="flex items-start gap-3 rounded-xl border border-zinc-100 bg-zinc-50/80 px-3 py-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-[12px] font-bold text-zinc-500 shadow-sm">
+                {index + 1}
+              </span>
+              <span
+                className={cn(
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
+                  step.iconBg,
+                )}
+              >
+                <Icon className={cn("h-[18px] w-[18px]", step.iconClass)} strokeWidth={1.75} />
+              </span>
+              <span className="min-w-0 flex-1 pt-0.5">
+                <p className="text-[13px] font-semibold leading-snug text-zinc-900">{step.title}</p>
+                {step.hint ? (
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-zinc-500">{step.hint}</p>
+                ) : null}
+              </span>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
 function AppIcon() {
   return (
-    <svg
-      width="30"
-      height="30"
-      viewBox="0 0 192 192"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <svg width="28" height="28" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="24" y="24" width="144" height="144" rx="30" fill="#1A1A1A" />
       <path
         d="M96 58C96 58 72 72 72 92C72 106 82 116 96 116C110 116 120 106 120 92C120 72 96 58 96 58Z"
@@ -127,185 +217,22 @@ function NativeInstallCTA({
   onDismiss: () => void;
 }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <button
+        type="button"
         onClick={onInstall}
-        className="w-full bg-zinc-900 text-white rounded-2xl py-4 text-[16px] font-medium flex items-center justify-center gap-2.5 shadow-lg shadow-zinc-900/15 active:scale-[0.98] hover:bg-zinc-800 transition-all duration-150"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 py-3.5 text-[15px] font-medium text-white shadow-lg shadow-zinc-900/15 transition-all hover:bg-zinc-800 active:scale-[0.99]"
       >
-        <Download className="w-5 h-5 opacity-70" />
+        <Download className="h-5 w-5 opacity-80" />
         {installNow}
       </button>
       <button
+        type="button"
         onClick={onDismiss}
-        className="w-full bg-zinc-50 text-zinc-500 rounded-2xl py-4 text-[16px] font-medium active:scale-[0.98] hover:bg-zinc-100 transition-all duration-150"
+        className="w-full rounded-xl bg-zinc-100 py-3 text-[15px] font-medium text-zinc-600 transition-colors hover:bg-zinc-200"
       >
         {installLater}
       </button>
     </div>
-  );
-}
-
-function IOSInstructions({
-  isIPad,
-  onDismiss,
-  t,
-}: {
-  isIPad: boolean;
-  onDismiss: () => void;
-  t: ReturnType<typeof useLocale>["t"];
-}) {
-  return (
-    <div className="space-y-3">
-      <div className="space-y-2">
-        {/* Step 1 */}
-        <StepCard
-          number={1}
-          icon={<ShareIcon />}
-          title={t.iosStep1Title}
-          hint={t.iosStep1Hint}
-        />
-
-        {/* Step 2 — iPad only: "View More" */}
-        {isIPad && (
-          <StepCard
-            number={2}
-            icon={<MoreIcon />}
-            title={t.iosPadStep2Title}
-            hint={t.iosPadStep2Hint}
-          />
-        )}
-
-        {/* Step 3 — Add to Home Screen */}
-        <StepCard
-          number={isIPad ? 3 : 2}
-          icon={<AddHomeIcon />}
-          title={t.iosStep3Title}
-          hint={t.iosStep3Hint}
-        />
-
-        {/* Step 4 — Tap Add */}
-        <StepCard
-          number={isIPad ? 4 : 3}
-          icon={<AddButtonIcon />}
-          title={t.iosStep4Title}
-          hint="Guest Pro ✓"
-        />
-      </div>
-
-      <button
-        onClick={onDismiss}
-        className="w-full bg-zinc-50 text-zinc-500 rounded-2xl py-4 text-[16px] font-medium active:scale-[0.98] hover:bg-zinc-100 transition-all duration-150 mt-1"
-      >
-        {t.installLater}
-      </button>
-    </div>
-  );
-}
-
-function FallbackInstructions({
-  onDismiss,
-  t,
-}: {
-  onDismiss: () => void;
-  t: ReturnType<typeof useLocale>["t"];
-}) {
-  return (
-    <div className="space-y-3">
-      <div className="space-y-2">
-        <StepCard
-          number={1}
-          icon={<MoreIcon />}
-          title={t.iosStep3Title}
-          hint={t.iosStep3Hint}
-        />
-        <StepCard
-          number={2}
-          icon={<AddHomeIcon />}
-          title={t.installNow}
-          hint=""
-        />
-        <StepCard
-          number={3}
-          icon={<AddButtonIcon />}
-          title={t.iosStep4Title}
-          hint="Guest Pro ✓"
-        />
-      </div>
-      <button
-        onClick={onDismiss}
-        className="w-full bg-zinc-50 text-zinc-500 rounded-2xl py-4 text-[16px] font-medium active:scale-[0.98] hover:bg-zinc-100 transition-all duration-150 mt-1"
-      >
-        {t.installLater}
-      </button>
-    </div>
-  );
-}
-
-function StepCard({
-  number,
-  icon,
-  title,
-  hint,
-}: {
-  number: number;
-  icon: React.ReactNode;
-  title: string;
-  hint: string;
-}) {
-  return (
-    <div className="flex items-center gap-3 bg-zinc-50 rounded-2xl px-4 py-3.5">
-      <div className="w-8 h-8 rounded-xl bg-white border border-zinc-100 shadow-sm flex items-center justify-center shrink-0 text-[12px] font-bold text-zinc-400">
-        {number}
-      </div>
-      <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-        {icon}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-semibold text-zinc-800 leading-snug">{title}</p>
-        {hint && (
-          <p className="text-[11px] text-zinc-400 mt-0.5 leading-relaxed">{hint}</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ── Inline SVG icons matching iOS/Safari UI conventions ── */
-
-function ShareIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />
-      <polyline points="16 6 12 2 8 6" />
-      <line x1="12" y1="2" x2="12" y2="15" />
-    </svg>
-  );
-}
-
-function MoreIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="5" cy="12" r="1" fill="#3B82F6" />
-      <circle cx="12" cy="12" r="1" fill="#3B82F6" />
-      <circle cx="19" cy="12" r="1" fill="#3B82F6" />
-    </svg>
-  );
-}
-
-function AddHomeIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="18" height="18" rx="3" />
-      <line x1="12" y1="8" x2="12" y2="16" />
-      <line x1="8" y1="12" x2="16" y2="12" />
-    </svg>
-  );
-}
-
-function AddButtonIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
   );
 }

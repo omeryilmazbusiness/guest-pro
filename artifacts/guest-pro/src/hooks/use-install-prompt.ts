@@ -1,7 +1,33 @@
 import { useState, useEffect, useCallback } from "react";
 
 const STORAGE_KEY = "guestpro_install";
+const FRESH_LOGIN_KEY = "guestpro_fresh_login";
 const COOLDOWN_DAYS = 7;
+
+/** Call after a successful guest login so the install guide shows on dashboard. */
+export function markFreshGuestLogin(): void {
+  try {
+    sessionStorage.setItem(FRESH_LOGIN_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
+function isFreshLoginSession(): boolean {
+  try {
+    return sessionStorage.getItem(FRESH_LOGIN_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function clearFreshLoginSession(): void {
+  try {
+    sessionStorage.removeItem(FRESH_LOGIN_KEY);
+  } catch {
+    /* ignore */
+  }
+}
 
 type InstallStatus = "pending" | "installed" | "dismissed" | "permanent";
 
@@ -122,13 +148,17 @@ export function useInstallPrompt(): UseInstallPromptReturn {
     };
     window.addEventListener("appinstalled", appInstalled);
 
-    // Show after a brief delay — after guest dashboard has fully loaded
+    const freshLogin = isFreshLoginSession();
+    if (freshLogin) clearFreshLoginSession();
+
+    // Show after dashboard load — sooner on first login in this session
+    const delayMs = freshLogin ? 900 : 1800;
     const timer = setTimeout(() => {
       const fresh = loadState();
       if (shouldShowPrompt(fresh)) {
         setShowSheet(true);
       }
-    }, 3000);
+    }, delayMs);
 
     return () => {
       clearTimeout(timer);
