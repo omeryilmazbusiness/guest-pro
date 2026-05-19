@@ -1,29 +1,95 @@
 import { ai } from "@workspace/integrations-gemini-ai";
-import { buildSystemPrompt, type ChatMode } from "./guided-prompts";
+import {
+  buildSystemPrompt,
+  type ChatChannel,
+  type ChatMode,
+  type PromptBuildInput,
+} from "./guided-prompts";
+import {
+  actionToCategory,
+  parseAiResponse,
+  type SuggestedChatAction,
+} from "./chat-actions";
+import {
+  classifyGeminiError,
+  extractFailedModel,
+  GeminiAllModelsExhaustedError,
+  GeminiChatError,
+  getModelsToTry,
+  isRetryableModelError,
+  markModelCooldown,
+  parseApiErrorPayload,
+} from "./gemini-models";
+import { logger } from "./logger";
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
 }
 
-function detectCategory(message: string): string {
-  const lower = message.toLowerCase();
-  if (lower.includes("reception") || lower.includes("check") || lower.includes("key") || lower.includes("desk") || lower.includes("resepsiyon") || lower.includes("anahtar")) {
-    return "reception";
-  } else if (lower.includes("room service") || lower.includes("food") || lower.includes("drink") || lower.includes("eat") || lower.includes("breakfast") || lower.includes("yemek") || lower.includes("kahvaltı") || lower.includes("acıktım") || lower.includes("sipariş")) {
-    return "room_service";
-  } else if (lower.includes("clean") || lower.includes("towel") || lower.includes("housekeep") || lower.includes("temizlik") || lower.includes("havlu")) {
-    return "housekeeping";
-  } else if (lower.includes("spa") || lower.includes("pool") || lower.includes("gym") || lower.includes("activit") || lower.includes("havuz")) {
-    return "activities";
-  } else if (lower.includes("taxi") || lower.includes("transport") || lower.includes("airport") || lower.includes("car") || lower.includes("taksi") || lower.includes("transfer")) {
-    return "transport";
-  } else if (lower.includes("support") || lower.includes("problem") || lower.includes("issue") || lower.includes("broken") || lower.includes("sorun") || lower.includes("destek") || lower.includes("arıza")) {
-    return "support";
-  } else if (lower.includes("care") || lower.includes("prefer") || lower.includes("tercih") || lower.includes("allerji") || lower.includes("allerg")) {
-    return "care";
+export interface ConciergeResponse {
+  response: string;
+  category: string;
+  action: SuggestedChatAction | null;
+  replyOptions: string[];
+  model?: string;
+}
+
+function temperatureForMode(mode: ChatMode): number {
+  if (mode === "food" || mode === "support" || mode === "care") return 0.45;
+  return 0.55;
+}
+
+/** Lower caps = faster time-to-first-token and total latency. */
+function maxTokensForChannel(channel: ChatChannel): number {
+  return channel === "voice" ? 220 : 420;
+}
+
+const CHAT_HISTORY_TURNS = 4;
+
+type GenerateContentRequest = Omit<
+  Parameters<typeof ai.models.generateContent>[0],
+  "model"
+>;
+
+async function generateContentWithModelFallback(
+  request: GenerateContentRequest,
+  lang?: string,
+  opts?: { fastOnly?: boolean },
+): Promise<{ text: string; model: string }> {
+  let models = getModelsToTry({ fastOnly: opts?.fastOnly });
+  if (models.length === 0) models = getModelsToTry();
+  let lastErr: unknown;
+  let maxRetryAfter: number | undefined;
+
+  for (const model of models) {
+    try {
+      const result = await ai.models.generateContent({ ...request, model });
+      const text = result.text?.trim();
+      if (!text) {
+        lastErr = new Error("Empty model response");
+        markModelCooldown(model, 30);
+        continue;
+      }
+      logger.debug({ model }, "gemini:model-success");
+      return { text, model };
+    } catch (err) {
+      lastErr = err;
+      const failedModel = extractFailedModel(err, model);
+      if (isRetryableModelError(err)) {
+        const info = parseApiErrorPayload(err);
+        markModelCooldown(failedModel, info.retryAfterSec);
+        if (info.retryAfterSec && (!maxRetryAfter || info.retryAfterSec > maxRetryAfter)) {
+          maxRetryAfter = info.retryAfterSec;
+        }
+        logger.warn({ model: failedModel, retryAfterSec: info.retryAfterSec }, "gemini:model-skip");
+        continue;
+      }
+      throw classifyGeminiError(err, lang);
+    }
   }
-  return "general";
+
+  throw new GeminiAllModelsExhaustedError(maxRetryAfter, lastErr);
 }
 
 export async function generateConversationSummary(messages: ChatMessage[]): Promise<string> {
@@ -34,25 +100,25 @@ export async function generateConversationSummary(messages: ChatMessage[]): Prom
     .join("\n");
 
   try {
-    const result = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              text: `Summarize this hotel guest conversation in 2-3 concise sentences. Focus on the main topics discussed, requests made, and any important context for continuing the conversation naturally:\n\n${historyText}`,
-            },
-          ],
+    const { text } = await generateContentWithModelFallback({
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: `Summarize this hotel guest conversation in 2-3 concise sentences. Focus on requests, decisions pending, and preferences:\n\n${historyText}`,
+              },
+            ],
+          },
+        ],
+        config: {
+          temperature: 0.3,
+          maxOutputTokens: 200,
         },
-      ],
-      config: {
-        temperature: 0.3,
-        maxOutputTokens: 200,
-      },
-    });
-    return result.text ?? "";
-  } catch {
+      });
+    return text;
+  } catch (err) {
+    logger.warn({ err, messageCount: messages.length }, "conversation-summary-failed");
     return "";
   }
 }
@@ -60,19 +126,14 @@ export async function generateConversationSummary(messages: ChatMessage[]): Prom
 export async function generateConciergeResponse(
   userMessage: string,
   conversationHistory: ChatMessage[],
-  guestFirstName?: string,
-  contextSummary?: string,
-  detectedLanguage?: string,
-  chatMode?: ChatMode
-): Promise<{ response: string; category: string }> {
-  const systemNote = buildSystemPrompt(
-    chatMode ?? "general",
-    guestFirstName,
-    contextSummary,
-    detectedLanguage
-  );
+  promptInput: Omit<PromptBuildInput, "mode" | "channel"> & {
+    mode: ChatMode;
+    channel: ChatChannel;
+  },
+): Promise<ConciergeResponse> {
+  const systemNote = buildSystemPrompt(promptInput);
 
-  const contents = conversationHistory.slice(-8).map((msg) => ({
+  const contents = conversationHistory.slice(-CHAT_HISTORY_TURNS).map((msg) => ({
     role: msg.role === "assistant" ? ("model" as const) : ("user" as const),
     parts: [{ text: msg.content }],
   }));
@@ -82,37 +143,43 @@ export async function generateConciergeResponse(
     parts: [{ text: userMessage }],
   });
 
+  const lang = promptInput.detectedLanguage;
+  const request: GenerateContentRequest = {
+    contents,
+    config: {
+      systemInstruction: systemNote,
+      temperature: temperatureForMode(promptInput.mode),
+      maxOutputTokens: maxTokensForChannel(promptInput.channel),
+    },
+  };
+
+  let raw: string;
+  let model: string | undefined;
   try {
-    const result = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents,
-      config: {
-        systemInstruction: systemNote,
-        temperature: 0.7,
-        maxOutputTokens: 8192,
-      },
-    });
-
-    const responseText =
-      result.text ??
-      "I apologize, I'm having trouble responding right now. Please try again.";
-    const category = chatMode === "food" ? "room_service"
-      : chatMode === "support" ? "support"
-      : chatMode === "care" ? "care"
-      : detectCategory(userMessage);
-
-    return { response: responseText, category };
-  } catch (error) {
-    throw new Error(
-      `Failed to generate AI response: ${error instanceof Error ? error.message : "Unknown error"}`
-    );
+    ({ text: raw, model } = await generateContentWithModelFallback(request, lang, { fastOnly: true }));
+  } catch (err) {
+    if (err instanceof GeminiAllModelsExhaustedError) {
+      ({ text: raw, model } = await generateContentWithModelFallback(request, lang));
+    } else {
+      throw err;
+    }
   }
+
+  const { guestText, action, replyOptions } = parseAiResponse(raw);
+
+  return {
+    response: guestText,
+    category: actionToCategory(action),
+    action,
+    replyOptions,
+    model,
+  };
 }
 
+export { GeminiAllModelsExhaustedError, GeminiChatError } from "./gemini-models";
+
 // ---------------------------------------------------------------------------
-// Restaurant care analysis
-// Analyses CARE_PROFILE_UPDATE requests and returns food/nutrition-relevant
-// actionable insights for restaurant staff.
+// Restaurant care analysis (unchanged)
 // ---------------------------------------------------------------------------
 
 export interface CareRequestSummary {
@@ -123,7 +190,7 @@ export interface CareRequestSummary {
 }
 
 export async function analyzeGuestCareForRestaurant(
-  careRequests: CareRequestSummary[]
+  careRequests: CareRequestSummary[],
 ): Promise<string[]> {
   if (careRequests.length === 0) return [];
 
@@ -132,40 +199,14 @@ export async function analyzeGuestCareForRestaurant(
       (r) =>
         `Oda ${r.roomNumber} (${r.guestName}): ${r.summary}${
           r.structuredData ? " | Detay: " + JSON.stringify(r.structuredData) : ""
-        }`
+        }`,
     )
     .join("\n");
 
   const prompt = `Sen 5 yıldızlı bir otel restoranının baş aşçısına yardım eden uzman bir beslenme danışmanısın.
 
-Aşağıda otel misafirlerinin "Care About Me" (beni önemse) profillerinden elde edilen veriler verilmiştir.
+Aşağıda otel misafirlerinin "Care About Me" profillerinden elde edilen veriler verilmiştir.
 Bu profilleri derinlemesine analiz et ve restoran ekibine SOMUT, UYGULANABİLİR yemek hazırlama önerileri sun.
-
-ANALIZ EDİLECEK KATEGORİLER:
-1. Gıda alerjileri (gluten, laktoz, fıstık, kabuklu deniz ürünleri vb.)
-2. Diyet kısıtlamaları (diyabet, hipertansiyon, kalp hastalığı, böbrek hastalığı vb.)
-3. Beslenme tercihleri (vejetaryen, vegan, helal, koşer vb.)
-4. Kişisel tercihler (sevilen/sevilmeyen yiyecekler, baharatlar, pişirme şekli)
-5. Sağlık durumları (hamilelik, emzirme, ameliyat sonrası, ilaç kullanımı)
-6. Kültürel/dini gereksinimler
-
-HER ÖNERİ İÇİN FORMAT:
-"Oda [NO] ([İSİM]): [Durum] → [Somut Yemek Hazırlama Önerisi]"
-
-ÖRNEKLER:
-"Oda 101 (Ali Yıldız): Çölyak hastalığı → Tüm ekmek ve makarnayı glutensiz alternatifle değiştirin; ortak yüzey kontaminasyonuna dikkat edin"
-"Oda 203 (Sara Demir): Tip-2 diyabet → Şeker yerine stevia kullanın; tam tahıllı seçenekler sunun; porsiyon bilgisi etiketleyin"
-"Oda 315 (John Smith): Vegan + fıstık alerjisi → Hayvansal ürün içermeyen menü hazırlayın; fıstık yağı yerine zeytinyağı kullanın"
-"Oda 412 (Mei Wang): Düşük sodyum diyet (hipertansiyon) → Tuz miktarını yarıya indirin; soya sosu yerine düşük sodyumlu alternatif kullanın"
-
-KURALLAR:
-- SADECE yiyecek, içecek ve beslenme ile ilgili verileri dahil et
-- Oda ve yemek ilişkisini NET belirt
-- Her öneri pratik ve mutfakta uygulanabilir olsun
-- Türkçe yaz, profesyonel ama anlaşılır ol
-- Maksimum 20 madde döndür
-- İlgisiz profilleri (oda tercihi, ulaşım, sıcaklık vb.) tamamen atla
-- Eğer hiç ilgili bildirim yoksa boş liste döndür: []
 
 MİSAFİR PROFİLLERİ:
 ${requestsText}
@@ -173,13 +214,12 @@ ${requestsText}
 SADECE JSON dizisi döndür, başka hiçbir metin ekleme:`;
 
   try {
-    const result = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+    const { text } = await generateContentWithModelFallback({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       config: { temperature: 0.15, maxOutputTokens: 2048 },
     });
 
-    const raw = result.text?.trim() ?? "[]";
+    const raw = text.trim() || "[]";
     const cleaned = raw
       .replace(/^```json\s*/i, "")
       .replace(/^```\s*/i, "")
@@ -191,7 +231,7 @@ SADECE JSON dizisi döndür, başka hiçbir metin ekleme:`;
     }
     return [];
   } catch (err) {
-    console.error("[analyzeGuestCareForRestaurant] AI error", err);
+    logger.error({ err, careRequestCount: careRequests.length }, "analyzeGuestCareForRestaurant failed");
     return [];
   }
 }

@@ -118,3 +118,8 @@ export async function clearLimit(
     logger.warn({ err, key }, "rate-limiter: failed to clear key");
   }
 }
+
+/** Chat burst: 20 messages / 60 s per guest (Redis-backed in production). */
+export async function checkChatBurstRateLimit(guestId: number): Promise<RateLimitResult> {
+  return consumeLimit(chatBurstLimiter, String(guestId));
+}

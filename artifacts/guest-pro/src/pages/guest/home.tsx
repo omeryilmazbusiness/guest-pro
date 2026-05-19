@@ -351,8 +351,11 @@ export default function GuestHome() {
     setLocation(`/guest/flow?mode=${mode}`);
   };
 
+  const voiceStopRef = useRef<(() => void) | null>(null);
+
   const voice = useVoice({
     onResult: (transcript, _lang) => {
+      voiceStopRef.current?.();
       if (transcript.trim()) {
         setLocation(`/guest/chat?q=${encodeURIComponent(transcript)}&voice=1`);
       }
@@ -367,6 +370,7 @@ export default function GuestHome() {
       micNotAvailable: t.micDenied,
     },
   });
+  voiceStopRef.current = voice.stopListening;
 
   const handleMicTap = () => {
     if (voice.isListening) {

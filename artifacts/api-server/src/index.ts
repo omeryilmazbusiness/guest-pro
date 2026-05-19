@@ -1,4 +1,11 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+// Load repo-root .env when running from artifacts/api-server (pnpm dev)
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+dotenv.config({ path: path.join(repoRoot, ".env") });
+dotenv.config();
 import app from "./app";
 import { logger } from "./lib/logger";
 import { startScheduler } from "./lib/scheduler";

@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
     "build": "node ./build.mjs",
-    "start": "node --enable-source-maps ./dist/index.mjs",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "start": "DOTENV_CONFIG_PATH=../../.env node --import dotenv/config --enable-source-maps ./dist/index.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test src/lib/chat-actions.unit.test.ts"
   },
   "dependencies": {
     "@google/genai": "^1.44.0",

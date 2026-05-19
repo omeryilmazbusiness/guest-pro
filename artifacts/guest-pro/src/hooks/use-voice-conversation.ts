@@ -37,7 +37,11 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { detectVoiceCapability, type VoiceCapabilityModel } from "@/lib/voice/capability";
 import { detectLanguageFromText } from "@/lib/voice/language-resolver";
 import { synthesize, cancelSpeech, primeTts } from "@/lib/voice/speech-synthesis";
-import { createSpeechSession, isSttSupported } from "@/lib/voice/speech-recognition";
+import {
+  abortAllSpeechSessions,
+  createSpeechSession,
+  isSttSupported,
+} from "@/lib/voice/speech-recognition";
 import { VoiceDiagnosticsLogger } from "@/lib/voice/diagnostics";
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -48,7 +52,7 @@ import { VoiceDiagnosticsLogger } from "@/lib/voice/diagnostics";
  * "playback" mode before STT starts recording — 300 ms was too short on
  * Android Chrome and iOS Safari, causing silent second-turn failure.
  */
-const TTS_TO_STT_GAP_MS = 700;
+const TTS_TO_STT_GAP_MS = 900;
 
 /**
  * Silence threshold — how long (ms) of speech-free audio after interim results
@@ -104,6 +108,8 @@ export interface VoiceConversationReturn {
   interruptAndListen: () => void;
   speakResponse: (text: string, lang: string) => void;
   setProcessing: () => void;
+  /** Stop current mic turn but keep conversation active (e.g. chip tap). */
+  pauseListeningForOutgoingMessage: () => void;
   retryListening: () => void;
   errorMessage: string | null;
 }
@@ -138,6 +144,8 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
   // Per-turn transcript buffer and commit guard
   const interimBufferRef = useRef("");
   const committedRef = useRef(false);
+  /** Bumps each doListen() — stale session callbacks are ignored */
+  const listenGenRef = useRef(0);
 
   // Always-fresh opts ref — no stale closures in async callbacks
   const optsRef = useRef(opts);
@@ -224,6 +232,45 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
     setAmplitude(0);
   }, []);
 
+  /**
+   * Release the separate getUserMedia stream before STT starts.
+   * Holding two mic consumers (viz + SpeechRecognition) breaks the 2nd+ turn on
+   * iOS Safari and many Android Chrome builds.
+   */
+  const releaseMicForStt = useCallback(() => {
+    if (animFrameRef.current !== null) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+    analyserRef.current = null;
+    if (audioContextRef.current) {
+      audioContextRef.current.close().catch(() => {});
+      audioContextRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+  }, []);
+
+  const clearLoopTimer = useCallback(() => {
+    if (loopTimerRef.current !== null) {
+      clearTimeout(loopTimerRef.current);
+      loopTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleListen = useCallback(
+    (delayMs: number) => {
+      clearLoopTimer();
+      loopTimerRef.current = setTimeout(() => {
+        loopTimerRef.current = null;
+        doListenRef.current();
+      }, delayMs);
+    },
+    [clearLoopTimer]
+  );
+
   // ── Core: start one listening turn ──────────────────────────────────────────
   const doListen = useCallback(() => {
     if (!activeRef.current) return;
@@ -233,35 +280,45 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
       return;
     }
 
+    const turnGen = ++listenGenRef.current;
+
     // Reset per-turn state
     clearProcessingWatchdog();
     clearSilenceTimer();
     committedRef.current = false;
     interimBufferRef.current = "";
 
+    // Tear down any lingering session before opening a new one
+    sessionRef.current?.abort();
+    sessionRef.current = null;
+
+    // Free mic for SpeechRecognition (exclusive on mobile)
+    releaseMicForStt();
+
     setTranscript("");
     setStateSync("listening");
-    VoiceDiagnosticsLogger.log("conv:listening");
+    VoiceDiagnosticsLogger.log("conv:listening", `gen=${turnGen}`);
+
+    const isStale = () => !activeRef.current || listenGenRef.current !== turnGen;
 
     // ── commitOnce — only one commit fires per turn ─────────────────────────
     // Called from: (A) browser onFinalResult, (B) silence timer, (C) onEnd fallback
     const commitOnce = (text: string) => {
-      if (committedRef.current) return; // already committed this turn
+      if (isStale() || committedRef.current) return;
       committedRef.current = true;
 
       clearSilenceTimer();
 
-      // Stop the recognition session cleanly
-      sessionRef.current?.abort();
+      // Graceful stop so onend can flush interim → final in the adapter
+      const session = sessionRef.current;
       sessionRef.current = null;
+      session?.stop();
 
       const trimmed = text.trim();
       if (!trimmed) {
         // Empty transcript after all paths — restart listening
         VoiceDiagnosticsLogger.log("conv:commit-empty", "restarting");
-        if (activeRef.current) {
-          loopTimerRef.current = setTimeout(() => doListen(), EMPTY_TURN_RESTART_MS);
-        }
+        if (!isStale()) scheduleListen(EMPTY_TURN_RESTART_MS);
         return;
       }
 
@@ -280,9 +337,12 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
       lang: optsRef.current.defaultLang,
 
       onInterimResult: (text) => {
+        if (isStale()) return;
         VoiceDiagnosticsLogger.log("conv:interim", text.slice(0, 40));
         setTranscript(text);
         interimBufferRef.current = text;
+        // Visual feedback without a parallel mic stream
+        setAmplitude(Math.min(1, 0.25 + text.length / 80));
 
         if (committedRef.current) return;
 
@@ -301,14 +361,16 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
       },
 
       onFinalResult: (text) => {
+        if (isStale()) return;
         VoiceDiagnosticsLogger.log("conv:final", text.slice(0, 80));
         // PATH A: browser delivered a final result — commit immediately
         commitOnce(text);
       },
 
       onError: (code) => {
-        if (!activeRef.current) return;
+        if (isStale()) return;
         clearSilenceTimer();
+        sessionRef.current = null;
         VoiceDiagnosticsLogger.log("conv:stt-error", code);
 
         if (code === "not-allowed") {
@@ -319,15 +381,11 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
               "Microphone access denied. Please check your browser settings."
           );
         } else if (code === "no-speech") {
-          // Restart after silence with no detectable speech
-          if (activeRef.current) {
-            loopTimerRef.current = setTimeout(() => doListen(), EMPTY_TURN_RESTART_MS);
-          }
+          if (!isStale()) scheduleListen(EMPTY_TURN_RESTART_MS);
+        } else if (code === "start-failed") {
+          if (!isStale()) scheduleListen(600);
         } else {
-          // Transient error — auto-retry
-          if (activeRef.current) {
-            loopTimerRef.current = setTimeout(() => doListen(), 900);
-          }
+          if (!isStale()) scheduleListen(900);
         }
       },
 
@@ -335,16 +393,18 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
       // (if speech was heard, speech-recognition.ts promotes interim to final
       //  via PATH C, so commitOnce has already been called by the time onEnd fires)
       onEnd: () => {
+        if (isStale()) return;
         clearSilenceTimer();
+        sessionRef.current = null;
+        setAmplitude(0);
         VoiceDiagnosticsLogger.log("conv:stt-end");
         // If we still have buffered text and haven't committed, PATH C:
         const buffered = interimBufferRef.current;
         if (buffered.trim() && !committedRef.current) {
           VoiceDiagnosticsLogger.log("conv:stt-end-commit-fallback", buffered.slice(0, 40));
           commitOnce(buffered);
-        } else if (!committedRef.current && activeRef.current && stateRef.current === "listening") {
-          // Genuine silence — restart
-          loopTimerRef.current = setTimeout(() => doListen(), EMPTY_TURN_RESTART_MS);
+        } else if (!committedRef.current && stateRef.current === "listening") {
+          scheduleListen(EMPTY_TURN_RESTART_MS);
         }
       },
     });
@@ -356,7 +416,14 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
 
     sessionRef.current = session;
     session.start();
-  }, [setStateSync, clearProcessingWatchdog, armProcessingWatchdog, clearSilenceTimer]);
+  }, [
+    setStateSync,
+    clearProcessingWatchdog,
+    armProcessingWatchdog,
+    clearSilenceTimer,
+    releaseMicForStt,
+    scheduleListen,
+  ]);
 
   // Keep forward ref current
   useEffect(() => {
@@ -368,25 +435,26 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
     (text: string, lang: string) => {
       if (!activeRef.current) return;
       clearProcessingWatchdog();
+      clearSilenceTimer();
+      sessionRef.current?.abort();
+      sessionRef.current = null;
+      releaseMicForStt();
+      setAmplitude(0);
       setStateSync("speaking");
       VoiceDiagnosticsLogger.log("conv:tts-start", lang);
 
       synthesize(text, lang, {
         onEnd: () => {
           VoiceDiagnosticsLogger.log("conv:tts-end");
-          if (activeRef.current) {
-            loopTimerRef.current = setTimeout(() => doListen(), TTS_TO_STT_GAP_MS);
-          }
+          if (activeRef.current) scheduleListen(TTS_TO_STT_GAP_MS);
         },
         onError: () => {
           VoiceDiagnosticsLogger.log("conv:tts-error", "resuming listening");
-          if (activeRef.current) {
-            loopTimerRef.current = setTimeout(() => doListen(), TTS_TO_STT_GAP_MS);
-          }
+          if (activeRef.current) scheduleListen(TTS_TO_STT_GAP_MS);
         },
       });
     },
-    [doListen, setStateSync, clearProcessingWatchdog]
+    [setStateSync, clearProcessingWatchdog, clearSilenceTimer, releaseMicForStt, scheduleListen]
   );
 
   // ── Public: setProcessing ───────────────────────────────────────────────────
@@ -396,6 +464,27 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
       armProcessingWatchdog();
     }
   }, [setStateSync, armProcessingWatchdog]);
+
+  // ── Public: pauseListeningForOutgoingMessage (chip / typed send in voice mode) ─
+  const pauseListeningForOutgoingMessage = useCallback(() => {
+    if (!activeRef.current) return;
+    VoiceDiagnosticsLogger.log("conv:pause-for-outgoing");
+    clearLoopTimer();
+    clearSilenceTimer();
+    sessionRef.current?.abort();
+    sessionRef.current = null;
+    releaseMicForStt();
+    setAmplitude(0);
+    committedRef.current = true;
+    setStateSync("processing");
+    armProcessingWatchdog();
+  }, [
+    clearLoopTimer,
+    clearSilenceTimer,
+    releaseMicForStt,
+    setStateSync,
+    armProcessingWatchdog,
+  ]);
 
   // ── Public: startConversation ───────────────────────────────────────────────
   const startConversation = useCallback(() => {
@@ -417,17 +506,20 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
     setErrorMessage(null);
     setStateSync("starting");
 
+    // Request mic permission once, then release — STT owns the mic each turn
     startAmplitude().then(() => {
+      releaseMicForStt();
       if (activeRef.current) doListen();
     });
-  }, [capability.sttSupported, doListen, setStateSync, startAmplitude]);
+  }, [capability.sttSupported, doListen, setStateSync, startAmplitude, releaseMicForStt]);
 
   // ── Public: stopConversation ────────────────────────────────────────────────
   const stopConversation = useCallback(() => {
     VoiceDiagnosticsLogger.log("conv:stop");
     activeRef.current = false;
+    abortAllSpeechSessions();
 
-    if (loopTimerRef.current) { clearTimeout(loopTimerRef.current); loopTimerRef.current = null; }
+    clearLoopTimer();
     clearSilenceTimer();
     clearProcessingWatchdog();
 
@@ -440,7 +532,7 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
     interimBufferRef.current = "";
     committedRef.current = false;
     setStateSync("stopped");
-  }, [setStateSync, stopAmplitude, clearSilenceTimer, clearProcessingWatchdog]);
+  }, [setStateSync, stopAmplitude, clearSilenceTimer, clearProcessingWatchdog, clearLoopTimer]);
 
   // ── Public: interruptAndListen ──────────────────────────────────────────────
   const interruptAndListen = useCallback(() => {
@@ -448,18 +540,17 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
     VoiceDiagnosticsLogger.log("conv:interrupt");
     cancelSpeech();
 
-    if (loopTimerRef.current) { clearTimeout(loopTimerRef.current); loopTimerRef.current = null; }
+    clearLoopTimer();
     clearSilenceTimer();
     clearProcessingWatchdog();
 
     doListen();
-  }, [doListen, clearSilenceTimer, clearProcessingWatchdog]);
+  }, [doListen, clearSilenceTimer, clearProcessingWatchdog, clearLoopTimer]);
 
   // ── Public: retryListening ──────────────────────────────────────────────────
   const retryListening = useCallback(() => {
-    if (!capability.sttSupported) return;
+    if (!capability.sttSupported || !activeRef.current) return;
     VoiceDiagnosticsLogger.log("conv:retry");
-    activeRef.current = true;
     setErrorMessage(null);
     clearSilenceTimer();
     doListen();
@@ -469,14 +560,26 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
   useEffect(() => {
     return () => {
       activeRef.current = false;
-      if (loopTimerRef.current) clearTimeout(loopTimerRef.current);
+      clearLoopTimer();
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       clearProcessingWatchdog();
-      sessionRef.current?.abort();
+      abortAllSpeechSessions();
+      sessionRef.current = null;
       cancelSpeech();
       stopAmplitude();
     };
-  }, [stopAmplitude, clearProcessingWatchdog]);
+  }, [stopAmplitude, clearProcessingWatchdog, clearLoopTimer]);
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.hidden && activeRef.current) {
+        VoiceDiagnosticsLogger.log("conv:visibility-hidden-stop");
+        stopConversation();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [stopConversation]);
 
   const isActive =
     state !== "idle" &&
@@ -495,6 +598,7 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
     interruptAndListen,
     speakResponse,
     setProcessing,
+    pauseListeningForOutgoingMessage,
     retryListening,
     errorMessage,
   };

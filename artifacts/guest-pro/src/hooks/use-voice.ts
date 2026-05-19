@@ -14,7 +14,11 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { isSttSupported, createSpeechSession } from "@/lib/voice/speech-recognition";
+import {
+  abortAllSpeechSessions,
+  isSttSupported,
+  createSpeechSession,
+} from "@/lib/voice/speech-recognition";
 import { synthesize, primeTts } from "@/lib/voice/speech-synthesis";
 import { detectLanguageFromText } from "@/lib/voice/language-resolver";
 import { VoiceDiagnosticsLogger } from "@/lib/voice/diagnostics";
@@ -114,7 +118,7 @@ export function useVoice(opts: VoiceHookOptions): VoiceHookReturn {
     activeRef.current = false;
 
     clearSilenceTimer();
-    sessionRef.current?.abort();
+    abortAllSpeechSessions();
     sessionRef.current = null;
     cleanupMedia();
 
@@ -286,10 +290,21 @@ export function useVoice(opts: VoiceHookOptions): VoiceHookReturn {
     return () => {
       activeRef.current = false;
       clearSilenceTimer();
-      sessionRef.current?.abort();
+      abortAllSpeechSessions();
+      sessionRef.current = null;
       cleanupMedia();
     };
   }, [cleanupMedia, clearSilenceTimer]);
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.hidden && activeRef.current) {
+        stopListening();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [stopListening]);
 
   return { isListening, isSupported, transcript, amplitude, startListening, stopListening };
 }

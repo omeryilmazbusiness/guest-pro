@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import type { Message } from "@workspace/api-client-react";
+import { stripAiMarkup } from "@/lib/chat-sanitize";
 
 interface MessageBubbleProps {
   message: Message;
@@ -61,6 +62,7 @@ function AIMessageContent({ content, animate }: { content: string; animate: bool
 export function MessageBubble({ message, animate = false }: MessageBubbleProps) {
   const isUser = message.role === "user";
   const isAssistant = message.role === "assistant";
+  const displayContent = isAssistant ? stripAiMarkup(message.content) : message.content;
 
   const [isVisible, setIsVisible] = useState(false);
 
@@ -83,7 +85,7 @@ export function MessageBubble({ message, animate = false }: MessageBubbleProps) 
 
       {isAssistant && (
         <div className="max-w-[88%] px-5 py-4 text-[15px] leading-relaxed bg-white text-zinc-800 rounded-3xl rounded-tl-sm border border-zinc-100 shadow-sm">
-          <AIMessageContent content={message.content} animate={animate} />
+          <AIMessageContent content={displayContent || message.content} animate={animate} />
         </div>
       )}
     </div>

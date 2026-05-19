@@ -17,6 +17,24 @@
  * 4. Session lifecycle: start / stop / abort all guard `ended` correctly
  */
 
+/** Minimum gap between recognition sessions (Chrome mobile quirk). */
+const MIN_RESTART_GAP_MS = 280;
+
+/** Last time any session ended — used to pace recognition.start(). */
+let lastSessionEndedAt = 0;
+
+/** Only one STT session app-wide — prevents ghost listening across pages. */
+let activeSession: SpeechSession | null = null;
+
+/** Stop any in-flight recognition (call on route change / unmount). */
+export function abortAllSpeechSessions(): void {
+  if (activeSession) {
+    activeSession.abort();
+    activeSession = null;
+  }
+  lastSessionEndedAt = Date.now();
+}
+
 export interface SpeechSessionOptions {
   lang: string;
   /** Called continuously with interim transcripts for live display */
@@ -108,9 +126,15 @@ export function createSpeechSession(opts: SpeechSessionOptions): SpeechSession |
     }
   };
 
-  recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+  const markEnded = () => {
     if (ended) return;
     ended = true;
+    lastSessionEndedAt = Date.now();
+  };
+
+  recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+    if (ended) return;
+    markEnded();
 
     if (event.error === "no-speech") {
       // No audio detected at all — not an error, just silence
@@ -128,7 +152,7 @@ export function createSpeechSession(opts: SpeechSessionOptions): SpeechSession |
 
   recognition.onend = () => {
     if (ended) return;
-    ended = true;
+    markEnded();
 
     if (!finalFired) {
       if (lastInterimText.trim()) {
@@ -146,24 +170,55 @@ export function createSpeechSession(opts: SpeechSessionOptions): SpeechSession |
     // If finalFired is already true, onFinalResult was already delivered — do nothing
   };
 
-  return {
+  const scheduleStart = (attempt = 0) => {
+    const sinceEnd = Date.now() - lastSessionEndedAt;
+    const delay = Math.max(0, MIN_RESTART_GAP_MS - sinceEnd);
+
+    const run = () => {
+      try {
+        recognition.start();
+      } catch {
+        // InvalidStateError: previous session not fully released yet
+        if (attempt < 5) {
+          setTimeout(() => scheduleStart(attempt + 1), 120 * (attempt + 1));
+        } else {
+          opts.onError("start-failed");
+        }
+      }
+    };
+
+    if (delay > 0) {
+      setTimeout(run, delay);
+    } else {
+      run();
+    }
+  };
+
+  const session: SpeechSession = {
     start: () => {
+      if (activeSession && activeSession !== session) {
+        activeSession.abort();
+      }
+      activeSession = session;
       ended = false;
       finalFired = false;
       lastInterimText = "";
-      recognition.start();
+      scheduleStart();
     },
     stop: () => {
       if (!ended) {
-        ended = true;
         recognition.stop();
       }
+      if (activeSession === session) activeSession = null;
     },
     abort: () => {
       if (!ended) {
-        ended = true;
+        markEnded();
         recognition.abort();
       }
+      if (activeSession === session) activeSession = null;
     },
   };
+
+  return session;
 }

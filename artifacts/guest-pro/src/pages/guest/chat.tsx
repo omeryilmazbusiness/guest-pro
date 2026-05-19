@@ -36,8 +36,23 @@ import { ShimmerBubble } from "@/components/chat/ShimmerBubble";
 import { OptimisticUserBubble } from "@/components/chat/OptimisticUserBubble";
 import { MicrophoneButton } from "@/components/chat/MicrophoneButton";
 import { VoiceConversationPanel } from "@/components/chat/VoiceConversationPanel";
+import { ChatActionBar } from "@/components/chat/ChatActionBar";
 import { useVoiceConversation } from "@/hooks/use-voice-conversation";
 import { VoiceDiagnosticsLogger } from "@/lib/voice/diagnostics";
+import { stripAiMarkup } from "@/lib/chat-sanitize";
+import {
+  getQuickActionRoutesFromMessage,
+  getReplyOptionsFromMessage,
+  isAiCapacityLimitedMessage,
+} from "@/lib/chat-message-meta";
+import { ChatReplyChips } from "@/components/chat/ChatReplyChips";
+import { abortAllSpeechSessions } from "@/lib/voice/speech-recognition";
+import {
+  confirmChatAction,
+  type QuickActionRoute,
+  type SuggestedChatAction,
+} from "@/lib/chat-api";
+import { AiCapacityPanel } from "@/components/chat/AiCapacityPanel";
 import { tFmt } from "@/lib/i18n";
 
 const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
@@ -63,6 +78,8 @@ export default function GuestChat() {
   const [inputValue, setInputValue] = useState("");
   const [pendingUserMessage, setPendingUserMessage] = useState<string | null>(null);
   const [quotaExceeded, setQuotaExceeded] = useState(false);
+  const [aiCapacityExceeded, setAiCapacityExceeded] = useState(false);
+  const [capacityQuickRoutes, setCapacityQuickRoutes] = useState<QuickActionRoute[]>([]);
   const [pendingAutoSend, setPendingAutoSend] = useState<string | null>(null);
   const [voiceAutoStart, setVoiceAutoStart] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -71,6 +88,9 @@ export default function GuestChat() {
   const [showRequestCreated, setShowRequestCreated] = useState(false);
   const [isCreatingRequest, setIsCreatingRequest] = useState(false);
   const [detectedLanguage, setDetectedLanguage] = useState<string>(voiceLocale);
+  const [pendingAction, setPendingAction] = useState<SuggestedChatAction | null>(null);
+  const [isConfirmingAction, setIsConfirmingAction] = useState(false);
+  const [replyOptions, setReplyOptions] = useState<string[]>([]);
 
   // Sync detectedLanguage when voiceLocale resolves from the async /auth/me call.
   // On first render user.language is not yet loaded, so voiceLocale starts as
@@ -98,12 +118,12 @@ export default function GuestChat() {
   });
 
   // ── Voice conversation hook ──────────────────────────────────────────────
+  const convRef = useRef<ReturnType<typeof useVoiceConversation> | null>(null);
+
   const conv = useVoiceConversation({
     defaultLang: voiceLocale,
     onSpeechResult: (transcript, lang) => {
       setDetectedLanguage(lang);
-      // Mark we're processing — the AI response will trigger speakResponse
-      conv.setProcessing();
       handleSend(transcript, lang);
     },
     messages: {
@@ -111,6 +131,15 @@ export default function GuestChat() {
       micDenied: t.micDenied,
     },
   });
+  convRef.current = conv;
+
+  useEffect(() => {
+    return () => {
+      convRef.current?.stopConversation();
+      abortAllSpeechSessions();
+      window.speechSynthesis?.cancel();
+    };
+  }, []);
 
   // ── Auth guard ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -206,11 +235,30 @@ export default function GuestChat() {
       setAnimatingIds((prev) => new Set([...prev, ...newIds]));
     }
 
-    // Voice conversation loop: speak AI response then resume listening
-    if (conv.isActive && newAssistantMessages.length > 0) {
+    const voice = convRef.current;
+    if (voice?.isActive && newAssistantMessages.length > 0) {
       const latest = newAssistantMessages[newAssistantMessages.length - 1];
-      VoiceDiagnosticsLogger.log("chat:ai-response-speak", latest.content.slice(0, 40));
-      conv.speakResponse(latest.content, detectedLanguage);
+      if (!isAiCapacityLimitedMessage(latest)) {
+        VoiceDiagnosticsLogger.log("chat:ai-response-speak", latest.content.slice(0, 40));
+        voice.speakResponse(stripAiMarkup(latest.content), detectedLanguage);
+      }
+    }
+  }, [messages, detectedLanguage]);
+
+  useEffect(() => {
+    if (!messages?.length) {
+      setReplyOptions([]);
+      return;
+    }
+    const latestAssistant = [...messages]
+      .reverse()
+      .find((m: Message) => m.role === "assistant");
+    if (latestAssistant) {
+      setReplyOptions(getReplyOptionsFromMessage(latestAssistant));
+      if (isAiCapacityLimitedMessage(latestAssistant)) {
+        setAiCapacityExceeded(true);
+        setCapacityQuickRoutes(getQuickActionRoutesFromMessage(latestAssistant));
+      }
     }
   }, [messages]);
 
@@ -229,37 +277,111 @@ export default function GuestChat() {
     }
   };
 
+  const handleCapacityRoute = useCallback(
+    (route: QuickActionRoute) => {
+      if (conv.isActive) conv.stopConversation();
+      if (route.chatMessage) {
+        setLocation(`${route.href}?q=${encodeURIComponent(route.chatMessage)}`);
+      } else {
+        setLocation(route.href);
+      }
+    },
+    [conv, setLocation],
+  );
+
   const handleSend = (content: string, lang?: string) => {
-    if (!content.trim() || !sessionId || quotaExceeded) return;
+    if (!content.trim() || !sessionId || quotaExceeded || aiCapacityExceeded) return;
     const trimmed = content.trim();
+    setReplyOptions([]);
+    if (conv.isActive) conv.setProcessing();
     setPendingUserMessage(trimmed);
     setInputValue("");
+    setPendingAction(null);
     if (textareaRef.current) textareaRef.current.style.height = "auto";
 
+    const channel = conv.isActive ? "voice" : "text";
+
     sendMessageMutation.mutate(
-      { sessionId, data: { content: trimmed, language: lang ?? detectedLanguage, chatMode: activeChatMode } as Parameters<typeof sendMessageMutation.mutate>[0]["data"] },
       {
-        onSuccess: () => {
+        sessionId,
+        data: {
+          content: trimmed,
+          language: lang ?? detectedLanguage,
+          chatMode: activeChatMode,
+          channel,
+        } as Parameters<typeof sendMessageMutation.mutate>[0]["data"],
+      },
+      {
+        onSuccess: (res) => {
           setPendingUserMessage(null);
+          const extras = res as typeof res & import("@/lib/chat-api").SendMessageExtras;
+          if (extras.requestCreated) {
+            setPendingAction(null);
+            setShowRequestCreated(true);
+            toast.success(t.chatRequestCreated);
+          } else if (
+            extras.suggestedAction?.phase === "propose" &&
+            extras.suggestedAction.requestType
+          ) {
+            setPendingAction(extras.suggestedAction);
+          } else {
+            setPendingAction(null);
+          }
+          const opts = (extras as { replyOptions?: string[] }).replyOptions;
+          if (opts?.length) setReplyOptions(opts);
+          if (extras.aiCapacityExceeded) {
+            setAiCapacityExceeded(true);
+            setCapacityQuickRoutes(extras.quickActionRoutes ?? []);
+            if (conv.isActive) conv.stopConversation();
+          } else {
+            setAiCapacityExceeded(false);
+          }
           refetchMessages();
         },
         onError: (err: unknown) => {
           setPendingUserMessage(null);
-          const errData = (err as { data?: { quotaExceeded?: boolean; error?: string } | null })?.data;
+          const errData = (err as {
+            data?: {
+              quotaExceeded?: boolean;
+              aiUnavailable?: boolean;
+              error?: string;
+            } | null;
+          })?.data;
           if (errData?.quotaExceeded) {
             setQuotaExceeded(true);
-            // Can't continue conversation if quota exceeded
             if (conv.isActive) conv.stopConversation();
+          } else if (errData?.aiUnavailable) {
+            toast.error(errData.error || t.sendFailed);
+            void refetchMessages();
+            if (conv.isActive && conv.state === "processing") {
+              conv.retryListening();
+            }
           } else {
             toast.error(errData?.error || t.sendFailed);
             setInputValue(trimmed);
-            // Voice: transition back to listening after error
             if (conv.isActive) conv.retryListening();
           }
         },
       }
     );
   };
+
+  const handleConfirmPendingAction = useCallback(async () => {
+    if (!sessionId || !pendingAction) return;
+    setIsConfirmingAction(true);
+    try {
+      await confirmChatAction(sessionId, pendingAction, detectedLanguage);
+      setPendingAction(null);
+      setShowRequestCreated(true);
+      toast.success(t.chatRequestCreated);
+      await refetchMessages();
+      if (conv.isActive) conv.retryListening();
+    } catch {
+      toast.error(t.sendFailed);
+    } finally {
+      setIsConfirmingAction(false);
+    }
+  }, [sessionId, pendingAction, detectedLanguage, conv, t, refetchMessages]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -296,6 +418,21 @@ export default function GuestChat() {
     logoutAuth();
     logoutMutation.mutate(undefined);
     toast.success(t.logoutSuccess);
+  };
+
+  const handleReplyChip = (label: string) => {
+    if (quotaExceeded || sendMessageMutation.isPending) return;
+    if (aiCapacityExceeded) {
+      const route =
+        capacityQuickRoutes.find((r) => r.label === label) ??
+        capacityQuickRoutes[0];
+      if (route) handleCapacityRoute(route);
+      return;
+    }
+    if (conv.isActive) {
+      conv.pauseListeningForOutgoingMessage();
+    }
+    handleSend(label);
   };
 
   const toggleVoiceConversation = () => {
@@ -362,6 +499,9 @@ export default function GuestChat() {
   const isWaiting = sendMessageMutation.isPending;
   const hasMessages = visibleMessages.length > 0 || !!pendingUserMessage;
   const voiceActive = conv.isActive;
+  const latestAssistantId = [...visibleMessages]
+    .reverse()
+    .find((m: Message) => m.role === "assistant")?.id;
 
   return (
     <div className="flex flex-col h-[100dvh] bg-[#F8F8F8]">
@@ -438,6 +578,26 @@ export default function GuestChat() {
                 {t.emptySubtitle}
               </p>
             </div>
+            <div className="flex flex-wrap justify-center gap-2 max-w-sm px-2">
+              {[
+                { label: t.chatQuickFood, text: t.chatQuickFood, mode: "food" as const },
+                { label: t.chatQuickSupport, text: t.chatQuickSupport, mode: "support" as const },
+                { label: t.chatQuickInfo, text: t.chatQuickInfo, mode: "general" as const },
+                { label: t.chatQuickActivity, text: t.chatQuickActivity, mode: "general" as const },
+              ].map((chip) => (
+                <button
+                  key={chip.label}
+                  type="button"
+                  onClick={() => {
+                    setActiveChatMode(chip.mode);
+                    handleSend(chip.text);
+                  }}
+                  className="px-4 py-2 rounded-full bg-white border border-zinc-200 text-[13px] font-medium text-zinc-700 shadow-sm hover:border-zinc-300 active:scale-[0.98]"
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
             {conv.capability.sttSupported && (
               <MicrophoneButton
                 isConversationActive={voiceActive}
@@ -453,16 +613,35 @@ export default function GuestChat() {
         ) : (
           <div className="space-y-3 pb-2">
             {visibleMessages.map((msg: Message) => (
-              <MessageBubble
-                key={msg.id}
-                message={msg}
-                animate={animatingIds.has(msg.id)}
-              />
+              <div key={msg.id} className="space-y-0">
+                <MessageBubble
+                  message={msg}
+                  animate={animatingIds.has(msg.id)}
+                />
+                {msg.role === "assistant" &&
+                  msg.id === latestAssistantId &&
+                  !pendingAction &&
+                  !isWaiting && (
+                    <ChatReplyChips
+                      options={replyOptions}
+                      onSelect={handleReplyChip}
+                      disabled={quotaExceeded && !aiCapacityExceeded}
+                    />
+                  )}
+              </div>
             ))}
             {isWaiting && pendingUserMessage && (
               <OptimisticUserBubble content={pendingUserMessage} />
             )}
             {isWaiting && <ShimmerBubble />}
+            {aiCapacityExceeded && capacityQuickRoutes.length > 0 && (
+              <AiCapacityPanel
+                title={t.aiCapacityTitle}
+                subtitle={t.aiCapacityHint}
+                routes={capacityQuickRoutes}
+                onNavigate={handleCapacityRoute}
+              />
+            )}
             {quotaExceeded && (
               <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-400">
                 <div className="max-w-[88%] px-5 py-4 bg-white rounded-3xl rounded-tl-sm border border-zinc-100 shadow-sm flex items-start gap-3">
@@ -507,6 +686,17 @@ export default function GuestChat() {
             <div ref={messagesEndRef} className="h-2" />
           </div>
         )}
+        {pendingAction && !showRequestCreated && (
+          <ChatActionBar
+            action={pendingAction}
+            onConfirm={handleConfirmPendingAction}
+            onDismiss={() => setPendingAction(null)}
+            isLoading={isConfirmingAction}
+            title={t.chatActionTitle}
+            confirmLabel={t.chatActionConfirm}
+            dismissLabel={t.chatActionDismiss}
+          />
+        )}
       </main>
 
       {/* Bottom area — voice panel OR text input */}
@@ -521,6 +711,15 @@ export default function GuestChat() {
               amplitude={conv.amplitude}
               capability={conv.capability}
               errorMessage={conv.errorMessage}
+              labels={{
+                starting: t.voiceStarting,
+                listening: t.voiceListening,
+                thinking: t.voiceThinking,
+                speaking: t.voiceSpeaking,
+                tapInterrupt: t.voiceTapInterrupt,
+                tapRetry: t.voiceTapRetry,
+                notSupported: t.voiceNotSupported,
+              }}
               onStop={conv.stopConversation}
               onInterrupt={conv.interruptAndListen}
               onRetry={conv.retryListening}
@@ -550,7 +749,7 @@ export default function GuestChat() {
               {/* Chat input bar */}
               <div
                 className={`flex items-end gap-2 bg-white rounded-3xl border shadow-sm transition-all duration-200 px-4 py-2.5 ${
-                  quotaExceeded
+                  quotaExceeded || aiCapacityExceeded
                     ? "border-zinc-100 opacity-60"
                     : "border-zinc-200 focus-within:border-zinc-300 focus-within:shadow-md"
                 }`}
@@ -562,15 +761,19 @@ export default function GuestChat() {
                   onChange={handleInput}
                   onKeyDown={handleKeyDown}
                   placeholder={
-                    quotaExceeded ? t.quotaPlaceholder : t.inputPlaceholder
+                    aiCapacityExceeded
+                      ? t.aiCapacityHint
+                      : quotaExceeded
+                        ? t.quotaPlaceholder
+                        : t.inputPlaceholder
                   }
                   rows={1}
                   className="flex-1 max-h-[120px] bg-transparent border-0 resize-none outline-none focus:ring-0 py-2 text-[15px] text-zinc-900 placeholder:text-zinc-400 leading-relaxed font-sans"
-                  disabled={isWaiting || !sessionId || quotaExceeded}
+                  disabled={isWaiting || !sessionId || quotaExceeded || aiCapacityExceeded}
                 />
 
                 {/* Mic toggle — starts conversation mode */}
-                {conv.capability.sttSupported && !quotaExceeded && (
+                {conv.capability.sttSupported && !quotaExceeded && !aiCapacityExceeded && (
                   <div className="shrink-0 pb-1">
                     <MicrophoneButton
                       isConversationActive={false}

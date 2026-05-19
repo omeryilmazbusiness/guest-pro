@@ -15,71 +15,78 @@ import { Mic, Square, Volume2, Loader2, WifiOff, X } from "lucide-react";
 import type { ConversationState } from "@/hooks/use-voice-conversation";
 import type { VoiceCapabilityModel } from "@/lib/voice/capability";
 
+export interface VoicePanelLabels {
+  starting: string;
+  listening: string;
+  thinking: string;
+  speaking: string;
+  tapInterrupt: string;
+  tapRetry: string;
+  notSupported: string;
+}
+
 interface VoiceConversationPanelProps {
   state: ConversationState;
   transcript: string;
   amplitude: number;
   capability: VoiceCapabilityModel;
   errorMessage: string | null;
+  labels: VoicePanelLabels;
   onStop: () => void;
   onInterrupt: () => void;
   onRetry: () => void;
 }
 
-// ─── State config ─────────────────────────────────────────────────────────────
-
-const STATE_CONFIG: Record<
-  ConversationState,
-  { label: string; sublabel?: string; icon: React.ReactNode; color: string }
-> = {
-  starting: {
-    label: "Starting",
-    sublabel: "Opening microphone",
-    icon: <Loader2 className="w-6 h-6 animate-spin" />,
-    color: "text-zinc-400",
-  },
-  listening: {
-    label: "Listening",
-    sublabel: "Speak now",
-    icon: <Mic className="w-6 h-6" />,
-    color: "text-zinc-900",
-  },
-  processing: {
-    label: "Thinking",
-    sublabel: "Getting a response",
-    icon: <Loader2 className="w-6 h-6 animate-spin" />,
-    color: "text-zinc-500",
-  },
-  speaking: {
-    label: "Speaking",
-    sublabel: "Tap to interrupt",
-    icon: <Volume2 className="w-6 h-6" />,
-    color: "text-zinc-700",
-  },
-  idle: {
-    label: "Ready",
-    sublabel: "Tap to start",
-    icon: <Mic className="w-6 h-6" />,
-    color: "text-zinc-400",
-  },
-  stopped: {
-    label: "Stopped",
-    icon: <Square className="w-6 h-6" />,
-    color: "text-zinc-300",
-  },
-  error: {
-    label: "Error",
-    sublabel: "Tap to retry",
-    icon: <WifiOff className="w-6 h-6" />,
-    color: "text-red-500",
-  },
-  unsupported: {
-    label: "Not supported",
-    sublabel: "Use text input instead",
-    icon: <WifiOff className="w-6 h-6" />,
-    color: "text-zinc-400",
-  },
-};
+function stateConfig(
+  state: ConversationState,
+  labels: VoicePanelLabels,
+): { label: string; sublabel?: string; icon: React.ReactNode; color: string } {
+  const map: Record<ConversationState, { label: string; sublabel?: string; icon: React.ReactNode; color: string }> = {
+    starting: {
+      label: labels.starting,
+      icon: <Loader2 className="w-6 h-6 animate-spin" />,
+      color: "text-zinc-400",
+    },
+    listening: {
+      label: labels.listening,
+      icon: <Mic className="w-6 h-6" />,
+      color: "text-zinc-900",
+    },
+    processing: {
+      label: labels.thinking,
+      icon: <Loader2 className="w-6 h-6 animate-spin" />,
+      color: "text-zinc-500",
+    },
+    speaking: {
+      label: labels.speaking,
+      sublabel: labels.tapInterrupt,
+      icon: <Volume2 className="w-6 h-6" />,
+      color: "text-zinc-700",
+    },
+    idle: {
+      label: labels.listening,
+      icon: <Mic className="w-6 h-6" />,
+      color: "text-zinc-400",
+    },
+    stopped: {
+      label: labels.speaking,
+      icon: <Square className="w-6 h-6" />,
+      color: "text-zinc-300",
+    },
+    error: {
+      label: labels.thinking,
+      sublabel: labels.tapRetry,
+      icon: <WifiOff className="w-6 h-6" />,
+      color: "text-red-500",
+    },
+    unsupported: {
+      label: labels.notSupported,
+      icon: <WifiOff className="w-6 h-6" />,
+      color: "text-zinc-400",
+    },
+  };
+  return map[state] ?? map.idle;
+}
 
 // ─── Amplitude rings ──────────────────────────────────────────────────────────
 
@@ -111,11 +118,12 @@ export function VoiceConversationPanel({
   amplitude,
   capability,
   errorMessage,
+  labels,
   onStop,
   onInterrupt,
   onRetry,
 }: VoiceConversationPanelProps) {
-  const config = STATE_CONFIG[state] ?? STATE_CONFIG.idle;
+  const config = stateConfig(state, labels);
   const isListening = state === "listening";
   const isSpeaking = state === "speaking";
   const isProcessing = state === "processing";

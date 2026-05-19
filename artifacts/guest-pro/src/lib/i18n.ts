@@ -59,6 +59,8 @@ export interface GuestTranslations {
   listeningPlaceholder: string;
   quotaPlaceholder: string;
   quotaMessage: string;
+  aiCapacityTitle: string;
+  aiCapacityHint: string;
 
   clearTitle: string;
   clearMessage: string;
@@ -263,6 +265,22 @@ export interface GuestTranslations {
   billToday: string;
   billYesterday: string;
   billClose: string;
+
+  // ── AI Chat assistant ─────────────────────────────────────────────────────
+  chatQuickFood: string;
+  chatQuickSupport: string;
+  chatQuickInfo: string;
+  chatQuickActivity: string;
+  chatActionTitle: string;
+  chatActionConfirm: string;
+  chatActionDismiss: string;
+  chatRequestCreated: string;
+  voiceStarting: string;
+  voiceListening: string;
+  voiceThinking: string;
+  voiceSpeaking: string;
+  voiceTapInterrupt: string;
+  voiceTapRetry: string;
 }
 
 type SupportedLocale = "en" | "tr" | "ar" | "ru" | "de" | "fr" | "es";
@@ -314,6 +332,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     listeningPlaceholder: "Listening…",
     quotaPlaceholder: "Daily limit reached. See you tomorrow.",
     quotaMessage: "Your daily message limit has been reached. Please try again tomorrow.",
+    aiCapacityTitle: "AI chat is at capacity for today",
+    aiCapacityHint: "Choose a quick action below — our team will help you right away.",
 
     clearTitle: "Delete conversation?",
     clearMessage: "All messages will be permanently deleted. This cannot be undone.",
@@ -497,6 +517,21 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     billToday: "Today",
     billYesterday: "Yesterday",
     billClose: "Close",
+
+    chatQuickFood: "I'm hungry",
+    chatQuickSupport: "I need help",
+    chatQuickInfo: "Hotel info",
+    chatQuickActivity: "I'm bored",
+    chatActionTitle: "Confirm request",
+    chatActionConfirm: "Send to staff",
+    chatActionDismiss: "Not now",
+    chatRequestCreated: "Request sent — our team will assist you shortly.",
+    voiceStarting: "Starting",
+    voiceListening: "Listening",
+    voiceThinking: "Thinking",
+    voiceSpeaking: "Speaking",
+    voiceTapInterrupt: "Tap to interrupt",
+    voiceTapRetry: "Tap to retry",
   },
 
   // ── Turkish ───────────────────────────────────────────────────────────────
@@ -545,6 +580,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     listeningPlaceholder: "Dinleniyor…",
     quotaPlaceholder: "Günlük limit doldu. Yarın görüşürüz.",
     quotaMessage: "Bugünkü mesaj limitiniz doldu. Lütfen yarın tekrar deneyin.",
+    aiCapacityTitle: "Bugünkü AI sohbet kotası doldu",
+    aiCapacityHint: "Hemen yardım için aşağıdaki hızlı işlemlerden birini seçin.",
 
     clearTitle: "Konuşmayı sil?",
     clearMessage: "Tüm mesajlar kalıcı olarak silinecek. Bu işlem geri alınamaz.",
@@ -728,6 +765,21 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     billToday: "Bugün",
     billYesterday: "Dün",
     billClose: "Kapat",
+
+    chatQuickFood: "Acıktım",
+    chatQuickSupport: "Yardım lazım",
+    chatQuickInfo: "Otel bilgisi",
+    chatQuickActivity: "Sıkıldım",
+    chatActionTitle: "Talebi onayla",
+    chatActionConfirm: "Personele ilet",
+    chatActionDismiss: "Şimdi değil",
+    chatRequestCreated: "Talebiniz iletildi — ekibimiz kısa sürede ilgilenecek.",
+    voiceStarting: "Başlatılıyor",
+    voiceListening: "Dinliyorum",
+    voiceThinking: "Düşünüyorum",
+    voiceSpeaking: "Konuşuyorum",
+    voiceTapInterrupt: "Durmak için dokun",
+    voiceTapRetry: "Tekrar dene",
   },
 
   // ── Arabic ────────────────────────────────────────────────────────────────
@@ -776,6 +828,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     listeningPlaceholder: "جارٍ الاستماع…",
     quotaPlaceholder: "تم الوصول إلى الحد اليومي. نراك غداً.",
     quotaMessage: "لقد وصلت إلى حد رسائلك اليومي. يرجى المحاولة مرة أخرى غداً.",
+    aiCapacityTitle: "سعة الدردشة الذكية ممتلئة اليوم",
+    aiCapacityHint: "اختر إجراءً سريعاً أدناه — سيساعدك فريقنا فوراً.",
 
     clearTitle: "حذف المحادثة؟",
     clearMessage: "سيتم حذف جميع الرسائل بشكل دائم. لا يمكن التراجع عن هذا.",
@@ -959,6 +1013,21 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     billToday: "اليوم",
     billYesterday: "أمس",
     billClose: "إغلاق",
+
+    chatQuickFood: "أنا جائع",
+    chatQuickSupport: "أحتاج مساعدة",
+    chatQuickInfo: "معلومات الفندق",
+    chatQuickActivity: "أشعر بالملل",
+    chatActionTitle: "تأكيد الطلب",
+    chatActionConfirm: "إرسال للطاقم",
+    chatActionDismiss: "ليس الآن",
+    chatRequestCreated: "تم إرسال طلبك — سيتولى الفريق الأمر قريبًا.",
+    voiceStarting: "جاري البدء",
+    voiceListening: "أستمع",
+    voiceThinking: "أفكر",
+    voiceSpeaking: "أتحدث",
+    voiceTapInterrupt: "اضغط للمقاطعة",
+    voiceTapRetry: "اضغط للمحاولة",
   },
 
   // ── Russian ───────────────────────────────────────────────────────────────
@@ -1007,6 +1076,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     listeningPlaceholder: "Слушаю…",
     quotaPlaceholder: "Дневной лимит исчерпан. До завтра!",
     quotaMessage: "Вы достигли дневного лимита сообщений. Попробуйте снова завтра.",
+    aiCapacityTitle: "Лимит ИИ-чата на сегодня исчерпан",
+    aiCapacityHint: "Выберите быстрое действие ниже — команда поможет сразу.",
 
     clearTitle: "Удалить переписку?",
     clearMessage: "Все сообщения будут удалены безвозвратно. Это действие нельзя отменить.",
@@ -1190,6 +1261,21 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     billToday: "Сегодня",
     billYesterday: "Вчера",
     billClose: "Закрыть",
+
+    chatQuickFood: "Я голоден",
+    chatQuickSupport: "Нужна помощь",
+    chatQuickInfo: "Информация об отеле",
+    chatQuickActivity: "Мне скучно",
+    chatActionTitle: "Подтвердить запрос",
+    chatActionConfirm: "Отправить персоналу",
+    chatActionDismiss: "Не сейчас",
+    chatRequestCreated: "Запрос отправлен — команда скоро поможет.",
+    voiceStarting: "Запуск",
+    voiceListening: "Слушаю",
+    voiceThinking: "Думаю",
+    voiceSpeaking: "Говорю",
+    voiceTapInterrupt: "Нажмите, чтобы прервать",
+    voiceTapRetry: "Повторить",
   },
 
   // ── German ────────────────────────────────────────────────────────────────
@@ -1238,6 +1324,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     listeningPlaceholder: "Höre zu…",
     quotaPlaceholder: "Tageslimit erreicht. Bis morgen!",
     quotaMessage: "Ihr tägliches Nachrichtenlimit wurde erreicht. Bitte morgen erneut versuchen.",
+    aiCapacityTitle: "KI-Chat-Kapazität für heute erschöpft",
+    aiCapacityHint: "Wählen Sie unten eine Schnellaktion — unser Team hilft sofort.",
 
     clearTitle: "Gespräch löschen?",
     clearMessage: "Alle Nachrichten werden dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden.",
@@ -1421,6 +1509,21 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     billToday: "Heute",
     billYesterday: "Gestern",
     billClose: "Schließen",
+
+    chatQuickFood: "Ich habe Hunger",
+    chatQuickSupport: "Ich brauche Hilfe",
+    chatQuickInfo: "Hotelinfo",
+    chatQuickActivity: "Mir ist langweilig",
+    chatActionTitle: "Anfrage bestätigen",
+    chatActionConfirm: "An Team senden",
+    chatActionDismiss: "Nicht jetzt",
+    chatRequestCreated: "Anfrage gesendet — unser Team kümmert sich bald.",
+    voiceStarting: "Start",
+    voiceListening: "Höre zu",
+    voiceThinking: "Denke nach",
+    voiceSpeaking: "Spreche",
+    voiceTapInterrupt: "Tippen zum Unterbrechen",
+    voiceTapRetry: "Erneut versuchen",
   },
 
   // ── French ────────────────────────────────────────────────────────────────
@@ -1469,6 +1572,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     listeningPlaceholder: "En écoute…",
     quotaPlaceholder: "Limite quotidienne atteinte. À demain !",
     quotaMessage: "Vous avez atteint votre limite de messages quotidiens. Réessayez demain.",
+    aiCapacityTitle: "Capacité du chat IA atteinte pour aujourd'hui",
+    aiCapacityHint: "Choisissez une action rapide ci-dessous — notre équipe vous aide tout de suite.",
 
     clearTitle: "Supprimer la conversation ?",
     clearMessage: "Tous les messages seront définitivement supprimés. Cette action est irréversible.",
@@ -1652,6 +1757,21 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     billToday: "Aujourd'hui",
     billYesterday: "Hier",
     billClose: "Fermer",
+
+    chatQuickFood: "J'ai faim",
+    chatQuickSupport: "J'ai besoin d'aide",
+    chatQuickInfo: "Infos hôtel",
+    chatQuickActivity: "Je m'ennuie",
+    chatActionTitle: "Confirmer la demande",
+    chatActionConfirm: "Envoyer à l'équipe",
+    chatActionDismiss: "Pas maintenant",
+    chatRequestCreated: "Demande envoyée — notre équipe s'en occupe.",
+    voiceStarting: "Démarrage",
+    voiceListening: "J'écoute",
+    voiceThinking: "Réflexion",
+    voiceSpeaking: "Je parle",
+    voiceTapInterrupt: "Appuyez pour interrompre",
+    voiceTapRetry: "Réessayer",
   },
 
   // ── Spanish ───────────────────────────────────────────────────────────────
@@ -1700,6 +1820,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     listeningPlaceholder: "Escuchando…",
     quotaPlaceholder: "Límite diario alcanzado. ¡Hasta mañana!",
     quotaMessage: "Has alcanzado tu límite diario de mensajes. Por favor, inténtalo mañana.",
+    aiCapacityTitle: "Capacidad del chat IA agotada por hoy",
+    aiCapacityHint: "Elige una acción rápida abajo — nuestro equipo te ayudará al instante.",
 
     clearTitle: "¿Eliminar conversación?",
     clearMessage: "Todos los mensajes se eliminarán permanentemente. Esto no se puede deshacer.",
@@ -1883,6 +2005,21 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     billToday: "Hoy",
     billYesterday: "Ayer",
     billClose: "Cerrar",
+
+    chatQuickFood: "Tengo hambre",
+    chatQuickSupport: "Necesito ayuda",
+    chatQuickInfo: "Info del hotel",
+    chatQuickActivity: "Me aburro",
+    chatActionTitle: "Confirmar solicitud",
+    chatActionConfirm: "Enviar al equipo",
+    chatActionDismiss: "Ahora no",
+    chatRequestCreated: "Solicitud enviada — nuestro equipo atenderá pronto.",
+    voiceStarting: "Iniciando",
+    voiceListening: "Escuchando",
+    voiceThinking: "Pensando",
+    voiceSpeaking: "Hablando",
+    voiceTapInterrupt: "Toca para interrumpir",
+    voiceTapRetry: "Reintentar",
   },
 };
 
