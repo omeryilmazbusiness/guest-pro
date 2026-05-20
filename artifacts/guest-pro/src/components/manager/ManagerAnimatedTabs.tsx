@@ -16,6 +16,10 @@ import {
 import { PILL_SPRING } from "@/lib/manager-motion";
 import type { StaffTranslations } from "@/lib/staff-i18n";
 import type { ManagerDashboardTab } from "@/lib/manager-dashboard-nav";
+import {
+  canAccessManagerTab,
+  type StaffScopeKind,
+} from "@/lib/staff-scope";
 import { cn } from "@/lib/utils";
 
 interface TabDef {
@@ -23,48 +27,65 @@ interface TabDef {
   label: string;
   icon: LucideIcon;
   count: number;
-  managerOnly?: boolean;
-  managerHidden?: boolean;
 }
 
 interface ManagerAnimatedTabsProps {
   active: ManagerDashboardTab;
   onChange: (tab: ManagerDashboardTab) => void;
+  scope: StaffScopeKind;
   guestCount: number;
   roomCount: number;
   requestCount: number;
   teamCount: number;
-  isManager: boolean;
   t: StaffTranslations;
 }
+
+const ALL_TABS: Omit<TabDef, "label">[] = [
+  { key: "team", icon: Briefcase, count: 0 },
+  { key: "tasks", icon: ClipboardList, count: 0 },
+  { key: "guests", icon: Users, count: 0 },
+  { key: "rooms", icon: DoorOpen, count: 0 },
+  { key: "requests", icon: Bell, count: 0 },
+  { key: "summary", icon: TrendingUp, count: 0 },
+];
 
 export function ManagerAnimatedTabs({
   active,
   onChange,
+  scope,
   guestCount,
   roomCount,
   requestCount,
   teamCount,
-  isManager,
   t,
 }: ManagerAnimatedTabsProps) {
-  const tabs: TabDef[] = useMemo(
-    () => [
-      { key: "team", label: t.tabTeam, icon: Briefcase, count: teamCount, managerOnly: true },
-      { key: "tasks", label: t.tabTasks, icon: ClipboardList, count: 0, managerOnly: true },
-      { key: "guests", label: t.tabGuests, icon: Users, count: guestCount },
-      { key: "rooms", label: t.tabRooms, icon: DoorOpen, count: roomCount, managerHidden: true },
-      { key: "requests", label: t.tabRequests, icon: Bell, count: requestCount, managerHidden: true },
-      { key: "summary", label: t.tabSummary, icon: TrendingUp, count: 0, managerOnly: true },
-    ],
-    [t, guestCount, roomCount, requestCount, teamCount],
-  );
+  const counts: Record<ManagerDashboardTab, number> = {
+    team: teamCount,
+    tasks: 0,
+    guests: guestCount,
+    rooms: roomCount,
+    requests: requestCount,
+    summary: 0,
+  };
 
-  const visibleTabs = tabs.filter((tab) => {
-    if (tab.managerOnly && !isManager) return false;
-    if (tab.managerHidden && isManager) return false;
-    return true;
-  });
+  const labels: Record<ManagerDashboardTab, string> = {
+    team: t.tabTeam,
+    tasks: t.tabTasks,
+    guests: t.tabGuests,
+    rooms: t.tabRooms,
+    requests: t.tabRequests,
+    summary: t.tabSummary,
+  };
+
+  const visibleTabs = useMemo(
+    () =>
+      ALL_TABS.filter((tab) => canAccessManagerTab(scope, tab.key)).map((tab) => ({
+        ...tab,
+        label: labels[tab.key],
+        count: counts[tab.key],
+      })),
+    [scope, t, guestCount, roomCount, requestCount, teamCount],
+  );
 
   const activeIndex = visibleTabs.findIndex((tab) => tab.key === active);
 
@@ -111,7 +132,6 @@ export function ManagerAnimatedTabs({
           </button>
         );
       })}
-      {/* Hidden layout hint for accessibility */}
       <span className="sr-only">Tab {activeIndex + 1} of {visibleTabs.length}</span>
     </div>
   );

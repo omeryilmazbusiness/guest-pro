@@ -2,7 +2,10 @@ import { Router } from "express";
 import type { IRouter, Request } from "express";
 import { db, guestsTable, guestKeysTable, auditLogsTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
-import { requireStaff, requireManager } from "../middlewares/requireAuth";
+import {
+  requireGuestOperations,
+  requireGeneralManager,
+} from "../middlewares/requireAuth";
 import { generateGuestKey } from "../lib/auth";
 import { deriveLocaleFromCountry } from "../lib/locale";
 import { issueQrToken, revokeAllGuestQrTokens } from "../lib/qr-token";
@@ -45,7 +48,7 @@ const GUEST_SELECT = {
 // ---------------------------------------------------------------------------
 // GET /guests — list all guests for this hotel
 // ---------------------------------------------------------------------------
-router.get("/guests", requireStaff, async (req, res): Promise<void> => {
+router.get("/guests", requireGuestOperations, async (req, res): Promise<void> => {
   const hotelId = req.session!.hotelId;
   const guests = await db
     .select(GUEST_SELECT)
@@ -60,7 +63,7 @@ router.get("/guests", requireStaff, async (req, res): Promise<void> => {
 // ---------------------------------------------------------------------------
 // POST /guests — create a new guest
 // ---------------------------------------------------------------------------
-router.post("/guests", requireStaff, async (req, res): Promise<void> => {
+router.post("/guests", requireGuestOperations, async (req, res): Promise<void> => {
   const { firstName, lastName, roomNumber, countryCode, checkInDate, checkOutDate } = req.body;
   const hotelId = req.session!.hotelId;
   const actorId = req.session!.userId;
@@ -158,7 +161,7 @@ router.post("/guests", requireStaff, async (req, res): Promise<void> => {
 // ---------------------------------------------------------------------------
 // GET /guests/:id — get one guest
 // ---------------------------------------------------------------------------
-router.get("/guests/:id", requireStaff, async (req, res): Promise<void> => {
+router.get("/guests/:id", requireGuestOperations, async (req, res): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const id = parseInt(rawId, 10);
   if (isNaN(id)) {
@@ -184,7 +187,7 @@ router.get("/guests/:id", requireStaff, async (req, res): Promise<void> => {
 // ---------------------------------------------------------------------------
 // PATCH /guests/:id — update guest details + optionally extend stay
 // ---------------------------------------------------------------------------
-router.patch("/guests/:id", requireStaff, async (req, res): Promise<void> => {
+router.patch("/guests/:id", requireGuestOperations, async (req, res): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const id = parseInt(rawId, 10);
   if (isNaN(id)) {
@@ -298,7 +301,7 @@ router.patch("/guests/:id", requireStaff, async (req, res): Promise<void> => {
 // ---------------------------------------------------------------------------
 // DELETE /guests/:id — soft-delete (manager only)
 // ---------------------------------------------------------------------------
-router.delete("/guests/:id", requireManager, async (req, res): Promise<void> => {
+router.delete("/guests/:id", requireGeneralManager, async (req, res): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const id = parseInt(rawId, 10);
   if (isNaN(id)) {
@@ -347,7 +350,7 @@ router.delete("/guests/:id", requireManager, async (req, res): Promise<void> => 
 // ---------------------------------------------------------------------------
 // POST /guests/:id/renew-key
 // ---------------------------------------------------------------------------
-router.post("/guests/:id/renew-key", requireStaff, async (req, res): Promise<void> => {
+router.post("/guests/:id/renew-key", requireGuestOperations, async (req, res): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const id = parseInt(rawId, 10);
   if (isNaN(id)) {

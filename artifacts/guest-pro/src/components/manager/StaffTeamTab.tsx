@@ -245,11 +245,13 @@ function EmployeeSearchBar({
   onSearchChange,
   deptFilter,
   onDeptChange,
+  hideDeptFilter = false,
 }: {
   search: string;
   onSearchChange: (v: string) => void;
   deptFilter: DeptFilter;
   onDeptChange: (v: DeptFilter) => void;
+  hideDeptFilter?: boolean;
 }) {
   const isFiltered = deptFilter !== "ALL";
 
@@ -280,6 +282,7 @@ function EmployeeSearchBar({
         )}
 
         {/* Filter icon → dept dropdown */}
+        {!hideDeptFilter && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -317,6 +320,7 @@ function EmployeeSearchBar({
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+        )}
       </div>
     </div>
   );
@@ -598,12 +602,15 @@ interface StaffTeamTabProps {
    */
   externalCreateOpen?: boolean;
   onExternalCreateOpenChange?: (open: boolean) => void;
+  /** Department managers: list and create only within this department. */
+  lockedDepartment?: StaffDepartment;
 }
 
 export function StaffTeamTab({
   staffCount,
   externalCreateOpen,
   onExternalCreateOpenChange,
+  lockedDepartment,
 }: StaffTeamTabProps) {
   const queryClient = useQueryClient();
   const { t } = useStaffLocale();
@@ -655,7 +662,9 @@ export function StaffTeamTab({
   // ── Other local UI state
   const [editTarget, setEditTarget]  = useState<StaffMember | null>(null);
   const [detailMember, setDetailMember] = useState<StaffMember | null>(null);
-  const [deptFilter, setDeptFilter]  = useState<DeptFilter>("ALL");
+  const [deptFilter, setDeptFilter]  = useState<DeptFilter>(
+    lockedDepartment ?? "ALL",
+  );
   const [search, setSearch]          = useState("");
 
   // ── Derived data
@@ -682,6 +691,7 @@ export function StaffTeamTab({
               onSearchChange={setSearch}
               deptFilter={deptFilter}
               onDeptChange={setDeptFilter}
+              hideDeptFilter={!!lockedDepartment}
             />
           </div>
           <Button
@@ -793,6 +803,7 @@ export function StaffTeamTab({
         open={isCreateOpen}
         onClose={() => setCreateOpen(false)}
         onSuccess={() => { setCreateOpen(false); invalidate(); }}
+        lockedDepartment={lockedDepartment}
       />
       <EditStaffModal
         member={editTarget}

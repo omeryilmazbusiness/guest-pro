@@ -13,6 +13,7 @@ import {
   type ManagerDashboardNavItem,
   type ManagerDashboardTab,
 } from "@/lib/manager-dashboard-nav";
+import type { StaffScopeKind } from "@/lib/staff-scope";
 import { ManagerMobileNavDrawer } from "@/components/manager/ManagerMobileNavDrawer";
 
 export interface ManagerDashboardHeaderProps {
@@ -22,7 +23,8 @@ export interface ManagerDashboardHeaderProps {
   locale: StaffLocale;
   dir: "ltr" | "rtl";
   onLocaleChange: (locale: StaffLocale) => void;
-  isManager: boolean;
+  scope: StaffScopeKind;
+  isGeneralManager: boolean;
   guestCount: number;
   roomCount: number;
   requestCount: number;
@@ -43,7 +45,8 @@ export function ManagerDashboardHeader({
   locale,
   dir,
   onLocaleChange,
-  isManager,
+  scope,
+  isGeneralManager,
   guestCount,
   roomCount,
   requestCount,
@@ -63,14 +66,15 @@ export function ManagerDashboardHeader({
     () =>
       buildManagerDashboardNavItems({
         t,
-        isManager,
+        scope,
         guestCount,
         roomCount,
         requestCount,
         teamCount,
         canCreateGuest,
+        isGeneralManager,
       }),
-    [t, isManager, guestCount, roomCount, requestCount, teamCount, canCreateGuest],
+    [t, scope, guestCount, roomCount, requestCount, teamCount, canCreateGuest, isGeneralManager],
   );
 
   const handleNavSelect = useCallback(

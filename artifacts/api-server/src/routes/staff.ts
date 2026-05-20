@@ -16,9 +16,14 @@ import type { IRouter } from "express";
 import { z } from "zod";
 import { db, usersTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
-import { requireManager } from "../middlewares/requireAuth";
+import { requireStaffManagement } from "../middlewares/requireAuth";
 import { hashPassword, generateSalt } from "../lib/auth";
 import { isValidDepartment, STAFF_DEPARTMENTS } from "../lib/roles";
+import {
+  canManageStaffMember,
+  getDepartmentScope,
+  isGeneralManager,
+} from "../lib/staff-scope";
 import { logger } from "../lib/logger";
 /**
  * Safely extract a single string from an Express 5 route param.
@@ -72,8 +77,11 @@ const STAFF_SELECT = {
 // ---------------------------------------------------------------------------
 // GET /staff — list all personnel for this hotel
 // ---------------------------------------------------------------------------
-router.get("/staff", requireManager, async (req, res): Promise<void> => {
-  const hotelId = req.session!.hotelId;
+router.get("/staff", requireStaffManagement, async (req, res): Promise<void> => {
+  const session = req.session!;
+  const hotelId = session.hotelId;
+  const actor = { role: session.role, staffDepartment: session.staffDepartment };
+  const deptScope = getDepartmentScope(actor);
 
   const staff = await db
     .select(STAFF_SELECT)
@@ -82,7 +90,8 @@ router.get("/staff", requireManager, async (req, res): Promise<void> => {
       and(
         eq(usersTable.hotelId, hotelId),
         eq(usersTable.role, "personnel"),
-      )
+        ...(deptScope ? [eq(usersTable.staffDepartment, deptScope)] : []),
+      ),
     )
     .orderBy(usersTable.createdAt);
 
@@ -92,9 +101,12 @@ router.get("/staff", requireManager, async (req, res): Promise<void> => {
 // ---------------------------------------------------------------------------
 // POST /staff — create a new personnel user
 // ---------------------------------------------------------------------------
-router.post("/staff", requireManager, async (req, res): Promise<void> => {
-  const hotelId = req.session!.hotelId;
-  const actorId = req.session!.userId;
+router.post("/staff", requireStaffManagement, async (req, res): Promise<void> => {
+  const session = req.session!;
+  const hotelId = session.hotelId;
+  const actorId = session.userId;
+  const actor = { role: session.role, staffDepartment: session.staffDepartment };
+  const deptScope = getDepartmentScope(actor);
 
   const parsed = createStaffSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -102,7 +114,11 @@ router.post("/staff", requireManager, async (req, res): Promise<void> => {
     return;
   }
 
-  const { email, password, firstName, lastName, staffDepartment } = parsed.data;
+  let { email, password, firstName, lastName, staffDepartment } = parsed.data;
+
+  if (deptScope) {
+    staffDepartment = deptScope;
+  }
   const normalizedEmail = email.toLowerCase().trim();
 
   // Prevent duplicate email across the whole system
@@ -145,8 +161,11 @@ router.post("/staff", requireManager, async (req, res): Promise<void> => {
 // ---------------------------------------------------------------------------
 // PATCH /staff/:id — update name / department / isActive
 // ---------------------------------------------------------------------------
-router.patch("/staff/:id", requireManager, async (req, res): Promise<void> => {
-  const hotelId = req.session!.hotelId;
+router.patch("/staff/:id", requireStaffManagement, async (req, res): Promise<void> => {
+  const session = req.session!;
+  const hotelId = session.hotelId;
+  const actor = { role: session.role, staffDepartment: session.staffDepartment };
+  const deptScope = getDepartmentScope(actor);
   const id = parseInt(paramStr(req.params.id), 10);
 
   if (isNaN(id)) {
@@ -160,10 +179,12 @@ router.patch("/staff/:id", requireManager, async (req, res): Promise<void> => {
     return;
   }
 
-  // Confirm target is a personnel user belonging to this hotel — never allow
-  // a manager to mutate another manager (or users from other hotels).
   const [target] = await db
-    .select({ id: usersTable.id, role: usersTable.role })
+    .select({
+      id: usersTable.id,
+      role: usersTable.role,
+      staffDepartment: usersTable.staffDepartment,
+    })
     .from(usersTable)
     .where(and(eq(usersTable.id, id), eq(usersTable.hotelId, hotelId)));
 
@@ -172,12 +193,23 @@ router.patch("/staff/:id", requireManager, async (req, res): Promise<void> => {
     return;
   }
 
-  if (target.role !== "personnel") {
-    res.status(403).json({ error: "Manager accounts cannot be modified through this endpoint" });
+  if (!canManageStaffMember(actor, target)) {
+    res.status(403).json({ error: "You cannot modify this staff member" });
     return;
   }
 
-  const { firstName, lastName, staffDepartment, isActive } = parsed.data;
+  let { firstName, lastName, staffDepartment, isActive } = parsed.data;
+
+  if (deptScope) {
+    if (staffDepartment !== undefined && staffDepartment !== deptScope) {
+      res.status(403).json({ error: "Cannot assign staff outside your department" });
+      return;
+    }
+    staffDepartment = deptScope;
+  } else if (staffDepartment !== undefined && !isGeneralManager(actor)) {
+    res.status(403).json({ error: "Only general managers may change department" });
+    return;
+  }
 
   const [updated] = await db
     .update(usersTable)
@@ -202,8 +234,10 @@ router.patch("/staff/:id", requireManager, async (req, res): Promise<void> => {
 //
 // Managers cannot be deleted/deactivated through this endpoint.
 // ---------------------------------------------------------------------------
-router.delete("/staff/:id", requireManager, async (req, res): Promise<void> => {
-  const hotelId = req.session!.hotelId;
+router.delete("/staff/:id", requireStaffManagement, async (req, res): Promise<void> => {
+  const session = req.session!;
+  const hotelId = session.hotelId;
+  const actor = { role: session.role, staffDepartment: session.staffDepartment };
   const id = parseInt(paramStr(req.params.id), 10);
   const isPermanent = req.query.permanent === "true";
 
@@ -212,8 +246,18 @@ router.delete("/staff/:id", requireManager, async (req, res): Promise<void> => {
     return;
   }
 
+  if (isPermanent && !isGeneralManager(actor)) {
+    res.status(403).json({ error: "Only general managers may permanently delete staff" });
+    return;
+  }
+
   const [target] = await db
-    .select({ id: usersTable.id, role: usersTable.role, isActive: usersTable.isActive })
+    .select({
+      id: usersTable.id,
+      role: usersTable.role,
+      staffDepartment: usersTable.staffDepartment,
+      isActive: usersTable.isActive,
+    })
     .from(usersTable)
     .where(and(eq(usersTable.id, id), eq(usersTable.hotelId, hotelId)));
 
@@ -222,8 +266,8 @@ router.delete("/staff/:id", requireManager, async (req, res): Promise<void> => {
     return;
   }
 
-  if (target.role !== "personnel") {
-    res.status(403).json({ error: "Manager accounts cannot be modified through this endpoint" });
+  if (!canManageStaffMember(actor, target)) {
+    res.status(403).json({ error: "You cannot modify this staff member" });
     return;
   }
 

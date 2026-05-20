@@ -25,6 +25,7 @@ const ORDERED_DEPTS: StaffDepartment[] = [
 ];
 
 interface ManagerOverviewCardsProps {
+  variant: "both" | "guests" | "employees";
   guestSummary: GuestTrackingSummary;
   isRefreshing: boolean;
   onRefresh: () => void;
@@ -131,6 +132,7 @@ function OverviewCardShell({
 }
 
 export function ManagerOverviewCards({
+  variant,
   guestSummary,
   isRefreshing,
   onRefresh,
@@ -141,9 +143,14 @@ export function ManagerOverviewCards({
   t,
 }: ManagerOverviewCardsProps) {
   const deptEntries = ORDERED_DEPTS.filter((d) => (staffInfo.byDept[d] ?? 0) > 0);
+  const showGuests = variant === "both" || variant === "guests";
+  const showEmployees = variant === "both" || variant === "employees";
+  const gridClass =
+    variant === "both" ? "grid grid-cols-2 gap-2.5" : "grid grid-cols-1 gap-2.5";
 
   return (
-    <div className="grid grid-cols-2 gap-2.5">
+    <div className={gridClass}>
+      {showGuests && (
       <OverviewCardShell
         icon={Users}
         title={t.overviewGuests}
@@ -184,7 +191,9 @@ export function ManagerOverviewCards({
           </div>
         )}
       </OverviewCardShell>
+      )}
 
+      {showEmployees && (
       <OverviewCardShell
         icon={Briefcase}
         title={t.overviewEmployees}
@@ -219,6 +228,7 @@ export function ManagerOverviewCards({
           </p>
         )}
       </OverviewCardShell>
+      )}
     </div>
   );
 }

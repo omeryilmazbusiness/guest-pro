@@ -11,7 +11,8 @@ import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { db, staffTasksTable, usersTable, TASK_STATUSES } from "@workspace/db";
 import { and, eq, lt, gt, ne, asc } from "drizzle-orm";
-import { requireManager } from "../middlewares/requireAuth";
+import { requireStaffManager } from "../middlewares/requireAuth";
+import { getDepartmentScope } from "../lib/staff-scope";
 import { logger } from "../lib/logger";
 
 function paramStr(val: string | string[]): string {
@@ -124,7 +125,7 @@ async function fetchTaskById(id: number, hotelId: number) {
 // ---------------------------------------------------------------------------
 // GET /tasks
 // ---------------------------------------------------------------------------
-router.get("/tasks", requireManager, async (req, res): Promise<void> => {
+router.get("/tasks", requireStaffManager, async (req, res): Promise<void> => {
   const hotelId = req.session!.hotelId;
   const fromRaw = typeof req.query.from === "string" ? req.query.from : "";
   const toRaw = typeof req.query.to === "string" ? req.query.to : "";
@@ -136,6 +137,12 @@ router.get("/tasks", requireManager, async (req, res): Promise<void> => {
     return;
   }
 
+  const session = req.session!;
+  const deptScope = getDepartmentScope({
+    role: session.role,
+    staffDepartment: session.staffDepartment,
+  });
+
   const rows = await db
     .select(TASK_SELECT)
     .from(staffTasksTable)
@@ -146,6 +153,7 @@ router.get("/tasks", requireManager, async (req, res): Promise<void> => {
         lt(staffTasksTable.scheduledStartAt, to),
         gt(staffTasksTable.scheduledEndAt, from),
         ne(staffTasksTable.status, "cancelled"),
+        ...(deptScope ? [eq(usersTable.staffDepartment, deptScope)] : []),
       ),
     )
     .orderBy(asc(staffTasksTable.scheduledStartAt));
@@ -156,7 +164,7 @@ router.get("/tasks", requireManager, async (req, res): Promise<void> => {
 // ---------------------------------------------------------------------------
 // POST /tasks
 // ---------------------------------------------------------------------------
-router.post("/tasks", requireManager, async (req, res): Promise<void> => {
+router.post("/tasks", requireStaffManager, async (req, res): Promise<void> => {
   const hotelId = req.session!.hotelId;
   const createdByUserId = req.session!.userId;
 
@@ -168,8 +176,14 @@ router.post("/tasks", requireManager, async (req, res): Promise<void> => {
 
   const { title, description, assigneeUserId, scheduledStartAt, scheduledEndAt } = parsed.data;
 
+  const session = req.session!;
+  const deptScope = getDepartmentScope({
+    role: session.role,
+    staffDepartment: session.staffDepartment,
+  });
+
   const [assignee] = await db
-    .select({ id: usersTable.id })
+    .select({ id: usersTable.id, staffDepartment: usersTable.staffDepartment })
     .from(usersTable)
     .where(
       and(
@@ -177,11 +191,12 @@ router.post("/tasks", requireManager, async (req, res): Promise<void> => {
         eq(usersTable.hotelId, hotelId),
         eq(usersTable.role, "personnel"),
         eq(usersTable.isActive, true),
+        ...(deptScope ? [eq(usersTable.staffDepartment, deptScope)] : []),
       ),
     );
 
   if (!assignee) {
-    res.status(400).json({ error: "Assignee must be an active employee at this hotel" });
+    res.status(400).json({ error: "Assignee must be an active employee in your department" });
     return;
   }
 
@@ -207,7 +222,7 @@ router.post("/tasks", requireManager, async (req, res): Promise<void> => {
 // ---------------------------------------------------------------------------
 // PATCH /tasks/:id
 // ---------------------------------------------------------------------------
-router.patch("/tasks/:id", requireManager, async (req, res): Promise<void> => {
+router.patch("/tasks/:id", requireStaffManager, async (req, res): Promise<void> => {
   const hotelId = req.session!.hotelId;
   const id = parseInt(paramStr(req.params.id), 10);
   if (Number.isNaN(id)) {
@@ -278,7 +293,7 @@ router.patch("/tasks/:id", requireManager, async (req, res): Promise<void> => {
 // ---------------------------------------------------------------------------
 // DELETE /tasks/:id — soft cancel
 // ---------------------------------------------------------------------------
-router.delete("/tasks/:id", requireManager, async (req, res): Promise<void> => {
+router.delete("/tasks/:id", requireStaffManager, async (req, res): Promise<void> => {
   const hotelId = req.session!.hotelId;
   const id = parseInt(paramStr(req.params.id), 10);
   if (Number.isNaN(id)) {

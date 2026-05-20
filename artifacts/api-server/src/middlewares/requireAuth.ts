@@ -1,6 +1,12 @@
 import type { Request, Response, NextFunction } from "express";
 import { verifyToken } from "../lib/auth";
 import { isStaffRole } from "../lib/roles";
+import {
+  canAccessGuestOperations,
+  canManageStaff,
+  isGeneralManager,
+  isAnyManager,
+} from "../lib/staff-scope";
 /**
  * Safely extract a single string from an Express 5 route param.
  * In Express 5, params can be string | string[]; parseInt expects string.
@@ -40,13 +46,58 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
 }
 
 /**
- * Requires an authenticated manager (role === "manager").
- * Use this for sensitive hotel management operations.
+ * Requires General Manager (manager with no department scope).
+ * Hotel-wide settings, analytics, delete guest, etc.
+ */
+export function requireGeneralManager(req: Request, res: Response, next: NextFunction): void {
+  requireAuth(req, res, () => {
+    const session = req.session!;
+    if (!isGeneralManager({ role: session.role, staffDepartment: session.staffDepartment })) {
+      res.status(403).json({ error: "General manager access required" });
+      return;
+    }
+    next();
+  });
+}
+
+/**
+ * @deprecated Use requireGeneralManager or requireStaffManager explicitly.
+ * Kept as alias for general manager (hotel-wide manager routes).
  */
 export function requireManager(req: Request, res: Response, next: NextFunction): void {
+  requireGeneralManager(req, res, next);
+}
+
+/** General Manager or Department Manager (team & tasks). */
+export function requireStaffManager(req: Request, res: Response, next: NextFunction): void {
   requireAuth(req, res, () => {
-    if (req.session?.role !== "manager") {
+    const session = req.session!;
+    if (!isAnyManager({ role: session.role, staffDepartment: session.staffDepartment })) {
       res.status(403).json({ error: "Manager access required" });
+      return;
+    }
+    next();
+  });
+}
+
+/** Guest check-in / guest list — General Manager and Reception only. */
+export function requireGuestOperations(req: Request, res: Response, next: NextFunction): void {
+  requireAuth(req, res, () => {
+    const session = req.session!;
+    if (!canAccessGuestOperations({ role: session.role, staffDepartment: session.staffDepartment })) {
+      res.status(403).json({ error: "Guest operations access required" });
+      return;
+    }
+    next();
+  });
+}
+
+/** Staff roster management — managers only (scoped on route handlers). */
+export function requireStaffManagement(req: Request, res: Response, next: NextFunction): void {
+  requireAuth(req, res, () => {
+    const session = req.session!;
+    if (!canManageStaff({ role: session.role, staffDepartment: session.staffDepartment })) {
+      res.status(403).json({ error: "Staff management access required" });
       return;
     }
     next();

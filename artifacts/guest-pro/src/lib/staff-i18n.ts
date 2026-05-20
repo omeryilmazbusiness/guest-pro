@@ -9,6 +9,9 @@
  *   <p>{t.tabGuests}</p>
  */
 
+import type { StaffScopeKind } from "@/lib/staff-scope";
+import { DEPARTMENT_LABELS, type StaffDepartment } from "@/lib/staff";
+
 export type StaffLocale = "en" | "tr" | "ar";
 
 export interface StaffTranslations {
@@ -110,6 +113,12 @@ export interface StaffTranslations {
   tabSummary: string;
   tabTeam: string;
   tabTasks: string;
+
+  // ── Staff scope labels (role line) ────────────────────────────────────────
+  scopeGeneralManager: string;
+  scopeDepartmentManager: string;
+  scopeReception: string;
+  scopeRestaurant: string;
 
   // ── Tasks tab ─────────────────────────────────────────────────────────────
   tasksDayView: string;
@@ -369,6 +378,11 @@ const en: StaffTranslations = {
   tabTeam: "Employees",
   tabTasks: "Tasks",
 
+  scopeGeneralManager: "General Manager",
+  scopeDepartmentManager: "{dept} Manager",
+  scopeReception: "Reception",
+  scopeRestaurant: "Restaurant",
+
   tasksDayView: "Day",
   tasksWeekView: "Week",
   tasksPrevDay: "Previous day",
@@ -610,6 +624,11 @@ const tr: StaffTranslations = {
   tabSummary: "Özet",
   tabTeam: "Çalışanlar",
   tabTasks: "Görevler",
+
+  scopeGeneralManager: "Genel Müdür",
+  scopeDepartmentManager: "{dept} Müdürü",
+  scopeReception: "Resepsiyon",
+  scopeRestaurant: "Restoran",
 
   tasksDayView: "Gün",
   tasksWeekView: "Hafta",
@@ -853,6 +872,11 @@ const ar: StaffTranslations = {
   tabTeam: "الموظفون",
   tabTasks: "المهام",
 
+  scopeGeneralManager: "المدير العام",
+  scopeDepartmentManager: "مدير {dept}",
+  scopeReception: "الاستقبال",
+  scopeRestaurant: "المطعم",
+
   tasksDayView: "يوم",
   tasksWeekView: "أسبوع",
   tasksPrevDay: "اليوم السابق",
@@ -1011,6 +1035,31 @@ export function tStaff(template: string, vars: Record<string, string | number>):
     (s, [k, v]) => s.replaceAll(`{${k}}`, String(v)),
     template
   );
+}
+
+/** Locale-aware label for dashboard role line (scope hierarchy). */
+export function staffScopeLabel(
+  scope: StaffScopeKind,
+  department: string | null | undefined,
+  t: StaffTranslations,
+): string {
+  const deptLabel =
+    department && department in DEPARTMENT_LABELS
+      ? DEPARTMENT_LABELS[department as StaffDepartment]
+      : (department ?? "");
+
+  switch (scope) {
+    case "general_manager":
+      return t.scopeGeneralManager;
+    case "department_manager":
+      return tStaff(t.scopeDepartmentManager, { dept: deptLabel || "Department" });
+    case "reception":
+      return t.scopeReception;
+    case "restaurant_personnel":
+      return t.scopeRestaurant;
+    case "operations_personnel":
+      return deptLabel || "Staff";
+  }
 }
 
 /** Locale-aware menu category label map derived from t. */

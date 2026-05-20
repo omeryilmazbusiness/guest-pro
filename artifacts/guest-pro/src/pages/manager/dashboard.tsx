@@ -57,8 +57,10 @@ import {
 } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useStaffLocale } from "@/hooks/use-staff-locale";
-import { tStaff, type StaffTranslations } from "@/lib/staff-i18n";
-import { isStaffRole, can, Permission, roleLabel } from "@/lib/permissions";
+import { tStaff, staffScopeLabel, type StaffTranslations } from "@/lib/staff-i18n";
+import { isStaffRole, can, Permission } from "@/lib/permissions";
+import { useStaffScope } from "@/hooks/use-staff-scope";
+import type { StaffActor } from "@/lib/staff-scope";
 import { filterGuests, extractRoomNumbers, countByStatus } from "@/lib/guests";
 import { aggregateRooms, filterRooms } from "@/lib/rooms";
 import { type StayStatus } from "@/lib/stays";
@@ -173,17 +175,42 @@ export default function ManagerDashboard() {
   const queryClient = useQueryClient();
   const logoutMutation = useLogout();
   const { t, locale, dir, setLocale } = useStaffLocale();
+  const staffScope = useStaffScope();
+
+  const actor: StaffActor | undefined = useMemo(() => {
+    if (!user?.role) return undefined;
+    return {
+      role: user.role,
+      staffDepartment:
+        "staffDepartment" in user
+          ? (user as { staffDepartment?: string | null }).staffDepartment
+          : null,
+    };
+  }, [user]);
+
+  const needsGuestData = Boolean(
+    staffScope &&
+      (staffScope.canViewGuests || staffScope.scope === "operations_personnel"),
+  );
+
+  const needsTracking = Boolean(
+    staffScope &&
+      (staffScope.canViewGuests || staffScope.scope === "operations_personnel"),
+  );
 
   // ── Data
   const { data: guests, isLoading } = useListGuests({
-    query: { queryKey: ["guests", "list"], enabled: isAuthenticated && isStaffRole(user?.role) },
+    query: {
+      queryKey: ["guests", "list"],
+      enabled: isAuthenticated && isStaffRole(user?.role) && needsGuestData,
+    },
   });
 
   // ── Presence data (tracking) — refetch every 60 s while dashboard is open.
   const { data: presences, isFetching: presencesFetching } = useQuery({
     queryKey: ["tracking", "presences"],
     queryFn: getGuestPresences,
-    enabled: isAuthenticated && isStaffRole(user?.role),
+    enabled: isAuthenticated && isStaffRole(user?.role) && needsTracking,
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
@@ -231,22 +258,29 @@ export default function ManagerDashboard() {
   // Controlled create-employee modal — can be triggered from the overview card
   const [staffCreateOpen, setStaffCreateOpen] = useState(false);
 
-  // Auto-switch to Employees tab when a manager lands without a URL tab param.
-  // Uses a ref so this fires exactly once per mount.
+  // Resolve initial tab from URL (?tab=) or scope default — once per mount.
   const hasAutoSwitchedTab = useRef(false);
   useEffect(() => {
-    if (hasAutoSwitchedTab.current) return;
-    if (!user) return;
-    if (user.role === "manager") {
-      const param = new URLSearchParams(window.location.search).get("tab");
-      if (!param) {
-        setActiveTab("team");
-      }
-      hasAutoSwitchedTab.current = true;
+    if (hasAutoSwitchedTab.current || !staffScope) return;
+    const param = new URLSearchParams(window.location.search).get("tab");
+    const tabParam = param as ManagerDashboardTab | null;
+    if (tabParam && staffScope.canAccessTab(tabParam)) {
+      setActiveTab(tabParam);
+    } else if (!param) {
+      setActiveTab(staffScope.defaultTab);
     } else {
-      hasAutoSwitchedTab.current = true;
+      setActiveTab(staffScope.defaultTab);
     }
-  }, [user]);
+    hasAutoSwitchedTab.current = true;
+  }, [staffScope]);
+
+  // Keep active tab in sync when scope forbids the current tab.
+  useEffect(() => {
+    if (!staffScope) return;
+    if (!staffScope.canAccessTab(activeTab)) {
+      setActiveTab(staffScope.defaultTab);
+    }
+  }, [staffScope, activeTab]);
 
   // ── Quick Report modal
   const [quickReportOpen, setQuickReportOpen] = useState(false);
@@ -278,15 +312,36 @@ export default function ManagerDashboard() {
   useEffect(() => {
     if (!isAuthenticated) setLocation("/");
     else if (user && !isStaffRole(user.role)) setLocation("/guest");
-  }, [isAuthenticated, user, setLocation]);
+    else if (staffScope?.scope === "restaurant_personnel") setLocation("/restaurant");
+  }, [isAuthenticated, user, staffScope, setLocation]);
 
-  // ── Permissions
-  const role = user?.role ?? "";
-  const isManager = role === "manager";
-  const canEdit = can(role, Permission.EDIT_GUEST);
-  const canDelete = can(role, Permission.DELETE_GUEST);
-  const canRenew = can(role, Permission.RENEW_GUEST_KEY);
-  const canCreate = can(role, Permission.CREATE_GUEST);
+  // ── Permissions (scope-aware)
+  const canEdit = can(actor, Permission.EDIT_GUEST);
+  const canDelete = can(actor, Permission.DELETE_GUEST);
+  const canRenew = can(actor, Permission.RENEW_GUEST_KEY);
+  const canCreate = can(actor, Permission.CREATE_GUEST);
+
+  const overviewVariant = useMemo((): "both" | "guests" | "employees" | null => {
+    if (!staffScope) return null;
+    switch (staffScope.scope) {
+      case "general_manager":
+        return "both";
+      case "department_manager":
+        return "employees";
+      case "reception":
+        return "guests";
+      default:
+        return null;
+    }
+  }, [staffScope]);
+
+  const roleLine = useMemo(() => {
+    if (!user) return "";
+    const label = staffScope
+      ? staffScopeLabel(staffScope.scope, staffScope.actor.staffDepartment, t)
+      : "Staff";
+    return `${label} · ${user.firstName} ${user.lastName}`;
+  }, [user, staffScope, t]);
 
   // ── Derived data (all from lib — no logic in page)
   const stats = useMemo(() => {
@@ -407,7 +462,7 @@ export default function ManagerDashboard() {
     setRoomSearch("");
   };
 
-  if (!isAuthenticated || !isStaffRole(user?.role)) return null;
+  if (!isAuthenticated || !isStaffRole(user?.role) || !staffScope) return null;
 
   return (
     <div className="min-h-dvh bg-zinc-50/60" dir={dir}>
@@ -415,12 +470,13 @@ export default function ManagerDashboard() {
       {/* ── Sticky header (56px) ── */}
       <ManagerDashboardHeader
         appName="Guest Pro"
-        roleLine={`${roleLabel(user.role)} · ${user.firstName} ${user.lastName}`}
+        roleLine={roleLine}
         t={t}
         locale={locale}
         dir={dir}
         onLocaleChange={setLocale}
-        isManager={isManager}
+        scope={staffScope.scope}
+        isGeneralManager={staffScope.isGeneralManager}
         guestCount={guests?.length ?? 0}
         roomCount={allRooms.length}
         requestCount={openRequestCount}
@@ -444,7 +500,7 @@ export default function ManagerDashboard() {
                 {t.newGuest}
               </Button>
             )}
-            {isManager && (
+            {staffScope.isGeneralManager && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -456,7 +512,7 @@ export default function ManagerDashboard() {
                 <ChefHat className="h-3.5 w-3.5" />
               </Button>
             )}
-            {isManager && (
+            {staffScope.isGeneralManager && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -468,7 +524,7 @@ export default function ManagerDashboard() {
                 <FileText className="h-3.5 w-3.5" />
               </Button>
             )}
-            {isManager && (
+            {staffScope.isGeneralManager && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -506,36 +562,43 @@ export default function ManagerDashboard() {
       <main className="max-w-2xl mx-auto px-4 py-5 pb-28 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
 
         {/* ─── Presence overview ─── */}
-        {!isLoading && (
-          isManager ? (
+        {!isLoading && overviewVariant ? (
             <ManagerOverviewCards
+              variant={overviewVariant}
               guestSummary={trackingSummary}
               isRefreshing={presencesFetching}
               onRefresh={handleRefreshTracking}
               staffInfo={staffInfo}
               onAddEmployee={() => setStaffCreateOpen(true)}
-              onGuestsPress={() => setActiveTab("guests")}
-              onEmployeesPress={() => setActiveTab("team")}
+              onGuestsPress={
+                staffScope.canAccessTab("guests")
+                  ? () => setActiveTab("guests")
+                  : undefined
+              }
+              onEmployeesPress={
+                staffScope.canAccessTab("team")
+                  ? () => setActiveTab("team")
+                  : undefined
+              }
               t={t}
             />
-          ) : (
+          ) : !isLoading && needsTracking ? (
             <GuestsOverviewCard
               summary={trackingSummary}
               isRefreshing={presencesFetching}
               onRefresh={handleRefreshTracking}
             />
-          )
-        )}
+          ) : null}
 
         {/* Tab switcher */}
         <ManagerAnimatedTabs
           active={activeTab}
           onChange={setActiveTab}
+          scope={staffScope.scope}
           guestCount={guests?.length ?? 0}
           roomCount={allRooms.length}
           requestCount={openRequestCount}
           teamCount={staffInfo.active}
-          isManager={isManager}
           t={t}
         />
 
@@ -544,7 +607,7 @@ export default function ManagerDashboard() {
         {/* ══════════════════════════════════
             GUESTS TAB
         ══════════════════════════════════ */}
-        {activeTab === "guests" && (
+        {activeTab === "guests" && staffScope.canAccessTab("guests") && (
           <div className="space-y-3">
             <GuestSearchFilterBar
               search={guestSearch}
@@ -636,7 +699,7 @@ export default function ManagerDashboard() {
             ROOMS TAB
             (filter bar is sticky above — not rendered here)
         ══════════════════════════════════ */}
-        {activeTab === "rooms" && (
+        {activeTab === "rooms" && staffScope.canAccessTab("rooms") && (
           <div className="space-y-3 animate-in fade-in duration-200">
             {/* Result count */}
             {!isLoading && (
@@ -690,7 +753,7 @@ export default function ManagerDashboard() {
         {/* ══════════════════════════════════
             REQUESTS TAB
         ══════════════════════════════════ */}
-        {activeTab === "requests" && (
+        {activeTab === "requests" && staffScope.canAccessTab("requests") && (
           <div className="animate-in fade-in duration-200">
             <StaffRequestsBoard
               presenceMap={presenceMap}
@@ -702,7 +765,7 @@ export default function ManagerDashboard() {
         {/* ══════════════════════════════════
             DAILY SUMMARY TAB (manager-only)
         ══════════════════════════════════ */}
-        {activeTab === "summary" && isManager && (
+        {activeTab === "summary" && staffScope.canAccessTab("summary") && (
           <div className="animate-in fade-in duration-200">
             <DailySummaryTab />
           </div>
@@ -711,15 +774,16 @@ export default function ManagerDashboard() {
         {/* ══════════════════════════════════
             TEAM TAB (manager-only)
         ══════════════════════════════════ */}
-        {activeTab === "team" && isManager && (
+        {activeTab === "team" && staffScope.canAccessTab("team") && (
           <StaffTeamTab
             staffCount={setStaffInfo}
             externalCreateOpen={staffCreateOpen}
             onExternalCreateOpenChange={setStaffCreateOpen}
+            lockedDepartment={staffScope.departmentScope ?? undefined}
           />
         )}
 
-        {activeTab === "tasks" && isManager && (
+        {activeTab === "tasks" && staffScope.canAccessTab("tasks") && (
           <TasksTab />
         )}
 
@@ -727,7 +791,7 @@ export default function ManagerDashboard() {
       </main>
 
       {/* ── Mobile FAB ── */}
-      {canCreate && (
+      {canCreate && activeTab === "guests" && (
         <div className="fixed bottom-6 right-5 z-30 sm:hidden">
           <button
             data-testid="button-create-guest"
@@ -811,7 +875,7 @@ export default function ManagerDashboard() {
       <WelcomeAreaAlertBanner enabled={isAuthenticated && !!user} />
 
       {/* ── Quick Report modal (manager-only) ── */}
-      {isManager && (
+      {staffScope.isGeneralManager && (
         <QuickReportModal
           open={quickReportOpen}
           onClose={() => setQuickReportOpen(false)}

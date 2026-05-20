@@ -16,14 +16,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { StaffTranslations } from "@/lib/staff-i18n";
+import {
+  canAccessManagerTab,
+  type ManagerDashboardTab,
+  type StaffScopeKind,
+} from "@/lib/staff-scope";
 
-export type ManagerDashboardTab =
-  | "guests"
-  | "rooms"
-  | "requests"
-  | "summary"
-  | "team"
-  | "tasks";
+export type { ManagerDashboardTab };
 
 export type ManagerNavAction =
   | { type: "tab"; tab: ManagerDashboardTab }
@@ -42,12 +41,13 @@ export interface ManagerDashboardNavItem {
 
 export interface ManagerDashboardNavContext {
   t: StaffTranslations;
-  isManager: boolean;
+  scope: StaffScopeKind;
   guestCount: number;
   roomCount: number;
   requestCount: number;
   teamCount: number;
   canCreateGuest: boolean;
+  isGeneralManager: boolean;
 }
 
 type NavDef = {
@@ -66,14 +66,14 @@ const NAV_DEFS: NavDef[] = [
     resolveLabel: ({ t }) => t.tabTeam,
     action: { type: "tab", tab: "team" },
     badge: (c) => (c.teamCount > 0 ? c.teamCount : undefined),
-    isVisible: (c) => c.isManager,
+    isVisible: (c) => canAccessManagerTab(c.scope, "team"),
   },
   {
     id: "tasks",
     icon: ClipboardList,
     resolveLabel: ({ t }) => t.tabTasks,
     action: { type: "tab", tab: "tasks" },
-    isVisible: (c) => c.isManager,
+    isVisible: (c) => canAccessManagerTab(c.scope, "tasks"),
   },
   {
     id: "guests",
@@ -81,6 +81,7 @@ const NAV_DEFS: NavDef[] = [
     resolveLabel: ({ t }) => t.tabGuests,
     action: { type: "tab", tab: "guests" },
     badge: (c) => (c.guestCount > 0 ? c.guestCount : undefined),
+    isVisible: (c) => canAccessManagerTab(c.scope, "guests"),
   },
   {
     id: "rooms",
@@ -88,7 +89,7 @@ const NAV_DEFS: NavDef[] = [
     resolveLabel: ({ t }) => t.tabRooms,
     action: { type: "tab", tab: "rooms" },
     badge: (c) => (c.roomCount > 0 ? c.roomCount : undefined),
-    isVisible: (c) => !c.isManager,
+    isVisible: (c) => canAccessManagerTab(c.scope, "rooms"),
   },
   {
     id: "requests",
@@ -96,14 +97,14 @@ const NAV_DEFS: NavDef[] = [
     resolveLabel: ({ t }) => t.tabRequests,
     action: { type: "tab", tab: "requests" },
     badge: (c) => (c.requestCount > 0 ? c.requestCount : undefined),
-    isVisible: (c) => !c.isManager,
+    isVisible: (c) => canAccessManagerTab(c.scope, "requests"),
   },
   {
     id: "summary",
     icon: TrendingUp,
     resolveLabel: ({ t }) => t.tabSummary,
     action: { type: "tab", tab: "summary" },
-    isVisible: (c) => c.isManager,
+    isVisible: (c) => canAccessManagerTab(c.scope, "summary"),
   },
   {
     id: "new-guest",
@@ -117,21 +118,21 @@ const NAV_DEFS: NavDef[] = [
     icon: FileText,
     resolveLabel: ({ t }) => t.quickReport,
     action: { type: "quick-report" },
-    isVisible: (c) => c.isManager,
+    isVisible: (c) => c.isGeneralManager,
   },
   {
     id: "restaurant",
     icon: ChefHat,
     resolveLabel: ({ t }) => t.restaurantDashboard,
     action: { type: "restaurant" },
-    isVisible: (c) => c.isManager,
+    isVisible: (c) => c.isGeneralManager,
   },
   {
     id: "settings",
     icon: Settings,
     resolveLabel: ({ t }) => t.settings,
     action: { type: "settings" },
-    isVisible: (c) => c.isManager,
+    isVisible: (c) => c.isGeneralManager,
   },
 ];
 

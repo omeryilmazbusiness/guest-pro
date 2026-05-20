@@ -69,9 +69,16 @@ export interface CreateStaffSheetProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  /** When set, new staff are created only in this department (department managers). */
+  lockedDepartment?: StaffDepartment;
 }
 
-export function CreateStaffSheet({ open, onClose, onSuccess }: CreateStaffSheetProps) {
+export function CreateStaffSheet({
+  open,
+  onClose,
+  onSuccess,
+  lockedDepartment,
+}: CreateStaffSheetProps) {
   const { t } = useStaffLocale();
   const schema = useMemo(() => buildCreateSchema(t), [t]);
 
@@ -93,9 +100,9 @@ export function CreateStaffSheet({ open, onClose, onSuccess }: CreateStaffSheetP
       lastName: "",
       email: "",
       password: "",
-      staffDepartment: undefined,
+      staffDepartment: lockedDepartment ?? undefined,
     });
-  }, [open, form]);
+  }, [open, form, lockedDepartment]);
 
   const mutation = useMutation({
     mutationFn: createStaff,
@@ -142,7 +149,12 @@ export function CreateStaffSheet({ open, onClose, onSuccess }: CreateStaffSheetP
         {/* Form */}
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit((v) => mutation.mutate(v))}
+            onSubmit={form.handleSubmit((v) =>
+              mutation.mutate({
+                ...v,
+                staffDepartment: lockedDepartment ?? v.staffDepartment,
+              }),
+            )}
             className="flex min-h-0 flex-1 flex-col"
           >
             <div className="flex-1 space-y-3.5 overflow-y-auto overscroll-contain px-5 py-4">
@@ -231,6 +243,14 @@ export function CreateStaffSheet({ open, onClose, onSuccess }: CreateStaffSheetP
                 )}
               />
 
+              {lockedDepartment ? (
+                <div>
+                  <p className={labelClass}>{t.staffDepartment}</p>
+                  <p className="mt-1.5 rounded-xl border border-zinc-100 bg-zinc-50/80 px-3 py-2.5 text-sm font-medium text-zinc-800">
+                    {DEPARTMENT_LABELS[lockedDepartment]}
+                  </p>
+                </div>
+              ) : (
               <FormField
                 control={form.control}
                 name="staffDepartment"
@@ -273,6 +293,7 @@ export function CreateStaffSheet({ open, onClose, onSuccess }: CreateStaffSheetP
                   </FormItem>
                 )}
               />
+              )}
             </div>
 
             {/* Footer */}

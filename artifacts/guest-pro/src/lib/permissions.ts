@@ -1,10 +1,17 @@
 /**
  * Central client-side permission definitions for Guest Pro.
  *
- * This mirrors the server-side roles.ts policy and is the single source of
- * truth for UI-level capability checks. It NEVER replaces server-side
- * authorization — the server always enforces access independently.
+ * Scope-aware: pass { role, staffDepartment } for accurate checks when
+ * department managers or reception staff differ from legacy role-only rules.
  */
+
+import {
+  resolveStaffScope,
+  canAccessGuestOperations as scopeCanGuests,
+  canManageStaff as scopeCanManageStaff,
+  isGeneralManager as scopeIsGeneralManager,
+  type StaffActor,
+} from "@/lib/staff-scope";
 
 // ---------------------------------------------------------------------------
 // Role types
@@ -14,12 +21,16 @@ export type StaffRole = "manager" | "personnel";
 export type GuestRole = "guest";
 export type UserRole = StaffRole | GuestRole;
 
-/** All roles that belong to hotel staff. */
 export const STAFF_ROLES: ReadonlyArray<StaffRole> = ["manager", "personnel"];
 
-/** Returns true if the role belongs to a staff member. */
 export function isStaffRole(role: string | undefined): role is StaffRole {
   return role === "manager" || role === "personnel";
+}
+
+function toActor(roleOrActor: string | StaffActor | undefined): StaffActor | null {
+  if (!roleOrActor) return null;
+  if (typeof roleOrActor === "string") return { role: roleOrActor };
+  return roleOrActor;
 }
 
 // ---------------------------------------------------------------------------
@@ -27,63 +38,53 @@ export function isStaffRole(role: string | undefined): role is StaffRole {
 // ---------------------------------------------------------------------------
 
 export const Permission = {
-  /** View the hotel's guest list */
   VIEW_GUESTS: "view_guests",
-  /** Create a new hotel guest and generate their key */
   CREATE_GUEST: "create_guest",
-  /** Edit an existing guest's details */
   EDIT_GUEST: "edit_guest",
-  /** Delete a guest (soft-delete; manager only) */
   DELETE_GUEST: "delete_guest",
-  /** Renew a guest's access key and QR token */
   RENEW_GUEST_KEY: "renew_guest_key",
-  /** Access hotel branding, settings, and admin controls */
   MANAGE_HOTEL: "manage_hotel",
-  /** Create, edit, and deactivate staff members (manager only) */
   MANAGE_STAFF: "manage_staff",
+  VIEW_TASKS: "view_tasks",
+  MANAGE_TASKS: "manage_tasks",
 } as const;
 
 export type Permission = (typeof Permission)[keyof typeof Permission];
 
 // ---------------------------------------------------------------------------
-// Access policy — single source of truth for "who can do what" on the client
-// ---------------------------------------------------------------------------
-
-const ROLE_PERMISSIONS: Record<StaffRole, ReadonlyArray<Permission>> = {
-  manager: [
-    Permission.VIEW_GUESTS,
-    Permission.CREATE_GUEST,
-    Permission.EDIT_GUEST,
-    Permission.DELETE_GUEST,
-    Permission.RENEW_GUEST_KEY,
-    Permission.MANAGE_HOTEL,
-    Permission.MANAGE_STAFF,
-  ],
-  personnel: [
-    Permission.VIEW_GUESTS,
-    Permission.CREATE_GUEST,
-    Permission.EDIT_GUEST,
-    Permission.RENEW_GUEST_KEY,
-    // DELETE_GUEST excluded — personnel cannot delete guests
-    // MANAGE_HOTEL excluded — personnel cannot configure the hotel
-    // MANAGE_STAFF excluded — only managers manage the team
-  ],
-};
-
-// ---------------------------------------------------------------------------
 // Authorization helper
 // ---------------------------------------------------------------------------
 
-/**
- * Returns true if the user with the given role has the requested permission.
- * Pure function — no hooks, no React context.
- */
-export function can(role: string | undefined, permission: Permission): boolean {
-  if (!role || !isStaffRole(role)) return false;
-  return (ROLE_PERMISSIONS[role] as ReadonlyArray<Permission>).includes(permission);
+export function can(
+  roleOrActor: string | StaffActor | undefined,
+  permission: Permission,
+): boolean {
+  const actor = toActor(roleOrActor);
+  if (!actor || !isStaffRole(actor.role)) return false;
+
+  const scope = resolveStaffScope(actor);
+
+  switch (permission) {
+    case Permission.VIEW_GUESTS:
+    case Permission.CREATE_GUEST:
+    case Permission.EDIT_GUEST:
+    case Permission.RENEW_GUEST_KEY:
+      return scopeCanGuests(actor);
+    case Permission.DELETE_GUEST:
+      return scopeIsGeneralManager(actor);
+    case Permission.MANAGE_HOTEL:
+      return scopeIsGeneralManager(actor);
+    case Permission.MANAGE_STAFF:
+      return scopeCanManageStaff(actor);
+    case Permission.VIEW_TASKS:
+    case Permission.MANAGE_TASKS:
+      return scope === "general_manager" || scope === "department_manager";
+    default:
+      return false;
+  }
 }
 
-/** Returns the display label for a staff role. */
+/** Returns the display label for a staff role (legacy; prefer useStaffScope().label). */
 export function roleLabel(role: string | undefined): string {
   if (role === "manager") return "Manager";
   if (role === "personnel") return "Staff";

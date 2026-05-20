@@ -108,11 +108,16 @@ export default function Login() {
   // Redirect already-authenticated users
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (user.role === "manager") setLocation("/manager");
-      else if (user.role === "personnel") {
-        // Restaurant personnel go to the dedicated restaurant dashboard
-        if (user.staffDepartment === "RESTAURANT") setLocation("/restaurant");
-        else setLocation("/manager");
+      if (user.role === "manager") {
+        setLocation("/manager");
+      } else if (user.role === "personnel") {
+        if (user.staffDepartment === "RESTAURANT") {
+          setLocation("/restaurant");
+        } else if (user.staffDepartment === "RECEPTION") {
+          setLocation("/manager?tab=guests");
+        } else {
+          setLocation("/manager");
+        }
       } else {
         setLocation("/guest");
       }
@@ -173,6 +178,7 @@ export default function Login() {
           const dept = res.user?.staffDepartment;
           const role = res.user?.role;
           if (role === "personnel" && dept === "RESTAURANT") setLocation("/restaurant");
+          else if (role === "personnel" && dept === "RECEPTION") setLocation("/manager?tab=guests");
           else setLocation("/manager");
         },
         onError: (err) => {
