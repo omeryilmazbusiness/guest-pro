@@ -48,6 +48,7 @@ export interface GuestTranslations {
   nearbyViewAll: string; // {count}
   nearbyNoResults: string;
   nearbyBackToList: string;
+  nearbySection: string;
 
   quickActionsSection: string;
   touchToAsk: string;
@@ -134,16 +135,31 @@ export interface GuestTranslations {
   flowFoodNoteQ: string;
   flowFoodNoteHint: string;
   flowFoodConfirmQ: string;
+  flowMenuLoading: string;
+  flowMenuEmpty: string;
+  flowConfirmCategoryLabel: string;
 
   // ── Flow — Food categories ───────────────────────────────────────────────
   flowCatBreakfast: string;
   flowCatBreakfastHint: string;
+  flowCatSoup: string;
+  flowCatSoupHint: string;
+  flowCatSalad: string;
+  flowCatSaladHint: string;
+  flowCatAppetizer: string;
+  flowCatAppetizerHint: string;
   flowCatLight: string;
   flowCatLightHint: string;
   flowCatMain: string;
   flowCatMainHint: string;
+  flowCatDessert: string;
+  flowCatDessertHint: string;
+  flowCatSnack: string;
+  flowCatSnackHint: string;
   flowCatDrinks: string;
   flowCatDrinksHint: string;
+  flowCatOther: string;
+  flowCatOtherHint: string;
 
   // ── Flow — Quantity ──────────────────────────────────────────────────────
   flowQty1: string;
@@ -285,6 +301,8 @@ export interface GuestTranslations {
   myRequestsTitle: string;
   myRequestsSubtitle: string;
   myRequestsEmpty: string;
+  reqTypeGeneral: string;
+  reqDetailCategory: string;
   reqStatusOpen: string;
   reqStatusInProgress: string;
   reqStatusResolved: string;
@@ -312,10 +330,20 @@ export interface GuestTranslations {
   chatQuickSupport: string;
   chatQuickInfo: string;
   chatQuickActivity: string;
+  chatModeIntroFood: string;
+  chatModeIntroSupport: string;
+  chatModeIntroCare: string;
+  chatSummaryPrefixFood: string;
+  chatSummaryPrefixSupport: string;
+  chatSummaryPrefixCare: string;
+  chatSummaryFallback: string;
+  chatCreateRequestCta: string;
+  chatCreateRequestError: string;
   chatActionTitle: string;
   chatActionConfirm: string;
   chatActionDismiss: string;
   chatRequestCreated: string;
+  receptionChatPrompt: string;
   voiceStarting: string;
   voiceListening: string;
   voiceThinking: string;
@@ -363,6 +391,7 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     nearbyViewAll: "View all {count} places",
     nearbyNoResults: "No places match your search",
     nearbyBackToList: "All places",
+    nearbySection: "Nearby",
 
     quickActionsSection: "Quick Actions",
     touchToAsk: "Touch to ask →",
@@ -441,15 +470,30 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowFoodNoteQ: "Any note for the kitchen?",
     flowFoodNoteHint: "Optional — allergies, special requests…",
     flowFoodConfirmQ: "Confirm your order",
+    flowMenuLoading: "Loading…",
+    flowMenuEmpty: "No items on the menu",
+    flowConfirmCategoryLabel: "Category",
 
     flowCatBreakfast: "Breakfast",
     flowCatBreakfastHint: "Spreads, omelettes, toast",
+    flowCatSoup: "Soup",
+    flowCatSoupHint: "Soups and warm starters",
+    flowCatSalad: "Salad",
+    flowCatSaladHint: "Fresh salads",
+    flowCatAppetizer: "Appetizers",
+    flowCatAppetizerHint: "Starters and small plates",
     flowCatLight: "Light Meals",
     flowCatLightHint: "Sandwiches, soup, salads",
     flowCatMain: "Main Dishes",
     flowCatMainHint: "Chicken, fish, pasta",
+    flowCatDessert: "Dessert",
+    flowCatDessertHint: "Sweets and treats",
+    flowCatSnack: "Snacks",
+    flowCatSnackHint: "Quick bites",
     flowCatDrinks: "Beverages",
     flowCatDrinksHint: "Tea, coffee, juice",
+    flowCatOther: "Other",
+    flowCatOtherHint: "More options",
 
     flowQty1: "1 serving",
     flowQty2: "2 servings",
@@ -579,6 +623,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     myRequestsTitle: "My Requests",
     myRequestsSubtitle: "Track your service requests",
     myRequestsEmpty: "No requests yet",
+    reqTypeGeneral: "General request",
+    reqDetailCategory: "Category",
     reqStatusOpen: "Open",
     reqStatusInProgress: "In Progress",
     reqStatusResolved: "Completed",
@@ -604,10 +650,20 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     chatQuickSupport: "I need help",
     chatQuickInfo: "Hotel info",
     chatQuickActivity: "I'm bored",
+    chatModeIntroFood: "I'm hungry and would like to order something.",
+    chatModeIntroSupport: "I have a support request — can you help?",
+    chatModeIntroCare: "I'd like to share my stay preferences.",
+    chatSummaryPrefixFood: "Food order: ",
+    chatSummaryPrefixSupport: "Support request: ",
+    chatSummaryPrefixCare: "Guest preferences: ",
+    chatSummaryFallback: "Guided chat completed.",
+    chatCreateRequestCta: "Create request & notify staff",
+    chatCreateRequestError: "Could not create the request. Please try again.",
     chatActionTitle: "Confirm request",
     chatActionConfirm: "Send to staff",
     chatActionDismiss: "Not now",
     chatRequestCreated: "Request sent — our team will assist you shortly.",
+    receptionChatPrompt: "I'd like to speak with reception",
     voiceStarting: "Starting",
     voiceListening: "Listening",
     voiceThinking: "Thinking",
@@ -652,6 +708,7 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     nearbyViewAll: "Tüm yerler ({count})",
     nearbyNoResults: "Aramanızla eşleşen yer yok",
     nearbyBackToList: "Tüm yerlere dön",
+    nearbySection: "Yakında",
 
     quickActionsSection: "Hızlı İstekler",
     touchToAsk: "Sormak için dokun →",
@@ -730,15 +787,30 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowFoodNoteQ: "Mutfağa notunuz var mı?",
     flowFoodNoteHint: "Opsiyonel — alerjiler, özel istek…",
     flowFoodConfirmQ: "Siparişinizi onaylayın",
+    flowMenuLoading: "Yükleniyor…",
+    flowMenuEmpty: "Menüde ürün yok",
+    flowConfirmCategoryLabel: "Kategori",
 
     flowCatBreakfast: "Kahvaltı",
     flowCatBreakfastHint: "Serpme, omlet, tost",
+    flowCatSoup: "Çorba",
+    flowCatSoupHint: "Sıcak başlangıçlar",
+    flowCatSalad: "Salata",
+    flowCatSaladHint: "Taze salatalar",
+    flowCatAppetizer: "Başlangıç",
+    flowCatAppetizerHint: "Atıştırmalık başlangıçlar",
     flowCatLight: "Hafif Yemekler",
     flowCatLightHint: "Sandviç, çorba, salata",
     flowCatMain: "Ana Yemekler",
     flowCatMainHint: "Tavuk, balık, makarna",
+    flowCatDessert: "Tatlı",
+    flowCatDessertHint: "Tatlı seçenekler",
+    flowCatSnack: "Atıştırmalık",
+    flowCatSnackHint: "Hızlı atıştırmalıklar",
     flowCatDrinks: "İçecekler",
     flowCatDrinksHint: "Çay, kahve, meyve suyu",
+    flowCatOther: "Diğer",
+    flowCatOtherHint: "Diğer seçenekler",
 
     flowQty1: "1 porsiyon",
     flowQty2: "2 porsiyon",
@@ -868,6 +940,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     myRequestsTitle: "Taleplerim",
     myRequestsSubtitle: "Taleplerinizi takip edin",
     myRequestsEmpty: "Henüz talep yok",
+    reqTypeGeneral: "Genel talep",
+    reqDetailCategory: "Kategori",
     reqStatusOpen: "Açık",
     reqStatusInProgress: "İşlemde",
     reqStatusResolved: "Tamamlandı",
@@ -893,10 +967,20 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     chatQuickSupport: "Yardım lazım",
     chatQuickInfo: "Otel bilgisi",
     chatQuickActivity: "Sıkıldım",
+    chatModeIntroFood: "Acıktım, bir şeyler sipariş etmek istiyorum.",
+    chatModeIntroSupport: "Destek talebim var, yardımcı olur musunuz?",
+    chatModeIntroCare: "Hizmet tercihlerimi paylaşmak istiyorum.",
+    chatSummaryPrefixFood: "Yemek siparişi: ",
+    chatSummaryPrefixSupport: "Destek talebi: ",
+    chatSummaryPrefixCare: "Misafir tercihleri: ",
+    chatSummaryFallback: "Rehberli sohbet tamamlandı.",
+    chatCreateRequestCta: "Talebi oluştur ve personeli bildir",
+    chatCreateRequestError: "Talep oluşturulurken bir hata oluştu.",
     chatActionTitle: "Talebi onayla",
     chatActionConfirm: "Personele ilet",
     chatActionDismiss: "Şimdi değil",
     chatRequestCreated: "Talebiniz iletildi — ekibimiz kısa sürede ilgilenecek.",
+    receptionChatPrompt: "Resepsiyon ile görüşmek istiyorum",
     voiceStarting: "Başlatılıyor",
     voiceListening: "Dinliyorum",
     voiceThinking: "Düşünüyorum",
@@ -941,7 +1025,7 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     nearbyViewAll: "عرض كل الأماكن ({count})",
     nearbyNoResults: "لا توجد نتائج",
     nearbyBackToList: "جميع الأماكن",
-
+    nearbySection: "بالقرب",
 
     quickActionsSection: "الإجراءات السريعة",
     touchToAsk: "اضغط للسؤال ←",
@@ -1020,15 +1104,30 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowFoodNoteQ: "هل لديك ملاحظة للمطبخ؟",
     flowFoodNoteHint: "اختياري — حساسيات، طلبات خاصة…",
     flowFoodConfirmQ: "تأكيد طلبك",
+    flowMenuLoading: "جارٍ التحميل…",
+    flowMenuEmpty: "لا توجد أصناف في القائمة",
+    flowConfirmCategoryLabel: "الفئة",
 
     flowCatBreakfast: "فطور",
     flowCatBreakfastHint: "مشكل، أومليت، توست",
+    flowCatSoup: "شوربة",
+    flowCatSoupHint: "شوربات وبدايات دافئة",
+    flowCatSalad: "سلطة",
+    flowCatSaladHint: "سلطات طازجة",
+    flowCatAppetizer: "مقبلات",
+    flowCatAppetizerHint: "بدايات وأطباق صغيرة",
     flowCatLight: "وجبات خفيفة",
     flowCatLightHint: "ساندويش، حساء، سلطة",
     flowCatMain: "الأطباق الرئيسية",
     flowCatMainHint: "دجاج، سمك، معكرونة",
+    flowCatDessert: "حلويات",
+    flowCatDessertHint: "حلويات ومقبلات حلوة",
+    flowCatSnack: "وجبات خفيفة",
+    flowCatSnackHint: "لقيمات سريعة",
     flowCatDrinks: "مشروبات",
     flowCatDrinksHint: "شاي، قهوة، عصير",
+    flowCatOther: "أخرى",
+    flowCatOtherHint: "خيارات أخرى",
 
     flowQty1: "حصة واحدة",
     flowQty2: "حصتان",
@@ -1159,6 +1258,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     myRequestsTitle: "طلباتي",
     myRequestsSubtitle: "تتبع طلبات الخدمة",
     myRequestsEmpty: "لا توجد طلبات بعد",
+    reqTypeGeneral: "طلب عام",
+    reqDetailCategory: "الفئة",
     reqStatusOpen: "مفتوح",
     reqStatusInProgress: "قيد التنفيذ",
     reqStatusResolved: "مكتمل",
@@ -1184,10 +1285,20 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     chatQuickSupport: "أحتاج مساعدة",
     chatQuickInfo: "معلومات الفندق",
     chatQuickActivity: "أشعر بالملل",
+    chatModeIntroFood: "أنا جائع وأريد طلب شيء للأكل.",
+    chatModeIntroSupport: "لدي طلب دعم — هل يمكنك المساعدة؟",
+    chatModeIntroCare: "أود مشاركة تفضيلات إقامتي.",
+    chatSummaryPrefixFood: "طلب طعام: ",
+    chatSummaryPrefixSupport: "طلب دعم: ",
+    chatSummaryPrefixCare: "تفضيلات الضيف: ",
+    chatSummaryFallback: "اكتملت المحادثة الموجهة.",
+    chatCreateRequestCta: "إنشاء الطلب وإبلاغ الفريق",
+    chatCreateRequestError: "تعذر إنشاء الطلب. يرجى المحاولة مرة أخرى.",
     chatActionTitle: "تأكيد الطلب",
     chatActionConfirm: "إرسال للطاقم",
     chatActionDismiss: "ليس الآن",
     chatRequestCreated: "تم إرسال طلبك — سيتولى الفريق الأمر قريبًا.",
+    receptionChatPrompt: "أود التحدث مع الاستقبال",
     voiceStarting: "جاري البدء",
     voiceListening: "أستمع",
     voiceThinking: "أفكر",
@@ -1232,7 +1343,7 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     nearbyViewAll: "Все места ({count})",
     nearbyNoResults: "Ничего не найдено",
     nearbyBackToList: "Все места",
-
+    nearbySection: "Рядом",
 
     quickActionsSection: "Быстрые действия",
     touchToAsk: "Нажмите, чтобы спросить →",
@@ -1311,15 +1422,30 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowFoodNoteQ: "Есть ли пожелания для кухни?",
     flowFoodNoteHint: "Необязательно — аллергии, особые пожелания…",
     flowFoodConfirmQ: "Подтвердите ваш заказ",
+    flowMenuLoading: "Загрузка…",
+    flowMenuEmpty: "В меню нет блюд",
+    flowConfirmCategoryLabel: "Категория",
 
     flowCatBreakfast: "Завтрак",
     flowCatBreakfastHint: "Ассорти, омлет, тост",
+    flowCatSoup: "Супы",
+    flowCatSoupHint: "Супы и горячие закуски",
+    flowCatSalad: "Салаты",
+    flowCatSaladHint: "Свежие салаты",
+    flowCatAppetizer: "Закуски",
+    flowCatAppetizerHint: "Стартеры и маленькие блюда",
     flowCatLight: "Лёгкие блюда",
     flowCatLightHint: "Сэндвичи, суп, салаты",
     flowCatMain: "Основные блюда",
     flowCatMainHint: "Курица, рыба, паста",
+    flowCatDessert: "Десерты",
+    flowCatDessertHint: "Сладкое",
+    flowCatSnack: "Перекусы",
+    flowCatSnackHint: "Быстрые закуски",
     flowCatDrinks: "Напитки",
     flowCatDrinksHint: "Чай, кофе, сок",
+    flowCatOther: "Другое",
+    flowCatOtherHint: "Другие варианты",
 
     flowQty1: "1 порция",
     flowQty2: "2 порции",
@@ -1450,6 +1576,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     myRequestsTitle: "Мои запросы",
     myRequestsSubtitle: "Отслеживайте свои запросы",
     myRequestsEmpty: "Запросов пока нет",
+    reqTypeGeneral: "Общий запрос",
+    reqDetailCategory: "Категория",
     reqStatusOpen: "Открыт",
     reqStatusInProgress: "В работе",
     reqStatusResolved: "Выполнен",
@@ -1475,10 +1603,20 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     chatQuickSupport: "Нужна помощь",
     chatQuickInfo: "Информация об отеле",
     chatQuickActivity: "Мне скучно",
+    chatModeIntroFood: "Я голоден и хочу что-нибудь заказать.",
+    chatModeIntroSupport: "У меня запрос в поддержку — можете помочь?",
+    chatModeIntroCare: "Хочу поделиться предпочтениями по проживанию.",
+    chatSummaryPrefixFood: "Заказ еды: ",
+    chatSummaryPrefixSupport: "Запрос в поддержку: ",
+    chatSummaryPrefixCare: "Предпочтения гостя: ",
+    chatSummaryFallback: "Направленный чат завершён.",
+    chatCreateRequestCta: "Создать запрос и уведомить персонал",
+    chatCreateRequestError: "Не удалось создать запрос. Попробуйте снова.",
     chatActionTitle: "Подтвердить запрос",
     chatActionConfirm: "Отправить персоналу",
     chatActionDismiss: "Не сейчас",
     chatRequestCreated: "Запрос отправлен — команда скоро поможет.",
+    receptionChatPrompt: "Хочу связаться с ресепшеном",
     voiceStarting: "Запуск",
     voiceListening: "Слушаю",
     voiceThinking: "Думаю",
@@ -1523,7 +1661,7 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     nearbyViewAll: "Alle {count} Orte",
     nearbyNoResults: "Keine Treffer",
     nearbyBackToList: "Alle Orte",
-
+    nearbySection: "In der Nähe",
 
     quickActionsSection: "Schnellaktionen",
     touchToAsk: "Tippen zum Fragen →",
@@ -1602,15 +1740,30 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowFoodNoteQ: "Haben Sie eine Anmerkung für die Küche?",
     flowFoodNoteHint: "Optional — Allergien, besondere Wünsche…",
     flowFoodConfirmQ: "Bestellung bestätigen",
+    flowMenuLoading: "Wird geladen…",
+    flowMenuEmpty: "Keine Gerichte auf der Karte",
+    flowConfirmCategoryLabel: "Kategorie",
 
     flowCatBreakfast: "Frühstück",
     flowCatBreakfastHint: "Büfett, Omelett, Toast",
+    flowCatSoup: "Suppe",
+    flowCatSoupHint: "Suppen und warme Vorspeisen",
+    flowCatSalad: "Salat",
+    flowCatSaladHint: "Frische Salate",
+    flowCatAppetizer: "Vorspeisen",
+    flowCatAppetizerHint: "Starter und kleine Teller",
     flowCatLight: "Leichte Mahlzeiten",
     flowCatLightHint: "Sandwiches, Suppe, Salate",
     flowCatMain: "Hauptgerichte",
     flowCatMainHint: "Hähnchen, Fisch, Pasta",
+    flowCatDessert: "Dessert",
+    flowCatDessertHint: "Süßes",
+    flowCatSnack: "Snacks",
+    flowCatSnackHint: "Kleine Happen",
     flowCatDrinks: "Getränke",
     flowCatDrinksHint: "Tee, Kaffee, Saft",
+    flowCatOther: "Sonstiges",
+    flowCatOtherHint: "Weitere Optionen",
 
     flowQty1: "1 Portion",
     flowQty2: "2 Portionen",
@@ -1741,6 +1894,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     myRequestsTitle: "Meine Anfragen",
     myRequestsSubtitle: "Ihre Serviceanfragen verfolgen",
     myRequestsEmpty: "Noch keine Anfragen",
+    reqTypeGeneral: "Allgemeine Anfrage",
+    reqDetailCategory: "Kategorie",
     reqStatusOpen: "Offen",
     reqStatusInProgress: "In Bearbeitung",
     reqStatusResolved: "Abgeschlossen",
@@ -1766,10 +1921,20 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     chatQuickSupport: "Ich brauche Hilfe",
     chatQuickInfo: "Hotelinfo",
     chatQuickActivity: "Mir ist langweilig",
+    chatModeIntroFood: "Ich habe Hunger und möchte etwas bestellen.",
+    chatModeIntroSupport: "Ich habe eine Support-Anfrage — können Sie helfen?",
+    chatModeIntroCare: "Ich möchte meine Aufenthaltspräferenzen mitteilen.",
+    chatSummaryPrefixFood: "Essensbestellung: ",
+    chatSummaryPrefixSupport: "Support-Anfrage: ",
+    chatSummaryPrefixCare: "Gastpräferenzen: ",
+    chatSummaryFallback: "Geführtes Gespräch abgeschlossen.",
+    chatCreateRequestCta: "Anfrage erstellen & Team benachrichtigen",
+    chatCreateRequestError: "Anfrage konnte nicht erstellt werden. Bitte erneut versuchen.",
     chatActionTitle: "Anfrage bestätigen",
     chatActionConfirm: "An Team senden",
     chatActionDismiss: "Nicht jetzt",
     chatRequestCreated: "Anfrage gesendet — unser Team kümmert sich bald.",
+    receptionChatPrompt: "Ich möchte mit der Rezeption sprechen",
     voiceStarting: "Start",
     voiceListening: "Höre zu",
     voiceThinking: "Denke nach",
@@ -1814,7 +1979,7 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     nearbyViewAll: "Voir les {count} lieux",
     nearbyNoResults: "Aucun résultat",
     nearbyBackToList: "Tous les lieux",
-
+    nearbySection: "À proximité",
 
     quickActionsSection: "Actions rapides",
     touchToAsk: "Appuyer pour demander →",
@@ -1893,15 +2058,30 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowFoodNoteQ: "Une note pour la cuisine ?",
     flowFoodNoteHint: "Optionnel — allergies, demandes spéciales…",
     flowFoodConfirmQ: "Confirmer votre commande",
+    flowMenuLoading: "Chargement…",
+    flowMenuEmpty: "Aucun plat au menu",
+    flowConfirmCategoryLabel: "Catégorie",
 
     flowCatBreakfast: "Petit-déjeuner",
     flowCatBreakfastHint: "Buffet, omelette, toast",
+    flowCatSoup: "Soupe",
+    flowCatSoupHint: "Soupes et entrées chaudes",
+    flowCatSalad: "Salade",
+    flowCatSaladHint: "Salades fraîches",
+    flowCatAppetizer: "Entrées",
+    flowCatAppetizerHint: "Petites assiettes",
     flowCatLight: "Plats légers",
     flowCatLightHint: "Sandwichs, soupe, salades",
     flowCatMain: "Plats principaux",
     flowCatMainHint: "Poulet, poisson, pâtes",
+    flowCatDessert: "Dessert",
+    flowCatDessertHint: "Douceurs",
+    flowCatSnack: "Snacks",
+    flowCatSnackHint: "Petites bouchées",
     flowCatDrinks: "Boissons",
     flowCatDrinksHint: "Thé, café, jus",
+    flowCatOther: "Autres",
+    flowCatOtherHint: "Plus d'options",
 
     flowQty1: "1 portion",
     flowQty2: "2 portions",
@@ -2032,6 +2212,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     myRequestsTitle: "Mes demandes",
     myRequestsSubtitle: "Suivez vos demandes de service",
     myRequestsEmpty: "Aucune demande pour l'instant",
+    reqTypeGeneral: "Demande générale",
+    reqDetailCategory: "Catégorie",
     reqStatusOpen: "Ouvert",
     reqStatusInProgress: "En cours",
     reqStatusResolved: "Terminé",
@@ -2057,10 +2239,20 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     chatQuickSupport: "J'ai besoin d'aide",
     chatQuickInfo: "Infos hôtel",
     chatQuickActivity: "Je m'ennuie",
+    chatModeIntroFood: "J'ai faim et je voudrais commander quelque chose.",
+    chatModeIntroSupport: "J'ai une demande d'assistance — pouvez-vous m'aider ?",
+    chatModeIntroCare: "Je souhaite partager mes préférences de séjour.",
+    chatSummaryPrefixFood: "Commande repas : ",
+    chatSummaryPrefixSupport: "Demande d'assistance : ",
+    chatSummaryPrefixCare: "Préférences du client : ",
+    chatSummaryFallback: "Conversation guidée terminée.",
+    chatCreateRequestCta: "Créer la demande et alerter l'équipe",
+    chatCreateRequestError: "Impossible de créer la demande. Réessayez.",
     chatActionTitle: "Confirmer la demande",
     chatActionConfirm: "Envoyer à l'équipe",
     chatActionDismiss: "Pas maintenant",
     chatRequestCreated: "Demande envoyée — notre équipe s'en occupe.",
+    receptionChatPrompt: "Je souhaite parler à la réception",
     voiceStarting: "Démarrage",
     voiceListening: "J'écoute",
     voiceThinking: "Réflexion",
@@ -2105,7 +2297,7 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     nearbyViewAll: "Ver los {count} lugares",
     nearbyNoResults: "Sin resultados",
     nearbyBackToList: "Todos los lugares",
-
+    nearbySection: "Cerca",
 
     quickActionsSection: "Acciones rápidas",
     touchToAsk: "Toca para preguntar →",
@@ -2184,15 +2376,30 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowFoodNoteQ: "¿Tienes alguna nota para la cocina?",
     flowFoodNoteHint: "Opcional — alergias, peticiones especiales…",
     flowFoodConfirmQ: "Confirmar tu pedido",
+    flowMenuLoading: "Cargando…",
+    flowMenuEmpty: "No hay platos en el menú",
+    flowConfirmCategoryLabel: "Categoría",
 
     flowCatBreakfast: "Desayuno",
     flowCatBreakfastHint: "Bufé, tortilla, tostadas",
+    flowCatSoup: "Sopa",
+    flowCatSoupHint: "Sopas y entrantes calientes",
+    flowCatSalad: "Ensalada",
+    flowCatSaladHint: "Ensaladas frescas",
+    flowCatAppetizer: "Entrantes",
+    flowCatAppetizerHint: "Platos pequeños",
     flowCatLight: "Platos ligeros",
     flowCatLightHint: "Sándwiches, sopa, ensaladas",
     flowCatMain: "Platos principales",
     flowCatMainHint: "Pollo, pescado, pasta",
+    flowCatDessert: "Postres",
+    flowCatDessertHint: "Dulces",
+    flowCatSnack: "Snacks",
+    flowCatSnackHint: "Bocados rápidos",
     flowCatDrinks: "Bebidas",
     flowCatDrinksHint: "Té, café, zumo",
+    flowCatOther: "Otros",
+    flowCatOtherHint: "Más opciones",
 
     flowQty1: "1 porción",
     flowQty2: "2 porciones",
@@ -2323,6 +2530,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     myRequestsTitle: "Mis solicitudes",
     myRequestsSubtitle: "Sigue tus solicitudes de servicio",
     myRequestsEmpty: "Sin solicitudes aún",
+    reqTypeGeneral: "Solicitud general",
+    reqDetailCategory: "Categoría",
     reqStatusOpen: "Abierto",
     reqStatusInProgress: "En progreso",
     reqStatusResolved: "Completado",
@@ -2348,10 +2557,20 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     chatQuickSupport: "Necesito ayuda",
     chatQuickInfo: "Info del hotel",
     chatQuickActivity: "Me aburro",
+    chatModeIntroFood: "Tengo hambre y me gustaría pedir algo.",
+    chatModeIntroSupport: "Tengo una solicitud de soporte — ¿puede ayudarme?",
+    chatModeIntroCare: "Quiero compartir mis preferencias de estancia.",
+    chatSummaryPrefixFood: "Pedido de comida: ",
+    chatSummaryPrefixSupport: "Solicitud de soporte: ",
+    chatSummaryPrefixCare: "Preferencias del huésped: ",
+    chatSummaryFallback: "Chat guiado completado.",
+    chatCreateRequestCta: "Crear solicitud y avisar al equipo",
+    chatCreateRequestError: "No se pudo crear la solicitud. Inténtelo de nuevo.",
     chatActionTitle: "Confirmar solicitud",
     chatActionConfirm: "Enviar al equipo",
     chatActionDismiss: "Ahora no",
     chatRequestCreated: "Solicitud enviada — nuestro equipo atenderá pronto.",
+    receptionChatPrompt: "Quisiera hablar con recepción",
     voiceStarting: "Iniciando",
     voiceListening: "Escuchando",
     voiceThinking: "Pensando",

@@ -19,7 +19,7 @@ export function GuestNearbySection({ className }: GuestNearbySectionProps) {
   const s = getWelcomingStrings(welcomingLocale);
 
   return (
-    <section className={cn(dash.section, className)} aria-label={s.nearbySection}>
+    <section className={cn(dash.section, className)} aria-label={t.nearbySection}>
       <GuestNearbyExplorer places={HOTEL_CONFIG.nearbyPlaces} s={s} t={t} />
     </section>
   );

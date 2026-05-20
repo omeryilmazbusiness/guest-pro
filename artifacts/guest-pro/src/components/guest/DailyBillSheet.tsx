@@ -66,7 +66,7 @@ function LineRow({
       <div className="w-9 h-9 rounded-xl bg-zinc-50 flex items-center justify-center shrink-0 mt-0.5">
         <Icon className="w-4 h-4 text-zinc-500" strokeWidth={1.75} />
       </div>
-      <div className="flex-1 min-w-0 pr-2">
+      <div className="flex-1 min-w-0 pe-2">
         <p className="text-[14px] font-medium text-zinc-900 leading-snug">{line.description}</p>
         {line.quantity > 1 && unit && (
           <p className="text-[12px] text-zinc-400 mt-0.5">
@@ -138,7 +138,7 @@ export function DailyBillSheet({ open, onClose }: DailyBillSheetProps) {
             <button
               type="button"
               onClick={onClose}
-              className="p-2 -mr-1 text-zinc-300 hover:text-zinc-500 transition-colors rounded-full"
+              className="p-2 -me-1 text-zinc-300 hover:text-zinc-500 transition-colors rounded-full"
               aria-label={t.billClose}
             >
               <X className="w-5 h-5" />

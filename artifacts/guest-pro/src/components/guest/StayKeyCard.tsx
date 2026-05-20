@@ -21,7 +21,7 @@ export function StayKeyCard({
   firstName,
   lastName,
 }: StayKeyCardProps) {
-  const { t } = useLocale();
+  const { t, uiLocale } = useLocale();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
@@ -47,7 +47,7 @@ export function StayKeyCard({
   const formatDate = (d?: string) => {
     if (!d) return null;
     try {
-      return new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "short" }).format(
+      return new Intl.DateTimeFormat(uiLocale, { day: "numeric", month: "short" }).format(
         new Date(d),
       );
     } catch {

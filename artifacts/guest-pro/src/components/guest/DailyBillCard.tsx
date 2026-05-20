@@ -28,7 +28,7 @@ export function DailyBillCard() {
           onClick={() => setOpen(true)}
           className={cn(
             dash.card,
-            "w-full text-left border border-zinc-100 bg-gradient-to-br from-white to-zinc-50/90 shadow-sm px-3.5 py-2.5 flex items-center gap-3 active:scale-[0.99] hover:border-zinc-200 transition-all",
+            "w-full text-start border border-zinc-100 bg-gradient-to-br from-white to-zinc-50/90 shadow-sm px-3.5 py-2.5 flex items-center gap-3 active:scale-[0.99] hover:border-zinc-200 transition-all",
           )}
         >
           <span className={cn(dash.icon, "bg-zinc-900/[0.04] border border-zinc-100 flex items-center justify-center shrink-0")}>

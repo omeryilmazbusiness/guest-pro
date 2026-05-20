@@ -54,6 +54,7 @@ import {
 } from "@/lib/chat-api";
 import { AiCapacityPanel } from "@/components/chat/AiCapacityPanel";
 import { tFmt } from "@/lib/i18n";
+import { getGuestQuickActionLabel } from "@/lib/guest-quick-action-label";
 
 const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   "map-pin": MapPin,
@@ -162,16 +163,16 @@ export default function GuestChat() {
 
     if (mode === "food" || mode === "support" || mode === "care") {
       setActiveChatMode(mode);
-      const modeIntros: Record<string, string> = {
-        food: "Acıktım, bir şeyler sipariş etmek istiyorum.",
-        support: "Destek talebim var, yardımcı olur musunuz?",
-        care: "Hizmet tercihlerimi paylaşmak istiyorum.",
+      const intros: Record<string, string> = {
+        food: t.chatModeIntroFood,
+        support: t.chatModeIntroSupport,
+        care: t.chatModeIntroCare,
       };
-      setPendingAutoSend(modeIntros[mode]);
+      setPendingAutoSend(intros[mode]);
     }
 
     window.history.replaceState({}, "", window.location.pathname);
-  }, []);
+  }, [t.chatModeIntroFood, t.chatModeIntroSupport, t.chatModeIntroCare]);
 
   // ── Create session on mount ───────────────────────────────────────────────
   useEffect(() => {
@@ -460,12 +461,12 @@ export default function GuestChat() {
     };
 
     const summaryPrefixes = {
-      food: "Yemek siparişi: ",
-      support: "Destek talebi: ",
-      care: "Misafir tercihleri: ",
+      food: t.chatSummaryPrefixFood,
+      support: t.chatSummaryPrefixSupport,
+      care: t.chatSummaryPrefixCare,
     };
 
-    const rawSummary = lastAiMessages || "Rehberli sohbet tamamlandı.";
+    const rawSummary = lastAiMessages || t.chatSummaryFallback;
     const summary = (summaryPrefixes[activeChatMode] || "") + rawSummary.slice(0, 500);
 
     try {
@@ -476,20 +477,20 @@ export default function GuestChat() {
       });
       setShowRequestCreated(true);
     } catch {
-      toast.error("Talep oluşturulurken bir hata oluştu.");
+      toast.error(t.chatCreateRequestError);
     } finally {
       setIsCreatingRequest(false);
     }
-  }, [sessionId, activeChatMode, messages]);
+  }, [sessionId, activeChatMode, messages, t]);
 
   if (!isAuthenticated || user?.role !== "guest") return null;
 
   const visibleMessages = messages?.filter((m: Message) => m.role !== "system") ?? [];
 
   const MODE_CONFIG = {
-    food: { icon: UtensilsCrossed, label: "Yemek Siparişi", color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" },
-    support: { icon: Bell, label: "Destek Talebi", color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-200" },
-    care: { icon: Heart, label: "Care About Me", color: "text-rose-500", bg: "bg-rose-50", border: "border-rose-200" },
+    food: { icon: UtensilsCrossed, label: t.flowFoodLabel, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" },
+    support: { icon: Bell, label: t.flowSupportLabel, color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-200" },
+    care: { icon: Heart, label: t.flowCareLabel, color: "text-rose-500", bg: "bg-rose-50", border: "border-rose-200" },
     general: { icon: MessageSquare, label: "", color: "text-zinc-500", bg: "bg-zinc-50", border: "border-zinc-200" },
   };
   const modeConfig = MODE_CONFIG[activeChatMode];
@@ -510,7 +511,7 @@ export default function GuestChat() {
         <div className="max-w-3xl mx-auto px-4 h-[64px] flex items-center gap-3">
           <button
             onClick={() => { if (conv.isActive) conv.stopConversation(); setLocation("/guest"); }}
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-50 transition-all -ml-1"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-50 transition-all -ms-1"
             aria-label={t.backLabel}
           >
             <ArrowLeft className="w-5 h-5" />
@@ -668,7 +669,7 @@ export default function GuestChat() {
                     ) : (
                       <ModeIcon className="w-4 h-4" />
                     )}
-                    Talebi Oluştur ve Personeli Bildir
+                    {t.chatCreateRequestCta}
                   </button>
                 </div>
               );
@@ -678,7 +679,7 @@ export default function GuestChat() {
               <div className="flex justify-center py-2 animate-in fade-in slide-in-from-bottom-2 duration-400">
                 <div className="flex items-center gap-2 px-5 py-3 rounded-2xl text-[14px] font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">
                   <CheckCircle2 className="w-4 h-4" />
-                  Talebiniz iletildi, personelimiz yakında ilgilenecek.
+                  {t.chatRequestCreated}
                 </div>
               </div>
             )}
@@ -735,11 +736,11 @@ export default function GuestChat() {
                     return (
                       <button
                         key={action.id}
-                        onClick={() => handleSend(action.label)}
+                        onClick={() => handleSend(getGuestQuickActionLabel(action, t))}
                         className="shrink-0 snap-start bg-white border border-zinc-200 shadow-sm px-4 py-2.5 rounded-full text-[13px] font-medium text-zinc-600 hover:bg-zinc-50 hover:border-zinc-300 active:scale-95 transition-all whitespace-nowrap flex items-center gap-1.5"
                       >
                         <IconComponent className="w-3.5 h-3.5 text-zinc-400" />
-                        {action.label}
+                        {getGuestQuickActionLabel(action, t)}
                       </button>
                     );
                   })}

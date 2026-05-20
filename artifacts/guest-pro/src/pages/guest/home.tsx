@@ -123,11 +123,7 @@ export default function GuestHome() {
   const welcomingStrings = getWelcomingStrings(welcomingLocale);
 
   const openReceptionChat = () => {
-    const prompt =
-      uiLocale === "tr"
-        ? "Resepsiyon ile görüşmek istiyorum"
-        : "I'd like to speak with reception";
-    goToChat(prompt);
+    goToChat(t.receptionChatPrompt);
   };
 
   return (
@@ -135,7 +131,7 @@ export default function GuestHome() {
       <GuestDashboardHeader
         appName={branding?.appName || "Guest Pro"}
         t={t}
-        nearbyLabel={welcomingStrings.nearbySection}
+        nearbyLabel={t.nearbySection}
         showRequestsSection={myRequests !== undefined}
         onLogout={handleLogout}
       />
@@ -234,7 +230,7 @@ export default function GuestHome() {
             <span className="relative w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-sm">
               <Bot className="w-5 h-5 text-zinc-950" strokeWidth={1.5} />
             </span>
-            <span className="relative flex-1 text-left min-w-0">
+            <span className="relative flex-1 text-start min-w-0">
               <p className="font-serif text-[15px] font-medium text-white tracking-tight leading-snug">
                 {t.askSomethingTitle}
               </p>

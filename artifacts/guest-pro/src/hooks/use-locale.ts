@@ -59,10 +59,8 @@ export function useLocale(): LocaleContext {
   useEffect(() => {
     document.documentElement.dir  = dir;
     document.documentElement.lang = uiLocale;
-    return () => {
-      document.documentElement.dir  = "ltr";
-      document.documentElement.lang = "en";
-    };
+    // NOTE: Do not reset on unmount. During route transitions, unmount/mount
+    // order can cause a brief LTR flash in RTL locales.
   }, [dir, uiLocale]);
 
   return { voiceLocale, uiLocale, dir, t };

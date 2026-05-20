@@ -47,6 +47,7 @@ interface ServiceQuickActionsProps {
 }
 
 export function ServiceQuickActions({ onAction, t }: ServiceQuickActionsProps) {
+  const isRtl = typeof document !== "undefined" && document.documentElement.dir === "rtl";
   const titles: Record<QuickActionMode, string> = {
     food: t.quickActionFoodTitle,
     support: t.quickActionSupportTitle,
@@ -69,16 +70,21 @@ export function ServiceQuickActions({ onAction, t }: ServiceQuickActionsProps) {
               key={action.mode}
               type="button"
               onClick={() => onAction(action.mode)}
-              className={cn(dash.lightCard, action.cardBg, "w-full text-left group")}
+              className={cn(dash.lightCard, action.cardBg, "w-full text-start group")}
             >
               <span className="relative flex items-center gap-2.5 px-3 py-2.5">
                 <span
-                  className={cn("absolute left-0 top-2 bottom-2 w-[3px] rounded-full", action.accent)}
+                  className={cn(
+                    "absolute top-2 bottom-2 w-[3px] rounded-full",
+                    isRtl ? "right-0" : "left-0",
+                    action.accent,
+                  )}
                   aria-hidden
                 />
                 <span
                   className={cn(
-                    "ml-0.5 w-9 h-9 rounded-xl border flex items-center justify-center shrink-0",
+                    "w-9 h-9 rounded-xl border flex items-center justify-center shrink-0",
+                    isRtl ? "mr-0.5" : "ml-0.5",
                     action.iconWrap,
                   )}
                 >

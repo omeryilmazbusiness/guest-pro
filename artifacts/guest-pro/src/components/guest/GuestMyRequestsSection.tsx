@@ -13,17 +13,19 @@ import { cn } from "@/lib/utils";
 import { dash } from "@/lib/guest-dashboard-ui";
 import { GUEST_SECTION_IDS } from "@/lib/guest-dashboard-nav";
 import type { GuestTranslations } from "@/lib/i18n";
+import { useLocale } from "@/hooks/use-locale";
 import { deleteMyServiceRequest, type ServiceRequest } from "@/lib/service-requests";
 import { buildDisplaySummary } from "@/lib/request-display";
 
-function timeAgo(isoString: string): string {
+function timeAgo(isoString: string, locale: string): string {
   const diff = Date.now() - new Date(isoString).getTime();
   const mins = Math.floor(diff / 60_000);
   const hours = Math.floor(mins / 60);
   const days = Math.floor(hours / 24);
-  if (days > 0) return `${days}d`;
-  if (hours > 0) return `${hours}h`;
-  return `${Math.max(1, mins)}m`;
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+  if (days > 0) return rtf.format(-days, "day");
+  if (hours > 0) return rtf.format(-hours, "hour");
+  return rtf.format(-Math.max(1, mins), "minute");
 }
 
 interface RequestGroupConfig {
@@ -66,7 +68,7 @@ const REQUEST_GROUP_CONFIGS: RequestGroupConfig[] = [
   },
   {
     requestType: "GENERAL_SERVICE_REQUEST",
-    label: (t) => t.myRequestsTitle,
+    label: (t) => t.reqTypeGeneral,
     icon: LayoutGrid,
     iconColor: "text-zinc-600",
     iconBg: "bg-zinc-50 border-zinc-100",
@@ -98,7 +100,8 @@ function RequestCard({
     REQUEST_GROUP_CONFIGS[3];
   const sc = STATUS_CONFIG[request.status] ?? STATUS_CONFIG.open;
   const Icon = gc.icon;
-  const displayText = buildDisplaySummary(request);
+  const { uiLocale } = useLocale();
+  const displayText = buildDisplaySummary(request, t);
 
   const [deleteState, setDeleteState] = useState<"idle" | "confirming" | "deleting">("idle");
 
@@ -125,7 +128,7 @@ function RequestCard({
           <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", sc.dot)} />
           <p className={cn("text-[11px] font-semibold", sc.text)}>{sc.label(t)}</p>
           <span className="text-[11px] text-zinc-300">·</span>
-          <p className="text-[11px] text-zinc-400">{timeAgo(request.createdAt)}</p>
+          <p className="text-[11px] text-zinc-400">{timeAgo(request.createdAt, uiLocale)}</p>
         </div>
       </div>
 
@@ -177,6 +180,7 @@ function GuestRequestGroups({
   t: GuestTranslations;
   onDelete?: (id: number) => void;
 }) {
+  const isRtl = typeof document !== "undefined" && document.documentElement.dir === "rtl";
   const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set());
 
   const grouped = useMemo(() => {
@@ -209,23 +213,28 @@ function GuestRequestGroups({
         const items = grouped[group.requestType] ?? [];
         const isExpanded = expandedTypes.has(group.requestType);
         const Icon = group.icon;
-        const newestSummary = items[0]?.summary ?? "";
+        const newestSummary = items[0] ? buildDisplaySummary(items[0], t) : "";
 
         return (
           <article key={group.requestType} className={cn(dash.lightCard, group.cardTint)}>
             <button
               type="button"
               onClick={() => toggle(group.requestType)}
-              className="relative w-full text-left"
+              className="relative w-full text-start"
             >
               <span className="flex items-center gap-2.5 px-3 py-2.5">
                 <span
-                  className={cn("absolute left-0 top-2 bottom-2 w-[3px] rounded-full", group.accent)}
+                  className={cn(
+                    "absolute top-2 bottom-2 w-[3px] rounded-full",
+                    isRtl ? "right-0" : "left-0",
+                    group.accent,
+                  )}
                   aria-hidden
                 />
                 <span
                   className={cn(
-                    "ml-0.5 w-9 h-9 rounded-xl border flex items-center justify-center shrink-0",
+                    "w-9 h-9 rounded-xl border flex items-center justify-center shrink-0",
+                    isRtl ? "mr-0.5" : "ml-0.5",
                     group.iconBg,
                   )}
                 >

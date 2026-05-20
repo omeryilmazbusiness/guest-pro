@@ -58,7 +58,7 @@ export function GuestDashboardHeader({
               <button
                 type="button"
                 onClick={() => setDrawerOpen(true)}
-                className="-ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-zinc-700 transition-colors hover:bg-zinc-100 active:scale-95"
+                className="-ms-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-zinc-700 transition-colors hover:bg-zinc-100 active:scale-95"
                 aria-label={t.navMenuOpen}
                 aria-expanded={drawerOpen}
                 aria-controls="guest-mobile-nav"
@@ -74,7 +74,7 @@ export function GuestDashboardHeader({
           <button
             type="button"
             onClick={onLogout}
-            className="-mr-1 shrink-0 p-2 text-zinc-400 transition-colors hover:text-zinc-700"
+            className="-me-1 shrink-0 p-2 text-zinc-400 transition-colors hover:text-zinc-700"
             aria-label={t.logout}
           >
             <LogOut className="h-4 w-4" />

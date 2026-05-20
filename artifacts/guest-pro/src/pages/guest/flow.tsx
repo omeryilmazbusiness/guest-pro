@@ -312,7 +312,7 @@ function buildSummary(
     return parts.length > 0 ? parts.join(", ") : t.flowCareLabel;
   }
 
-  return "Service request";
+  return t.reqTypeGeneral;
 }
 
 function buildStructuredData(
@@ -399,7 +399,7 @@ function OptionButton({
   return (
     <button
       onClick={() => onSelect(option.value, option.label)}
-      className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl border-2 text-left transition-all active:scale-[0.97] touch-manipulation ${
+      className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl border-2 text-start transition-all active:scale-[0.97] touch-manipulation ${
         selected
           ? "border-zinc-900 bg-zinc-900 text-white shadow-md"
           : dimmed
@@ -487,7 +487,7 @@ function CustomInputArea({
         />
       </div>
       {value.trim() && activeLabel && (
-        <p className="text-[11px] text-zinc-500 font-medium mt-2 ml-7">{activeLabel}</p>
+        <p className="text-[11px] text-zinc-500 font-medium mt-2 ms-7">{activeLabel}</p>
       )}
     </div>
   );
@@ -527,7 +527,7 @@ function ConfirmCard({
     if (cat) {
       const catStep = steps.find((s) => s.id === "category");
       const catOpt = catStep?.options?.find((o) => o.value === cat);
-      entries.push({ label: "Category", value: catOpt?.label ?? cat });
+      entries.push({ label: t.flowConfirmCategoryLabel, value: catOpt?.label ?? cat });
     }
     const item = pick("item");
     if (item) entries.push({ label: t.flowSumFood, value: item });
@@ -648,7 +648,7 @@ export default function GuidedFlowPage() {
                   : (item.description ?? item.portionInfo ?? item.allergenNotes ?? undefined),
               icon: Utensils,
             }))
-          : [{ value: "__empty__", label: menuLoading ? "Yükleniyor…" : "Menüde ürün yok", icon: Utensils }];
+          : [{ value: "__empty__", label: menuLoading ? t.flowMenuLoading : t.flowMenuEmpty, icon: Utensils }];
       return { ...step, options };
     }
     return step;
@@ -789,7 +789,7 @@ export default function GuidedFlowPage() {
         <div className="max-w-lg mx-auto px-4 h-[60px] flex items-center gap-3">
           <button
             onClick={handleBack}
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-50 transition-all -ml-1"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-50 transition-all -ms-1"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>

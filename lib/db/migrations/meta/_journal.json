@@ -29,6 +29,13 @@
       "when": 1777496400000,
       "tag": "0003_staff_tasks",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1777496500000,
+      "tag": "0004_restaurant_menu_i18n",
+      "breakpoints": true
     }
   ]
 }

@@ -12,17 +12,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-function isReceptionAction(action: QuickAction): boolean {
-  const cat = action.category.toLowerCase();
-  const label = action.label.toLowerCase();
-  return (
-    cat.includes("reception") ||
-    label.includes("reception") ||
-    label.includes("resepsiyon") ||
-    action.icon === "phone"
-  );
-}
-
 interface GuestHotelQuickLinksProps {
   quickActions?: QuickAction[];
   onReceptionChat: () => void;
@@ -32,8 +21,7 @@ export function GuestHotelQuickLinks({ quickActions, onReceptionChat }: GuestHot
   const { t } = useLocale();
   const [moreOpen, setMoreOpen] = useState(false);
 
-  const receptionAction = quickActions?.find(isReceptionAction);
-  const receptionLabel = receptionAction?.label ?? t.receptionLiveTitle;
+  const receptionLabel = t.receptionLiveTitle;
 
   return (
     <>
@@ -48,7 +36,7 @@ export function GuestHotelQuickLinks({ quickActions, onReceptionChat }: GuestHot
             onClick={onReceptionChat}
             className={cn(
               "relative overflow-hidden rounded-2xl border border-zinc-200 bg-white",
-              "px-3.5 py-3 text-left shadow-sm",
+              "px-3.5 py-3 text-start shadow-sm",
               "hover:border-zinc-300 hover:shadow-md active:scale-[0.99] transition-all duration-200 group",
             )}
           >
@@ -87,7 +75,7 @@ export function GuestHotelQuickLinks({ quickActions, onReceptionChat }: GuestHot
             onClick={() => setMoreOpen(true)}
             className={cn(
               "relative overflow-hidden rounded-2xl border border-zinc-100 bg-zinc-50/60",
-              "px-3.5 py-3 text-left shadow-sm",
+              "px-3.5 py-3 text-start shadow-sm",
               "hover:bg-white hover:border-zinc-200 hover:shadow-md active:scale-[0.99] transition-all duration-200 group",
             )}
           >

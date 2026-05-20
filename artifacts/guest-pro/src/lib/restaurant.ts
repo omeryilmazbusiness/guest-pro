@@ -123,10 +123,12 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 export async function listMenuItems(params?: {
   menuType?: MenuType;
   date?: string;
+  lang?: string;
 }): Promise<RestaurantMenuItem[]> {
   const url = new URL("/api/restaurant/menu", window.location.origin);
   if (params?.menuType) url.searchParams.set("menuType", params.menuType);
   if (params?.date) url.searchParams.set("date", params.date);
+  if (params?.lang) url.searchParams.set("lang", params.lang);
   return apiFetch<RestaurantMenuItem[]>(url.pathname + url.search);
 }
 

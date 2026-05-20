@@ -9,11 +9,12 @@
  * so the static fallback in flow.tsx can take over.
  */
 import { useQuery } from "@tanstack/react-query";
-import { listMenuItems, MENU_CATEGORY_LABELS, type MenuCategory } from "@/lib/restaurant";
+import { listMenuItems, type MenuCategory } from "@/lib/restaurant";
 import type { LucideIcon } from "lucide-react";
 import {
   Sunrise, UtensilsCrossed, Leaf, Coffee, Utensils,
 } from "lucide-react";
+import { useLocale } from "@/hooks/use-locale";
 
 // ── Category → icon map ───────────────────────────────────────────────────────
 
@@ -75,11 +76,12 @@ export interface UseGuestMenuResult {
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
 export function useGuestMenu(): UseGuestMenuResult {
+  const { t, uiLocale } = useLocale();
   const today = new Date().toISOString().split("T")[0]!;
 
   const dailyQ = useQuery({
-    queryKey: ["guest-menu-daily", today],
-    queryFn: () => listMenuItems({ menuType: "DAILY", date: today }),
+    queryKey: ["guest-menu-daily", today, uiLocale],
+    queryFn: () => listMenuItems({ menuType: "DAILY", date: today, lang: uiLocale }),
     staleTime: 5 * 60_000,
     retry: 1,
     // Never throw — fallback to [] on error
@@ -87,8 +89,8 @@ export function useGuestMenu(): UseGuestMenuResult {
   });
 
   const roomQ = useQuery({
-    queryKey: ["guest-menu-room-service"],
-    queryFn: () => listMenuItems({ menuType: "ROOM_SERVICE" }),
+    queryKey: ["guest-menu-room-service", uiLocale],
+    queryFn: () => listMenuItems({ menuType: "ROOM_SERVICE", lang: uiLocale }),
     staleTime: 5 * 60_000,
     retry: 1,
     throwOnError: false,
@@ -133,7 +135,24 @@ export function useGuestMenu(): UseGuestMenuResult {
     (k) => (grouped[k]?.length ?? 0) > 0
   ).map((k) => ({
     key:       k,
-    label:     MENU_CATEGORY_LABELS[k],
+    label:
+      k === "BREAKFAST"
+        ? t.flowCatBreakfast
+        : k === "SOUP"
+          ? t.flowCatSoup
+          : k === "SALAD"
+            ? t.flowCatSalad
+            : k === "APPETIZER"
+              ? t.flowCatAppetizer
+              : k === "MAIN_COURSE"
+                ? t.flowCatMain
+                : k === "DESSERT"
+                  ? t.flowCatDessert
+                  : k === "SNACK"
+                    ? t.flowCatSnack
+                    : k === "BEVERAGE"
+                      ? t.flowCatDrinks
+                      : t.flowCatOther,
     itemCount: grouped[k]!.length,
     icon:      CATEGORY_ICONS[k],
   }));

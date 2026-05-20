@@ -29,7 +29,7 @@ import {
   MENU_CATEGORIES,
   MENU_TYPES,
 } from "@workspace/db";
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc, sql } from "drizzle-orm";
 import { requireAuth, requireStaff } from "../middlewares/requireAuth";
 import { analyzeGuestCareForRestaurant } from "../lib/gemini";
 import { logger } from "../lib/logger";
@@ -113,6 +113,10 @@ router.get("/restaurant/menu", async (req: Request, res: Response): Promise<void
   const { hotelId } = payload;
   const isStaff = payload.role === "manager" || payload.role === "personnel";
   const { menuType, date: dateParam } = req.query;
+  const lang =
+    typeof req.query.lang === "string" && req.query.lang.trim()
+      ? req.query.lang.trim().toLowerCase()
+      : undefined;
 
   if (isStaff) {
     // Staff: return everything (active + inactive) for management UI
@@ -150,7 +154,24 @@ router.get("/restaurant/menu", async (req: Request, res: Response): Promise<void
     conditions.push(eq(restaurantMenuItemsTable.availableDate, dateToUse));
   }
   const items = await db
-    .select()
+    .select({
+      id: restaurantMenuItemsTable.id,
+      hotelId: restaurantMenuItemsTable.hotelId,
+      name: sql<string>`COALESCE(restaurant_menu_items.name_i18n ->> ${lang ?? ""}, ${restaurantMenuItemsTable.name})`,
+      description: sql<string | null>`COALESCE(restaurant_menu_items.description_i18n ->> ${lang ?? ""}, ${restaurantMenuItemsTable.description})`,
+      category: restaurantMenuItemsTable.category,
+      menuType: restaurantMenuItemsTable.menuType,
+      availableDate: restaurantMenuItemsTable.availableDate,
+      priceAmount: restaurantMenuItemsTable.priceAmount,
+      currency: restaurantMenuItemsTable.currency,
+      isActive: restaurantMenuItemsTable.isActive,
+      allergenNotes: restaurantMenuItemsTable.allergenNotes,
+      portionInfo: restaurantMenuItemsTable.portionInfo,
+      sortOrder: restaurantMenuItemsTable.sortOrder,
+      createdByUserId: restaurantMenuItemsTable.createdByUserId,
+      createdAt: restaurantMenuItemsTable.createdAt,
+      updatedAt: restaurantMenuItemsTable.updatedAt,
+    })
     .from(restaurantMenuItemsTable)
     .where(and(...conditions))
     .orderBy(asc(restaurantMenuItemsTable.sortOrder), asc(restaurantMenuItemsTable.name));

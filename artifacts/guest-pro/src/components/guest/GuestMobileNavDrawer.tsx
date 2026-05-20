@@ -8,6 +8,7 @@ import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { GuestDashboardNavItem } from "@/lib/guest-dashboard-nav";
 import { GuestProLogo } from "@/components/GuestProLogo";
+import { useLocale } from "@/hooks/use-locale";
 
 const DRAWER_EASE = "duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]";
 
@@ -30,6 +31,7 @@ export function GuestMobileNavDrawer({
   closeLabel,
   onSelectItem,
 }: GuestMobileNavDrawerProps) {
+  const { dir } = useLocale();
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -70,9 +72,10 @@ export function GuestMobileNavDrawer({
         role="navigation"
         aria-label={menuTitle}
         className={cn(
-          "absolute inset-y-0 left-0 flex w-[min(18.5rem,86vw)] flex-col bg-zinc-950 text-white shadow-2xl outline-none",
+          "absolute inset-y-0 flex w-[min(18.5rem,86vw)] flex-col bg-zinc-950 text-white shadow-2xl outline-none",
+          dir === "rtl" ? "right-0" : "left-0",
           "pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]",
-          "animate-in slide-in-from-left",
+          dir === "rtl" ? "animate-in slide-in-from-right" : "animate-in slide-in-from-left",
           DRAWER_EASE,
         )}
         onClick={(e) => e.stopPropagation()}
@@ -108,9 +111,11 @@ export function GuestMobileNavDrawer({
                   type="button"
                   onClick={() => onSelectItem(item.sectionId)}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors",
+                    "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-start transition-colors",
                     "hover:bg-white/8 active:bg-white/12 active:scale-[0.99]",
-                    "animate-in fade-in slide-in-from-left-2 duration-300",
+                    dir === "rtl"
+                      ? "animate-in fade-in slide-in-from-right-2 duration-300"
+                      : "animate-in fade-in slide-in-from-left-2 duration-300",
                   )}
                   style={{ animationDelay: `${Math.min(index * 35, 280)}ms` }}
                 >

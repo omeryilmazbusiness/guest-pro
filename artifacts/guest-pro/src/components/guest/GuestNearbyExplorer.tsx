@@ -39,7 +39,7 @@ function PlaceRow({
     <button
       type="button"
       onClick={() => onSelect(place)}
-      className="group flex w-full items-center gap-2.5 rounded-xl border border-zinc-100 bg-white px-3 py-2.5 text-left transition-all hover:border-zinc-200 hover:shadow-sm active:scale-[0.99]"
+      className="group flex w-full items-center gap-2.5 rounded-xl border border-zinc-100 bg-white px-3 py-2.5 text-start transition-all hover:border-zinc-200 hover:shadow-sm active:scale-[0.99]"
     >
       <NearbyPlaceTypeIcon type={place.type} size="sm" />
       <span className="min-w-0 flex-1">
@@ -127,7 +127,7 @@ export function GuestNearbyExplorer({ places, s, t, className }: GuestNearbyExpl
         <button
           type="button"
           onClick={openList}
-          className="flex w-full items-start gap-2.5 border-b border-zinc-100/80 px-3.5 pt-3 pb-2 text-left transition-colors hover:bg-zinc-50/50"
+          className="flex w-full items-start gap-2.5 border-b border-zinc-100/80 px-3.5 pt-3 pb-2 text-start transition-colors hover:bg-zinc-50/50"
         >
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-teal-100 bg-teal-50">
             <MapPin className="h-4 w-4 text-teal-600" strokeWidth={1.75} />
@@ -145,7 +145,7 @@ export function GuestNearbyExplorer({ places, s, t, className }: GuestNearbyExpl
               key={place.name}
               type="button"
               onClick={() => openDetail(place)}
-              className="flex w-full items-center gap-2 rounded-lg bg-zinc-50/80 px-2 py-1.5 text-left transition-colors hover:bg-white hover:shadow-sm active:scale-[0.99]"
+              className="flex w-full items-center gap-2 rounded-lg bg-zinc-50/80 px-2 py-1.5 text-start transition-colors hover:bg-white hover:shadow-sm active:scale-[0.99]"
             >
               <NearbyPlaceTypeIcon type={place.type} size="sm" />
               <span className="min-w-0 flex-1">
@@ -186,7 +186,7 @@ export function GuestNearbyExplorer({ places, s, t, className }: GuestNearbyExpl
                 {t.nearbyBackToList}
               </button>
             ) : (
-              <div className="min-w-0 flex-1 pl-1">
+              <div className="min-w-0 flex-1 ps-1">
                 <h2 className="text-[16px] font-semibold tracking-tight text-zinc-900">
                   {s.nearbySection}
                 </h2>
@@ -211,13 +211,20 @@ export function GuestNearbyExplorer({ places, s, t, className }: GuestNearbyExpl
             <>
               <div className="shrink-0 space-y-2.5 border-b border-zinc-50 px-4 py-3">
                 <label className="relative block">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                  <Search
+                    className={cn(
+                      "pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400",
+                      typeof document !== "undefined" && document.documentElement.dir === "rtl"
+                        ? "right-3"
+                        : "left-3",
+                    )}
+                  />
                   <input
                     type="search"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={t.nearbySearchPlaceholder}
-                    className="h-10 w-full rounded-xl border border-zinc-200 bg-zinc-50/80 pl-9 pr-3 text-[14px] text-zinc-900 placeholder:text-zinc-400 focus:border-teal-300/60 focus:outline-none focus:ring-2 focus:ring-teal-500/25"
+                    className="h-10 w-full rounded-xl border border-zinc-200 bg-zinc-50/80 ps-9 pe-3 text-[14px] text-zinc-900 placeholder:text-zinc-400 focus:border-teal-300/60 focus:outline-none focus:ring-2 focus:ring-teal-500/25"
                   />
                 </label>
                 <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">

@@ -54,23 +54,77 @@ function pack(lang: string | undefined, firstName?: string): AiCapacityFallbackP
         { id: "care", label: "Care About Me", href: "/guest/flow?mode=care" },
       ],
     },
+    ar: {
+      guestText: (n) =>
+        `${n}اكتملت سعة الدردشة الذكية اليوم — حاول غداً. للمساعدة الفورية استخدم الإجراءات السريعة أدناه.`,
+      options: ["طلب طعام", "طلب دعم", "معلومات الفندق", "تفضيلاتي"],
+      routes: [
+        { id: "food", label: "طلب طعام", href: "/guest/flow?mode=food" },
+        { id: "support", label: "طلب دعم", href: "/guest/flow?mode=support" },
+        { id: "info", label: "معلومات الفندق", href: "/guest/chat", chatMessage: "معلومات عن خدمات الفندق" },
+        { id: "care", label: "اعتنِ بي", href: "/guest/flow?mode=care" },
+      ],
+    },
+    ru: {
+      guestText: (n) =>
+        `${n}лимит ИИ-чата на сегодня исчерпан — попробуйте завтра. Для срочной помощи используйте быстрые действия ниже.`,
+      options: ["Заказ еды", "Поддержка", "Инфо об отеле", "Мои предпочтения"],
+      routes: [
+        { id: "food", label: "Заказ еды", href: "/guest/flow?mode=food" },
+        { id: "support", label: "Поддержка", href: "/guest/flow?mode=support" },
+        { id: "info", label: "Инфо об отеле", href: "/guest/chat", chatMessage: "Услуги и часы работы отеля" },
+        { id: "care", label: "Позаботьтесь обо мне", href: "/guest/flow?mode=care" },
+      ],
+    },
+    de: {
+      guestText: (n) =>
+        `${n}die KI-Chat-Kapazität für heute ist erschöpft. Bitte nutzen Sie die Schnellaktionen unten.`,
+      options: ["Essen bestellen", "Support", "Hotelinfo", "Präferenzen"],
+      routes: [
+        { id: "food", label: "Essen bestellen", href: "/guest/flow?mode=food" },
+        { id: "support", label: "Support", href: "/guest/flow?mode=support" },
+        { id: "info", label: "Hotelinfo", href: "/guest/chat", chatMessage: "Hotel services and hours" },
+        { id: "care", label: "Care About Me", href: "/guest/flow?mode=care" },
+      ],
+    },
+    fr: {
+      guestText: (n) =>
+        `${n}la capacité de chat IA est pleine pour aujourd'hui — réessayez demain. Utilisez les actions rapides ci-dessous.`,
+      options: ["Commander", "Assistance", "Infos hôtel", "Mes préférences"],
+      routes: [
+        { id: "food", label: "Commander", href: "/guest/flow?mode=food" },
+        { id: "support", label: "Assistance", href: "/guest/flow?mode=support" },
+        { id: "info", label: "Infos hôtel", href: "/guest/chat", chatMessage: "Services et horaires de l'hôtel" },
+        { id: "care", label: "Prenez soin de moi", href: "/guest/flow?mode=care" },
+      ],
+    },
+    es: {
+      guestText: (n) =>
+        `${n}la capacidad de chat IA de hoy está llena — inténtelo mañana. Use las acciones rápidas abajo.`,
+      options: ["Pedir comida", "Soporte", "Info del hotel", "Mis preferencias"],
+      routes: [
+        { id: "food", label: "Pedir comida", href: "/guest/flow?mode=food" },
+        { id: "support", label: "Soporte", href: "/guest/flow?mode=support" },
+        { id: "info", label: "Info del hotel", href: "/guest/chat", chatMessage: "Servicios y horarios del hotel" },
+        { id: "care", label: "Cuídame", href: "/guest/flow?mode=care" },
+      ],
+    },
   };
 
-  const p = l.startsWith("tr")
-    ? packs.tr!
-    : l.startsWith("de")
-      ? {
-          guestText: (n: string) =>
-            `${n}die KI-Chat-Kapazität für heute ist erschöpft. Bitte nutzen Sie die Schnellaktionen unten.`,
-          options: ["Essen bestellen", "Support", "Hotelinfo", "Präferenzen"] as [
-            string,
-            string,
-            string,
-            string,
-          ],
-          routes: packs.en!.routes,
-        }
-      : packs.en!;
+  const key = l.startsWith("tr")
+    ? "tr"
+    : l.startsWith("ar")
+      ? "ar"
+      : l.startsWith("ru")
+        ? "ru"
+        : l.startsWith("de")
+          ? "de"
+          : l.startsWith("fr")
+            ? "fr"
+            : l.startsWith("es")
+              ? "es"
+              : "en";
+  const p = packs[key] ?? packs.en!;
 
   const guestText = p.guestText(name);
   const replyOptions = [...p.options];

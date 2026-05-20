@@ -159,8 +159,20 @@ export function guestAiErrorMessage(
     if (l.startsWith("tr")) {
       return "Yapay zeka asistanı şu an yoğun. Lütfen bir dakika sonra tekrar deneyin veya resepsiyonu arayın.";
     }
+    if (l.startsWith("ar")) {
+      return "مساعد الذكاء الاصطناعي مشغول حالياً. يرجى المحاولة بعد دقيقة أو الاتصال بالاستقبال.";
+    }
+    if (l.startsWith("ru")) {
+      return "ИИ-ассистент сейчас занят. Повторите попытку через минуту или позвоните на ресепшен.";
+    }
     if (l.startsWith("de")) {
       return "Der KI-Assistent ist gerade ausgelastet. Bitte versuchen Sie es in einer Minute erneut.";
+    }
+    if (l.startsWith("fr")) {
+      return "Le concierge IA est occupé. Réessayez dans une minute ou appelez la réception.";
+    }
+    if (l.startsWith("es")) {
+      return "El conserje IA está ocupado. Inténtelo de nuevo en un minuto o llame a recepción.";
     }
     return "The AI concierge is busy right now. Please try again in a minute or call reception.";
   }
@@ -168,10 +180,40 @@ export function guestAiErrorMessage(
     if (l.startsWith("tr")) {
       return "Asistan geçici olarak kullanılamıyor. Lütfen resepsiyonla iletişime geçin.";
     }
+    if (l.startsWith("ar")) {
+      return "المساعد غير متاح مؤقتاً. يرجى الاتصال بالاستقبال.";
+    }
+    if (l.startsWith("ru")) {
+      return "Ассистент временно недоступен. Обратитесь на ресепшен.";
+    }
+    if (l.startsWith("de")) {
+      return "Der Assistent ist vorübergehend nicht verfügbar. Bitte kontaktieren Sie die Rezeption.";
+    }
+    if (l.startsWith("fr")) {
+      return "L'assistant est temporairement indisponible. Contactez la réception.";
+    }
+    if (l.startsWith("es")) {
+      return "El asistente no está disponible temporalmente. Contacte con recepción.";
+    }
     return "The assistant is temporarily unavailable. Please contact reception.";
   }
   if (l.startsWith("tr")) {
     return "Asistan şu an yanıt veremiyor. Lütfen tekrar deneyin.";
+  }
+  if (l.startsWith("ar")) {
+    return "المساعد لا يستطيع الرد حالياً. يرجى المحاولة مرة أخرى.";
+  }
+  if (l.startsWith("ru")) {
+    return "Ассистент не может ответить. Попробуйте снова.";
+  }
+  if (l.startsWith("de")) {
+    return "Der Assistent kann gerade nicht antworten. Bitte erneut versuchen.";
+  }
+  if (l.startsWith("fr")) {
+    return "L'assistant ne peut pas répondre. Veuillez réessayer.";
+  }
+  if (l.startsWith("es")) {
+    return "El asistente no puede responder. Inténtelo de nuevo.";
   }
   return "The assistant could not respond. Please try again.";
 }

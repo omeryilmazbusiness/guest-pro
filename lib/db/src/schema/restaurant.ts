@@ -46,7 +46,14 @@ export const restaurantMenuItemsTable = pgTable("restaurant_menu_items", {
     .references(() => hotelsTable.id)
     .notNull(),
   name: text("name").notNull(),
+  /** Optional guest-facing translations by ui locale (e.g. { ar: \"...\" }). */
+  nameI18n: jsonb("name_i18n").$type<Record<string, string>>().notNull().default({}),
   description: text("description"),
+  /** Optional guest-facing translations by ui locale (e.g. { ar: \"...\" }). */
+  descriptionI18n: jsonb("description_i18n")
+    .$type<Record<string, string>>()
+    .notNull()
+    .default({}),
   category: text("category").$type<MenuCategory>().notNull().default("OTHER"),
   menuType: text("menu_type").$type<MenuType>().notNull().default("DAILY"),
   /** For DAILY items: the calendar date this item is available (YYYY-MM-DD).
