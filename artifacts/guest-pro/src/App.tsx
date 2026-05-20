@@ -14,13 +14,17 @@ import GuestAutoLogin from "@/pages/guest/auto-login";
 import GuestWelcoming from "@/pages/guest/welcoming";
 import PassportScanPage from "@/pages/guest/passport-scan";
 import RestaurantDashboard from "@/pages/restaurant/dashboard";
+import MarketingHomePage from "@/pages/marketing/MarketingHomePage";
+import { ROUTES } from "@/lib/app-routes";
 
 const queryClient = new QueryClient();
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Login} />
+      <Route path={ROUTES.login} component={Login} />
+      <Route path={ROUTES.marketingHomeAlias} component={MarketingHomePage} />
+      <Route path={ROUTES.marketingHome} component={MarketingHomePage} />
       <Route path="/manager" component={ManagerDashboard} />
       <Route path="/manager/guests/new" component={CreateGuest} />
       <Route path="/manager/settings" component={ManagerSettings} />

@@ -5,6 +5,7 @@
 
 import { useEffect } from "react";
 import { useLocation } from "wouter";
+import { ROUTES } from "@/lib/app-routes";
 import { useAuth } from "@/hooks/use-auth";
 import { isStaffRole } from "@/lib/permissions";
 import { CreateGuestSheet } from "@/components/manager/CreateGuestSheet";
@@ -14,7 +15,7 @@ export default function CreateGuest() {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!isAuthenticated) setLocation("/");
+    if (!isAuthenticated) setLocation(ROUTES.login);
     else if (user && !isStaffRole(user.role)) setLocation("/guest");
   }, [isAuthenticated, user, setLocation]);
 

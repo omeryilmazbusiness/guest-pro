@@ -52,3 +52,6 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+
+# UI/UX Pro Max (uipro) — local AI skill, not shipped to prod build
+.agent/

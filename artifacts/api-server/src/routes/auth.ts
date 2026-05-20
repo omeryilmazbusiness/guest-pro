@@ -314,7 +314,7 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
 router.get("/auth/google", async (req, res): Promise<void> => {
   if (!env.isGoogleConfigured) {
     const frontendBase = getFrontendBase(req);
-    res.redirect(`${frontendBase}/?error=google_not_configured`);
+    res.redirect(`${frontendBase}/login?error=google_not_configured`);
     return;
   }
 
@@ -343,31 +343,31 @@ router.get("/auth/google/callback", async (req, res): Promise<void> => {
   const { code, state, error } = req.query as Record<string, string>;
 
   if (error) {
-    res.redirect(`${frontendBase}/?error=google_denied`);
+    res.redirect(`${frontendBase}/login?error=google_denied`);
     return;
   }
 
   if (!state || !(await consumeOAuthState(state))) {
-    res.redirect(`${frontendBase}/?error=google_invalid_state`);
+    res.redirect(`${frontendBase}/login?error=google_invalid_state`);
     return;
   }
 
   if (!code) {
-    res.redirect(`${frontendBase}/?error=google_no_code`);
+    res.redirect(`${frontendBase}/login?error=google_no_code`);
     return;
   }
 
   const redirectUri = computeRedirectUri(req);
   const profile = await exchangeGoogleCode(code, redirectUri);
   if (!profile || !profile.email) {
-    res.redirect(`${frontendBase}/?error=google_profile_failed`);
+    res.redirect(`${frontendBase}/login?error=google_profile_failed`);
     return;
   }
 
   try {
     const [hotel] = await db.select().from(hotelsTable).limit(1);
     if (!hotel) {
-      res.redirect(`${frontendBase}/?error=google_no_hotel`);
+      res.redirect(`${frontendBase}/login?error=google_no_hotel`);
       return;
     }
 
@@ -392,10 +392,10 @@ router.get("/auth/google/callback", async (req, res): Promise<void> => {
       })
       .catch(() => {});
 
-    res.redirect(`${frontendBase}/?google_code=${encodeURIComponent(exchangeCode)}`);
+    res.redirect(`${frontendBase}/login?google_code=${encodeURIComponent(exchangeCode)}`);
   } catch (err) {
     logger.error({ err }, "Google OAuth callback error");
-    res.redirect(`${frontendBase}/?error=google_server_error`);
+    res.redirect(`${frontendBase}/login?error=google_server_error`);
   }
 });
 

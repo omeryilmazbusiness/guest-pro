@@ -15,6 +15,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useSearch } from "wouter";
+import { ROUTES } from "@/lib/app-routes";
 import { GuestProLogo } from "@/components/GuestProLogo";
 import { markFreshGuestLogin } from "@/hooks/use-install-prompt";
 import { useAuth } from "@/hooks/use-auth";
@@ -151,7 +152,7 @@ export default function GuestAutoLogin() {
           <div className="w-full flex flex-col gap-3">
             <Button
               className="w-full h-12 rounded-2xl bg-white text-zinc-900 font-medium hover:bg-zinc-100"
-              onClick={() => setLocation("/")}
+              onClick={() => setLocation(ROUTES.login)}
             >
               Sign in with Guest Key
             </Button>

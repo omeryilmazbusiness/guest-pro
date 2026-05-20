@@ -8,6 +8,7 @@ import {
   useLogout,
 } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
+import { ROUTES } from "@/lib/app-routes";
 import { Mic, Bot, ArrowRight, MessageSquare } from "lucide-react";
 import { GuestDashboardHeader } from "@/components/guest/GuestDashboardHeader";
 import { GUEST_SECTION_IDS } from "@/lib/guest-dashboard-nav";
@@ -53,7 +54,7 @@ export default function GuestHome() {
   // be part of the authenticated guest flow.
   useEffect(() => {
     if (!isAuthenticated) {
-      setLocation("/");
+      setLocation(ROUTES.login);
       return;
     }
     if (user?.role !== "guest") {

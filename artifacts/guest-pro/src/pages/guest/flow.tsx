@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { ROUTES } from "@/lib/app-routes";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -624,7 +625,7 @@ export default function GuidedFlowPage() {
   const [showCareBranch, setShowCareBranch] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) setLocation("/");
+    if (!isAuthenticated) setLocation(ROUTES.login);
     else if (user?.role !== "guest") setLocation("/manager");
   }, [isAuthenticated, user]);
 

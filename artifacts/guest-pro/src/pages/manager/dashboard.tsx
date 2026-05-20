@@ -31,6 +31,7 @@
 
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
+import { ROUTES } from "@/lib/app-routes";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -310,7 +311,7 @@ export default function ManagerDashboard() {
 
   // ── Auth guard
   useEffect(() => {
-    if (!isAuthenticated) setLocation("/");
+    if (!isAuthenticated) setLocation(ROUTES.login);
     else if (user && !isStaffRole(user.role)) setLocation("/guest");
     else if (staffScope?.scope === "restaurant_personnel") setLocation("/restaurant");
   }, [isAuthenticated, user, staffScope, setLocation]);

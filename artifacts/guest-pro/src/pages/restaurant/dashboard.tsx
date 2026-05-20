@@ -12,6 +12,7 @@
 
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
+import { ROUTES } from "@/lib/app-routes";
 import { useAuth } from "@/hooks/use-auth.tsx";
 import { useStaffLocale } from "@/hooks/use-staff-locale";
 import { tStaff } from "@/lib/staff-i18n";
@@ -91,7 +92,7 @@ export default function RestaurantDashboard() {
 
   // Auth guard — must be manager OR restaurant personnel
   useEffect(() => {
-    if (!isAuthenticated) { setLocation("/"); return; }
+    if (!isAuthenticated) { setLocation(ROUTES.login); return; }
     if (!user) return;
     const isManager = user.role === "manager";
     const isRestaurantPersonnel =

@@ -11,6 +11,7 @@ import {
   customFetch,
 } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
+import { ROUTES } from "@/lib/app-routes";
 import {
   LogOut,
   Send,
@@ -145,7 +146,7 @@ export default function GuestChat() {
   // ── Auth guard ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isAuthenticated) {
-      setLocation("/");
+      setLocation(ROUTES.login);
     } else if (user?.role !== "guest") {
       setLocation("/manager");
     }
