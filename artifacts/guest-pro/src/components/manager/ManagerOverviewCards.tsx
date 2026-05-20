@@ -87,14 +87,25 @@ function OverviewCardShell({
   action,
   children,
 }: OverviewCardShellProps) {
-  const Tag = onPress ? "button" : "div";
+  const handleKeyDown = onPress
+    ? (e: React.KeyboardEvent) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onPress();
+        }
+      }
+    : undefined;
+
   return (
-    <Tag
-      type={onPress ? "button" : undefined}
+    <div
+      role={onPress ? "button" : undefined}
+      tabIndex={onPress ? 0 : undefined}
       onClick={onPress}
+      onKeyDown={handleKeyDown}
       className={cn(
         "flex flex-col gap-2.5 rounded-2xl border border-zinc-200/80 bg-white px-3 py-3 text-left shadow-sm shadow-zinc-900/[0.03]",
-        onPress && "touch-manipulation transition-transform active:scale-[0.98] hover:border-zinc-300",
+        onPress &&
+          "cursor-pointer touch-manipulation transition-transform active:scale-[0.98] hover:border-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-2",
       )}
     >
       <div className="flex items-start justify-between gap-2">
@@ -115,7 +126,7 @@ function OverviewCardShell({
         {action}
       </div>
       {children}
-    </Tag>
+    </div>
   );
 }
 

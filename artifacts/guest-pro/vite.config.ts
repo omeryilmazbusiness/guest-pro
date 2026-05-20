@@ -4,7 +4,8 @@ import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
 
-const port = Number(process.env.PORT ?? "5173");
+// Vite dev port — do not use root .env PORT (API uses 3000).
+const port = Number(process.env.VITE_DEV_PORT ?? process.env.WEB_PORT ?? "5173");
 const basePath = process.env.BASE_PATH ?? "/";
 const startUrl = basePath === "/" ? "/" : `${basePath}/`;
 
@@ -70,7 +71,7 @@ export default defineConfig({
     fs: { strict: true, deny: ["**/.*"] },
     proxy: {
       "/api": {
-        target: "http://localhost:3000",
+        target: process.env.VITE_API_PROXY_TARGET ?? "http://localhost:3000",
         changeOrigin: true,
         secure: false,
       },

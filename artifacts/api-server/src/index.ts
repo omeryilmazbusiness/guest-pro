@@ -80,8 +80,15 @@ async function bootstrap(): Promise<void> {
     startScheduler();
   });
 
-  server.on("error", (err) => {
-    logger.fatal({ err }, "HTTP server error");
+  server.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "EADDRINUSE") {
+      logger.fatal(
+        { port, err },
+        `Port ${port} is already in use. Stop the other process or run: pnpm predev`,
+      );
+    } else {
+      logger.fatal({ err }, "HTTP server error");
+    }
     process.exit(1);
   });
 }

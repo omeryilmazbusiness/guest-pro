@@ -4,7 +4,15 @@
 
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { Briefcase, Users, DoorOpen, Bell, TrendingUp, type LucideIcon } from "lucide-react";
+import {
+  Briefcase,
+  ClipboardList,
+  Users,
+  DoorOpen,
+  Bell,
+  TrendingUp,
+  type LucideIcon,
+} from "lucide-react";
 import { PILL_SPRING } from "@/lib/manager-motion";
 import type { StaffTranslations } from "@/lib/staff-i18n";
 import type { ManagerDashboardTab } from "@/lib/manager-dashboard-nav";
@@ -43,6 +51,7 @@ export function ManagerAnimatedTabs({
   const tabs: TabDef[] = useMemo(
     () => [
       { key: "team", label: t.tabTeam, icon: Briefcase, count: teamCount, managerOnly: true },
+      { key: "tasks", label: t.tabTasks, icon: ClipboardList, count: 0, managerOnly: true },
       { key: "guests", label: t.tabGuests, icon: Users, count: guestCount },
       { key: "rooms", label: t.tabRooms, icon: DoorOpen, count: roomCount, managerHidden: true },
       { key: "requests", label: t.tabRequests, icon: Bell, count: requestCount, managerHidden: true },

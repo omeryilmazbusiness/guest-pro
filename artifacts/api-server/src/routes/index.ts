@@ -9,6 +9,7 @@ import requestsRouter from "./requests";
 import analyticsRouter from "./analytics";
 import welcomeAlertRouter from "./welcome-alert";
 import staffRouter from "./staff";
+import tasksRouter from "./tasks";
 import restaurantRouter from "./restaurant";
 import folioRouter from "./folio";
 
@@ -24,6 +25,7 @@ router.use(requestsRouter);
 router.use(analyticsRouter);
 router.use(welcomeAlertRouter);
 router.use(staffRouter);
+router.use(tasksRouter);
 router.use(restaurantRouter);
 router.use(folioRouter);
 

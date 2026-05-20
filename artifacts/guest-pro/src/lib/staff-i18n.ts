@@ -109,6 +109,47 @@ export interface StaffTranslations {
   tabRequests: string;
   tabSummary: string;
   tabTeam: string;
+  tabTasks: string;
+
+  // ── Tasks tab ─────────────────────────────────────────────────────────────
+  tasksDayView: string;
+  tasksWeekView: string;
+  tasksPrevDay: string;
+  tasksNextDay: string;
+  tasksPrevWeek: string;
+  tasksNextWeek: string;
+  tasksSearchPlaceholder: string;
+  tasksNewTask: string;
+  tasksNoTasks: string;
+  tasksNoEmployees: string;
+  tasksOverdueTitle: string;
+  tasksTitle: string;
+  tasksDescription: string;
+  tasksAssignee: string;
+  tasksStart: string;
+  tasksEnd: string;
+  tasksCreate: string;
+  tasksSave: string;
+  tasksComplete: string;
+  tasksDelete: string;
+  tasksEdit: string;
+  tasksDetail: string;
+  tasksStatusPending: string;
+  tasksStatusInProgress: string;
+  tasksStatusCompleted: string;
+  tasksStatusCancelled: string;
+  tasksCreated: string;
+  tasksUpdated: string;
+  tasksDeleted: string;
+  tasksFailed: string;
+  tasksTitleRequired: string;
+  tasksAssigneeRequired: string;
+  tasksEndAfterStart: string;
+  tasksSelectAssignee: string;
+  tasksSearchAssignee: string;
+  tasksDeleteConfirm: string;
+  tasksEmptyDescription: string;
+  tasksCreateHint: string;
 
   // ── Guest filter bar ──────────────────────────────────────────────────────
   searchPlaceholder: string;
@@ -326,6 +367,46 @@ const en: StaffTranslations = {
   tabRequests: "Requests",
   tabSummary: "Summary",
   tabTeam: "Employees",
+  tabTasks: "Tasks",
+
+  tasksDayView: "Day",
+  tasksWeekView: "Week",
+  tasksPrevDay: "Previous day",
+  tasksNextDay: "Next day",
+  tasksPrevWeek: "Previous week",
+  tasksNextWeek: "Next week",
+  tasksSearchPlaceholder: "Search tasks or assignee…",
+  tasksNewTask: "New task",
+  tasksNoTasks: "No tasks in this period",
+  tasksNoEmployees: "Add employees before scheduling tasks",
+  tasksOverdueTitle: "Overdue",
+  tasksTitle: "Title",
+  tasksDescription: "Description",
+  tasksAssignee: "Assignee",
+  tasksStart: "Start",
+  tasksEnd: "End",
+  tasksCreate: "Create task",
+  tasksSave: "Save",
+  tasksComplete: "Mark complete",
+  tasksDelete: "Delete",
+  tasksEdit: "Edit",
+  tasksDetail: "Task details",
+  tasksStatusPending: "Pending",
+  tasksStatusInProgress: "In progress",
+  tasksStatusCompleted: "Completed",
+  tasksStatusCancelled: "Cancelled",
+  tasksCreated: "Task created",
+  tasksUpdated: "Task updated",
+  tasksDeleted: "Task removed",
+  tasksFailed: "Task action failed",
+  tasksTitleRequired: "Title is required",
+  tasksAssigneeRequired: "Select an assignee",
+  tasksEndAfterStart: "End must be after start",
+  tasksSelectAssignee: "Select employee",
+  tasksSearchAssignee: "Search employees…",
+  tasksDeleteConfirm: "Remove this task from the schedule?",
+  tasksEmptyDescription: "No description",
+  tasksCreateHint: "Assign to an employee with a time window",
 
   searchPlaceholder: "Name, room, or key…",
   searchRoomPlaceholder: "Search room number…",
@@ -528,6 +609,46 @@ const tr: StaffTranslations = {
   tabRequests: "Talepler",
   tabSummary: "Özet",
   tabTeam: "Çalışanlar",
+  tabTasks: "Görevler",
+
+  tasksDayView: "Gün",
+  tasksWeekView: "Hafta",
+  tasksPrevDay: "Önceki gün",
+  tasksNextDay: "Sonraki gün",
+  tasksPrevWeek: "Önceki hafta",
+  tasksNextWeek: "Sonraki hafta",
+  tasksSearchPlaceholder: "Görev veya çalışan ara…",
+  tasksNewTask: "Yeni görev",
+  tasksNoTasks: "Bu dönemde görev yok",
+  tasksNoEmployees: "Görev planlamak için önce çalışan ekleyin",
+  tasksOverdueTitle: "Gecikmiş",
+  tasksTitle: "Başlık",
+  tasksDescription: "Açıklama",
+  tasksAssignee: "Atanan",
+  tasksStart: "Başlangıç",
+  tasksEnd: "Bitiş",
+  tasksCreate: "Görev oluştur",
+  tasksSave: "Kaydet",
+  tasksComplete: "Tamamlandı işaretle",
+  tasksDelete: "Sil",
+  tasksEdit: "Düzenle",
+  tasksDetail: "Görev detayı",
+  tasksStatusPending: "Bekliyor",
+  tasksStatusInProgress: "Devam ediyor",
+  tasksStatusCompleted: "Tamamlandı",
+  tasksStatusCancelled: "İptal",
+  tasksCreated: "Görev oluşturuldu",
+  tasksUpdated: "Görev güncellendi",
+  tasksDeleted: "Görev silindi",
+  tasksFailed: "Görev işlemi başarısız",
+  tasksTitleRequired: "Başlık zorunludur",
+  tasksAssigneeRequired: "Çalışan seçin",
+  tasksEndAfterStart: "Bitiş başlangıçtan sonra olmalı",
+  tasksSelectAssignee: "Çalışan seçin",
+  tasksSearchAssignee: "Çalışan ara…",
+  tasksDeleteConfirm: "Bu görevi programdan kaldırmak istiyor musunuz?",
+  tasksEmptyDescription: "Açıklama yok",
+  tasksCreateHint: "Çalışana zaman aralığı ile atayın",
 
   searchPlaceholder: "Ad, oda veya anahtar…",
   searchRoomPlaceholder: "Oda numarası ara…",
@@ -730,6 +851,46 @@ const ar: StaffTranslations = {
   tabRequests: "الطلبات",
   tabSummary: "الملخص",
   tabTeam: "الموظفون",
+  tabTasks: "المهام",
+
+  tasksDayView: "يوم",
+  tasksWeekView: "أسبوع",
+  tasksPrevDay: "اليوم السابق",
+  tasksNextDay: "اليوم التالي",
+  tasksPrevWeek: "الأسبوع السابق",
+  tasksNextWeek: "الأسبوع التالي",
+  tasksSearchPlaceholder: "ابحث عن مهمة أو موظف…",
+  tasksNewTask: "مهمة جديدة",
+  tasksNoTasks: "لا توجد مهام في هذه الفترة",
+  tasksNoEmployees: "أضف موظفين قبل جدولة المهام",
+  tasksOverdueTitle: "متأخرة",
+  tasksTitle: "العنوان",
+  tasksDescription: "الوصف",
+  tasksAssignee: "المكلف",
+  tasksStart: "البداية",
+  tasksEnd: "النهاية",
+  tasksCreate: "إنشاء مهمة",
+  tasksSave: "حفظ",
+  tasksComplete: "تعيين كمكتملة",
+  tasksDelete: "حذف",
+  tasksEdit: "تعديل",
+  tasksDetail: "تفاصيل المهمة",
+  tasksStatusPending: "قيد الانتظار",
+  tasksStatusInProgress: "قيد التنفيذ",
+  tasksStatusCompleted: "مكتملة",
+  tasksStatusCancelled: "ملغاة",
+  tasksCreated: "تم إنشاء المهمة",
+  tasksUpdated: "تم تحديث المهمة",
+  tasksDeleted: "تمت إزالة المهمة",
+  tasksFailed: "فشل إجراء المهمة",
+  tasksTitleRequired: "العنوان مطلوب",
+  tasksAssigneeRequired: "اختر موظفاً",
+  tasksEndAfterStart: "يجب أن تكون النهاية بعد البداية",
+  tasksSelectAssignee: "اختر موظفاً",
+  tasksSearchAssignee: "ابحث عن موظف…",
+  tasksDeleteConfirm: "إزالة هذه المهمة من الجدول؟",
+  tasksEmptyDescription: "لا يوجد وصف",
+  tasksCreateHint: "عيّن لموظف مع نافذة زمنية",
 
   searchPlaceholder: "الاسم أو الغرفة أو المفتاح…",
   searchRoomPlaceholder: "ابحث عن رقم الغرفة…",

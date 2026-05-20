@@ -85,6 +85,7 @@ import { WelcomeAreaAlertBanner } from "@/components/manager/WelcomeAreaAlertBan
 import { DailySummaryTab } from "@/components/manager/DailySummaryTab";
 import { QuickReportModal } from "@/components/manager/QuickReportModal";
 import { StaffTeamTab } from "@/components/manager/StaffTeamTab";
+import { TasksTab } from "@/components/manager/tasks/TasksTab";
 import { GuestSearchFilterBar } from "@/components/manager/GuestSearchFilterBar";
 import { CreateGuestSheet } from "@/components/manager/CreateGuestSheet";
 import { type StaffInfo } from "@/lib/staff";
@@ -211,7 +212,16 @@ export default function ManagerDashboard() {
   // ── Tab (reads ?tab= from URL for deep-linking; defaults to "team" for managers)
   const [activeTab, setActiveTab] = useState<ManagerDashboardTab>(() => {
     const param = new URLSearchParams(window.location.search).get("tab");
-    if (param === "guests" || param === "rooms" || param === "requests" || param === "summary" || param === "team") return param;
+    if (
+      param === "guests" ||
+      param === "rooms" ||
+      param === "requests" ||
+      param === "summary" ||
+      param === "team" ||
+      param === "tasks"
+    ) {
+      return param;
+    }
     return "guests"; // real default set below via useEffect once role resolves
   });
 
@@ -707,6 +717,10 @@ export default function ManagerDashboard() {
             externalCreateOpen={staffCreateOpen}
             onExternalCreateOpenChange={setStaffCreateOpen}
           />
+        )}
+
+        {activeTab === "tasks" && isManager && (
+          <TasksTab />
         )}
 
         </ManagerTabPanel>

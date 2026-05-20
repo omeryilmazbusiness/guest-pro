@@ -5,6 +5,7 @@
 import {
   Users,
   Briefcase,
+  ClipboardList,
   DoorOpen,
   Bell,
   TrendingUp,
@@ -16,7 +17,13 @@ import {
 } from "lucide-react";
 import type { StaffTranslations } from "@/lib/staff-i18n";
 
-export type ManagerDashboardTab = "guests" | "rooms" | "requests" | "summary" | "team";
+export type ManagerDashboardTab =
+  | "guests"
+  | "rooms"
+  | "requests"
+  | "summary"
+  | "team"
+  | "tasks";
 
 export type ManagerNavAction =
   | { type: "tab"; tab: ManagerDashboardTab }
@@ -59,6 +66,13 @@ const NAV_DEFS: NavDef[] = [
     resolveLabel: ({ t }) => t.tabTeam,
     action: { type: "tab", tab: "team" },
     badge: (c) => (c.teamCount > 0 ? c.teamCount : undefined),
+    isVisible: (c) => c.isManager,
+  },
+  {
+    id: "tasks",
+    icon: ClipboardList,
+    resolveLabel: ({ t }) => t.tabTasks,
+    action: { type: "tab", tab: "tasks" },
     isVisible: (c) => c.isManager,
   },
   {
