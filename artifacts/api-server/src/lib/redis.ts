@@ -34,6 +34,8 @@ function createClient(): Redis | null {
     maxRetriesPerRequest: 3,
     enableReadyCheck: true,
     lazyConnect: false,
+    connectTimeout: 10_000,
+    commandTimeout: 5_000,
     // Reconnect with capped exponential back-off
     retryStrategy(times) {
       if (times > 10) {

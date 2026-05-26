@@ -1,5 +1,8 @@
 import { redisClient } from "../redis";
 import { logger } from "../logger";
+import { withAsyncTimeout } from "../async-timeout";
+
+const REDIS_OP_TIMEOUT_MS = 4_000;
 
 const KEY_PREFIX = "platform:login-lockout:";
 const FAILURES_BEFORE_LOCK = 3;
@@ -22,7 +25,11 @@ async function readState(email: string): Promise<LockoutState> {
   const key = KEY_PREFIX + email;
   if (redisClient) {
     try {
-      const raw = await redisClient.get(key);
+      const raw = await withAsyncTimeout(
+        "platform-lockout redis get",
+        redisClient.get(key),
+        REDIS_OP_TIMEOUT_MS,
+      );
       if (!raw) return defaultState();
       return JSON.parse(raw) as LockoutState;
     } catch (err) {
@@ -37,7 +44,11 @@ async function writeState(email: string, state: LockoutState): Promise<void> {
   if (redisClient) {
     try {
       const ttlSec = 24 * 60 * 60;
-      await redisClient.setex(key, ttlSec, JSON.stringify(state));
+      await withAsyncTimeout(
+        "platform-lockout redis setex",
+        redisClient.setex(key, ttlSec, JSON.stringify(state)),
+        REDIS_OP_TIMEOUT_MS,
+      );
       return;
     } catch (err) {
       logger.warn({ err }, "platform-lockout: redis write failed");
@@ -106,7 +117,11 @@ export class PlatformLoginLockoutService {
     const normalized = this.normalizeEmail(email);
     if (redisClient) {
       try {
-        await redisClient.del(KEY_PREFIX + normalized);
+        await withAsyncTimeout(
+          "platform-lockout redis del",
+          redisClient.del(KEY_PREFIX + normalized),
+          REDIS_OP_TIMEOUT_MS,
+        );
       } catch {
         /* ignore */
       }

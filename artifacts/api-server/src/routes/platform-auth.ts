@@ -6,6 +6,10 @@ import {
   PlatformAuthError,
 } from "../lib/platform-auth/platform-login-auth-service";
 import { platformSettingsRepository } from "../lib/platform-auth/platform-settings-repository";
+import {
+  createPlatformAuthLogger,
+  newRequestId,
+} from "../lib/platform-auth/platform-auth-log";
 import { requirePlatformAdmin } from "../middlewares/requirePlatformAdmin";
 import { logPlatformAudit } from "../lib/platform-audit";
 
@@ -26,39 +30,63 @@ const verificationEmailSchema = z.object({
   verificationEmail: z.string().email(),
 });
 
-function handleAuthError(err: unknown, res: import("express").Response): void {
+function handleAuthError(
+  err: unknown,
+  res: import("express").Response,
+  log: ReturnType<typeof createPlatformAuthLogger>,
+): void {
   if (err instanceof PlatformAuthError) {
-    const body: { error: string; retryAfterMs?: number } = { error: err.message };
+    log.fail("auth_error", err, { statusCode: err.statusCode });
+    const body: { error: string; retryAfterMs?: number; requestId: string } = {
+      error: err.message,
+      requestId: log.requestId,
+    };
     if (err.retryAfterMs) body.retryAfterMs = err.retryAfterMs;
     res.status(err.statusCode).json(body);
     return;
   }
+  log.fail("auth_error", err, { statusCode: 500 });
   throw err;
 }
 
 // POST /platform/auth/login — step 1: credentials → email OTP
 router.post("/platform/auth/login", async (req, res): Promise<void> => {
+  const requestId = newRequestId(req.headers["x-request-id"]);
+  const log = createPlatformAuthLogger(requestId);
+  res.setHeader("X-Request-Id", requestId);
+
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid request" });
+    res.status(400).json({
+      error: parsed.error.issues[0]?.message ?? "Invalid request",
+      requestId,
+    });
     return;
   }
   try {
     const result = await platformLoginAuthService.startLogin(
       parsed.data.email,
       parsed.data.password,
+      log,
     );
     res.json(result);
   } catch (err) {
-    handleAuthError(err, res);
+    handleAuthError(err, res, log);
   }
 });
 
 // POST /platform/auth/verify-otp — step 2: OTP → session token
 router.post("/platform/auth/verify-otp", async (req, res): Promise<void> => {
+  const requestId = newRequestId(req.headers["x-request-id"]);
+  const log = createPlatformAuthLogger(requestId);
+  res.setHeader("X-Request-Id", requestId);
+
   const parsed = verifySchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid request" });
+    res.status(400).json({
+      error: parsed.error.issues[0]?.message ?? "Invalid request",
+      requestId,
+    });
     return;
   }
   try {
@@ -66,10 +94,11 @@ router.post("/platform/auth/verify-otp", async (req, res): Promise<void> => {
       parsed.data.challengeId,
       parsed.data.code,
       parsed.data.email,
+      log,
     );
     res.json(result);
   } catch (err) {
-    handleAuthError(err, res);
+    handleAuthError(err, res, log);
   }
 });
 

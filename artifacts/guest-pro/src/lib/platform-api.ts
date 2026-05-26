@@ -9,32 +9,59 @@ export function setPlatformToken(token: string | null): void {
   else localStorage.removeItem(PLATFORM_TOKEN_KEY);
 }
 
-async function platformFetch<T>(path: string, init?: RequestInit): Promise<T> {
+const DEFAULT_TIMEOUT_MS = 30_000;
+const AUTH_TIMEOUT_MS = 45_000;
+
+function newClientRequestId(): string {
+  return crypto.randomUUID();
+}
+
+async function platformFetch<T>(
+  path: string,
+  init?: RequestInit & { timeoutMs?: number },
+): Promise<T> {
+  const { timeoutMs = DEFAULT_TIMEOUT_MS, ...fetchInit } = init ?? {};
   const token = getPlatformToken();
-  const headers = new Headers(init?.headers);
+  const headers = new Headers(fetchInit.headers);
   headers.set("Accept", "application/json");
-  if (init?.body && !headers.has("Content-Type")) {
+  if (!headers.has("X-Request-Id")) {
+    headers.set("X-Request-Id", newClientRequestId());
+  }
+  if (fetchInit.body && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
   let res: Response;
   try {
-    res = await fetch(`/api${path}`, { ...init, headers });
-  } catch {
+    res = await fetch(`/api${path}`, { ...fetchInit, headers, signal: controller.signal });
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error(
+        `Request timed out after ${Math.round(timeoutMs / 1000)}s. Check server logs (Railway) for platform_auth:* entries.`,
+      );
+    }
     throw new Error(
-      "Cannot reach the API server. Run pnpm dev from the project root and wait for “Server listening on 0.0.0.0:3000”.",
+      "Cannot reach the API server. Ensure the backend is running and /api is reachable.",
     );
+  } finally {
+    clearTimeout(timer);
   }
   const contentType = res.headers.get("content-type") ?? "";
   const data = contentType.includes("application/json")
     ? await res.json().catch(() => ({}))
     : {};
   if (!res.ok) {
-    const payload = data as { error?: string; retryAfterMs?: number };
+    const payload = data as { error?: string; retryAfterMs?: number; requestId?: string };
     if (payload.error) {
-      const err = new Error(payload.error) as Error & { retryAfterMs?: number };
+      const err = new Error(
+        payload.requestId ? `${payload.error} (ref: ${payload.requestId})` : payload.error,
+      ) as Error & { retryAfterMs?: number; requestId?: string };
       if (payload.retryAfterMs) err.retryAfterMs = payload.retryAfterMs;
+      if (payload.requestId) err.requestId = payload.requestId;
       throw err;
     }
     if (res.status === 404) {
@@ -104,6 +131,7 @@ export interface PlatformLoginChallenge {
 export function platformLogin(email: string, password: string) {
   return platformFetch<PlatformLoginChallenge>("/platform/auth/login", {
     method: "POST",
+    timeoutMs: AUTH_TIMEOUT_MS,
     body: JSON.stringify({ email, password }),
   });
 }
@@ -111,6 +139,7 @@ export function platformLogin(email: string, password: string) {
 export function platformVerifyOtp(challengeId: string, code: string, email: string) {
   return platformFetch<{ token: string; user: PlatformAdminUser }>("/platform/auth/verify-otp", {
     method: "POST",
+    timeoutMs: AUTH_TIMEOUT_MS,
     body: JSON.stringify({ challengeId, code, email }),
   });
 }

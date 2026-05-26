@@ -1,8 +1,11 @@
 import nodemailer from "nodemailer";
 import type { Transporter } from "nodemailer";
 import { resolveSmtpConfig } from "../../config/smtp-config";
+import { withAsyncTimeout } from "../async-timeout";
 import { logger } from "../logger";
 import type { IEmailSender, SendEmailInput } from "./email-sender";
+
+const SMTP_SEND_TIMEOUT_MS = 25_000;
 
 export class SmtpEmailSender implements IEmailSender {
   private transporter: Transporter | null = null;
@@ -17,6 +20,9 @@ export class SmtpEmailSender implements IEmailSender {
         host: smtp.host,
         port: smtp.port,
         secure: smtp.secure,
+        connectionTimeout: 10_000,
+        greetingTimeout: 10_000,
+        socketTimeout: SMTP_SEND_TIMEOUT_MS,
         auth: {
           user: smtp.user,
           pass: smtp.pass,
@@ -35,13 +41,17 @@ export class SmtpEmailSender implements IEmailSender {
 
     const transport = this.getTransporter();
     try {
-      await transport.sendMail({
-        from: smtp.from,
-        to: input.to,
-        subject: input.subject,
-        text: input.text,
-        html: input.html ?? input.text.replace(/\n/g, "<br>"),
-      });
+      await withAsyncTimeout(
+        "smtp sendMail",
+        transport.sendMail({
+          from: smtp.from,
+          to: input.to,
+          subject: input.subject,
+          text: input.text,
+          html: input.html ?? input.text.replace(/\n/g, "<br>"),
+        }),
+        SMTP_SEND_TIMEOUT_MS,
+      );
       logger.info({ to: input.to, subject: input.subject }, "email:sent");
     } catch (err) {
       logger.error({ err, to: input.to }, "email:send-failed");
