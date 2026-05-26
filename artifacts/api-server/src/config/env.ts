@@ -23,6 +23,8 @@ function optionalBool(name: string, fallback: boolean): boolean {
   return val === "1" || val.toLowerCase() === "true";
 }
 
+import { normalizeAppPassword } from "./normalize-secret";
+
 export const env = {
   NODE_ENV: optionalEnv("NODE_ENV", "development") as "development" | "production" | "test",
   SESSION_SECRET: optionalEnv("SESSION_SECRET", "guestpro_dev_secret_change_in_production"),
@@ -60,9 +62,10 @@ export const env = {
   /** Prefer resolveSmtpConfig() — also accepts GMAIL_USER + GMAIL_APP_PASSWORD. */
   get isSmtpConfigured() {
     const gmail =
-      process.env.GMAIL_USER?.trim() &&
-      process.env.GMAIL_APP_PASSWORD?.replace(/\s+/g, "").trim();
-    return gmail || !!(this.SMTP_HOST && this.SMTP_USER && this.SMTP_PASS);
+      process.env.GMAIL_USER?.trim() && normalizeAppPassword(process.env.GMAIL_APP_PASSWORD);
+    const smtpPass =
+      normalizeAppPassword(process.env.SMTP_PASS) ?? process.env.SMTP_PASS?.trim();
+    return !!(gmail || (this.SMTP_HOST && this.SMTP_USER && smtpPass));
   },
 };
 
@@ -88,12 +91,6 @@ if (env.NODE_ENV === "production") {
     throw new Error(
       "[FATAL] ALLOWED_ORIGIN is required in production. " +
         "Set it to your frontend origin (e.g. https://app.example.com).",
-    );
-  }
-  if (!env.isSmtpConfigured) {
-    throw new Error(
-      "[FATAL] Platform OTP email is not configured in production. " +
-        "Set GMAIL_USER + GMAIL_APP_PASSWORD or SMTP_HOST/SMTP_USER/SMTP_PASS.",
     );
   }
 }

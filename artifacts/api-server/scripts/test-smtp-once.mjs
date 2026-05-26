@@ -3,11 +3,20 @@ import nodemailer from "nodemailer";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
+function normalizeAppPassword(raw) {
+  if (!raw) return undefined;
+  let v = raw.trim();
+  if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+    v = v.slice(1, -1).trim();
+  }
+  return v.replace(/\s+/g, "");
+}
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-config({ path: resolve(root, ".env") });
+config({ path: resolve(root, ".env"), override: true });
 
 const user = process.env.GMAIL_USER?.trim();
-const pass = process.env.GMAIL_APP_PASSWORD?.trim();
+const pass = normalizeAppPassword(process.env.GMAIL_APP_PASSWORD);
 const to = process.argv[2] ?? user;
 
 if (!user || !pass) {
@@ -15,12 +24,14 @@ if (!user || !pass) {
   process.exit(1);
 }
 
+console.log("Password length:", pass.length, pass.length === 16 ? "(ok)" : "(expected 16)");
+
 const transport = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
+  port: 465,
+  secure: true,
   auth: { user, pass },
-  requireTLS: true,
+  connectionTimeout: 10_000,
 });
 
 try {

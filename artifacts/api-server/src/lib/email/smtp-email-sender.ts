@@ -9,13 +9,16 @@ const SMTP_SEND_TIMEOUT_MS = 25_000;
 
 export class SmtpEmailSender implements IEmailSender {
   private transporter: Transporter | null = null;
+  private transporterKey: string | null = null;
 
   private getTransporter(): Transporter {
-    if (!this.transporter) {
-      const smtp = resolveSmtpConfig();
-      if (!smtp) {
-        throw new Error("SMTP is not configured");
-      }
+    const smtp = resolveSmtpConfig();
+    if (!smtp) {
+      throw new Error("SMTP is not configured");
+    }
+    const key = `${smtp.host}:${smtp.port}:${smtp.user}`;
+    if (!this.transporter || this.transporterKey !== key) {
+      this.transporterKey = key;
       this.transporter = nodemailer.createTransport({
         host: smtp.host,
         port: smtp.port,
@@ -54,11 +57,15 @@ export class SmtpEmailSender implements IEmailSender {
       );
       logger.info({ to: input.to, subject: input.subject }, "email:sent");
     } catch (err) {
-      logger.error({ err, to: input.to }, "email:send-failed");
-      const message =
-        err instanceof Error && /invalid login|authentication|535|534/i.test(err.message)
-          ? "SMTP authentication failed. For Gmail use an App Password (not your normal password)."
-          : "Could not send verification email. Check SMTP / Gmail App Password settings.";
+      const errMsg = err instanceof Error ? err.message : String(err);
+      logger.error({ err, to: input.to, smtpUser: smtp.user }, "email:send-failed");
+      let message = "Could not send verification email. Check SMTP / Gmail App Password settings.";
+      if (/timed out/i.test(errMsg)) {
+        message = "Verification email timed out. Try again or check SMTP host/port on the server.";
+      } else if (/invalid login|authentication|535|534|badcredentials/i.test(errMsg)) {
+        message =
+          "Gmail rejected the app password (535). In Railway Variables set GMAIL_APP_PASSWORD to the 16-character Google App Password with no quotes or spaces.";
+      }
       throw new Error(message);
     }
   }
