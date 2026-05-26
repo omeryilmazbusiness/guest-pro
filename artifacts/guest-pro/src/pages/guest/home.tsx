@@ -7,8 +7,10 @@ import {
   useListQuickActions,
   useLogout,
 } from "@workspace/api-client-react";
-import { useLocation } from "wouter";
 import { ROUTES } from "@/lib/app-routes";
+import { useOptionalHotelTenant } from "@/hooks/use-hotel-tenant";
+import { useTenantNav } from "@/hooks/use-tenant-nav";
+import { useHotelDisplay } from "@/hooks/use-hotel-display";
 import { Mic, Bot, ArrowRight, MessageSquare } from "lucide-react";
 import { GuestDashboardHeader } from "@/components/guest/GuestDashboardHeader";
 import { GUEST_SECTION_IDS } from "@/lib/guest-dashboard-nav";
@@ -32,17 +34,20 @@ import { listMyRequests, type ServiceRequest } from "@/lib/service-requests";
 
 export default function GuestHome() {
   const { user, isAuthenticated, logoutAuth } = useAuth();
-  const [, setLocation] = useLocation();
+  const goTo = useTenantNav();
   const logoutMutation = useLogout();
   const queryClient = useQueryClient();
   const install = useInstallPrompt();
   const { t, voiceLocale, uiLocale } = useLocale();
+  const tenant = useOptionalHotelTenant();
+  const { appName: displayAppName } = useHotelDisplay();
 
   // Start presence heartbeat — sends location + backend IP for tracking.
   useTrackingHeartbeat();
 
   const { data: branding } = useGetHotelBranding();
   const { data: quickActions } = useListQuickActions();
+  const appName = displayAppName || branding?.appName || "Guest Pro";
   const { data: myRequests } = useQuery({
     queryKey: ["my-requests"],
     queryFn: listMyRequests,
@@ -54,13 +59,13 @@ export default function GuestHome() {
   // be part of the authenticated guest flow.
   useEffect(() => {
     if (!isAuthenticated) {
-      setLocation(ROUTES.login);
+      goTo(ROUTES.login);
       return;
     }
     if (user?.role !== "guest") {
-      setLocation("/manager");
+      goTo(ROUTES.manager);
     }
-  }, [isAuthenticated, user, setLocation]);
+  }, [isAuthenticated, user, goTo]);
 
   const handleDeleteRequest = useCallback(
     (id: number) => {
@@ -78,14 +83,13 @@ export default function GuestHome() {
   };
 
   const goToChat = (q?: string) => {
-    const url = q ? `/guest/chat?q=${encodeURIComponent(q)}` : "/guest/chat";
-    setLocation(url);
+    goTo(q ? `${ROUTES.guestChat}?q=${encodeURIComponent(q)}` : ROUTES.guestChat);
   };
 
-  const goToVoice = () => setLocation("/guest/chat?voice=1");
+  const goToVoice = () => goTo(`${ROUTES.guestChat}?voice=1`);
 
   const handleQuickAction = (mode: QuickActionMode) => {
-    setLocation(`/guest/flow?mode=${mode}`);
+    goTo(`${ROUTES.guestFlow}?mode=${mode}`);
   };
 
   const voiceStopRef = useRef<(() => void) | null>(null);
@@ -94,7 +98,7 @@ export default function GuestHome() {
     onResult: (transcript, _lang) => {
       voiceStopRef.current?.();
       if (transcript.trim()) {
-        setLocation(`/guest/chat?q=${encodeURIComponent(transcript)}&voice=1`);
+        goTo(`${ROUTES.guestChat}?q=${encodeURIComponent(transcript)}&voice=1`);
       }
     },
     onError: (msg) => toast.error(msg),
@@ -130,7 +134,7 @@ export default function GuestHome() {
   return (
     <div className="min-h-[100dvh] bg-[#F8F8F8]">
       <GuestDashboardHeader
-        appName={branding?.appName || "Guest Pro"}
+        appName={appName}
         t={t}
         nearbyLabel={t.nearbySection}
         showRequestsSection={myRequests !== undefined}
@@ -286,11 +290,11 @@ export default function GuestHome() {
         </section>
 
         <section id={GUEST_SECTION_IDS.atYourService} className="scroll-mt-[72px]">
-          <GuestAtYourServicePanel appName={branding?.appName ?? "Guest Pro"} />
+          <GuestAtYourServicePanel appName={appName} />
         </section>
 
         <p className="text-center text-[12px] text-zinc-300 px-4 pb-2">
-          {branding?.appName || "Guest Pro"} · {t.footerText}
+          {appName} · {t.footerText}
         </p>
       </main>
 

@@ -32,6 +32,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { LoginModeSwitcher } from "@/components/login/LoginModeSwitcher";
 import { LoginTabPanel, getLoginSlideDirection } from "@/components/login/LoginTabPanel";
 import type { LoginMode } from "@/components/login/login-mode";
+import { useOptionalHotelTenant } from "@/hooks/use-hotel-tenant";
+import { ROUTES } from "@/lib/app-routes";
+import { tenantNavigatePath } from "@/lib/tenant-path";
+import { getHotelSlugFromPath } from "@/lib/hotel-slug-from-path";
 
 // ---------------------------------------------------------------------------
 // Schemas
@@ -85,7 +89,17 @@ function RevealToggle({
 export default function Login() {
   const { user, isAuthenticated, setToken, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
+  const tenant = useOptionalHotelTenant();
   const loginMutation = useLogin();
+  const tenantSlug = tenant?.slug ?? getHotelSlugFromPath() ?? undefined;
+
+  const goTo = (path: string) => {
+    if (tenant) {
+      setLocation(tenantNavigatePath(tenant.slug, path));
+      return;
+    }
+    setLocation(path.startsWith("/") ? path : `/${path}`);
+  };
 
   const [mode, setMode] = useState<LoginMode>("guest");
   const [slideDirection, setSlideDirection] = useState(0);
@@ -109,20 +123,20 @@ export default function Login() {
   useEffect(() => {
     if (isAuthenticated && user) {
       if (user.role === "manager") {
-        setLocation("/manager");
+        goTo(ROUTES.manager);
       } else if (user.role === "personnel") {
         if (user.staffDepartment === "RESTAURANT") {
-          setLocation("/restaurant");
+          goTo(ROUTES.restaurant);
         } else if (user.staffDepartment === "RECEPTION") {
-          setLocation("/manager?tab=guests");
+          goTo(`${ROUTES.manager}?tab=guests`);
         } else {
-          setLocation("/manager");
+          goTo(ROUTES.manager);
         }
       } else {
-        setLocation("/guest");
+        goTo(ROUTES.guest);
       }
     }
-  }, [isAuthenticated, user, setLocation]);
+  }, [isAuthenticated, user, setLocation, tenant]);
 
   // Switch tab and clean up stale state
   const switchMode = useCallback(
@@ -151,13 +165,19 @@ export default function Login() {
   const onSubmitGuest = (data: GuestForm) => {
     setFormError(null);
     loginMutation.mutate(
-      { data: { type: "guest", guestKey: data.guestKey } },
+      {
+        data: {
+          type: "guest",
+          guestKey: data.guestKey.trim().toUpperCase(),
+          ...(tenantSlug ? { hotelSlug: tenantSlug } : {}),
+        } as { type: "guest"; guestKey: string },
+      },
       {
         onSuccess: (res) => {
           setToken(res.token);
           markFreshGuestLogin();
           toast.success("Welcome to your stay");
-          setLocation("/guest");
+          goTo(ROUTES.guest);
         },
         onError: (err) => {
           const msg = err.data?.error ?? "Invalid or inactive guest key.";
@@ -170,16 +190,23 @@ export default function Login() {
   const onSubmitManager = (data: ManagerForm) => {
     setFormError(null);
     loginMutation.mutate(
-      { data: { type: "manager", email: data.email, password: data.password } },
+      {
+        data: {
+          type: "manager",
+          email: data.email,
+          password: data.password,
+          ...(tenantSlug ? { hotelSlug: tenantSlug } : {}),
+        } as { type: "manager"; email: string; password: string },
+      },
       {
         onSuccess: (res) => {
           setToken(res.token);
           toast.success("Welcome back");
           const dept = res.user?.staffDepartment;
           const role = res.user?.role;
-          if (role === "personnel" && dept === "RESTAURANT") setLocation("/restaurant");
-          else if (role === "personnel" && dept === "RECEPTION") setLocation("/manager?tab=guests");
-          else setLocation("/manager");
+          if (role === "personnel" && dept === "RESTAURANT") goTo(ROUTES.restaurant);
+          else if (role === "personnel" && dept === "RECEPTION") goTo(`${ROUTES.manager}?tab=guests`);
+          else goTo(ROUTES.manager);
         },
         onError: (err) => {
           const msg = err.data?.error ?? "Sign-in failed. Please check your credentials.";

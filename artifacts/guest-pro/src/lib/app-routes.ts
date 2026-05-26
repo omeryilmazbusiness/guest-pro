@@ -5,6 +5,8 @@
 export const ROUTES = {
   marketingHome: "/",
   marketingHomeAlias: "/home",
+  platform: "/platform",
+  platformLogin: "/platform/login",
   login: "/login",
   guest: "/guest",
   guestChat: "/guest/chat",

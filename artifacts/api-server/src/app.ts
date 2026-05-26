@@ -37,8 +37,20 @@ app.use(
 );
 
 app.use(cors(corsOptions));
-app.use(express.json({ limit: "64kb" }));
-app.use(express.urlencoded({ extended: true, limit: "64kb" }));
+
+/** Binary hotel logo upload (PUT) — must run before express.json */
+app.use((req, res, next) => {
+  if (req.method === "PUT" && /^\/api\/platform\/hotels\/\d+\/logo\/?$/.test(req.path)) {
+    return express.raw({
+      type: ["image/jpeg", "image/png", "image/webp", "application/octet-stream"],
+      limit: "3mb",
+    })(req, res, next);
+  }
+  next();
+});
+
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
 app.use("/api", router);
 

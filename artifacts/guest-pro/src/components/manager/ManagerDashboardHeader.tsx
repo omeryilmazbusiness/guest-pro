@@ -4,7 +4,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { Menu } from "lucide-react";
-import { GuestProLogo } from "@/components/GuestProLogo";
+import { HotelBrandMark } from "@/components/HotelBrandMark";
 import { LanguagePicker } from "@/components/ui/LanguagePicker";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { StaffLocale, StaffTranslations } from "@/lib/staff-i18n";
@@ -118,9 +118,7 @@ export function ManagerDashboardHeader({
                 <Menu className="h-5 w-5" strokeWidth={1.75} />
               </button>
             )}
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-zinc-100 bg-white shadow-sm">
-              <GuestProLogo variant="header" className="h-4 w-4" />
-            </div>
+            <HotelBrandMark variant="compact" framed alt={appName} />
             <div className="min-w-0">
               <span className="block truncate font-serif text-[15px] font-medium leading-tight text-zinc-900">
                 {appName}

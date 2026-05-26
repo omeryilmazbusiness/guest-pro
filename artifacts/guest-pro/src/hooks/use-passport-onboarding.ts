@@ -8,7 +8,8 @@ import type {
   PassportOnboardingStep,
 } from "@/lib/passport/onboarding/types";
 import { hasPassportConsent, setPassportConsent } from "@/lib/passport/onboarding/session";
-import { persistWelcomingLocale } from "@/lib/welcoming/welcoming-locale";
+import { useOptionalHotelTenant } from "@/hooks/use-hotel-tenant";
+import { getWelcomingHotelSlug, persistWelcomingLocale } from "@/lib/welcoming/welcoming-locale";
 import type { WelcomingLocale } from "@/lib/welcoming/types";
 
 function toWelcomingLocale(locale: PassportOnboardingLocale): WelcomingLocale {
@@ -16,8 +17,8 @@ function toWelcomingLocale(locale: PassportOnboardingLocale): WelcomingLocale {
   return locale;
 }
 
-function initialStep(): PassportOnboardingStep {
-  return hasPassportConsent() ? "scan" : "language";
+function initialStep(hotelSlug: string): PassportOnboardingStep {
+  return hasPassportConsent(hotelSlug) ? "scan" : "language";
 }
 
 export interface UsePassportOnboardingReturn {
@@ -29,21 +30,27 @@ export interface UsePassportOnboardingReturn {
 }
 
 export function usePassportOnboarding(): UsePassportOnboardingReturn {
-  const [step, setStep] = useState<PassportOnboardingStep>(initialStep);
+  const tenant = useOptionalHotelTenant();
+  const hotelSlug = tenant?.slug ?? getWelcomingHotelSlug();
+
+  const [step, setStep] = useState<PassportOnboardingStep>(() => initialStep(hotelSlug));
   const [locale, setLocale] = useState<PassportOnboardingLocale>("en");
 
-  const selectLanguage = useCallback((next: PassportOnboardingLocale) => {
-    setLocale(next);
-    persistWelcomingLocale(toWelcomingLocale(next));
-    setStep("intro");
-  }, []);
+  const selectLanguage = useCallback(
+    (next: PassportOnboardingLocale) => {
+      setLocale(next);
+      persistWelcomingLocale(toWelcomingLocale(next), hotelSlug);
+      setStep("intro");
+    },
+    [hotelSlug],
+  );
 
   const goToConsent = useCallback(() => setStep("consent"), []);
 
   const acceptConsent = useCallback(() => {
-    setPassportConsent();
+    setPassportConsent(hotelSlug);
     setStep("scan");
-  }, []);
+  }, [hotelSlug]);
 
   return {
     step,

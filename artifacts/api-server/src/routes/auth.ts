@@ -28,6 +28,9 @@ import {
   consumeExchangeCode,
 } from "../lib/oauth-state-store";
 import { evaluateStayAccess } from "../lib/guest-stay-policy";
+import { findHotelBySlug, resolveHotelForRequest } from "../lib/hotel-resolver";
+import { buildTenantPath } from "../lib/app-url";
+import { isReservedHotelSlug } from "../lib/reserved-slugs";
 
 const router: IRouter = Router();
 
@@ -39,12 +42,46 @@ const loginSchema = z.discriminatedUnion("type", [
     type: z.literal("manager"),
     email: z.string().email("Invalid email"),
     password: z.string().min(1, "Password required").max(200),
+    /** When set, credentials must belong to this hotel tenant (slug). */
+    hotelSlug: z.string().min(2).max(64).optional(),
   }),
   z.object({
     type: z.literal("guest"),
     guestKey: z.string().min(1, "Guest key required").max(100),
+    hotelSlug: z.string().min(2).max(64).optional(),
   }),
 ]);
+
+async function assertLoginHotelSlug(
+  hotelSlug: string | undefined,
+  userHotelId: number,
+  res: import("express").Response,
+): Promise<boolean> {
+  if (!hotelSlug) return true;
+  const hotel = await findHotelBySlug(hotelSlug, { requireActive: true });
+  if (!hotel) {
+    res.status(404).json({ error: "Hotel not found." });
+    return false;
+  }
+  if (hotel.id !== userHotelId) {
+    res.status(403).json({ error: "This account does not belong to this hotel." });
+    return false;
+  }
+  return true;
+}
+
+async function resolveLoginHotelId(
+  hotelSlug: string | undefined,
+  res: import("express").Response,
+): Promise<number | null | undefined> {
+  if (!hotelSlug) return undefined;
+  const hotel = await findHotelBySlug(hotelSlug, { requireActive: true });
+  if (!hotel) {
+    res.status(404).json({ error: "Hotel not found." });
+    return null;
+  }
+  return hotel.id;
+}
 
 
 
@@ -116,6 +153,8 @@ router.post("/auth/login", async (req, res): Promise<void> => {
       return;
     }
 
+    if (!(await assertLoginHotelSlug(body.hotelSlug, user.hotelId, res))) return;
+
     await clearFailedLogins(rateLimitKey);
     // Use the user's actual DB role (manager or personnel) — never hardcode "manager"
     const staffRole = user.role;
@@ -152,12 +191,20 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   }
 
   if (body.type === "guest") {
-    const result = await authenticateGuest(body.guestKey);
+    const loginHotelId = await resolveLoginHotelId(body.hotelSlug, res);
+    if (loginHotelId === null) return;
+
+    const result = await authenticateGuest(body.guestKey, loginHotelId);
     if (!result) {
-      res.status(401).json({ error: "Invalid or inactive guest key" });
+      const msg = loginHotelId
+        ? "Invalid or inactive guest key for this hotel."
+        : "Invalid or inactive guest key";
+      res.status(401).json({ error: msg });
       return;
     }
     const { guest } = result;
+
+    if (!(await assertLoginHotelSlug(body.hotelSlug, guest.hotelId, res))) return;
 
     // ── Stay-window policy ────────────────────────────────────────────────────
     // Credentials are valid — now enforce the stay access window.
@@ -318,8 +365,12 @@ router.get("/auth/google", async (req, res): Promise<void> => {
     return;
   }
 
+  const rawSlug = typeof req.query.hotelSlug === "string" ? req.query.hotelSlug.trim().toLowerCase() : "";
+  const hotelSlug =
+    rawSlug && !isReservedHotelSlug(rawSlug) ? rawSlug : undefined;
+
   const state = crypto.randomBytes(16).toString("hex");
-  await saveOAuthState(state);
+  await saveOAuthState(state, { hotelSlug });
 
   const redirectUri = computeRedirectUri(req);
   const params = new URLSearchParams({
@@ -347,7 +398,8 @@ router.get("/auth/google/callback", async (req, res): Promise<void> => {
     return;
   }
 
-  if (!state || !(await consumeOAuthState(state))) {
+  const oauthMeta = state ? await consumeOAuthState(state) : null;
+  if (!oauthMeta) {
     res.redirect(`${frontendBase}/login?error=google_invalid_state`);
     return;
   }
@@ -365,7 +417,12 @@ router.get("/auth/google/callback", async (req, res): Promise<void> => {
   }
 
   try {
-    const [hotel] = await db.select().from(hotelsTable).limit(1);
+    let hotel = oauthMeta.hotelSlug
+      ? await findHotelBySlug(oauthMeta.hotelSlug, { requireActive: true })
+      : null;
+    if (!hotel) {
+      hotel = await resolveHotelForRequest(req, { requireActive: true });
+    }
     if (!hotel) {
       res.redirect(`${frontendBase}/login?error=google_no_hotel`);
       return;
@@ -392,7 +449,10 @@ router.get("/auth/google/callback", async (req, res): Promise<void> => {
       })
       .catch(() => {});
 
-    res.redirect(`${frontendBase}/login?google_code=${encodeURIComponent(exchangeCode)}`);
+    const loginPath = buildTenantPath(hotel.slug, "/login");
+    res.redirect(
+      `${frontendBase}${loginPath}?google_code=${encodeURIComponent(exchangeCode)}`,
+    );
   } catch (err) {
     logger.error({ err }, "Google OAuth callback error");
     res.redirect(`${frontendBase}/login?error=google_server_error`);

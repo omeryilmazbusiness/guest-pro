@@ -4,7 +4,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { LogOut, Menu } from "lucide-react";
-import { GuestProLogo } from "@/components/GuestProLogo";
+import { HotelBrandMark } from "@/components/HotelBrandMark";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { GuestTranslations } from "@/lib/i18n";
 import {
@@ -66,7 +66,7 @@ export function GuestDashboardHeader({
                 <Menu className="h-5 w-5" strokeWidth={1.75} />
               </button>
             )}
-            <GuestProLogo variant="header" />
+            <HotelBrandMark variant="header" framed />
             <span className="truncate font-serif text-[17px] font-medium tracking-tight text-zinc-900">
               {appName}
             </span>

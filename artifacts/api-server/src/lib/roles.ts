@@ -9,6 +9,12 @@
 // Role constants
 // ---------------------------------------------------------------------------
 
+/** Platform super-admin (stored in platformAdminsTable). */
+export const PLATFORM_ADMIN_ROLE = "platform_admin" as const;
+
+/** JWT sentinel when no hotel is bound (platform operators only). */
+export const PLATFORM_HOTEL_ID = 0;
+
 /** All roles that belong to hotel staff (stored in usersTable). */
 export const STAFF_ROLES = ["manager", "personnel"] as const;
 
@@ -16,10 +22,15 @@ export const STAFF_ROLES = ["manager", "personnel"] as const;
 export const GUEST_ROLE = "guest" as const;
 
 /** All recognized roles across the system. */
-export const ALL_ROLES = [...STAFF_ROLES, GUEST_ROLE] as const;
+export const ALL_ROLES = [PLATFORM_ADMIN_ROLE, ...STAFF_ROLES, GUEST_ROLE] as const;
 
 export type StaffRole = (typeof STAFF_ROLES)[number];
+export type PlatformAdminRole = typeof PLATFORM_ADMIN_ROLE;
 export type UserRole = (typeof ALL_ROLES)[number];
+
+export function isPlatformAdminRole(role: string): role is PlatformAdminRole {
+  return role === PLATFORM_ADMIN_ROLE;
+}
 
 // ---------------------------------------------------------------------------
 // Staff department classification
@@ -118,6 +129,7 @@ export function isValidDepartment(dept: unknown): dept is StaffDepartment {
  * Used in generateToken — personnel gets the same 12-hour window as managers.
  */
 export const TOKEN_TTL_BY_ROLE: Record<string, number> = {
+  [PLATFORM_ADMIN_ROLE]: 8 * 60 * 60 * 1000,
   manager: 12 * 60 * 60 * 1000,
   personnel: 12 * 60 * 60 * 1000,
   guest: 7 * 24 * 60 * 60 * 1000,

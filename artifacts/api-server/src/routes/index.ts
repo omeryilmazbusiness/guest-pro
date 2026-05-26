@@ -12,10 +12,18 @@ import staffRouter from "./staff";
 import tasksRouter from "./tasks";
 import restaurantRouter from "./restaurant";
 import folioRouter from "./folio";
+import platformRouter from "./platform";
+import platformAuthRouter from "./platform-auth";
+import publicHotelsRouter from "./public-hotels";
+import publicConfigRouter from "./public-config";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(publicConfigRouter);
+router.use(publicHotelsRouter);
+router.use(platformAuthRouter);
+router.use(platformRouter);
 router.use(authRouter);
 router.use(guestsRouter);
 router.use(chatRouter);

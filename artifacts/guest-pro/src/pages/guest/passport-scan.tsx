@@ -6,13 +6,15 @@
 
 import { usePassportOnboarding } from "@/hooks/use-passport-onboarding";
 import { getPassportOnboardingStrings } from "@/lib/passport/onboarding/content";
-import { HOTEL_CONFIG } from "@/lib/welcoming/hotel-content";
+import { useHotelDisplay } from "@/hooks/use-hotel-display";
 import { WelcomeLanguageStep } from "@/components/guest/passport/onboarding/WelcomeLanguageStep";
 import { OnboardingIntroStep } from "@/components/guest/passport/onboarding/OnboardingIntroStep";
 import { ConsentStep } from "@/components/guest/passport/onboarding/ConsentStep";
 import { PassportScanStage } from "@/components/guest/passport/onboarding/PassportScanStage";
 
 export default function PassportScanPage() {
+  const { hotelName, appName } = useHotelDisplay();
+  const displayName = hotelName || appName;
   const { step, locale, selectLanguage, goToConsent, acceptConsent } =
     usePassportOnboarding();
 
@@ -21,7 +23,7 @@ export default function PassportScanPage() {
   if (step === "language") {
     return (
       <WelcomeLanguageStep
-        hotelName={HOTEL_CONFIG.name}
+        hotelName={displayName}
         onSelect={selectLanguage}
       />
     );

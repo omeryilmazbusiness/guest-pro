@@ -4,8 +4,9 @@ import { fileURLToPath } from "node:url";
 
 // Load repo-root .env when running from artifacts/api-server (pnpm dev)
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
-dotenv.config({ path: path.join(repoRoot, ".env") });
-dotenv.config();
+const isProd = process.env.NODE_ENV === "production";
+// In dev, repo .env wins over stale shell exports (e.g. truncated Gmail app passwords).
+dotenv.config({ path: path.join(repoRoot, ".env"), override: !isProd });
 import app from "./app";
 import { logger } from "./lib/logger";
 import { startScheduler } from "./lib/scheduler";
@@ -69,7 +70,17 @@ async function bootstrap(): Promise<void> {
   try {
     logger.info("Running database migrations...");
     await runMigrations();
+    const { ensureLogosDirectory } = await import("./lib/hotel-logo-storage");
+    await ensureLogosDirectory();
     logger.info("Migrations complete");
+    const { getEmailDeliveryMode } = await import("./config/smtp-config");
+    if (getEmailDeliveryMode() === "console") {
+      logger.warn(
+        "Platform OTP emails log to console only — set GMAIL_USER + GMAIL_APP_PASSWORD (or SMTP_*) in .env",
+      );
+    } else {
+      logger.info("Platform OTP email: SMTP configured");
+    }
   } catch (err) {
     logger.fatal({ err }, "Migration failed — refusing to start");
     process.exit(1);

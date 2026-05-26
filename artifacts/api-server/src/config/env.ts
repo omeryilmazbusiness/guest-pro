@@ -17,14 +17,18 @@ function optionalInt(name: string, fallback: number): number {
   return parsed;
 }
 
+function optionalBool(name: string, fallback: boolean): boolean {
+  const val = process.env[name];
+  if (val === undefined) return fallback;
+  return val === "1" || val.toLowerCase() === "true";
+}
+
 export const env = {
   NODE_ENV: optionalEnv("NODE_ENV", "development") as "development" | "production" | "test",
   SESSION_SECRET: optionalEnv("SESSION_SECRET", "guestpro_dev_secret_change_in_production"),
 
-  // T-08: DATABASE_URL is required — fail fast at startup if missing.
   DATABASE_URL: requireEnv("DATABASE_URL"),
 
-  // T-10: Connection pool tuning — override via env to match your deployment.
   DB_POOL_MAX: optionalInt("DB_POOL_MAX", 10),
   DB_POOL_IDLE_TIMEOUT_MS: optionalInt("DB_POOL_IDLE_TIMEOUT_MS", 30_000),
   DB_POOL_CONNECTION_TIMEOUT_MS: optionalInt("DB_POOL_CONNECTION_TIMEOUT_MS", 5_000),
@@ -33,25 +37,42 @@ export const env = {
   GOOGLE_CLIENT_SECRET: optionalEnv("AUTH_GOOGLE_CLIENT_SECRET"),
   GOOGLE_REDIRECT_URI: optionalEnv("AUTH_GOOGLE_REDIRECT_URI"),
   APP_BASE_URL: optionalEnv("APP_BASE_URL"),
+  DEFAULT_HOTEL_SLUG: optionalEnv("DEFAULT_HOTEL_SLUG"),
   ALLOWED_ORIGIN: optionalEnv("ALLOWED_ORIGIN"),
 
-  // T-06: Number of trusted reverse-proxy hops in front of the server.
-  // 0 = no proxy (direct), 1 = single LB/nginx, 2 = LB + nginx, etc.
   TRUST_PROXY_HOPS: optionalInt("TRUST_PROXY_HOPS", 1),
+
+  /** Default until changed in platform settings UI */
+  PLATFORM_VERIFICATION_EMAIL_DEFAULT:
+    optionalEnv("PLATFORM_VERIFICATION_EMAIL", "ryilmazomer@gmail.com") ?? "ryilmazomer@gmail.com",
+
+  SMTP_HOST: optionalEnv("SMTP_HOST"),
+  SMTP_PORT: optionalInt("SMTP_PORT", 587),
+  SMTP_SECURE: optionalBool("SMTP_SECURE", false),
+  SMTP_USER: optionalEnv("SMTP_USER"),
+  SMTP_PASS: optionalEnv("SMTP_PASS"),
+  SMTP_FROM: optionalEnv("SMTP_FROM", "Guest Pro Platform <noreply@guestpro.local>"),
 
   get isGoogleConfigured() {
     return !!(this.GOOGLE_CLIENT_ID && this.GOOGLE_CLIENT_SECRET);
   },
+
+  /** Prefer resolveSmtpConfig() — also accepts GMAIL_USER + GMAIL_APP_PASSWORD. */
+  get isSmtpConfigured() {
+    const gmail =
+      process.env.GMAIL_USER?.trim() &&
+      process.env.GMAIL_APP_PASSWORD?.replace(/\s+/g, "").trim();
+    return gmail || !!(this.SMTP_HOST && this.SMTP_USER && this.SMTP_PASS);
+  },
 };
 
-// ── Production guards — fail fast before the server accepts any traffic ──────
 if (env.NODE_ENV === "production") {
   const defaultSecret = "guestpro_dev_secret_change_in_production";
 
   if (env.SESSION_SECRET === defaultSecret) {
     throw new Error(
       "[FATAL] SESSION_SECRET is using the default dev value in production. " +
-        "Set a strong SESSION_SECRET environment variable before deploying."
+        "Set a strong SESSION_SECRET environment variable before deploying.",
     );
   }
   if (env.SESSION_SECRET && env.SESSION_SECRET.length < 32) {
@@ -60,13 +81,19 @@ if (env.NODE_ENV === "production") {
   if (!process.env.REDIS_URL) {
     throw new Error(
       "[FATAL] REDIS_URL is required in production. " +
-        "Set it to your Redis connection string before deploying."
+        "Set it to your Redis connection string before deploying.",
     );
   }
   if (!env.ALLOWED_ORIGIN) {
     throw new Error(
       "[FATAL] ALLOWED_ORIGIN is required in production. " +
-        "Set it to your frontend origin (e.g. https://app.example.com)."
+        "Set it to your frontend origin (e.g. https://app.example.com).",
+    );
+  }
+  if (!env.isSmtpConfigured) {
+    throw new Error(
+      "[FATAL] Platform OTP email is not configured in production. " +
+        "Set GMAIL_USER + GMAIL_APP_PASSWORD or SMTP_HOST/SMTP_USER/SMTP_PASS.",
     );
   }
 }

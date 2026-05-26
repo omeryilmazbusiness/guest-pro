@@ -13,10 +13,11 @@
 
 import { Router } from "express";
 import type { IRouter } from "express";
-import { db, hotelsTable, welcomeAlertsTable } from "@workspace/db";
+import { db, welcomeAlertsTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
 import { requireStaff } from "../middlewares/requireAuth";
 import { logger } from "../lib/logger";
+import { resolveHotelForRequest } from "../lib/hotel-resolver";
 /**
  * Safely extract a single string from an Express 5 route param.
  * In Express 5, params can be string | string[]; parseInt expects string.
@@ -37,11 +38,9 @@ router.post("/public/welcome-support", async (req, res): Promise<void> => {
     return;
   }
 
-  // Resolve hotel — single-hotel system uses the first hotel record.
-  // Extend this to multi-hotel by accepting a slug or domain header when needed.
-  const [hotel] = await db.select().from(hotelsTable).limit(1);
+  const hotel = await resolveHotelForRequest(req);
   if (!hotel) {
-    res.status(503).json({ error: "Hotel configuration not found" });
+    res.status(404).json({ error: "Hotel not found" });
     return;
   }
 

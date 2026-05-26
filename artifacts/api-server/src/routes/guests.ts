@@ -9,15 +9,17 @@ import {
 import { generateGuestKey } from "../lib/auth";
 import { deriveLocaleFromCountry } from "../lib/locale";
 import { issueQrToken, revokeAllGuestQrTokens } from "../lib/qr-token";
-import { env } from "../config/env";
+import { getHotelSlugById, readHotelSlugFromRequest, findHotelBySlug } from "../lib/hotel-resolver";
+import { buildTenantAppUrl, getAppBaseFromRequest } from "../lib/app-url";
 
 const router: IRouter = Router();
 
-function getAppBase(req: Request): string {
-  if (env.APP_BASE_URL) return env.APP_BASE_URL;
-  const proto = (req.headers["x-forwarded-proto"] as string) ?? req.protocol;
-  const host = (req.headers["x-forwarded-host"] as string) ?? req.headers.host;
-  return `${proto}://${host}`;
+async function buildGuestQrLoginUrl(req: Request, hotelId: number, rawToken: string): Promise<string> {
+  const appBase = getAppBaseFromRequest(req);
+  const slug = await getHotelSlugById(hotelId);
+  const path = `/guest/auto-login?token=${encodeURIComponent(rawToken)}`;
+  if (slug) return buildTenantAppUrl(appBase, slug, path);
+  return `${appBase.replace(/\/+$/, "")}${path}`;
 }
 
 /** Validate a date string is in YYYY-MM-DD format. */
@@ -67,6 +69,18 @@ router.post("/guests", requireGuestOperations, async (req, res): Promise<void> =
   const { firstName, lastName, roomNumber, countryCode, checkInDate, checkOutDate } = req.body;
   const hotelId = req.session!.hotelId;
   const actorId = req.session!.userId;
+
+  const tenantSlug = readHotelSlugFromRequest(req);
+  if (tenantSlug) {
+    const tenantHotel = await findHotelBySlug(tenantSlug, { requireActive: true });
+    if (tenantHotel && tenantHotel.id !== hotelId) {
+      res.status(403).json({
+        error:
+          "Your session is for a different property. Sign out and sign in again at this hotel's login page.",
+      });
+      return;
+    }
+  }
 
   if (!firstName || !lastName || !roomNumber) {
     res.status(400).json({ error: "firstName, lastName, and roomNumber are required" });
@@ -131,8 +145,7 @@ router.post("/guests", requireGuestOperations, async (req, res): Promise<void> =
   });
 
   const { rawToken, expiresAt } = await issueQrToken(guest.id, hotelId, actorId);
-  const appBase = getAppBase(req);
-  const qrLoginUrl = `${appBase}/guest/auto-login?token=${rawToken}`;
+  const qrLoginUrl = await buildGuestQrLoginUrl(req, hotelId, rawToken);
 
   res.status(201).json({
     guest: {
@@ -393,8 +406,7 @@ router.post("/guests/:id/renew-key", requireGuestOperations, async (req, res): P
   });
 
   const { rawToken, expiresAt } = await issueQrToken(id, hotelId, actorId);
-  const appBase = getAppBase(req);
-  const qrLoginUrl = `${appBase}/guest/auto-login?token=${rawToken}`;
+  const qrLoginUrl = await buildGuestQrLoginUrl(req, hotelId, rawToken);
 
   res.json({
     guest: {

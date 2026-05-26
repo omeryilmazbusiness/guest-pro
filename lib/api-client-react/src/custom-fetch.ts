@@ -17,6 +17,7 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
+let _hotelSlugGetter: (() => string | null) | null = null;
 
 /**
  * Set a base URL that is prepended to every relative request URL
@@ -42,6 +43,11 @@ export function setBaseUrl(url: string | null): void {
  */
 export function setAuthTokenGetter(getter: AuthTokenGetter | null): void {
   _authTokenGetter = getter;
+}
+
+/** Sends `X-Hotel-Slug` on API calls when inside a tenant route (multi-tenant branding). */
+export function setHotelSlugGetter(getter: (() => string | null) | null): void {
+  _hotelSlugGetter = getter;
 }
 
 function isRequest(input: RequestInfo | URL): input is Request {
@@ -356,6 +362,11 @@ export async function customFetch<T = unknown>(
     if (token) {
       headers.set("authorization", `Bearer ${token}`);
     }
+  }
+
+  if (_hotelSlugGetter && !headers.has("x-hotel-slug")) {
+    const slug = _hotelSlugGetter();
+    if (slug) headers.set("x-hotel-slug", slug);
   }
 
   const requestInfo = { method, url: resolveUrl(input) };

@@ -1,25 +1,30 @@
-const CONSENT_KEY = "guestpro_passport_consent";
+import { getHotelSlugFromPath } from "@/lib/hotel-slug-from-path";
 
-/** Consent granted this browser session — skip onboarding on scan retry */
-export function hasPassportConsent(): boolean {
+function consentKey(hotelSlug?: string): string {
+  const slug = (hotelSlug ?? getHotelSlugFromPath() ?? "default").toLowerCase();
+  return `guestpro_passport_consent_${slug}`;
+}
+
+/** Consent granted this browser session for this hotel — skip onboarding on scan retry */
+export function hasPassportConsent(hotelSlug?: string): boolean {
   try {
-    return sessionStorage.getItem(CONSENT_KEY) === "1";
+    return sessionStorage.getItem(consentKey(hotelSlug)) === "1";
   } catch {
     return false;
   }
 }
 
-export function setPassportConsent(): void {
+export function setPassportConsent(hotelSlug?: string): void {
   try {
-    sessionStorage.setItem(CONSENT_KEY, "1");
+    sessionStorage.setItem(consentKey(hotelSlug), "1");
   } catch {
     // private mode — in-memory only via hook state
   }
 }
 
-export function clearPassportConsent(): void {
+export function clearPassportConsent(hotelSlug?: string): void {
   try {
-    sessionStorage.removeItem(CONSENT_KEY);
+    sessionStorage.removeItem(consentKey(hotelSlug));
   } catch {
     // ignore
   }

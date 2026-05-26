@@ -11,32 +11,73 @@ import GuestHome from "@/pages/guest/home";
 import GuestChat from "@/pages/guest/chat";
 import GuestFlow from "@/pages/guest/flow";
 import GuestAutoLogin from "@/pages/guest/auto-login";
-import GuestWelcoming from "@/pages/guest/welcoming";
 import PassportScanPage from "@/pages/guest/passport-scan";
 import RestaurantDashboard from "@/pages/restaurant/dashboard";
 import MarketingHomePage from "@/pages/marketing/MarketingHomePage";
+import HotelTenantRoutes from "@/routes/HotelTenantRoutes";
+import PlatformRoutes from "@/routes/PlatformRoutes";
+import LegacyTenantRedirect from "@/routes/LegacyTenantRedirect";
+import { DuplicateTenantSlugRedirect } from "@/routes/DuplicateTenantSlugRedirect";
 import { ROUTES } from "@/lib/app-routes";
 
 const queryClient = new QueryClient();
 
 function Router() {
   return (
-    <Switch>
-      <Route path={ROUTES.login} component={Login} />
+    <>
+      <DuplicateTenantSlugRedirect />
+      <Switch>
+      {/* Platform super-admin — before /:hotelSlug so "platform" is not a tenant */}
+      <Route path="/platform" component={PlatformRoutes} />
+      <Route path="/platform/:_rest" component={PlatformRoutes} />
+
+      {/* Public marketing */}
       <Route path={ROUTES.marketingHomeAlias} component={MarketingHomePage} />
       <Route path={ROUTES.marketingHome} component={MarketingHomePage} />
-      <Route path="/manager" component={ManagerDashboard} />
-      <Route path="/manager/guests/new" component={CreateGuest} />
-      <Route path="/manager/settings" component={ManagerSettings} />
-      <Route path="/guest" component={GuestHome} />
-      <Route path="/guest/chat" component={GuestChat} />
-      <Route path="/guest/flow" component={GuestFlow} />
-      <Route path="/guest/auto-login" component={GuestAutoLogin} />
-      <Route path="/guest/passport-scan" component={PassportScanPage} />
-      <Route path="/welcoming" component={GuestWelcoming} />
-      <Route path="/restaurant" component={RestaurantDashboard} />
+
+      {/* Per-hotel tenant: /{slug}/login, /{slug}/guest, /{slug}/welcoming, … */}
+      <Route path="/:hotelSlug" nest>
+        <HotelTenantRoutes />
+      </Route>
+
+      {/* Legacy flat routes → redirect to /{defaultHotelSlug}/… */}
+      <Route path={ROUTES.login}>
+        <LegacyTenantRedirect segment={ROUTES.login} />
+      </Route>
+      <Route path={ROUTES.manager}>
+        <LegacyTenantRedirect segment={ROUTES.manager} />
+      </Route>
+      <Route path={ROUTES.managerCreateGuest}>
+        <LegacyTenantRedirect segment={ROUTES.managerCreateGuest} />
+      </Route>
+      <Route path={ROUTES.managerSettings}>
+        <LegacyTenantRedirect segment={ROUTES.managerSettings} />
+      </Route>
+      <Route path={ROUTES.guest}>
+        <LegacyTenantRedirect segment={ROUTES.guest} />
+      </Route>
+      <Route path={ROUTES.guestChat}>
+        <LegacyTenantRedirect segment={ROUTES.guestChat} />
+      </Route>
+      <Route path={ROUTES.guestFlow}>
+        <LegacyTenantRedirect segment={ROUTES.guestFlow} />
+      </Route>
+      <Route path={ROUTES.guestAutoLogin}>
+        <LegacyTenantRedirect segment={ROUTES.guestAutoLogin} />
+      </Route>
+      <Route path={ROUTES.guestPassportScan}>
+        <LegacyTenantRedirect segment={ROUTES.guestPassportScan} />
+      </Route>
+      <Route path={ROUTES.welcoming}>
+        <LegacyTenantRedirect segment={ROUTES.welcoming} />
+      </Route>
+      <Route path={ROUTES.restaurant}>
+        <LegacyTenantRedirect segment={ROUTES.restaurant} />
+      </Route>
+
       <Route component={NotFound} />
     </Switch>
+    </>
   );
 }
 

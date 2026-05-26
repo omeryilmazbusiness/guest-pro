@@ -10,8 +10,10 @@ import {
   useLogout,
   customFetch,
 } from "@workspace/api-client-react";
-import { useLocation } from "wouter";
 import { ROUTES } from "@/lib/app-routes";
+import { useTenantNav } from "@/hooks/use-tenant-nav";
+import { HotelBrandMark } from "@/components/HotelBrandMark";
+import { useHotelDisplay } from "@/hooks/use-hotel-display";
 import {
   LogOut,
   Send,
@@ -66,7 +68,8 @@ const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
 
 export default function GuestChat() {
   const { user, isAuthenticated, logoutAuth } = useAuth();
-  const [, setLocation] = useLocation();
+  const goTo = useTenantNav();
+  const { appName } = useHotelDisplay();
   const logoutMutation = useLogout();
   const { t, voiceLocale } = useLocale();
 
@@ -146,11 +149,11 @@ export default function GuestChat() {
   // ── Auth guard ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isAuthenticated) {
-      setLocation(ROUTES.login);
+      goTo(ROUTES.login);
     } else if (user?.role !== "guest") {
-      setLocation("/manager");
+      goTo(ROUTES.manager);
     }
-  }, [isAuthenticated, user, setLocation]);
+  }, [isAuthenticated, user, goTo]);
 
   // ── Parse URL params on mount ─────────────────────────────────────────────
   useEffect(() => {
@@ -283,12 +286,12 @@ export default function GuestChat() {
     (route: QuickActionRoute) => {
       if (conv.isActive) conv.stopConversation();
       if (route.chatMessage) {
-        setLocation(`${route.href}?q=${encodeURIComponent(route.chatMessage)}`);
+        goTo(`${route.href}?q=${encodeURIComponent(route.chatMessage)}`);
       } else {
-        setLocation(route.href);
+        goTo(route.href);
       }
     },
-    [conv, setLocation],
+    [conv, goTo],
   );
 
   const handleSend = (content: string, lang?: string) => {
@@ -511,17 +514,19 @@ export default function GuestChat() {
       <header className="bg-white/95 backdrop-blur-sm border-b border-zinc-100/80 shrink-0 sticky top-0 z-20">
         <div className="max-w-3xl mx-auto px-4 h-[64px] flex items-center gap-3">
           <button
-            onClick={() => { if (conv.isActive) conv.stopConversation(); setLocation("/guest"); }}
+            onClick={() => { if (conv.isActive) conv.stopConversation(); goTo(ROUTES.guest); }}
             className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-50 transition-all -ms-1"
             aria-label={t.backLabel}
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
 
+          <HotelBrandMark variant="header" framed className="shrink-0" />
+
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <p className="text-[15px] font-medium text-zinc-900 truncate">
-                {branding?.appName || "Concierge"}
+                {appName || branding?.appName || "Concierge"}
               </p>
               {isGuidedMode && (
                 <span className={`shrink-0 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border ${modeConfig.bg} ${modeConfig.color} ${modeConfig.border}`}>

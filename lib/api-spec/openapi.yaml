@@ -18,6 +18,10 @@ tags:
     description: AI chat operations
   - name: hotel
     description: Hotel and branding
+  - name: platform
+    description: Platform super-admin
+  - name: public
+    description: Public bootstrap (no auth)
 paths:
   /healthz:
     get:
@@ -334,11 +338,51 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /public/config:
+    get:
+      operationId: getPublicConfig
+      tags: [public]
+      summary: Public SPA config (default hotel slug for legacy redirects)
+      responses:
+        "200":
+          description: Config
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  defaultHotelSlug:
+                    type: ["string", "null"]
+
+  /public/hotels/{slug}:
+    get:
+      operationId: getPublicHotelBySlug
+      tags: [public]
+      summary: Tenant bootstrap by hotel slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Hotel tenant
+        "404":
+          description: Not found
+
   /hotel/branding:
     get:
       operationId: getHotelBranding
       tags: [hotel]
       summary: Get hotel branding for current tenant
+      parameters:
+        - name: X-Hotel-Slug
+          in: header
+          required: false
+          schema:
+            type: string
+          description: Hotel tenant slug (multi-tenant)
       responses:
         "200":
           description: Hotel branding info
@@ -361,6 +405,56 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/QuickAction"
+
+  /platform/hotels:
+    get:
+      operationId: listPlatformHotels
+      tags: [platform]
+      summary: List all hotels (platform admin)
+      responses:
+        "200":
+          description: Hotels list
+    post:
+      operationId: createPlatformHotel
+      tags: [platform]
+      summary: Create hotel tenant
+      responses:
+        "201":
+          description: Created
+
+  /platform/hotels/{hotelId}:
+    patch:
+      operationId: patchPlatformHotel
+      tags: [platform]
+      summary: Activate or deactivate hotel
+      parameters:
+        - name: hotelId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isActive:
+                  type: boolean
+              required: [isActive]
+      responses:
+        "200":
+          description: Updated hotel
+
+  /platform/audit-logs:
+    get:
+      operationId: listPlatformAuditLogs
+      tags: [platform]
+      summary: Platform admin audit trail
+      responses:
+        "200":
+          description: Audit logs
 
 components:
   schemas:

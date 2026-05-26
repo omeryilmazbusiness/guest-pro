@@ -1,9 +1,9 @@
 /**
- * KioskBrandHeader — Guest Pro logo + hotel name for kiosk flows.
+ * KioskBrandHeader — hotel logo + name for per-tenant kiosk flows.
  */
 
-import { GuestProLogo } from "@/components/GuestProLogo";
-import { HOTEL_CONFIG } from "@/lib/welcoming/hotel-content";
+import { HotelBrandMark } from "@/components/HotelBrandMark";
+import { useHotelDisplay } from "@/hooks/use-hotel-display";
 import { cn } from "@/lib/utils";
 
 type KioskBrandHeaderVariant = "fixed" | "embedded";
@@ -18,6 +18,8 @@ export function KioskBrandHeader({
   className,
 }: KioskBrandHeaderProps) {
   const isFixed = variant === "fixed";
+  const { appName, hotelName } = useHotelDisplay();
+  const displayName = hotelName || appName;
 
   return (
     <header
@@ -30,12 +32,15 @@ export function KioskBrandHeader({
       )}
     >
       <div className="flex items-center gap-2.5">
-        <GuestProLogo
+        <HotelBrandMark
           variant="header"
-          className={cn("invert", isFixed ? "w-7 h-7 opacity-90" : "w-6 h-6 opacity-80")}
+          className={cn(
+            "ring-1 ring-white/20",
+            isFixed ? "h-9 w-9" : "h-8 w-8",
+          )}
         />
         <span className="kiosk-brand-hotel-name truncate max-w-[min(72vw,14rem)] sm:max-w-none">
-          {HOTEL_CONFIG.name}
+          {displayName}
         </span>
       </div>
       {isFixed && (

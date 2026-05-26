@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useTenantNav } from "@/hooks/use-tenant-nav";
 import { ROUTES } from "@/lib/app-routes";
 import {
   ArrowLeft,
@@ -598,7 +598,7 @@ function ConfirmCard({
 export default function GuidedFlowPage() {
   const { user, isAuthenticated } = useAuth();
   const { t } = useLocale();
-  const [, setLocation] = useLocation();
+  const goTo = useTenantNav();
 
   const params = new URLSearchParams(window.location.search);
   const rawMode = params.get("mode");
@@ -625,9 +625,9 @@ export default function GuidedFlowPage() {
   const [showCareBranch, setShowCareBranch] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) setLocation(ROUTES.login);
-    else if (user?.role !== "guest") setLocation("/manager");
-  }, [isAuthenticated, user]);
+    if (!isAuthenticated) goTo(ROUTES.login);
+    else if (user?.role !== "guest") goTo(ROUTES.manager);
+  }, [isAuthenticated, user, goTo]);
 
   if (!isAuthenticated || user?.role !== "guest") return null;
 
@@ -709,7 +709,7 @@ export default function GuidedFlowPage() {
       return;
     }
     if (stepIndex > 0) setStepIndex((i) => i - 1);
-    else setLocation("/guest");
+    else goTo(ROUTES.guest);
   }
 
   function handleCareContinue() {
@@ -772,7 +772,7 @@ export default function GuidedFlowPage() {
           {config.successMessage}
         </p>
         <button
-          onClick={() => setLocation("/guest")}
+          onClick={() => goTo(ROUTES.guest)}
           className="bg-zinc-900 text-white rounded-2xl px-8 py-4 text-[15px] font-semibold shadow-md active:scale-95 transition-all"
         >
           {t.flowSuccessReturn}

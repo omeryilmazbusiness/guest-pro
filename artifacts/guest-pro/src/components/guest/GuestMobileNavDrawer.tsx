@@ -7,7 +7,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { GuestDashboardNavItem } from "@/lib/guest-dashboard-nav";
-import { GuestProLogo } from "@/components/GuestProLogo";
+import { HotelBrandMark } from "@/components/HotelBrandMark";
 import { useLocale } from "@/hooks/use-locale";
 
 const DRAWER_EASE = "duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]";
@@ -82,9 +82,7 @@ export function GuestMobileNavDrawer({
       >
         <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3.5">
           <div className="flex min-w-0 items-center gap-2.5">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10">
-              <GuestProLogo variant="header" />
-            </span>
+            <HotelBrandMark variant="drawer" alt={appName} />
             <div className="min-w-0">
               <p className="truncate text-[15px] font-semibold tracking-tight">{appName}</p>
               <p className="text-[11px] font-medium uppercase tracking-widest text-zinc-500">

@@ -1,15 +1,18 @@
 /**
- * GuestWelcoming — /welcoming
+ * GuestWelcoming — /{hotelSlug}/welcoming
  *
- * Kiosk registration entry: fixed brand header + responsive QR hero.
- * Optimized for mobile viewports (no horizontal overflow, scroll when needed).
+ * Per-hotel kiosk registration entry: brand header + QR to this hotel's passport scan.
  */
 
 import { KioskBrandHeader } from "@/components/kiosk/KioskBrandHeader";
 import { RegisterQrCard } from "@/components/welcoming/RegisterQrCard";
+import { useHotelTenant } from "@/hooks/use-hotel-tenant";
+import { ROUTES } from "@/lib/app-routes";
+import { absoluteAppHref, hotelPath } from "@/lib/tenant-path";
 
 export default function GuestWelcoming() {
-  const scanUrl = `${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, "")}/guest/passport-scan`;
+  const { slug } = useHotelTenant();
+  const scanUrl = absoluteAppHref(hotelPath(slug, ROUTES.guestPassportScan));
 
   return (
     <div className="welcoming-screen">

@@ -1,3 +1,6 @@
+export * from "./platform-admins";
+export * from "./platform-settings";
+export * from "./platform-login-challenges";
 export * from "./hotels";
 export * from "./users";
 export * from "./guests";

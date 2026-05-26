@@ -10,7 +10,7 @@ import { usePassportScan } from "@/hooks/use-passport-scan";
 import type { PassportOnboardingStrings } from "@/lib/passport/onboarding/types";
 import type { PassportOnboardingLocale } from "@/lib/passport/onboarding/types";
 import { getPassportLanguageEntry } from "@/lib/passport/onboarding/languages";
-import { HOTEL_CONFIG } from "@/lib/welcoming/hotel-content";
+import { useHotelDisplay } from "@/hooks/use-hotel-display";
 import { cn } from "@/lib/utils";
 
 interface PassportScanStageProps {
@@ -19,6 +19,8 @@ interface PassportScanStageProps {
 }
 
 export function PassportScanStage({ locale, strings }: PassportScanStageProps) {
+  const { hotelName, appName } = useHotelDisplay();
+  const displayName = hotelName || appName;
   const dir = getPassportLanguageEntry(locale).dir;
 
   const {
@@ -68,7 +70,7 @@ export function PassportScanStage({ locale, strings }: PassportScanStageProps) {
           status={status}
           frameFeedback={frameFeedback}
           instructionText={strings.scanInstruction}
-          hotelName={HOTEL_CONFIG.name}
+          hotelName={displayName}
           scanTitle={strings.scanTitle}
           statusLabels={{
             scanStatusRequesting: strings.scanStatusRequesting,

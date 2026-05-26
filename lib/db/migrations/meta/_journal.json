@@ -36,6 +36,34 @@
       "when": 1777496500000,
       "tag": "0004_restaurant_menu_i18n",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1777496600000,
+      "tag": "0005_platform_admins",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1777496700000,
+      "tag": "0006_hotel_address_country",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1777496800000,
+      "tag": "0007_hotel_subscription",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1777496900000,
+      "tag": "0008_platform_auth_security",
+      "breakpoints": true
     }
   ]
 }

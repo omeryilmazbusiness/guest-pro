@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -6,14 +6,20 @@ export const hotelsTable = pgTable("hotels", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
+  address: text("address"),
+  countryCode: text("country_code"),
   isActive: boolean("is_active").notNull().default(true),
+  /** starter | growth | enterprise */
+  planTier: text("plan_tier").notNull().default("starter"),
+  subscriptionRenewsAt: timestamp("subscription_renews_at", { withTimezone: true }),
+  platformNotes: text("platform_notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
 export const hotelBrandingTable = pgTable("hotel_branding", {
   id: serial("id").primaryKey(),
-  hotelId: serial("hotel_id").references(() => hotelsTable.id).notNull(),
+  hotelId: integer("hotel_id").references(() => hotelsTable.id).notNull(),
   appName: text("app_name").notNull().default("Guest Pro"),
   tagline: text("tagline"),
   primaryColor: text("primary_color"),

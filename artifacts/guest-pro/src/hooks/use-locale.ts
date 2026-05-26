@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { getTranslations, type GuestTranslations } from "@/lib/i18n";
 import { uiLocaleFromVoiceLocale, dirFromUiLocale } from "@/lib/locale";
-import { getRawPersistedWelcomingLocale } from "@/lib/welcoming/welcoming-locale";
+import { useOptionalHotelTenant } from "@/hooks/use-hotel-tenant";
+import { getRawPersistedWelcomingLocale, getWelcomingHotelSlug } from "@/lib/welcoming/welcoming-locale";
 import { getWelcomingLanguage } from "@/lib/welcoming/languages";
 
 export interface LocaleContext {
@@ -29,6 +30,8 @@ const DEFAULT_VOICE_LOCALE = "en-US";
  */
 export function useLocale(): LocaleContext {
   const { user } = useAuth();
+  const tenant = useOptionalHotelTenant();
+  const welcomingSlug = tenant?.slug ?? getWelcomingHotelSlug();
 
   let voiceLocale: string;
   let uiLocale: string;
@@ -39,7 +42,7 @@ export function useLocale(): LocaleContext {
     uiLocale    = uiLocaleFromVoiceLocale(voiceLocale);
   } else {
     // Priority 2: unauthenticated - kiosk welcoming locale
-    const welcomingLocale = getRawPersistedWelcomingLocale();
+    const welcomingLocale = getRawPersistedWelcomingLocale(welcomingSlug);
     if (welcomingLocale) {
       // getWelcomingLanguage already falls back to English for unknown locales —
       // no unsafe cast needed. We look up the entry directly.

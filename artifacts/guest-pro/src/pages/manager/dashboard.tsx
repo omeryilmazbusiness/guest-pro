@@ -30,8 +30,8 @@
  */
 
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import { useLocation } from "wouter";
 import { ROUTES } from "@/lib/app-routes";
+import { useTenantNav } from "@/hooks/use-tenant-nav";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -61,6 +61,7 @@ import { useStaffLocale } from "@/hooks/use-staff-locale";
 import { tStaff, staffScopeLabel, type StaffTranslations } from "@/lib/staff-i18n";
 import { isStaffRole, can, Permission } from "@/lib/permissions";
 import { useStaffScope } from "@/hooks/use-staff-scope";
+import { useHotelDisplay } from "@/hooks/use-hotel-display";
 import type { StaffActor } from "@/lib/staff-scope";
 import { filterGuests, extractRoomNumbers, countByStatus } from "@/lib/guests";
 import { aggregateRooms, filterRooms } from "@/lib/rooms";
@@ -171,8 +172,9 @@ function RoomCardSkeleton() {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ManagerDashboard() {
+  const { appName } = useHotelDisplay();
   const { user, isAuthenticated, logoutAuth } = useAuth();
-  const [, setLocation] = useLocation();
+  const goTo = useTenantNav();
   const queryClient = useQueryClient();
   const logoutMutation = useLogout();
   const { t, locale, dir, setLocale } = useStaffLocale();
@@ -311,10 +313,10 @@ export default function ManagerDashboard() {
 
   // ── Auth guard
   useEffect(() => {
-    if (!isAuthenticated) setLocation(ROUTES.login);
-    else if (user && !isStaffRole(user.role)) setLocation("/guest");
-    else if (staffScope?.scope === "restaurant_personnel") setLocation("/restaurant");
-  }, [isAuthenticated, user, staffScope, setLocation]);
+    if (!isAuthenticated) goTo(ROUTES.login);
+    else if (user && !isStaffRole(user.role)) goTo(ROUTES.guest);
+    else if (staffScope?.scope === "restaurant_personnel") goTo(ROUTES.restaurant);
+  }, [isAuthenticated, user, staffScope, goTo]);
 
   // ── Permissions (scope-aware)
   const canEdit = can(actor, Permission.EDIT_GUEST);
@@ -470,7 +472,7 @@ export default function ManagerDashboard() {
 
       {/* ── Sticky header (56px) ── */}
       <ManagerDashboardHeader
-        appName="Guest Pro"
+        appName={appName}
         roleLine={roleLine}
         t={t}
         locale={locale}
@@ -486,8 +488,8 @@ export default function ManagerDashboard() {
         onTabChange={setActiveTab}
         onCreateGuest={handleNavigateCreate}
         onQuickReport={() => setQuickReportOpen(true)}
-        onSettings={() => setLocation("/manager/settings")}
-        onRestaurant={() => setLocation("/restaurant")}
+        onSettings={() => goTo(ROUTES.managerSettings)}
+        onRestaurant={() => goTo(ROUTES.restaurant)}
         rightSlot={
           <>
             {canCreate && (
@@ -505,7 +507,7 @@ export default function ManagerDashboard() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setLocation("/restaurant")}
+                onClick={() => goTo(ROUTES.restaurant)}
                 className="hidden h-8 w-8 rounded-xl text-zinc-400 hover:bg-amber-50 hover:text-amber-600 touch-manipulation sm:flex"
                 aria-label={t.restaurantDashboard}
                 title={t.restaurantDashboard}
@@ -529,7 +531,7 @@ export default function ManagerDashboard() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setLocation("/manager/settings")}
+                onClick={() => goTo(ROUTES.managerSettings)}
                 className="hidden h-8 w-8 rounded-xl text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 touch-manipulation sm:flex"
                 aria-label={t.settings}
               >

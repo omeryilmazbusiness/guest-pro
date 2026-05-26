@@ -1,8 +1,17 @@
+import { config as loadEnv } from "dotenv";
 import { defineConfig } from "drizzle-kit";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Monorepo root .env (same as api-server DOTENV_CONFIG_PATH=../../.env)
+loadEnv({ path: path.resolve(__dirname, "../../.env") });
 
 if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL must be set before running drizzle-kit commands.");
+  throw new Error(
+    "DATABASE_URL must be set. Add it to the repo root .env file or export it in your shell.",
+  );
 }
 
 export default defineConfig({

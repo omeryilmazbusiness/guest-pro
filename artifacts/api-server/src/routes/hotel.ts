@@ -1,41 +1,43 @@
 import { Router } from "express";
 import type { IRouter } from "express";
-import { db, hotelBrandingTable, quickActionsTable, hotelsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, quickActionsTable } from "@workspace/db";
+import { eq, asc } from "drizzle-orm";
+import { resolveHotelForRequest, getBrandingForHotel } from "../lib/hotel-resolver";
 
 const router: IRouter = Router();
 
 router.get("/hotel/branding", async (req, res): Promise<void> => {
-  const [branding] = await db.select().from(hotelBrandingTable).limit(1);
-  if (!branding) {
-    const [hotel] = await db.select().from(hotelsTable).limit(1);
-    res.json({
-      hotelId: hotel?.id ?? 1,
-      appName: "Guest Pro",
-      tagline: "Your personal hotel concierge",
-      primaryColor: null,
-      accentColor: null,
-      logoUrl: null,
-      welcomeText: "Welcome! How can we make your stay perfect?",
-    });
+  const hotel = await resolveHotelForRequest(req, {
+    sessionHotelId: req.session?.hotelId,
+    requireActive: true,
+  });
+
+  if (!hotel) {
+    res.status(404).json({ error: "Hotel not found" });
     return;
   }
-  res.json({
-    hotelId: branding.hotelId,
-    appName: branding.appName,
-    tagline: branding.tagline,
-    primaryColor: branding.primaryColor,
-    accentColor: branding.accentColor,
-    logoUrl: branding.logoUrl,
-    welcomeText: branding.welcomeText,
-  });
+
+  const branding = await getBrandingForHotel(hotel);
+  res.json(branding);
 });
 
-router.get("/hotel/quick-actions", async (_req, res): Promise<void> => {
+router.get("/hotel/quick-actions", async (req, res): Promise<void> => {
+  const hotel = await resolveHotelForRequest(req, {
+    sessionHotelId: req.session?.hotelId,
+    requireActive: true,
+  });
+
+  if (!hotel) {
+    res.status(404).json({ error: "Hotel not found" });
+    return;
+  }
+
   const actions = await db
     .select()
     .from(quickActionsTable)
-    .orderBy(quickActionsTable.sortOrder);
+    .where(eq(quickActionsTable.hotelId, hotel.id))
+    .orderBy(asc(quickActionsTable.sortOrder));
+
   res.json(actions);
 });
 

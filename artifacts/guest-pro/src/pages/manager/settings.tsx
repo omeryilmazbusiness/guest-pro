@@ -29,7 +29,7 @@ import {
   type TrackingNetwork,
   type MyIpResponse,
 } from "@/lib/tracking";
-import { GuestProLogo } from "@/components/GuestProLogo";
+import { HotelBrandMark } from "@/components/HotelBrandMark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -328,7 +328,7 @@ export default function ManagerSettings() {
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
-        <GuestProLogo className="w-6 h-6 text-zinc-900" />
+        <HotelBrandMark variant="compact" framed />
         <span className="text-sm font-semibold text-zinc-900 flex-1">Settings</span>
       </header>
 

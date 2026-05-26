@@ -1,8 +1,8 @@
 import crypto from "crypto";
-import { db, usersTable, guestKeysTable, guestsTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { db, usersTable, guestKeysTable, guestsTable, platformAdminsTable } from "@workspace/db";
+import { eq, and, or } from "drizzle-orm";
 import { env } from "../config/env";
-import { TOKEN_TTL_BY_ROLE } from "./roles";
+import { PLATFORM_ADMIN_ROLE, PLATFORM_HOTEL_ID, TOKEN_TTL_BY_ROLE } from "./roles";
 import {
   loginLimiter,
   checkLimit,
@@ -86,6 +86,11 @@ export function generateToken(
     .update(payload)
     .digest("hex");
   return Buffer.from(payload).toString("base64") + "." + sig;
+}
+
+/** Platform super-admin JWT (no hotel binding). */
+export function generatePlatformAdminToken(adminId: number): string {
+  return generateToken(adminId, PLATFORM_ADMIN_ROLE, PLATFORM_HOTEL_ID);
 }
 
 export function verifyToken(
@@ -191,17 +196,47 @@ export async function authenticateManager(email: string, password: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Platform super-admin authentication
+// ---------------------------------------------------------------------------
+export async function authenticatePlatformAdmin(email: string, password: string) {
+  const normalizedEmail = email.toLowerCase().trim();
+  const [admin] = await db
+    .select()
+    .from(platformAdminsTable)
+    .where(eq(platformAdminsTable.email, normalizedEmail));
+  if (!admin || !admin.isActive) return null;
+
+  const hash = admin.passwordHash;
+  if (hash.startsWith("pbkdf2v3:")) {
+    return verifyPasswordV3(password, hash) ? admin : null;
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // Guest authentication — honours key expiry
 // ---------------------------------------------------------------------------
-export async function authenticateGuest(guestKey: string) {
-  const keyHash = crypto.createHash("sha256").update(guestKey).digest("hex");
+export async function authenticateGuest(guestKey: string, hotelId?: number) {
+  const normalized = guestKey.trim().toUpperCase();
+  if (!normalized) return null;
+
+  const keyHash = crypto.createHash("sha256").update(normalized).digest("hex");
+  const keyMatch = or(
+    eq(guestKeysTable.keyHash, keyHash),
+    eq(guestKeysTable.keyDisplay, normalized),
+  );
+
+  const conditions = [keyMatch, eq(guestKeysTable.isActive, true)];
+  if (hotelId != null) {
+    conditions.push(eq(guestKeysTable.hotelId, hotelId));
+  }
+
   const result = await db
     .select({ guestKey: guestKeysTable, guest: guestsTable })
     .from(guestKeysTable)
     .innerJoin(guestsTable, eq(guestKeysTable.guestId, guestsTable.id))
-    .where(
-      and(eq(guestKeysTable.keyHash, keyHash), eq(guestKeysTable.isActive, true))
-    );
+    .where(and(...conditions));
+
   if (!result.length) return null;
   const row = result[0];
   if (row.guestKey.expiresAt && new Date() > row.guestKey.expiresAt) return null;

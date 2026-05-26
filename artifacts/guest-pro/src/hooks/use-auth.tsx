@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useGetMe, setAuthTokenGetter, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { ROUTES } from "@/lib/app-routes";
+import { getLogoutNavigateTarget } from "@/lib/tenant-path";
 
 const TOKEN_KEY = "guestpro_token";
 
@@ -26,7 +26,7 @@ export function useAuth() {
   const logoutAuth = useCallback(() => {
     setToken(null);
     queryClient.clear();
-    setLocation(ROUTES.marketingHome);
+    setLocation(getLogoutNavigateTarget(), { replace: true });
   }, [setToken, queryClient, setLocation]);
 
   const { data: user, isLoading, isError } = useGetMe({

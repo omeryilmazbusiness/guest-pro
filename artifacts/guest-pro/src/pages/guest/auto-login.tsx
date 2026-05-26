@@ -14,8 +14,9 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useSearch } from "wouter";
+import { useSearch } from "wouter";
 import { ROUTES } from "@/lib/app-routes";
+import { useTenantNav } from "@/hooks/use-tenant-nav";
 import { GuestProLogo } from "@/components/GuestProLogo";
 import { markFreshGuestLogin } from "@/hooks/use-install-prompt";
 import { useAuth } from "@/hooks/use-auth";
@@ -45,7 +46,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 
 export default function GuestAutoLogin() {
   const search = useSearch();
-  const [, setLocation] = useLocation();
+  const goTo = useTenantNav();
   const { setToken } = useAuth();
   const [status, setStatus] = useState<Status>("loading");
   const [errorTitle, setErrorTitle] = useState<string>("QR Code Expired");
@@ -74,7 +75,7 @@ export default function GuestAutoLogin() {
         markFreshGuestLogin();
         setStatus("success");
         // Brief success pause so the guest sees the confirmation before redirect
-        setTimeout(() => setLocation("/guest"), 1200);
+        setTimeout(() => goTo(ROUTES.guest), 1200);
       })
       .catch((err: unknown) => {
         let code: string | undefined;
@@ -106,7 +107,7 @@ export default function GuestAutoLogin() {
         );
         setStatus("error");
       });
-  }, [search, setToken, setLocation]);
+  }, [search, setToken, goTo]);
 
   return (
     <div className="min-h-[100dvh] bg-zinc-900 flex flex-col items-center justify-center px-6">
@@ -152,7 +153,7 @@ export default function GuestAutoLogin() {
           <div className="w-full flex flex-col gap-3">
             <Button
               className="w-full h-12 rounded-2xl bg-white text-zinc-900 font-medium hover:bg-zinc-100"
-              onClick={() => setLocation(ROUTES.login)}
+              onClick={() => goTo(ROUTES.login)}
             >
               Sign in with Guest Key
             </Button>
