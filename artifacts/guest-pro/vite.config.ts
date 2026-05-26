@@ -17,7 +17,15 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       devOptions: { enabled: true, type: "module" },
-      includeAssets: ["favicon.svg", "apple-touch-icon.svg", "pwa-192.svg", "pwa-512.svg"],
+      includeAssets: [
+        "favicon.ico",
+        "favicon-16x16.png",
+        "favicon-32x32.png",
+        "favicon.svg",
+        "apple-touch-icon.png",
+        "pwa-192.png",
+        "pwa-512.png",
+      ],
       manifest: {
         name: "Guest Pro",
         short_name: "Guest Pro",
@@ -30,8 +38,8 @@ export default defineConfig({
         scope: basePath === "/" ? "/" : `${basePath}/`,
         id: "guestpro-app",
         icons: [
-          { src: "pwa-192.svg", sizes: "192x192", type: "image/svg+xml", purpose: "any" },
-          { src: "pwa-512.svg", sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" },
+          { src: "pwa-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "pwa-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
         ],
         categories: ["travel", "lifestyle"],
       },
