@@ -74,23 +74,19 @@ async function bootstrap(): Promise<void> {
     const { ensureLogosDirectory } = await import("./lib/hotel-logo-storage");
     await ensureLogosDirectory();
     logger.info("Migrations complete");
-    const { getEmailDeliveryMode, validateSmtpConfigForProduction } = await import(
-      "./config/smtp-config"
+    const { getEmailDeliveryMode, validateEmailDeliveryForProduction } = await import(
+      "./config/email-delivery"
     );
     if (env.NODE_ENV === "production") {
-      validateSmtpConfigForProduction();
+      validateEmailDeliveryForProduction();
     }
-    if (getEmailDeliveryMode() === "console") {
+    const mode = getEmailDeliveryMode();
+    if (mode === "console") {
       logger.warn(
-        "Platform OTP emails log to console only — set GMAIL_USER + GMAIL_APP_PASSWORD (or SMTP_*) in .env",
+        "Platform OTP emails log to console only — set RESEND_API_KEY or GMAIL_APP_PASSWORD",
       );
     } else {
-      const { resolveSmtpConfig } = await import("./config/smtp-config");
-      const smtp = resolveSmtpConfig();
-      logger.info(
-        { host: smtp?.host, port: smtp?.port, user: smtp?.user },
-        "Platform OTP email: SMTP configured",
-      );
+      logger.info({ mode }, `Platform OTP email: ${mode} configured`);
     }
   } catch (err) {
     logger.fatal({ err }, "Migration failed — refusing to start");

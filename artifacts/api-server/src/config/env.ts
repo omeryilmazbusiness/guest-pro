@@ -59,13 +59,22 @@ export const env = {
     return !!(this.GOOGLE_CLIENT_ID && this.GOOGLE_CLIENT_SECRET);
   },
 
-  /** Prefer resolveSmtpConfig() — also accepts GMAIL_USER + GMAIL_APP_PASSWORD. */
-  get isSmtpConfigured() {
+  RESEND_API_KEY: optionalEnv("RESEND_API_KEY"),
+  RESEND_FROM: optionalEnv("RESEND_FROM"),
+
+  /** Resend or SMTP — used for production OTP. */
+  get isEmailConfigured() {
+    if (process.env.RESEND_API_KEY?.trim()) return true;
     const gmail =
       process.env.GMAIL_USER?.trim() && normalizeAppPassword(process.env.GMAIL_APP_PASSWORD);
     const smtpPass =
       normalizeAppPassword(process.env.SMTP_PASS) ?? process.env.SMTP_PASS?.trim();
     return !!(gmail || (this.SMTP_HOST && this.SMTP_USER && smtpPass));
+  },
+
+  /** @deprecated use isEmailConfigured */
+  get isSmtpConfigured() {
+    return this.isEmailConfigured;
   },
 };
 

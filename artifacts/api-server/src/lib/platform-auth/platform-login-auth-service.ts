@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { authenticatePlatformAdmin, generatePlatformAdminToken } from "../auth";
 import { env } from "../../config/env";
 import { getEmailDeliveryMode, getEmailSender } from "../email/create-email-sender";
-import type { EmailDeliveryMode } from "../../config/smtp-config";
+import type { EmailDeliveryMode } from "../../config/email-delivery";
 import {
   platformChallengeRepository,
   PLATFORM_OTP_RESEND_COOLDOWN_MS,

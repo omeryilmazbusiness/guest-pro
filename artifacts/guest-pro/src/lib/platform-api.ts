@@ -116,7 +116,7 @@ export interface PlatformHotelTrack extends PlatformHotel {
   generalManager: { email: string; name: string | null } | null;
 }
 
-export type PlatformEmailDelivery = "smtp" | "console";
+export type PlatformEmailDelivery = "resend" | "smtp" | "console";
 
 export interface PlatformLoginChallenge {
   challengeId: string;
