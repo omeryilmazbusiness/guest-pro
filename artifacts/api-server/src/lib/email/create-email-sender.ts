@@ -10,6 +10,10 @@ import { SmtpEmailSender } from "./smtp-email-sender";
 
 let instance: IEmailSender | null = null;
 
+export function resetEmailSender(): void {
+  instance = null;
+}
+
 export function getEmailSender(): IEmailSender {
   if (!instance) {
     const mode = getEmailDeliveryMode();

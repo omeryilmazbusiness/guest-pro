@@ -1,5 +1,5 @@
-import { logger } from "../lib/logger";
 import { normalizeApiKey, normalizeAppPassword } from "./normalize-secret";
+import { getResolvedResendFrom } from "./resend-domains";
 import { resolveSmtpConfig } from "./smtp-config";
 
 export type EmailDeliveryMode = "resend" | "smtp" | "console";
@@ -21,6 +21,8 @@ export function resendFromDomainMatchesVerified(fromDomain: string, verifiedName
 export function getResendFrom(): string {
   const explicit = process.env.RESEND_FROM?.trim() || process.env.SMTP_FROM?.trim();
   if (explicit) return explicit;
+  const resolved = getResolvedResendFrom();
+  if (resolved) return resolved;
   if (getResendApiKey() && process.env.NODE_ENV === "production") {
     return PRODUCTION_RESEND_FROM;
   }
@@ -69,84 +71,6 @@ export async function verifyProductionEmailDelivery(): Promise<void> {
   throw new Error(
     `[FATAL] SMTP verify failed on boot: ${errors.join("; ")}. ` +
       "Fix GMAIL_APP_PASSWORD (16 chars, no quotes) or set RESEND_API_KEY on Railway.",
-  );
-}
-
-/** Validates Resend key and warns when test-mode `from` cannot reach OTP recipient. */
-export async function verifyResendForProduction(verificationEmail: string): Promise<void> {
-  const key = getResendApiKey();
-  if (!key) return;
-
-  if (!key.startsWith("re_")) {
-    throw new Error(
-      "[FATAL] RESEND_API_KEY must start with re_. Check Railway Variables (no quotes).",
-    );
-  }
-
-  const from = getResendFrom();
-  const res = await fetch("https://api.resend.com/domains", {
-    headers: { Authorization: `Bearer ${key}` },
-  });
-
-  if (res.status === 401 || res.status === 403) {
-    throw new Error(
-      "[FATAL] RESEND_API_KEY rejected by Resend (invalid or revoked). Create a new key at resend.com/api-keys.",
-    );
-  }
-
-  if (!res.ok) {
-    logger.warn({ status: res.status }, "resend:domains-check-skipped");
-    return;
-  }
-
-  const body = (await res.json()) as {
-    data?: Array<{ name: string; status: string }>;
-  };
-  const verified = (body.data ?? []).filter((d) => d.status === "verified");
-  const usesTestFrom = /@resend\.dev>/i.test(from) || from.includes("onboarding@resend.dev");
-
-  if (verified.length > 0) {
-    const fromDomain = from.match(/@([\w.-]+)/)?.[1];
-    const domainOk =
-      fromDomain && verified.some((d) => resendFromDomainMatchesVerified(fromDomain, d.name));
-    if (fromDomain && !domainOk && !usesTestFrom) {
-      const suggested = verified.find((d) => d.name.includes("guest-pro"))?.name ?? verified[0]?.name;
-      throw new Error(
-        `[FATAL] RESEND_FROM domain "${fromDomain}" is not verified. ` +
-          `Set RESEND_FROM=Guest Pro <noreply@${suggested ?? "www.guest-pro.com"}> on Railway.`,
-      );
-    }
-    if (usesTestFrom) {
-      throw new Error(
-        `[FATAL] Do not use onboarding@resend.dev in production. ` +
-          `Set RESEND_FROM=${PRODUCTION_RESEND_FROM} or remove RESEND_FROM to use the default.`,
-      );
-    }
-    logger.info({ from, verifiedDomains: verified.map((d) => d.name) }, "resend:domain-verified");
-    return;
-  }
-
-  if (usesTestFrom) {
-    logger.warn(
-      {
-        verificationEmail,
-        from,
-        hint:
-          "With onboarding@resend.dev, Resend only delivers to the email you used to sign up. " +
-          "Use that address as platform verification email, or verify guest-pro.com and set RESEND_FROM.",
-      },
-      "resend:test-mode-active",
-    );
-    return;
-  }
-
-  logger.warn(
-    {
-      verificationEmail,
-      from,
-      hint: "Complete DNS verification on resend.com/domains for www.guest-pro.com (status must be verified).",
-    },
-    "resend:no-verified-domain-yet",
   );
 }
 

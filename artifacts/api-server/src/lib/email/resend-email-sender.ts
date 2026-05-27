@@ -15,8 +15,17 @@ function mapResendApiError(status: number, apiMessage: string, to: string): stri
       "and set RESEND_FROM=Guest Pro <noreply@www.guest-pro.com> on Railway."
     );
   }
+  if (
+    (status === 403 || status === 422) &&
+    /not verified|verify your domain/i.test(apiMessage)
+  ) {
+    return (
+      `${apiMessage} The server will auto-use your verified Resend domain name on next deploy. ` +
+      "In Resend, check the exact domain label (guest-pro.com vs www.guest-pro.com) — From must match."
+    );
+  }
   if (status === 422 && /invalid.*from/i.test(apiMessage)) {
-    return "Invalid RESEND_FROM on the server. Use: Guest Pro <noreply@guest-pro.com> after domain verification.";
+    return "Invalid RESEND_FROM. Remove it on Railway to auto-detect, or match your verified Resend domain exactly.";
   }
   return apiMessage;
 }

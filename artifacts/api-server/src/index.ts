@@ -79,8 +79,8 @@ async function bootstrap(): Promise<void> {
       getResendFrom,
       validateEmailDeliveryForProduction,
       verifyProductionEmailDelivery,
-      verifyResendForProduction,
     } = await import("./config/email-delivery");
+    const { verifyResendForProduction } = await import("./config/resend-domains");
     const { platformSettingsRepository } = await import(
       "./lib/platform-auth/platform-settings-repository"
     );
@@ -92,6 +92,8 @@ async function bootstrap(): Promise<void> {
     const verificationEmail = await platformSettingsRepository.getVerificationEmail();
     if (env.NODE_ENV === "production" && mode === "resend") {
       await verifyResendForProduction(verificationEmail);
+      const { resetEmailSender } = await import("./lib/email/create-email-sender");
+      resetEmailSender();
     }
     if (mode === "console") {
       logger.warn(
