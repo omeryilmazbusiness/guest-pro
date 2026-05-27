@@ -45,7 +45,10 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-        navigateFallback: null,
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        // Deep links like /platform/login on installed PWA (mobile)
+        navigateFallback: basePath === "/" ? "/index.html" : `${basePath}/index.html`,
+        navigateFallbackDenylist: [/^\/api(?:\/|$)/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

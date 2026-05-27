@@ -3,33 +3,38 @@ import { Route, Switch, useLocation } from "wouter";
 import PlatformLogin from "@/pages/platform/login";
 import PlatformDashboard from "@/pages/platform/dashboard";
 import { PlatformAuthProvider } from "@/hooks/use-platform-auth";
-import { ROUTES } from "@/lib/app-routes";
-
-function PlatformPathRedirect() {
+function PlatformIndexRedirect() {
   const [, setLocation] = useLocation();
   useEffect(() => {
-    setLocation(ROUTES.platform, { replace: true });
+    setLocation("/", { replace: true });
   }, [setLocation]);
   return null;
 }
 
+/** Fixes /platform/platform/… mistaken as hotel tenant slug. */
+function PlatformDuplicateRedirect() {
+  useEffect(() => {
+    const p = window.location.pathname.replace(/\/+$/, "") || "/";
+    if (p === "/platform/platform" || p.startsWith("/platform/platform/")) {
+      const rest = p.slice("/platform/platform".length);
+      window.location.replace(`/platform${rest || "/"}`);
+    }
+  }, []);
+  return null;
+}
+
 /**
- * Platform super-admin routes at /platform, /platform/login.
- * Handles mistaken /platform/platform (white screen when matched as hotel tenant).
+ * Nested under /platform (wouter nest).
+ * /platform/login → path /login, /platform → path /
  */
 export default function PlatformRoutes() {
-  const [location] = useLocation();
-
-  if (location === "/platform/platform" || location.startsWith("/platform/platform/")) {
-    return <PlatformPathRedirect />;
-  }
-
   return (
     <PlatformAuthProvider>
+      <PlatformDuplicateRedirect />
       <Switch>
-        <Route path={ROUTES.platformLogin} component={PlatformLogin} />
-        <Route path={ROUTES.platform} component={PlatformDashboard} />
-        <Route component={PlatformPathRedirect} />
+        <Route path="/login" component={PlatformLogin} />
+        <Route path="/" component={PlatformDashboard} />
+        <Route component={PlatformIndexRedirect} />
       </Switch>
     </PlatformAuthProvider>
   );

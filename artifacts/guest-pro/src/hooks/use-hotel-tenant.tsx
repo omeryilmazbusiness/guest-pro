@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { fetchPublicHotel, type PublicHotelTenant } from "@/lib/platform-api";
+import { ROUTES } from "@/lib/app-routes";
 import { isReservedHotelSlug } from "@/lib/reserved-slugs";
 import { hotelPath } from "@/lib/tenant-path";
 
@@ -35,6 +36,10 @@ export function HotelTenantProvider({
   const normalizedSlug = slug.trim().toLowerCase();
 
   useEffect(() => {
+    if (normalizedSlug === "platform") {
+      window.location.replace(ROUTES.platformLogin);
+      return;
+    }
     if (!normalizedSlug || isReservedHotelSlug(normalizedSlug)) {
       setError("Invalid hotel");
       setIsLoading(false);

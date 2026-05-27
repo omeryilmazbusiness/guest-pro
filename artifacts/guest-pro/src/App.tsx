@@ -27,9 +27,10 @@ function Router() {
     <>
       <DuplicateTenantSlugRedirect />
       <Switch>
-      {/* Platform super-admin — before /:hotelSlug so "platform" is not a tenant */}
-      <Route path="/platform" component={PlatformRoutes} />
-      <Route path="/platform/:_rest" component={PlatformRoutes} />
+      {/* Platform super-admin — nest so /platform/login works on mobile/PWA */}
+      <Route path="/platform" nest>
+        <PlatformRoutes />
+      </Route>
 
       {/* Public marketing */}
       <Route path={ROUTES.marketingHomeAlias} component={MarketingHomePage} />
