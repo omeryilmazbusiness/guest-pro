@@ -222,7 +222,7 @@ export function updatePlatformHotel(
   hotelId: number,
   body: {
     name?: string;
-    address?: string;
+    address?: string | null;
     countryCode?: string;
     slug?: string;
     isActive?: boolean;

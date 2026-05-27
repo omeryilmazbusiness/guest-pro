@@ -133,7 +133,7 @@ export type HotelPlanTier = (typeof HOTEL_PLAN_TIERS)[number];
 
 export interface UpdateHotelInput {
   name?: string;
-  address?: string;
+  address?: string | null;
   countryCode?: string;
   slug?: string;
   isActive?: boolean;
@@ -151,7 +151,10 @@ export async function updateHotelRecord(hotelId: number, input: UpdateHotelInput
   const patch: Partial<typeof hotelsTable.$inferInsert> = {};
 
   if (input.name !== undefined) patch.name = input.name.trim();
-  if (input.address !== undefined) patch.address = input.address.trim() || null;
+  if (input.address !== undefined) {
+    patch.address =
+      input.address === null ? null : input.address.trim() || null;
+  }
   if (input.countryCode !== undefined) {
     patch.countryCode = input.countryCode.trim().toUpperCase().slice(0, 2) || null;
   }

@@ -77,12 +77,17 @@ export function PlatformHotelManageSheet({
     (!logoCleared ? getHotelLogoSrc(slug || hotel.slug, hotel.logoUrl, hotel.updatedAt) : null);
 
   const onSave = async () => {
+    const trimmedAddress = address.trim();
+    if (trimmedAddress.length > 0 && trimmedAddress.length < 3) {
+      toast.error("Address must be at least 3 characters, or leave it empty.");
+      return;
+    }
     setSaving(true);
     try {
       const newSlug = slug.trim().toLowerCase();
       await updatePlatformHotel(hotel.id, {
         name: name.trim(),
-        address: address.trim(),
+        address: trimmedAddress.length > 0 ? trimmedAddress : null,
         countryCode: countryCode.toUpperCase(),
         slug: newSlug !== hotel.slug ? newSlug : undefined,
         planTier,
@@ -162,10 +167,11 @@ export function PlatformHotelManageSheet({
             <Input value={name} onChange={(e) => setName(e.target.value)} className="rounded-xl" />
           </div>
           <div className="space-y-1.5">
-            <Label>Address</Label>
+            <Label>Address (optional)</Label>
             <Textarea
               value={address}
               onChange={(e) => setAddress(e.target.value)}
+              placeholder="Leave empty if not set yet"
               className="min-h-[72px] resize-none rounded-xl"
             />
           </div>

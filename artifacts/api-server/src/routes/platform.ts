@@ -35,6 +35,17 @@ import {
 
 const router: IRouter = Router();
 
+/** Empty string → null; non-empty must be ≥3 chars (hotels.address is optional in DB). */
+const optionalHotelAddressSchema = z.preprocess(
+  (val) => {
+    if (val === undefined) return undefined;
+    if (val === null) return null;
+    if (typeof val === "string" && val.trim() === "") return null;
+    return val;
+  },
+  z.union([z.string().min(3).max(500), z.null()]).optional(),
+);
+
 const createHotelSchema = z.object({
   name: z.string().min(2).max(120),
   appName: z.string().min(1).max(120).optional(),
@@ -45,7 +56,7 @@ const createHotelSchema = z.object({
 const updateHotelSchema = z
   .object({
     name: z.string().min(2).max(120).optional(),
-    address: z.string().min(3).max(500).optional(),
+    address: optionalHotelAddressSchema,
     countryCode: z.string().length(2).regex(/^[A-Z]{2}$/i).transform((c) => c.toUpperCase()).optional(),
     slug: z.string().min(2).max(64).regex(/^[a-z0-9-]+$/).optional(),
     isActive: z.boolean().optional(),
