@@ -74,19 +74,34 @@ async function bootstrap(): Promise<void> {
     const { ensureLogosDirectory } = await import("./lib/hotel-logo-storage");
     await ensureLogosDirectory();
     logger.info("Migrations complete");
-    const { getEmailDeliveryMode, validateEmailDeliveryForProduction } = await import(
-      "./config/email-delivery"
+    const {
+      getEmailDeliveryMode,
+      getResendFrom,
+      validateEmailDeliveryForProduction,
+      verifyProductionEmailDelivery,
+      verifyResendForProduction,
+    } = await import("./config/email-delivery");
+    const { platformSettingsRepository } = await import(
+      "./lib/platform-auth/platform-settings-repository"
     );
     if (env.NODE_ENV === "production") {
       validateEmailDeliveryForProduction();
+      await verifyProductionEmailDelivery();
     }
     const mode = getEmailDeliveryMode();
+    const verificationEmail = await platformSettingsRepository.getVerificationEmail();
+    if (env.NODE_ENV === "production" && mode === "resend") {
+      await verifyResendForProduction(verificationEmail);
+    }
     if (mode === "console") {
       logger.warn(
         "Platform OTP emails log to console only — set RESEND_API_KEY or GMAIL_APP_PASSWORD",
       );
     } else {
-      logger.info({ mode }, `Platform OTP email: ${mode} configured`);
+      logger.info(
+        { mode, verificationEmail, from: mode === "resend" ? getResendFrom() : undefined },
+        `Platform OTP email: ${mode} configured`,
+      );
     }
   } catch (err) {
     logger.fatal({ err }, "Migration failed — refusing to start");

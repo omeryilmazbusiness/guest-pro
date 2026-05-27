@@ -4,6 +4,23 @@ import type { IEmailSender, SendEmailInput } from "./email-sender";
 
 const RESEND_TIMEOUT_MS = 15_000;
 
+function mapResendApiError(status: number, apiMessage: string, to: string): string {
+  if (status === 401) {
+    return "Invalid RESEND_API_KEY on the server. Create a new key at resend.com/api-keys.";
+  }
+  if (status === 403 && /only send testing emails/i.test(apiMessage)) {
+    return (
+      `Resend test mode: OTP can only be sent to your Resend account email, not ${to}. ` +
+      "Either use that email as the platform verification address, or verify guest-pro.com on Resend " +
+      "and set RESEND_FROM=Guest Pro <noreply@www.guest-pro.com> on Railway."
+    );
+  }
+  if (status === 422 && /invalid.*from/i.test(apiMessage)) {
+    return "Invalid RESEND_FROM on the server. Use: Guest Pro <noreply@guest-pro.com> after domain verification.";
+  }
+  return apiMessage;
+}
+
 /**
  * HTTPS transactional email — reliable on Railway (no SMTP port blocking).
  * https://resend.com — set RESEND_API_KEY in production.
@@ -43,8 +60,9 @@ export class ResendEmailSender implements IEmailSender {
       };
 
       if (!res.ok) {
-        logger.error({ status: res.status, data }, "resend:api-error");
-        throw new Error(data.message ?? `Resend API error (${res.status})`);
+        const apiMessage = data.message ?? `Resend API error (${res.status})`;
+        logger.error({ status: res.status, data, to: input.to }, "resend:api-error");
+        throw new Error(mapResendApiError(res.status, apiMessage, input.to));
       }
 
       logger.info({ to: input.to, id: data.id }, "resend:sent");

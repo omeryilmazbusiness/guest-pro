@@ -1,4 +1,8 @@
-import { getEmailDeliveryMode, getResendApiKey, getResendFrom } from "../../config/email-delivery";
+import {
+  getEmailDeliveryMode,
+  getResendApiKey,
+  getResendFrom,
+} from "../../config/email-delivery";
 import type { IEmailSender } from "./email-sender";
 import { ConsoleEmailSender } from "./console-email-sender";
 import { ResendEmailSender } from "./resend-email-sender";
