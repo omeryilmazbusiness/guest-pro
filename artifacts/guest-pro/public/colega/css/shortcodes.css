@@ -224,9 +224,20 @@
 		z-index: 2;
 	}
 
-	.section-image:has(.hero-video-wrapper.force-video) > img.item-image.grid__item-img {
+	/* Poster visible immediately; video fades in when ready (avoids black card while 30MB loads) */
+	.hero-video-wrapper.force-video {
 		opacity: 0;
-		pointer-events: none;
+		transition: opacity 0.5s ease;
+	}
+
+	.hero-video-wrapper.force-video.guestpro-video-ready {
+		opacity: 1;
+	}
+
+	.section-image.guestpro-hero-poster {
+		background-image: url(../images/bauman-placeholder.jpg);
+		background-size: cover;
+		background-position: center center;
 	}
 
 	/* Guest Pro: subtle dark overlay for background videos */

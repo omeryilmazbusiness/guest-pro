@@ -78,9 +78,13 @@ function guestProInitShowcaseHeroVideo() {
 		video.playsInline = true;
 		video.setAttribute("playsinline", "");
 		video.setAttribute("webkit-playsinline", "");
-		video.preload = "auto";
+		/* Load full video after poster paints — keeps first paint fast */
+		video.preload = "metadata";
 
 		if (alreadyInit && !srcChanged) {
+			if (video.readyState >= 3) {
+				$(video).closest(".hero-video-wrapper.force-video").addClass("guestpro-video-ready");
+			}
 			guestProSafePlay(video);
 			return;
 		}
@@ -88,17 +92,40 @@ function guestProInitShowcaseHeroVideo() {
 		video.setAttribute("data-guestpro-video-init", "1");
 		$source.attr("src", url);
 
+		var $wrapper = $(video).closest(".hero-video-wrapper.force-video");
+
+		var markReady = function () {
+			$wrapper.addClass("guestpro-video-ready");
+		};
+
 		var onCanPlay = function () {
+			markReady();
 			guestProSafePlay(video);
 		};
 
 		video.addEventListener("canplay", onCanPlay, { once: true, passive: true });
+		video.addEventListener("playing", markReady, { once: true, passive: true });
 
-		if (srcChanged) {
+		if (video.readyState >= 3) {
+			markReady();
+		}
+
+		var startFullLoad = function () {
+			if (video.getAttribute("data-guestpro-full-load") === "1") return;
+			video.setAttribute("data-guestpro-full-load", "1");
+			video.preload = "auto";
 			try {
 				video.load();
 			} catch (e) {}
+			guestProSafePlay(video);
+		};
+
+		if (srcChanged) {
+			requestAnimationFrame(function () {
+				requestAnimationFrame(startFullLoad);
+			});
 		} else if (video.readyState >= 2) {
+			markReady();
 			guestProSafePlay(video);
 		}
 	});
