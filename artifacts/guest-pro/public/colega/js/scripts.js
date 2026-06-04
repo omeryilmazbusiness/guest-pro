@@ -116,27 +116,14 @@ function guestProInitShowcaseHeroVideo() {
 
 	$videos.each(function () {
 		var video = this;
-		var $sources = $(video).find("source[data-src], source[src]");
-		if ($sources.length === 0) {
-			$sources = $(
-				'<source type="video/mp4" data-src="videos/bauman-hero.mp4" src="videos/bauman-hero.mp4">',
-			).appendTo(video);
-		}
+		var $source = $(video).find("source[type='video/mp4']").first();
+		var rel =
+			$source.attr("data-src") ||
+			$source.attr("src") ||
+			"videos/bauman.mp4";
+		var url = guestProAssetUrl(rel);
 		var alreadyInit = video.getAttribute("data-guestpro-video-init") === "1";
-		var srcChanged = false;
-
-		$sources.each(function () {
-			var $s = $(this);
-			var rel =
-				$s.attr("data-src") ||
-				$s.attr("src") ||
-				"videos/bauman-hero.mp4";
-			var url = guestProAssetUrl(rel);
-			if ($s.attr("src") !== url) {
-				srcChanged = true;
-			}
-			$s.attr("src", url);
-		});
+		var srcChanged = !alreadyInit || $source.attr("src") !== url;
 
 		video.muted = true;
 		video.defaultMuted = true;
@@ -156,6 +143,7 @@ function guestProInitShowcaseHeroVideo() {
 		}
 
 		video.setAttribute("data-guestpro-video-init", "1");
+		$source.attr("src", url);
 
 		var $wrapper = $(video).closest(".hero-video-wrapper.force-video");
 

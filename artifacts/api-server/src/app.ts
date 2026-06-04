@@ -79,6 +79,10 @@ if (env.NODE_ENV === "production" && existsSync(staticDir)) {
 
   // SPA fallback — never return index.html for static asset paths (e.g. missing .mp4 → HTML breaks video)
   app.get("{*path}", (req, res) => {
+    if (req.path === "/colega" || req.path.startsWith("/colega/")) {
+      res.status(404).end();
+      return;
+    }
     const ext = path.extname(req.path).toLowerCase();
     if (
       /\.(mp4|webm|mov|m4v|jpg|jpeg|png|gif|webp|svg|ico|css|js|mjs|woff2?|ttf|otf|eot|mp3|wav|pdf)$/i.test(

@@ -41,8 +41,12 @@ export function HotelTenantProvider({
       return;
     }
     if (!normalizedSlug || isReservedHotelSlug(normalizedSlug)) {
-      setError("Invalid hotel");
       setIsLoading(false);
+      if (normalizedSlug === "colega") {
+        window.location.replace("/colega/index.html");
+      } else {
+        window.location.replace("/");
+      }
       return;
     }
 
