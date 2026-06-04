@@ -63,9 +63,14 @@ function guestProInitShowcaseHeroVideo() {
 
 	$videos.each(function () {
 		var video = this;
-		var $sources = $(video).find("source[data-src], source[src]");
+		var $source = $(video).find("source[type='video/mp4']").first();
+		var rel =
+			$source.attr("data-src") ||
+			$source.attr("src") ||
+			"videos/bauman.mp4";
+		var url = guestProAssetUrl(rel);
 		var alreadyInit = video.getAttribute("data-guestpro-video-init") === "1";
-		var srcChanged = false;
+		var srcChanged = !alreadyInit || $source.attr("src") !== url;
 
 		video.muted = true;
 		video.defaultMuted = true;
@@ -76,19 +81,6 @@ function guestProInitShowcaseHeroVideo() {
 		/* Load full video after poster paints — keeps first paint fast */
 		video.preload = "metadata";
 
-		$sources.each(function () {
-			var $src = $(this);
-			var rel =
-				$src.attr("data-src") ||
-				$src.attr("src") ||
-				"videos/bauman-hero.mp4";
-			var url = guestProAssetUrl(rel);
-			if ($src.attr("src") !== url) {
-				srcChanged = true;
-				$src.attr("src", url);
-			}
-		});
-
 		if (alreadyInit && !srcChanged) {
 			if (video.readyState >= 3) {
 				$(video).closest(".hero-video-wrapper.force-video").addClass("guestpro-video-ready");
@@ -98,6 +90,7 @@ function guestProInitShowcaseHeroVideo() {
 		}
 
 		video.setAttribute("data-guestpro-video-init", "1");
+		$source.attr("src", url);
 
 		var $wrapper = $(video).closest(".hero-video-wrapper.force-video");
 
