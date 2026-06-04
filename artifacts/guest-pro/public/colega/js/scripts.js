@@ -43,6 +43,19 @@ function guestProIsSingleProjectMode() {
 	return !!(window.GUESTPRO_SITE && window.GUESTPRO_SITE.singleProjectMode);
 }
 
+/** Swallow AbortError when play() races with load() — normal during hero video init. */
+function guestProSafePlay(video) {
+	if (!video) return;
+	try {
+		var p = video.play();
+		if (p && typeof p.catch === "function") {
+			p.catch(function (err) {
+				if (err && err.name === "AbortError") return;
+			});
+		}
+	} catch (e) {}
+}
+
 /** Home showcase background video — autoplay in iframe/production. */
 function guestProInitShowcaseHeroVideo() {
 	var $videos = $(".hero-video-wrapper.force-video video.bgvid");
@@ -56,12 +69,8 @@ function guestProInitShowcaseHeroVideo() {
 			$source.attr("src") ||
 			"videos/bauman.mp4";
 		var url = guestProAssetUrl(rel);
-		if ($source.attr("src") !== url) {
-			$source.attr("src", url);
-		}
-		try {
-			video.setAttribute("src", url);
-		} catch (e) {}
+		var alreadyInit = video.getAttribute("data-guestpro-video-init") === "1";
+		var srcChanged = !alreadyInit || $source.attr("src") !== url;
 
 		video.muted = true;
 		video.defaultMuted = true;
@@ -71,35 +80,42 @@ function guestProInitShowcaseHeroVideo() {
 		video.setAttribute("webkit-playsinline", "");
 		video.preload = "auto";
 
-		var play = function () {
-			if (!video) return;
-			var p = video.play();
-			if (p && typeof p.catch === "function") {
-				p.catch(function () {});
-			}
+		if (alreadyInit && !srcChanged) {
+			guestProSafePlay(video);
+			return;
+		}
+
+		video.setAttribute("data-guestpro-video-init", "1");
+		$source.attr("src", url);
+
+		var onCanPlay = function () {
+			guestProSafePlay(video);
 		};
 
-		video.addEventListener("loadeddata", play, { passive: true });
-		video.addEventListener("canplay", play, { passive: true });
-		try {
-			video.load();
-		} catch (e) {}
-		play();
+		video.addEventListener("canplay", onCanPlay, { once: true, passive: true });
+
+		if (srcChanged) {
+			try {
+				video.load();
+			} catch (e) {}
+		} else if (video.readyState >= 2) {
+			guestProSafePlay(video);
+		}
 	});
 
-	document.addEventListener(
-		"visibilitychange",
-		function () {
-			if (document.visibilityState === "visible") {
-				$videos.each(function () {
-					try {
-						this.play();
-					} catch (e) {}
+	if (!window.__guestproVisibilityPlayBound) {
+		window.__guestproVisibilityPlayBound = true;
+		document.addEventListener(
+			"visibilitychange",
+			function () {
+				if (document.visibilityState !== "visible") return;
+				$(".hero-video-wrapper.force-video video.bgvid").each(function () {
+					guestProSafePlay(this);
 				});
-			}
-		},
-		{ passive: true },
-	);
+			},
+			{ passive: true },
+		);
+	}
 }
 
 function applyGuestProSiteMode() {
@@ -206,15 +222,25 @@ $(document).ready(function() {
 				// Kickstart playback and recover from stalls
 				var kick = function () {
 					if (!v || v.readyState === 0) return;
-					var p = v.play();
-					if (p && typeof p.catch === "function") p.catch(function () {});
+					guestProSafePlay(v);
 				};
 				["canplay", "canplaythrough", "stalled", "waiting", "suspend"].forEach(function (ev) {
 					v.addEventListener(ev, kick, { passive: true });
 				});
 				v.addEventListener("error", function () {
-					try { v.load(); } catch (e) {}
-					kick();
+					if (v.__guestproReloading) return;
+					v.__guestproReloading = true;
+					v.addEventListener(
+						"canplay",
+						function () {
+							v.__guestproReloading = false;
+							guestProSafePlay(v);
+						},
+						{ once: true, passive: true },
+					);
+					try {
+						v.load();
+					} catch (e) {}
 				});
 				// Capture a poster frame from the video and apply it to transition images.
 				// This avoids showing the old static (reddish) placeholder during page transitions.
@@ -272,7 +298,9 @@ $(document).ready(function() {
 					}, { passive: true });
 				});
 
-				kick();
+				if (v.readyState >= 2) {
+					kick();
+				}
 			} catch (e) {
 				// If the browser blocks autoplay, we silently fall back to poster image.
 			}
@@ -393,14 +421,12 @@ Function Page Load
 								
 								if( $('.hero-video-wrapper').length > 0 ){
 									$('#hero-image-wrapper').find('video').each(function() {
-										$(this).get(0).play();
+										guestProSafePlay(this);
 									});
 									$('.hero-video-wrapper.force-video video.bgvid').each(function() {
 										this.muted = true;
-										var p = this.play();
-										if (p && typeof p.catch === "function") p.catch(function () {});
+										guestProSafePlay(this);
 									});
-									guestProInitShowcaseHeroVideo();
 								}
 								
 								TweenMax.to($("#main"), 0, {force3D:true, opacity:1, delay:0, ease:Power2.easeOut});//modified time
@@ -930,14 +956,14 @@ Function Showcase Slider
 				 	},
 					init: function () {						
 						$('.swiper-slide-active').find('video').each(function() {
-							$(this).get(0).play();
+							guestProSafePlay(this);
 						});
 						
 					},
 					slideChangeTransitionStart: function () {
 						
 						$('.swiper-slide-active').find('video').each(function() {
-							$(this).get(0).play();
+							guestProSafePlay(this);
 						}); 				
 						
 					},				
