@@ -1,0 +1,4 @@
+# Master hero video (30MB+) — keep locally; run pnpm colega:hero-media to build web assets
+*.mp4
+*.mov
+*.webm

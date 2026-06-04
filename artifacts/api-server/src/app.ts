@@ -72,6 +72,11 @@ if (env.NODE_ENV === "production" && existsSync(staticDir)) {
       setHeaders(res, filePath) {
         if (filePath.endsWith(".html")) {
           res.setHeader("Cache-Control", "no-cache");
+          return;
+        }
+        if (/\.(mp4|webm)$/i.test(filePath)) {
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+          res.setHeader("Accept-Ranges", "bytes");
         }
       },
     })
