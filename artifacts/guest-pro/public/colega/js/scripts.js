@@ -43,17 +43,70 @@ function guestProIsSingleProjectMode() {
 	return !!(window.GUESTPRO_SITE && window.GUESTPRO_SITE.singleProjectMode);
 }
 
-/** Swallow AbortError when play() races with load() — normal during hero video init. */
+/**
+ * Safe HTMLMediaElement.play() — https://developer.chrome.com/blog/play-request-was-interrupted
+ * Never assume play() succeeds; always handle the returned Promise.
+ */
+function guestProIsBenignPlayError(err) {
+	if (!err || !err.name) return true;
+	return (
+		err.name === "AbortError" ||
+		err.name === "NotAllowedError" ||
+		err.name === "NotSupportedError"
+	);
+}
+
 function guestProSafePlay(video) {
-	if (!video) return;
+	if (!video || !video.isConnected) {
+		return Promise.resolve();
+	}
 	try {
-		var p = video.play();
-		if (p && typeof p.catch === "function") {
-			p.catch(function (err) {
-				if (err && err.name === "AbortError") return;
-			});
+		video.muted = true;
+	} catch (e) {}
+	var playPromise;
+	try {
+		playPromise = video.play();
+	} catch (e) {
+		return Promise.resolve();
+	}
+	if (playPromise !== undefined && typeof playPromise.then === "function") {
+		return playPromise.catch(function (err) {
+			if (!guestProIsBenignPlayError(err)) {
+				return Promise.reject(err);
+			}
+		});
+	}
+	return Promise.resolve();
+}
+
+function guestProSafePause(video) {
+	if (!video || !video.isConnected) return;
+	try {
+		if (!video.paused) {
+			video.pause();
 		}
 	} catch (e) {}
+}
+
+function guestProPauseAllVideos() {
+	try {
+		document.querySelectorAll("video").forEach(function (v) {
+			guestProSafePause(v);
+		});
+	} catch (e) {}
+}
+
+/** Play only after media can play — avoids play()+load() / play()+pause() races */
+function guestProPlayWhenReady(video) {
+	if (!video || !video.isConnected) return;
+	if (video.readyState >= 2) {
+		guestProSafePlay(video);
+		return;
+	}
+	var onCanPlay = function () {
+		guestProSafePlay(video);
+	};
+	video.addEventListener("canplay", onCanPlay, { once: true, passive: true });
 }
 
 /** Home showcase background video — autoplay in iframe/production. */
@@ -117,7 +170,7 @@ function guestProInitShowcaseHeroVideo() {
 			try {
 				video.load();
 			} catch (e) {}
-			guestProSafePlay(video);
+			/* play() only from onCanPlay — not here (avoids "interrupted by new load request") */
 		};
 
 		if (srcChanged) {
@@ -248,10 +301,11 @@ $(document).ready(function() {
 				v.playsInline = true;
 				// Kickstart playback and recover from stalls
 				var kick = function () {
-					if (!v || v.readyState === 0) return;
-					guestProSafePlay(v);
+					if (!v || !v.isConnected) return;
+					if (v.getAttribute("data-guestpro-video-init") === "1") return;
+					guestProPlayWhenReady(v);
 				};
-				["canplay", "canplaythrough", "stalled", "waiting", "suspend"].forEach(function (ev) {
+				["canplaythrough", "stalled", "waiting"].forEach(function (ev) {
 					v.addEventListener(ev, kick, { passive: true });
 				});
 				v.addEventListener("error", function () {
@@ -261,7 +315,7 @@ $(document).ready(function() {
 						"canplay",
 						function () {
 							v.__guestproReloading = false;
-							guestProSafePlay(v);
+							guestProPlayWhenReady(v);
 						},
 						{ once: true, passive: true },
 					);
@@ -325,7 +379,7 @@ $(document).ready(function() {
 					}, { passive: true });
 				});
 
-				if (v.readyState >= 2) {
+				if (v.readyState >= 2 && v.getAttribute("data-guestpro-video-init") !== "1") {
 					kick();
 				}
 			} catch (e) {
@@ -583,6 +637,7 @@ Function First Load
 		
 		//Load Default Page
 		$('a.ajax-link').on('click', function() {
+			guestProPauseAllVideos();
 			$("body").addClass("show-loader");	
 			$(".flexnav").removeClass("flexnav-show");
 			$('#menu-burger').removeClass("open");
@@ -600,7 +655,8 @@ Function First Load
 		});
 		
 		//Load Project from Showcase
-		$('#showcase-slider-holder #showcase-slider-captions-stroked a.move-title').on('click', function() {	
+		$('#showcase-slider-holder #showcase-slider-captions-stroked a.move-title').on('click', function() {
+			guestProPauseAllVideos();
 			$('header').removeClass('white-header');
 			TweenMax.to($(".swiper-prev"), 0.3, {force3D:true, opacity:0, delay:0, ease:Power2.easeOut});
 			TweenMax.to($(".swiper-pagination .swiper-pagination-bullet"), 0.3, {force3D:true, opacity:0, delay:0.1, ease:Power2.easeOut});
@@ -612,6 +668,7 @@ Function First Load
 		
 		//Load Page From Menu
 		$('nav .ajax-link').on('click', function() {
+			guestProPauseAllVideos();
 			$(this).parents('.flexnav').addClass('hover');
 			$(this).parents('.item-with-ul').addClass('hover');
 			TweenMax.set($(this).find('span'),{yPercent:0});
@@ -883,7 +940,7 @@ Function Lazy Load
 		if( $('.load-project-thumb').length > 0 ){
 			setTimeout( function(){
 				$('#hero-image-wrapper').find('video').each(function() {
-					$(this).get(0).play();
+					guestProSafePlay(this);
 				});
 				$("#app.active").remove();
 				$(".big-title-caption").remove();	
@@ -891,14 +948,14 @@ Function Lazy Load
 		} else if( $('.load-project-thumb-with-title').length > 0 ){
 			setTimeout( function(){
 				$('#hero-image-wrapper').find('video').each(function() {
-					$(this).get(0).play();
+					guestProSafePlay(this);
 				});
 				$("#app.active").remove();
 				$(".big-title-caption").remove();	
 			} , 250 );
 		} else {
 			$('#hero-image-wrapper').find('video').each(function() {
-				$(this).get(0).play();
+				guestProSafePlay(this);
 			});
 		}
 		
@@ -997,11 +1054,11 @@ Function Showcase Slider
 					slideChangeTransitionEnd: function () {	
 						
 						$('.swiper-slide-prev').find('video').each(function() {
-							$(this).get(0).pause();
+							guestProSafePause(this);
 						});
 						
 						$('.swiper-slide-next').find('video').each(function() {
-							$(this).get(0).pause();
+							guestProSafePause(this);
 						});
 						
 					},
@@ -1103,7 +1160,7 @@ Function Showcase Carousel
 					
 					init: function () {						
 						$('.swiper-slide-active').find('video').each(function() {
-							$(this).get(0).play();
+							guestProSafePlay(this);
 						});
 					},				
 					slideNextTransitionStart: function () {	
@@ -1145,7 +1202,7 @@ Function Showcase Carousel
 						$('.swiper-button-white').addClass('disable-click');
 						
 						$('.swiper-slide-active').find('video').each(function() {
-							$(this).get(0).play();
+							guestProSafePlay(this);
 						}); 					
 						
 					},				
@@ -1154,11 +1211,11 @@ Function Showcase Carousel
 						$('.swiper-button-white').removeClass('disable-click');
 						
 						$('.swiper-slide-prev').find('video').each(function() {
-							$(this).get(0).pause();
+							guestProSafePause(this);
 						});
 						
 						$('.swiper-slide-next').find('video').each(function() {
-							$(this).get(0).pause();
+							guestProSafePause(this);
 						});
 						
 					}
@@ -1273,7 +1330,7 @@ Function Portfolio
 				TweenMax.to('#ball-loader', 0.2,{borderWidth: '2px', top: 2, left: 2});
 				$( "#ball" ).addClass("with-icon").append( '<i class="fa fa-plus"></i>' );
 				$(this).parent().find('video').each(function() {
-					$(this).get(0).play();
+					guestProSafePlay(this);
 				});
 			});
 							
@@ -1283,7 +1340,7 @@ Function Portfolio
 				$("#ball").removeClass("with-icon");
 				$('#ball i').remove();
 				$(this).parent().find('video').each(function() {
-					$(this).get(0).pause();
+					guestProSafePause(this);
 				});
 			});			
 			
@@ -1883,12 +1940,12 @@ Function Page PlayVideo
 					if(videoObj[0].paused || videoObj[0].ended) {
 						
 						videoObj.parent().addClass('play');
-						videoObj[0].play();
+						guestProSafePlay(videoObj[0]);
 					}
 					else {
 						
 						videoObj.parent().removeClass('play');
-						videoObj[0].pause();
+						guestProSafePause(videoObj[0]);
 					}
 				}
 			};
@@ -1921,7 +1978,7 @@ Function Page PlayVideo
 							
 							if( !$(this).get(0).paused && !$(this).get(0).ended ) {
 								
-								$(this).get(0).pause();
+								guestProSafePause(this);
 							}
 						});
 					}
@@ -2078,7 +2135,7 @@ Function Page PlayVideo
 				//video ended event
 				video.on('ended', function() {		
 					
-					$(this).get(0).pause();
+					guestProSafePause(this);
 					$(this).parent().removeClass("play");
 					$( "#ball" ).toggleClass("pause-movie");
 				});
