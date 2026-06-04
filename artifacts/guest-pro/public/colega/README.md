@@ -24,7 +24,9 @@ Static assets served by Vite at `/colega/`. The app home route (`/`) embeds `ind
 ### Assets
 
 - Logos: `images/guestpro-logo-*.png`
-- Hero video: `videos/bauman.mp4`
+- Hero poster: `images/bauman-hero-poster.jpg`
+- Hero video: `videos/bauman-hero.webm`, `videos/bauman-hero.mp4` (~2MB loop; `videos/bauman.mp4` alias for legacy URLs)
+- Regenerate: `pnpm --filter @workspace/guest-pro colega:hero-media` (master in `videos/source/`, gitignored)
 - Product images: `images/projects/guestpro-*`
 
 ### Dev
