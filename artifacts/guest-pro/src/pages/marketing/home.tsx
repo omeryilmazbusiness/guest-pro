@@ -6,6 +6,8 @@ export default function MarketingHome() {
         src={`${import.meta.env.BASE_URL.replace(/\/+$/, "")}/colega/index.html`}
         className="h-[100svh] w-full border-0"
         referrerPolicy="no-referrer"
+        allow="autoplay; fullscreen; encrypted-media"
+        loading="eager"
       />
     </div>
   );

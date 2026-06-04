@@ -209,6 +209,26 @@
 	  	background-size: cover;
 	}
 
+	/* Guest Pro: force-video must sit above page background (z-index:-100 broke in prod/iframe) */
+	.hero-video-wrapper.force-video video.bgvid {
+		z-index: 1;
+		object-fit: cover;
+		width: 100%;
+		height: 100%;
+		min-width: 100%;
+		min-height: 100%;
+		transform: translateX(-50%) translateY(-50%);
+	}
+
+	.hero-video-wrapper.force-video .bgvid-overlay {
+		z-index: 2;
+	}
+
+	.section-image:has(.hero-video-wrapper.force-video) > img.item-image.grid__item-img {
+		opacity: 0;
+		pointer-events: none;
+	}
+
 	/* Guest Pro: subtle dark overlay for background videos */
 	.hero-video-wrapper .bgvid-overlay {
 		position: absolute;

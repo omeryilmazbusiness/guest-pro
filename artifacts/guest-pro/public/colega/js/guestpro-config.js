@@ -4,7 +4,18 @@
  * singleProjectMode: true  → Home shows only Guest Pro; Project 01 shows Let's Work Together CTA
  * singleProjectMode: false → Restore full template portfolio
  */
+/** Base URL for colega assets (works in iframe + custom BASE_PATH). */
+function guestProColegaBase() {
+	var path = window.location.pathname || "/";
+	var idx = path.indexOf("/colega/");
+	if (idx >= 0) {
+		return path.slice(0, idx + "/colega/".length);
+	}
+	return "/colega/";
+}
+
 window.GUESTPRO_SITE = window.GUESTPRO_SITE || {
+	colegaBase: guestProColegaBase(),
 	singleProjectMode: true,
 	demoEmail: "omerfarukyilmazrbusiness@gmail.com",
 	demoMailSubject: "Guest Pro — Demo Request",
