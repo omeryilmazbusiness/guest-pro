@@ -64,16 +64,34 @@ async function shutdown(signal: string): Promise<void> {
 process.on("SIGTERM", () => { shutdown("SIGTERM").catch(() => process.exit(1)); });
 process.on("SIGINT",  () => { shutdown("SIGINT").catch(() => process.exit(1)); });
 
+function isDatabaseUnreachable(err: unknown): boolean {
+  const codes = new Set(["ECONNREFUSED", "ENOTFOUND", "ETIMEDOUT", "ECONNRESET"]);
+  let current: unknown = err;
+  for (let depth = 0; depth < 4 && current; depth++) {
+    if (typeof current === "object" && current !== null) {
+      const code = (current as { code?: string }).code;
+      if (code && codes.has(code)) return true;
+      current = (current as { cause?: unknown }).cause;
+    } else {
+      break;
+    }
+  }
+  return false;
+}
+
 // ── Startup ──────────────────────────────────────────────────────────────────
 async function bootstrap(): Promise<void> {
-  // T-09: Run pending migrations before accepting traffic.
-  // runMigrations() is idempotent — already-applied migrations are skipped.
+  let dbReady = false;
+
+  // T-09: Run pending migrations before accepting traffic (required in production).
   try {
     logger.info("Running database migrations...");
     await runMigrations();
     const { ensureLogosDirectory } = await import("./lib/hotel-logo-storage");
     await ensureLogosDirectory();
     logger.info("Migrations complete");
+    dbReady = true;
+
     const {
       getEmailDeliveryMode,
       getResendFrom,
@@ -106,13 +124,34 @@ async function bootstrap(): Promise<void> {
       );
     }
   } catch (err) {
-    logger.fatal({ err }, "Migration failed — refusing to start");
-    process.exit(1);
+    if (env.NODE_ENV === "production") {
+      logger.fatal({ err }, "Migration failed — refusing to start");
+      process.exit(1);
+    }
+
+    if (isDatabaseUnreachable(err)) {
+      logger.warn(
+        { err },
+        "PostgreSQL unreachable — starting in marketing-only mode (contact form and public routes work). Fix DATABASE_URL or start Postgres for full API.",
+      );
+    } else {
+      logger.warn(
+        { err },
+        "Database startup failed — HTTP server will start but hotel/app routes may error",
+      );
+    }
   }
 
   server = app.listen(port, "0.0.0.0", () => {
-    logger.info({ port, host: "0.0.0.0" }, `Server listening on 0.0.0.0:${port}`);
-    startScheduler();
+    logger.info(
+      { port, host: "0.0.0.0", dbReady },
+      `Server listening on 0.0.0.0:${port}${dbReady ? "" : " (marketing-only)"}`,
+    );
+    if (dbReady) {
+      startScheduler();
+    } else {
+      logger.warn("Background scheduler skipped (database unavailable)");
+    }
   });
 
   server.on("error", (err: NodeJS.ErrnoException) => {

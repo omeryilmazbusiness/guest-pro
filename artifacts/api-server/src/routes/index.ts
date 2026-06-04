@@ -16,11 +16,13 @@ import platformRouter from "./platform";
 import platformAuthRouter from "./platform-auth";
 import publicHotelsRouter from "./public-hotels";
 import publicConfigRouter from "./public-config";
+import publicContactRouter from "./public-contact";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(publicConfigRouter);
+router.use(publicContactRouter);
 router.use(publicHotelsRouter);
 router.use(platformAuthRouter);
 router.use(platformRouter);

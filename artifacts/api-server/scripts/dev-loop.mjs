@@ -37,8 +37,36 @@ async function startApi() {
 
 console.log("[dev-loop] Starting API (auto-restart enabled)…");
 
+const MAX_FATAL_RESTARTS = 8;
+let fatalRestarts = 0;
+
 while (true) {
   const code = await startApi();
-  console.log(`[dev-loop] API stopped (exit ${code}). Restarting in 2s…`);
-  await new Promise((r) => setTimeout(r, 2000));
+  if (code === 0) {
+    fatalRestarts = 0;
+    console.log("[dev-loop] API stopped cleanly.");
+    break;
+  }
+
+  fatalRestarts += 1;
+  if (fatalRestarts >= MAX_FATAL_RESTARTS) {
+    console.error(
+      "\n[dev-loop] API failed to stay up after",
+      MAX_FATAL_RESTARTS,
+      "attempts.",
+    );
+    console.error(
+      "[dev-loop] If logs show ECONNREFUSED on DATABASE_URL, start PostgreSQL or run ./setup-local.sh",
+    );
+    console.error(
+      "[dev-loop] Marketing contact form can still run in marketing-only mode once the server listens — check the latest log line.",
+    );
+    process.exit(code);
+  }
+
+  const delaySec = Math.min(2 + fatalRestarts, 15);
+  console.log(
+    `[dev-loop] API stopped (exit ${code}). Restarting in ${delaySec}s… (${fatalRestarts}/${MAX_FATAL_RESTARTS})`,
+  );
+  await new Promise((r) => setTimeout(r, delaySec * 1000));
 }

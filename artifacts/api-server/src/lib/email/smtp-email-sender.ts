@@ -82,25 +82,33 @@ export class SmtpEmailSender implements IEmailSender {
     const isGmail = smtp.host.includes("gmail.com") || smtp.user.endsWith("@gmail.com");
     const specs = isGmail ? buildGmailTransports(smtp.user, smtp.pass) : buildGenericTransports(smtp);
 
-    const mail = {
+    const recipients = Array.isArray(input.to) ? input.to : [input.to];
+    const mail: Record<string, unknown> = {
       from: smtp.from,
-      to: input.to,
+      to: recipients.join(", "),
+      envelope: { from: smtp.user, to: recipients },
       subject: input.subject,
       text: input.text,
       html: input.html ?? input.text.replace(/\n/g, "<br>"),
     };
+    if (input.replyTo) {
+      mail.replyTo = input.replyTo;
+    }
 
     const errors: string[] = [];
 
     for (const spec of specs) {
       const transport = spec.create();
       try {
-        await withAsyncTimeout(
+        const info = await withAsyncTimeout(
           `smtp ${spec.label}`,
           transport.sendMail(mail),
           SMTP_SEND_TIMEOUT_MS,
         );
-        logger.info({ to: input.to, via: spec.label }, "email:sent");
+        logger.info(
+          { to: input.to, via: spec.label, messageId: (info as { messageId?: string })?.messageId },
+          "email:sent",
+        );
         transport.close();
         return;
       } catch (err) {

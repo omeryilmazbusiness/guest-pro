@@ -41,13 +41,17 @@ export class ResendEmailSender implements IEmailSender {
   ) {}
 
   async send(input: SendEmailInput): Promise<void> {
-    const body = {
+    const recipients = Array.isArray(input.to) ? input.to : [input.to];
+    const body: Record<string, unknown> = {
       from: this.from,
-      to: [input.to],
+      to: recipients,
       subject: input.subject,
       text: input.text,
       html: input.html ?? input.text.replace(/\n/g, "<br>"),
     };
+    if (input.replyTo) {
+      body.reply_to = input.replyTo;
+    }
 
     try {
       const res = await withAsyncTimeout(
@@ -71,7 +75,7 @@ export class ResendEmailSender implements IEmailSender {
       if (!res.ok) {
         const apiMessage = data.message ?? `Resend API error (${res.status})`;
         logger.error({ status: res.status, data, to: input.to }, "resend:api-error");
-        throw new Error(mapResendApiError(res.status, apiMessage, input.to));
+        throw new Error(mapResendApiError(res.status, apiMessage, recipients[0] ?? ""));
       }
 
       logger.info({ to: input.to, id: data.id }, "resend:sent");
