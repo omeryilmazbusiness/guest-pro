@@ -14,6 +14,9 @@ import GuestAutoLogin from "@/pages/guest/auto-login";
 import PassportScanPage from "@/pages/guest/passport-scan";
 import RestaurantDashboard from "@/pages/restaurant/dashboard";
 import MarketingHomePage from "@/pages/marketing/MarketingHomePage";
+import MarketingAboutPage from "@/pages/marketing/MarketingAboutPage";
+import MarketingContactPage from "@/pages/marketing/MarketingContactPage";
+import { MARKETING_ROUTES } from "@/lib/marketing-routes";
 import HotelTenantRoutes from "@/routes/HotelTenantRoutes";
 import PlatformRoutes from "@/routes/PlatformRoutes";
 import LegacyTenantRedirect from "@/routes/LegacyTenantRedirect";
@@ -35,6 +38,8 @@ function Router() {
       {/* Public marketing */}
       <Route path={ROUTES.marketingHomeAlias} component={MarketingHomePage} />
       <Route path={ROUTES.marketingHome} component={MarketingHomePage} />
+      <Route path={MARKETING_ROUTES.about} component={MarketingAboutPage} />
+      <Route path={MARKETING_ROUTES.contact} component={MarketingContactPage} />
 
       {/* Per-hotel tenant: /{slug}/login, /{slug}/guest, /{slug}/welcoming, … */}
       <Route path="/:hotelSlug" nest>

@@ -48,7 +48,12 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         // Deep links like /platform/login on installed PWA (mobile)
         navigateFallback: basePath === "/" ? "/index.html" : `${basePath}/index.html`,
-        navigateFallbackDenylist: [/^\/api(?:\/|$)/, /^\/colega(?:\/|$)/],
+        navigateFallbackDenylist: [
+          /^\/api(?:\/|$)/,
+          /^\/colega(?:\/|$)/,
+          /^\/about\/?$/,
+          /^\/contact\/?$/,
+        ],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

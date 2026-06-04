@@ -6,10 +6,10 @@ Static assets served by Vite at `/colega/`. The app home route (`/`) embeds `ind
 
 | File | Purpose |
 |------|---------|
-| `index.html` | Home — Guest Pro hero video |
+| `/` → `index.html` | Home — Guest Pro hero video |
+| `/about` → `about.html` | Company & endorsement |
+| `/contact` → `contact.html` | Contact form |
 | `project01.html` | Product story |
-| `about.html` | Company & endorsement |
-| `contact.html` | Contact form |
 
 ### Config
 

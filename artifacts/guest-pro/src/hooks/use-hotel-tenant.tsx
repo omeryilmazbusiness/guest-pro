@@ -44,6 +44,10 @@ export function HotelTenantProvider({
       setIsLoading(false);
       if (normalizedSlug === "colega") {
         window.location.replace("/colega/index.html");
+      } else if (normalizedSlug === "about") {
+        window.location.replace("/about");
+      } else if (normalizedSlug === "contact") {
+        window.location.replace("/contact");
       } else {
         window.location.replace("/");
       }

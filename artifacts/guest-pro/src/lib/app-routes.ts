@@ -2,9 +2,13 @@
  * Canonical client-side paths for Guest Pro SPA routing.
  * Keep redirects and links in sync with App.tsx route definitions.
  */
+export { MARKETING_ROUTES } from "@/lib/marketing-routes";
+
 export const ROUTES = {
   marketingHome: "/",
   marketingHomeAlias: "/home",
+  marketingAbout: "/about",
+  marketingContact: "/contact",
   platform: "/platform",
   platformLogin: "/platform/login",
   login: "/login",

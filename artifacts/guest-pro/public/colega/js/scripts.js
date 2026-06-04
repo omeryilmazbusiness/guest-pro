@@ -228,6 +228,33 @@ function stashOptionalShowcaseSlides() {
 
 applyGuestProSiteMode();
 
+/** Top-level marketing routes (/, /about, /contact) — navigate parent SPA, not Colega AJAX. */
+function guestProApplySiteNav() {
+	var topPaths = { "/": true, "/about": true, "/contact": true };
+	$('a[href="/"], a[href="/about"], a[href="/contact"]').each(function () {
+		var $a = $(this);
+		var href = ($a.attr("href") || "").split("?")[0];
+		if (!topPaths[href]) return;
+		$a.attr("target", "_parent").removeClass(
+			"ajax-link ajax-link-project next-ajax-link-page",
+		);
+	});
+}
+
+$(document).on(
+	"click",
+	'a[href="/"], a[href="/about"], a[href="/contact"]',
+	function (e) {
+		var href = ($(this).attr("href") || "").split("?")[0];
+		if (href !== "/" && href !== "/about" && href !== "/contact") return;
+		if (window.top === window) return;
+		e.preventDefault();
+		e.stopImmediatePropagation();
+		window.top.location.href = href;
+		return false;
+	},
+);
+
 function guestProBuildDemoMailto() {
 	var cfg = window.GUESTPRO_SITE || {};
 	var email = cfg.demoEmail || "omerfarukyilmazrbusiness@gmail.com";
@@ -252,9 +279,7 @@ function initGuestProNavAndDemo() {
 		$li.addClass("guestpro-portfolio-as-home");
 		$li.find("> ul").remove();
 		var $a = $li.find("> a").first();
-		$a.attr("href", "index.html")
-			.addClass("ajax-link")
-			.attr("data-type", "page-transition");
+		$a.attr("href", "/").attr("target", "_parent").removeClass("ajax-link");
 		$span.attr("data-hover", "Home").text("Home");
 	});
 
@@ -388,6 +413,7 @@ $(document).ready(function() {
 		});
 	})();
 
+	guestProApplySiteNav();
 	stashOptionalShowcaseSlides();
 	PageLoad();
 	ScrollEffects();

@@ -3,6 +3,8 @@ export const RESERVED_HOTEL_SLUGS = new Set([
   "platform",
   "api",
   "home",
+  "about",
+  "contact",
   "colega",
   "login",
   "manager",
