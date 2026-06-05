@@ -24,7 +24,7 @@ Static assets served by Vite at `/colega/`. The app home route (`/`) embeds `ind
 ### Assets
 
 - Logos: `images/guestpro-logo-*.png`
-- Hero video: `videos/bauman.mp4` (master in `videos/source/`, gitignored)
+- Hero video: YouTube stream (`heroYoutubeVideoId` in `js/guestpro-config.js`) — no large MP4 deploy
 - Product images: `images/projects/guestpro-*`
 
 ### Dev

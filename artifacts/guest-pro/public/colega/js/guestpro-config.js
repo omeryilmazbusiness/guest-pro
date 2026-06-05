@@ -31,4 +31,7 @@ window.GUESTPRO_SITE = window.GUESTPRO_SITE || {
 	contactFormAction: "/api/public/contact",
 	contactInboxEmail: "omerfarukyilmazrbusiness@gmail.com",
 	contactDisplayEmail: "omerfarukyilmazrbusiness@gmail.com",
+	/** Hero background — streamed from YouTube (no large MP4 download). */
+	heroYoutubeVideoId: "cdKx1Zv3YKs",
+	heroYoutubeUrl: "https://youtu.be/cdKx1Zv3YKs?si=EO_7wvCAhkexfe4n",
 };

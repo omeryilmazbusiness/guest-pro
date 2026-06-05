@@ -16,7 +16,7 @@ export function MarketingColegaFrame({ page, title }: MarketingColegaFrameProps)
         src={src}
         className="h-[100svh] w-full border-0"
         referrerPolicy="no-referrer"
-        allow="autoplay; fullscreen; encrypted-media"
+        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
         loading="eager"
       />
     </div>

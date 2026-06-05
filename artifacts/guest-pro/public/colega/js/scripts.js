@@ -93,6 +93,9 @@ function guestProPauseAllVideos() {
 		document.querySelectorAll("video").forEach(function (v) {
 			guestProSafePause(v);
 		});
+		if (typeof guestProPauseAllYoutubeHeroes === "function") {
+			guestProPauseAllYoutubeHeroes();
+		}
 	} catch (e) {}
 }
 
@@ -109,94 +112,7 @@ function guestProPlayWhenReady(video) {
 	video.addEventListener("canplay", onCanPlay, { once: true, passive: true });
 }
 
-/** Home showcase background video — autoplay in iframe/production. */
-function guestProInitShowcaseHeroVideo() {
-	var $videos = $(".hero-video-wrapper.force-video video.bgvid");
-	if ($videos.length === 0) return;
-
-	$videos.each(function () {
-		var video = this;
-		var $source = $(video).find("source[type='video/mp4']").first();
-		var rel =
-			$source.attr("data-src") ||
-			$source.attr("src") ||
-			"videos/bauman.mp4";
-		var url = guestProAssetUrl(rel);
-		var alreadyInit = video.getAttribute("data-guestpro-video-init") === "1";
-		var srcChanged = !alreadyInit || $source.attr("src") !== url;
-
-		video.muted = true;
-		video.defaultMuted = true;
-		video.loop = true;
-		video.playsInline = true;
-		video.setAttribute("playsinline", "");
-		video.setAttribute("webkit-playsinline", "");
-		/* Load full video after poster paints — keeps first paint fast */
-		video.preload = "metadata";
-
-		if (alreadyInit && !srcChanged) {
-			if (video.readyState >= 3) {
-				$(video).closest(".hero-video-wrapper.force-video").addClass("guestpro-video-ready");
-			}
-			guestProSafePlay(video);
-			return;
-		}
-
-		video.setAttribute("data-guestpro-video-init", "1");
-		$source.attr("src", url);
-
-		var $wrapper = $(video).closest(".hero-video-wrapper.force-video");
-
-		var markReady = function () {
-			$wrapper.addClass("guestpro-video-ready");
-		};
-
-		var onCanPlay = function () {
-			markReady();
-			guestProSafePlay(video);
-		};
-
-		video.addEventListener("canplay", onCanPlay, { once: true, passive: true });
-		video.addEventListener("playing", markReady, { once: true, passive: true });
-
-		if (video.readyState >= 3) {
-			markReady();
-		}
-
-		var startFullLoad = function () {
-			if (video.getAttribute("data-guestpro-full-load") === "1") return;
-			video.setAttribute("data-guestpro-full-load", "1");
-			video.preload = "auto";
-			try {
-				video.load();
-			} catch (e) {}
-			/* play() only from onCanPlay — not here (avoids "interrupted by new load request") */
-		};
-
-		if (srcChanged) {
-			requestAnimationFrame(function () {
-				requestAnimationFrame(startFullLoad);
-			});
-		} else if (video.readyState >= 2) {
-			markReady();
-			guestProSafePlay(video);
-		}
-	});
-
-	if (!window.__guestproVisibilityPlayBound) {
-		window.__guestproVisibilityPlayBound = true;
-		document.addEventListener(
-			"visibilitychange",
-			function () {
-				if (document.visibilityState !== "visible") return;
-				$(".hero-video-wrapper.force-video video.bgvid").each(function () {
-					guestProSafePlay(this);
-				});
-			},
-			{ passive: true },
-		);
-	}
-}
+/* guestProInitShowcaseHeroVideo — see js/guestpro-youtube-hero.js */
 
 function applyGuestProSiteMode() {
 	if (!guestProIsSingleProjectMode()) return;
@@ -316,7 +232,9 @@ $(document).ready(function() {
 	
 	// Guest Pro: keep background videos resilient (mobile + low power)
 	(function KeepBackgroundVideoAlive() {
-		var $vid = $('.hero-video-wrapper.force-video video.bgvid');
+		var $vid = $('.hero-video-wrapper.force-video video.bgvid').not(
+			".hero-video-wrapper.force-video .bgvid-youtube video",
+		);
 		if ($vid.length === 0) return;
 		$vid.each(function () {
 			var v = this;
