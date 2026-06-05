@@ -113,6 +113,9 @@ function guestProPlayWhenReady(video) {
 }
 
 /* guestProInitShowcaseHeroVideo — see js/guestpro-youtube-hero.js */
+if (typeof window.guestProInitShowcaseHeroVideo !== "function") {
+	window.guestProInitShowcaseHeroVideo = function () {};
+}
 
 function applyGuestProSiteMode() {
 	if (!guestProIsSingleProjectMode()) return;
@@ -144,31 +147,55 @@ function stashOptionalShowcaseSlides() {
 
 applyGuestProSiteMode();
 
-/** Top-level marketing routes (/, /about, /contact) — navigate parent SPA, not Colega AJAX. */
+function guestProMarketingPaths() {
+	var cfg = window.GUESTPRO_SITE || {};
+	return {
+		home: "/",
+		about: cfg.marketingAboutPath || "/about",
+		contact: cfg.marketingContactPath || "/contact",
+	};
+}
+
+/** Top-level marketing routes — navigate parent window from Colega iframe, not AJAX. */
 function guestProApplySiteNav() {
-	var topPaths = { "/": true, "/about": true, "/contact": true };
-	$('a[href="/"], a[href="/about"], a[href="/contact"]').each(function () {
+	var paths = guestProMarketingPaths();
+	var topPaths = {};
+	topPaths[paths.home] = true;
+	topPaths[paths.about] = true;
+	topPaths[paths.contact] = true;
+
+	$("a[href]").each(function () {
 		var $a = $(this);
 		var href = ($a.attr("href") || "").split("?")[0];
 		if (!topPaths[href]) return;
-		$a.attr("target", "_parent").removeClass(
-			"ajax-link ajax-link-project next-ajax-link-page",
-		);
+		$a.attr("target", "_parent")
+			.removeAttr("data-type")
+			.removeClass("ajax-link ajax-link-project next-ajax-link-page");
 	});
 }
 
-$(document).on(
+/** Full-page marketing nav — capture phase beats Colega AJAX (data-type=page-transition). */
+document.addEventListener(
 	"click",
-	'a[href="/"], a[href="/about"], a[href="/contact"]',
 	function (e) {
-		var href = ($(this).attr("href") || "").split("?")[0];
-		if (href !== "/" && href !== "/about" && href !== "/contact") return;
-		if (window.top === window) return;
+		var link =
+			e.target && e.target.closest ? e.target.closest("a[href]") : null;
+		if (!link) return;
+		var paths = guestProMarketingPaths();
+		var href = (link.getAttribute("href") || "").split("?")[0];
+		if (href !== paths.home && href !== paths.about && href !== paths.contact)
+			return;
 		e.preventDefault();
 		e.stopImmediatePropagation();
-		window.top.location.href = href;
-		return false;
+		var dest =
+			href + (link.search || "") + (link.hash || "");
+		if (window.top !== window) {
+			window.top.location.href = dest;
+		} else {
+			window.location.href = dest;
+		}
 	},
+	true,
 );
 
 function guestProBuildDemoMailto() {
@@ -228,7 +255,9 @@ $(document).ready(function() {
 	"use strict";
 	applyGuestProSiteMode();
 	initGuestProNavAndDemo();
-	guestProInitShowcaseHeroVideo();
+	if (typeof guestProInitShowcaseHeroVideo === "function") {
+		guestProInitShowcaseHeroVideo();
+	}
 	
 	// Guest Pro: keep background videos resilient (mobile + low power)
 	(function KeepBackgroundVideoAlive() {
@@ -348,7 +377,7 @@ $(document).ready(function() {
 	Sliders();
 	ContactForm();
 	PlayVideo();
-	ContactMap();
+	guestProScheduleContactMap();
 });
 
 
@@ -2121,7 +2150,17 @@ Function Page PlayVideo
 	
 	/*--------------------------------------------------
 Function Contact Map
----------------------------------------------------*/	
+---------------------------------------------------*/
+
+	function guestProScheduleContactMap() {
+		if ($("#map_canvas").length === 0) return;
+		window.guestProInitContactMap = function () {
+			ContactMap();
+		};
+		if (window.__guestProGoogleMapsReady) {
+			window.guestProInitContactMap();
+		}
+	}
 		
 	function ContactMap() {	
 	
@@ -2378,7 +2417,7 @@ Function Load Via Ajax
 		Lightbox();
 		ContactForm();
 		PlayVideo();
-		ContactMap();
+		guestProScheduleContactMap();
 	
 	}//End Load Via Ajax
 

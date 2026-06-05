@@ -34,4 +34,7 @@ window.GUESTPRO_SITE = window.GUESTPRO_SITE || {
 	/** Hero background — streamed from YouTube (no large MP4 download). */
 	heroYoutubeVideoId: "cdKx1Zv3YKs",
 	heroYoutubeUrl: "https://youtu.be/cdKx1Zv3YKs?si=EO_7wvCAhkexfe4n",
+	marketingAboutPath: "/about",
+	marketingContactPath: "/contact",
+	googleMapsApiKey: "AIzaSyCpK1sWi3J3EbUOkF_K4-UHzi285HyFX5M",
 };

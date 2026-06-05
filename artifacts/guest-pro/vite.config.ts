@@ -3,39 +3,38 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
+import type { Connect } from "vite";
 
 // Vite dev port — do not use root .env PORT (API uses 3000).
 const port = Number(process.env.VITE_DEV_PORT ?? process.env.WEB_PORT ?? "5173");
 const basePath = process.env.BASE_PATH ?? "/";
 const startUrl = basePath === "/" ? "/" : `${basePath}/`;
 
-/** Serve Colega about/contact at /about and /contact (not React iframe shell). */
+/** Full Colega pages at /about and /contact (not React shell). */
 function guestProMarketingPagesPlugin() {
-  const map: Record<string, string> = {
+  const pages: Record<string, string> = {
     "/about": "/colega/about.html",
     "/contact": "/colega/contact.html",
   };
-  const rewrite = (
-    req: { url?: string },
-    _res: unknown,
-    next: () => void,
-  ) => {
+
+  const middleware: Connect.NextHandleFunction = (req, res, next) => {
     const raw = req.url || "/";
     const [pathname, search = ""] = raw.split("?");
     const normalized = pathname.replace(/\/+$/, "") || "/";
-    const target = map[normalized];
+    const target = pages[normalized];
     if (target) {
       req.url = target + (search ? `?${search}` : "");
     }
     next();
   };
+
   return {
     name: "guestpro-marketing-pages",
     configureServer(server) {
-      server.middlewares.use(rewrite);
+      server.middlewares.use(middleware);
     },
     configurePreviewServer(server) {
-      server.middlewares.use(rewrite);
+      server.middlewares.use(middleware);
     },
   };
 }
@@ -78,7 +77,6 @@ export default defineConfig({
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
-        // Deep links like /platform/login on installed PWA (mobile)
         navigateFallback: basePath === "/" ? "/index.html" : `${basePath}/index.html`,
         navigateFallbackDenylist: [
           /^\/api(?:\/|$)/,
