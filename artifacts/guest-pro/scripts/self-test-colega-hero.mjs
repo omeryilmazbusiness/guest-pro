@@ -24,7 +24,7 @@ const checks = [
   [scripts.includes("buildEmbedUrl") && scripts.includes("mute"), "youtube hero script builds muted autoplay embed"],
   [index.includes('class="bgvid-youtube-frame"'), "index.html has YouTube iframe element"],
   [scripts.includes("guestProInitShowcaseHeroVideo"), "youtube hero script exports init"],
-  [scripts.includes("guestProRefreshHeroVideo"), "youtube hero script supports ajax refresh"],
+  [scripts.includes("guestProRefreshHeroVideo") && !scripts.includes("zero size"), "youtube hero mounts without zero-size loop"],
   [read("js/scripts.js").includes("guestProRefreshHeroVideo"), "scripts.js refreshes hero after ajax"],
   [index.includes("guestpro-youtube-hero.js"), "index.html loads youtube hero script"],
 ];

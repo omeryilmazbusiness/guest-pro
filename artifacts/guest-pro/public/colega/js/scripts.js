@@ -445,11 +445,6 @@ Function Page Load
 								});
 								
 								if( $('.hero-video-wrapper').length > 0 ){
-									if (typeof guestProRefreshHeroVideo === "function") {
-										guestProRefreshHeroVideo();
-									} else if (typeof guestProInitShowcaseHeroVideo === "function") {
-										guestProInitShowcaseHeroVideo();
-									}
 									$('#hero-image-wrapper').find('video').each(function() {
 										guestProSafePlay(this);
 									});
@@ -888,9 +883,6 @@ Function Lazy Load
 		
 		if( $('.load-project-thumb').length > 0 ){
 			setTimeout( function(){
-				if (typeof guestProRefreshHeroVideo === "function") {
-					guestProRefreshHeroVideo();
-				}
 				$('#hero-image-wrapper').find('video').each(function() {
 					guestProSafePlay(this);
 				});
@@ -899,9 +891,6 @@ Function Lazy Load
 			} , 250 );
 		} else if( $('.load-project-thumb-with-title').length > 0 ){
 			setTimeout( function(){
-				if (typeof guestProRefreshHeroVideo === "function") {
-					guestProRefreshHeroVideo();
-				}
 				$('#hero-image-wrapper').find('video').each(function() {
 					guestProSafePlay(this);
 				});
@@ -909,16 +898,17 @@ Function Lazy Load
 				$(".big-title-caption").remove();	
 			} , 250 );
 		} else {
-			if ($('#hero-image-wrapper .bgvid-youtube').length > 0) {
-				if (typeof guestProRefreshHeroVideo === "function") {
-					guestProRefreshHeroVideo();
-				} else if (typeof guestProInitShowcaseHeroVideo === "function") {
-					guestProInitShowcaseHeroVideo();
-				}
-			}
 			$('#hero-image-wrapper').find('video').each(function() {
 				guestProSafePlay(this);
 			});
+		}
+
+		if ($(".hero-video-wrapper.force-video .bgvid-youtube").length > 0) {
+			if (typeof guestProRefreshHeroVideo === "function") {
+				guestProRefreshHeroVideo();
+			} else if (typeof guestProInitShowcaseHeroVideo === "function") {
+				guestProInitShowcaseHeroVideo();
+			}
 		}
 		
 		setTimeout( function(){	
@@ -2374,11 +2364,6 @@ Function Load Via Ajax
 		applyGuestProSiteMode();
 		initGuestProNavAndDemo();
 		guestProApplySiteNav();
-		if (typeof guestProRefreshHeroVideo === "function") {
-			guestProRefreshHeroVideo();
-		} else if (typeof guestProInitShowcaseHeroVideo === "function") {
-			guestProInitShowcaseHeroVideo();
-		}
 		FirstLoad();
 		ScrollEffects();
 		initGuestProEndorsementQuote();

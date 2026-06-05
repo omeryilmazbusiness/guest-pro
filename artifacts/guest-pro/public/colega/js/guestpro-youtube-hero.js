@@ -7,6 +7,7 @@
 
 	var LOG = "[GuestPro:Hero]";
 	var DEFAULT_VIDEO_ID = "cdKx1Zv3YKs";
+	var refreshTimer = null;
 
 	function heroLog(level, msg, detail) {
 		var fn = console[level] || console.log;
@@ -78,13 +79,13 @@
 		}
 
 		var url = buildEmbedUrl(videoId, host);
+		var rect = $wrapper[0] && $wrapper[0].getBoundingClientRect();
 		heroLog("info", "mount iframe", {
 			attempt: attempt,
 			host: host,
 			videoId: videoId,
-			url: url,
+			size: rect ? { w: Math.round(rect.width), h: Math.round(rect.height) } : null,
 			inIframe: global.self !== global.top,
-			origin: global.location.origin,
 		});
 
 		var readyTimer = setTimeout(function () {
@@ -106,7 +107,7 @@
 			if (attempt === 1 && host.indexOf("nocookie") === -1) {
 				heroLog("warn", "retrying with youtube-nocookie.com");
 				mountIframe($wrapper, videoId, "https://www.youtube-nocookie.com", 2);
-			} else if (attempt === 2) {
+			} else {
 				markReady($wrapper, "error-fallback-poster");
 			}
 		});
@@ -118,43 +119,30 @@
 	function wrapperNeedsInit($wrapper, videoId) {
 		var $iframe = $wrapper.find("iframe.bgvid-youtube-frame").first();
 		var src = $iframe.attr("src") || "";
-		if ($wrapper.attr("data-guestpro-yt-init") !== "1") return true;
-		if (!src || src.indexOf(videoId) === -1) return true;
-		if (!$wrapper.hasClass("guestpro-video-ready")) return true;
-		return false;
+		if ($wrapper.attr("data-guestpro-yt-init") === "1" && src.indexOf(videoId) !== -1) {
+			return false;
+		}
+		return true;
 	}
 
 	function initWrapper($wrapper, videoId) {
 		if (!wrapperNeedsInit($wrapper, videoId)) {
-			heroLog("debug", "wrapper already playing", { videoId: videoId });
+			heroLog("debug", "wrapper already mounted", { videoId: videoId });
+			if (!$wrapper.hasClass("guestpro-video-ready")) {
+				markReady($wrapper, "already-mounted");
+			}
 			return;
 		}
 
-		$wrapper.removeAttr("data-guestpro-yt-init data-guestpro-yt-ready");
+		$wrapper.removeAttr("data-guestpro-yt-ready");
 		$wrapper.removeClass("guestpro-video-ready");
-
 		$wrapper.find("video.bgvid").remove();
 
-		var rect = $wrapper[0] && $wrapper[0].getBoundingClientRect();
-		heroLog("info", "init wrapper", {
-			videoId: videoId,
-			size: rect ? { w: rect.width, h: rect.height } : null,
-		});
-
-		if (rect && (rect.width < 2 || rect.height < 2)) {
-			heroLog("warn", "wrapper has zero size — defer init 300ms");
-			setTimeout(function () {
-				initWrapper($wrapper, videoId);
-			}, 300);
-			return;
-		}
-
+		/* Mount immediately — CSS uses vw/vh cover; size may be 0 during AJAX/GSAP fade-in */
 		mountIframe($wrapper, videoId, "https://www.youtube.com", 1);
 	}
 
 	function guestProInitShowcaseHeroVideo() {
-		heroLog("info", "guestProInitShowcaseHeroVideo start");
-
 		var videoId = getHeroYoutubeId();
 		if (!videoId) {
 			heroLog("error", "no YouTube video id in config");
@@ -162,12 +150,9 @@
 		}
 
 		var $wrappers = $(".hero-video-wrapper.force-video");
-		heroLog("info", "found hero wrappers", { count: $wrappers.length, videoId: videoId });
+		heroLog("info", "init heroes", { count: $wrappers.length, videoId: videoId });
 
-		if ($wrappers.length === 0) {
-			heroLog("warn", "no .hero-video-wrapper.force-video on page");
-			return;
-		}
+		if ($wrappers.length === 0) return;
 
 		$wrappers.each(function (idx) {
 			var $wrapper = $(this);
@@ -183,7 +168,6 @@
 			document.addEventListener(
 				"visibilitychange",
 				function () {
-					heroLog("debug", "visibilitychange", document.visibilityState);
 					if (document.visibilityState !== "visible") return;
 					guestProResumeAllYoutubeHeroes();
 				},
@@ -200,27 +184,38 @@
 						'{"event":"command","func":"' + command + '","args":""}',
 						"*",
 					);
-			} catch (e) {
-				heroLog("debug", "postMessage failed", e);
-			}
+			} catch (e) {}
 		});
 	}
 
 	function guestProPauseAllYoutubeHeroes() {
-		heroLog("debug", "pause all YouTube heroes");
 		postToPlayers("pauseVideo");
 	}
 
 	function guestProResumeAllYoutubeHeroes() {
-		heroLog("debug", "resume all YouTube heroes");
 		postToPlayers("playVideo");
 	}
 
-	/** Re-run after Colega AJAX navigation (e.g. index → project01). */
+	/** Re-run after Colega AJAX navigation — debounced, resets only empty wrappers. */
 	function guestProRefreshHeroVideo() {
-		heroLog("info", "guestProRefreshHeroVideo (ajax/page swap)");
-		global.__guestproYoutubePlayers = [];
-		guestProInitShowcaseHeroVideo();
+		if (refreshTimer) {
+			clearTimeout(refreshTimer);
+		}
+		refreshTimer = setTimeout(function () {
+			refreshTimer = null;
+			heroLog("info", "refresh heroes (post-ajax)");
+
+			$(".hero-video-wrapper.force-video").each(function () {
+				var $w = $(this);
+				var src = ($w.find("iframe.bgvid-youtube-frame").attr("src") || "").trim();
+				if (!src) {
+					$w.removeAttr("data-guestpro-yt-init data-guestpro-yt-ready");
+					$w.removeClass("guestpro-video-ready");
+				}
+			});
+
+			guestProInitShowcaseHeroVideo();
+		}, 450);
 	}
 
 	global.guestProInitShowcaseHeroVideo = guestProInitShowcaseHeroVideo;
