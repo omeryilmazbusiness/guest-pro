@@ -273,6 +273,21 @@
 		z-index: 0;
 	}
 
+	/* Project detail hero (#hero-bg-image) — absolute fill, not position:fixed */
+	#hero-image-wrapper .hero-video-wrapper.force-video,
+	#hero-bg-image .hero-video-wrapper.force-video {
+		position: absolute;
+		inset: 0;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		min-width: 100%;
+		min-height: 100%;
+		z-index: 1;
+		pointer-events: none;
+	}
+
 	/* Guest Pro: subtle dark overlay for background videos */
 	.hero-video-wrapper .bgvid-overlay {
 		position: absolute;

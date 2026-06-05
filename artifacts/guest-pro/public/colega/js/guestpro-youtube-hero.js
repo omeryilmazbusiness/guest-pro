@@ -115,11 +115,23 @@
 		$wrapper.attr("data-guestpro-yt-init", "1");
 	}
 
+	function wrapperNeedsInit($wrapper, videoId) {
+		var $iframe = $wrapper.find("iframe.bgvid-youtube-frame").first();
+		var src = $iframe.attr("src") || "";
+		if ($wrapper.attr("data-guestpro-yt-init") !== "1") return true;
+		if (!src || src.indexOf(videoId) === -1) return true;
+		if (!$wrapper.hasClass("guestpro-video-ready")) return true;
+		return false;
+	}
+
 	function initWrapper($wrapper, videoId) {
-		if ($wrapper.attr("data-guestpro-yt-init") === "1") {
-			heroLog("debug", "wrapper already init, skip");
+		if (!wrapperNeedsInit($wrapper, videoId)) {
+			heroLog("debug", "wrapper already playing", { videoId: videoId });
 			return;
 		}
+
+		$wrapper.removeAttr("data-guestpro-yt-init data-guestpro-yt-ready");
+		$wrapper.removeClass("guestpro-video-ready");
 
 		$wrapper.find("video.bgvid").remove();
 
@@ -204,7 +216,15 @@
 		postToPlayers("playVideo");
 	}
 
+	/** Re-run after Colega AJAX navigation (e.g. index → project01). */
+	function guestProRefreshHeroVideo() {
+		heroLog("info", "guestProRefreshHeroVideo (ajax/page swap)");
+		global.__guestproYoutubePlayers = [];
+		guestProInitShowcaseHeroVideo();
+	}
+
 	global.guestProInitShowcaseHeroVideo = guestProInitShowcaseHeroVideo;
+	global.guestProRefreshHeroVideo = guestProRefreshHeroVideo;
 	global.guestProPauseAllYoutubeHeroes = guestProPauseAllYoutubeHeroes;
 	global.guestProResumeAllYoutubeHeroes = guestProResumeAllYoutubeHeroes;
 	global.guestProParseYoutubeVideoId = parseYoutubeVideoId;
