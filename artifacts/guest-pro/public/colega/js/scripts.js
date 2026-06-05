@@ -198,22 +198,26 @@ document.addEventListener(
 	true,
 );
 
-function guestProBuildDemoMailto() {
-	var cfg = window.GUESTPRO_SITE || {};
-	var email = cfg.demoEmail || "omerfarukyilmazrbusiness@gmail.com";
-	var params = new URLSearchParams();
-	params.set("subject", cfg.demoMailSubject || "Guest Pro — Demo Request");
-	params.set(
-		"body",
-		cfg.demoMailBody ||
-			"Hello Guest Pro Team,\n\nI would like to request a demo of Guest Pro for our property.\n\nThank you,\n[Your name]"
-	);
-	return "mailto:" + email + "?" + params.toString();
+function guestProNavigateToMarketing(href) {
+	if (window.top !== window) {
+		window.top.location.href = href;
+	} else {
+		window.location.href = href;
+	}
 }
 
-/** Portfolio dropdown → Home; Buy Now → Get Demo mailto. */
+function guestProContactUrl() {
+	var paths = guestProMarketingPaths();
+	return paths.contact + "#contact-formular";
+}
+
+function guestProNavigateToContact() {
+	guestProNavigateToMarketing(guestProContactUrl());
+}
+
+/** Portfolio dropdown → Home; Buy Now → contact page (demo request). */
 function initGuestProNavAndDemo() {
-	var mailto = guestProBuildDemoMailto();
+	var contactUrl = guestProMarketingPaths().contact;
 
 	$("nav .flexnav > li").each(function () {
 		var $li = $(this);
@@ -229,24 +233,25 @@ function initGuestProNavAndDemo() {
 	$("nav .buy-item a").each(function () {
 		var $a = $(this);
 		$a.addClass("guestpro-get-demo")
-			.attr("href", mailto)
-			.removeAttr("target")
+			.attr("href", contactUrl)
+			.attr("target", "_parent")
 			.removeClass("ajax-link");
 		$a.find("span[data-hover]").attr("data-hover", "Get Demo").text("Get Demo");
 	});
 
 	$(".guestpro-get-demo").each(function () {
 		var $a = $(this);
-		$a.attr("href", mailto)
+		$a.attr("href", contactUrl)
+			.attr("target", "_parent")
 			.removeClass("ajax-link ajax-link-project next-ajax-link-page")
-			.removeAttr("data-type target");
+			.removeAttr("data-type");
 	});
 }
 
 $(document).on("click", "a.guestpro-get-demo", function (e) {
 	e.preventDefault();
 	e.stopImmediatePropagation();
-	window.location.href = guestProBuildDemoMailto();
+	guestProNavigateToContact();
 	return false;
 });
 

@@ -4,6 +4,7 @@ import {
   colegaPageForPath,
   isMarketingSitePath,
   MARKETING_ROUTES,
+  marketingContactUrl,
 } from "./marketing-routes.ts";
 
 describe("marketing-routes", () => {
@@ -27,5 +28,10 @@ describe("marketing-routes", () => {
   it("exports stable route constants", () => {
     assert.equal(MARKETING_ROUTES.about, "/about");
     assert.equal(MARKETING_ROUTES.contact, "/contact");
+  });
+
+  it("builds contact URL for demo CTAs", () => {
+    assert.equal(marketingContactUrl(), "/contact#contact-formular");
+    assert.equal(marketingContactUrl(""), "/contact");
   });
 });

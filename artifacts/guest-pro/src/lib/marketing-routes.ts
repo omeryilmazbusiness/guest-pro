@@ -26,6 +26,13 @@ export function isMarketingSitePath(path: string): boolean {
   return (MARKETING_SITE_PATHS as readonly string[]).includes(p);
 }
 
+/** Contact page URL for demo / inquiry CTAs (optional in-page anchor). */
+export function marketingContactUrl(sectionId = "contact-formular"): string {
+  return sectionId
+    ? `${MARKETING_ROUTES.contact}#${sectionId}`
+    : MARKETING_ROUTES.contact;
+}
+
 export function colegaPageForPath(path: string): ColegaPage | null {
   const p = path.replace(/\/+$/, "") || "/";
   switch (p) {
