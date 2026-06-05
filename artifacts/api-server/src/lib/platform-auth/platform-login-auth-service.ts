@@ -86,6 +86,9 @@ export class PlatformLoginAuthService {
       throw new PlatformAuthError("Invalid credentials", 401);
     }
 
+    // Valid password — do not keep a prior lockout blocking OTP / resend.
+    await platformLoginLockout.clear(normalized);
+
     log?.stage("settings_load", { adminId: admin.id });
     const verificationEmail = await platformSettingsRepository.getVerificationEmail();
     const emailDelivery = getEmailDeliveryMode();
@@ -189,14 +192,6 @@ export class PlatformLoginAuthService {
 
     if (!verifyOtpCode(code, challenge.codeHash)) {
       const attempts = await platformChallengeRepository.incrementAttempts(challengeId);
-      const afterFail = await platformLoginLockout.recordFailure(normalized);
-      if (!afterFail.allowed) {
-        throw new PlatformAuthError(
-          afterFail.message ?? "Too many failed attempts.",
-          429,
-          afterFail.retryAfterMs,
-        );
-      }
       if (attempts >= PLATFORM_OTP.maxVerifyAttempts) {
         throw new PlatformAuthError(
           "Too many incorrect codes for this session. Sign in again.",

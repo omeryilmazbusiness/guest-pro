@@ -5,9 +5,10 @@ import { withAsyncTimeout } from "../async-timeout";
 const REDIS_OP_TIMEOUT_MS = 4_000;
 
 const KEY_PREFIX = "platform:login-lockout:";
-const FAILURES_BEFORE_LOCK = 3;
-const LOCK_MS_TIER_0 = 60_000;
-const LOCK_MS_TIER_1 = 600_000;
+/** Password step only — OTP has its own per-challenge attempt limit. */
+const FAILURES_BEFORE_LOCK = 8;
+const LOCK_MS_TIER_0 = 30_000;
+const LOCK_MS_TIER_1 = 300_000;
 
 interface LockoutState {
   failureCount: number;
@@ -75,7 +76,7 @@ export class PlatformLoginLockoutService {
       return {
         allowed: false,
         retryAfterMs: state.lockedUntil - now,
-        message: "Too many failed attempts. Please wait before trying again.",
+        message: "Too many failed password attempts. Please wait before trying again.",
       };
     }
     if (state.lockedUntil && now >= state.lockedUntil) {
@@ -104,8 +105,8 @@ export class PlatformLoginLockoutService {
         retryAfterMs: lockMs,
         message:
           lockMs === LOCK_MS_TIER_0
-            ? "Too many failed attempts. Try again in 1 minute."
-            : "Too many failed attempts. Try again in 10 minutes.",
+            ? "Too many failed password attempts. Try again in 30 seconds."
+            : "Too many failed password attempts. Try again in 5 minutes.",
       };
     }
 
