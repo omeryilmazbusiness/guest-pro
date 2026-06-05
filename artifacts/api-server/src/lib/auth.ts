@@ -4,6 +4,10 @@ import { eq, and, or } from "drizzle-orm";
 import { env } from "../config/env";
 import { PLATFORM_ADMIN_ROLE, PLATFORM_HOTEL_ID, TOKEN_TTL_BY_ROLE } from "./roles";
 import {
+  tokenWithinRefreshGrace,
+  type SessionTokenPayload,
+} from "./session-policy";
+import {
   loginLimiter,
   checkLimit,
   consumeLimit,
@@ -67,9 +71,7 @@ export function generateGuestKey(): { key: string; keyHash: string } {
 }
 
 // ---------------------------------------------------------------------------
-// Token — HMAC-signed, with expiry
-//   Staff tokens (manager, personnel) expire in 12 hours
-//   Guest tokens expire in 7 days
+// Token — HMAC-signed, with expiry (persistent for guest/staff; see session-policy)
 // ---------------------------------------------------------------------------
 export function generateToken(
   userId: number,
@@ -93,39 +95,59 @@ export function generatePlatformAdminToken(adminId: number): string {
   return generateToken(adminId, PLATFORM_ADMIN_ROLE, PLATFORM_HOTEL_ID);
 }
 
+function parseSignedToken(token: string): SessionTokenPayload | null {
+  const dotIdx = token.indexOf(".");
+  if (dotIdx === -1) return null;
+  const payloadB64 = token.slice(0, dotIdx);
+  const sig = token.slice(dotIdx + 1);
+  if (!payloadB64 || !sig) return null;
+  const payload = Buffer.from(payloadB64, "base64").toString("utf-8");
+  const expectedSig = crypto
+    .createHmac("sha256", env.SESSION_SECRET!)
+    .update(payload)
+    .digest("hex");
+  if (
+    !crypto.timingSafeEqual(
+      Buffer.from(sig, "hex"),
+      Buffer.from(expectedSig, "hex"),
+    )
+  ) {
+    return null;
+  }
+  const data = JSON.parse(payload) as SessionTokenPayload;
+  if (
+    typeof data.userId !== "number" ||
+    typeof data.role !== "string" ||
+    typeof data.hotelId !== "number" ||
+    typeof data.iat !== "number" ||
+    typeof data.exp !== "number"
+  ) {
+    return null;
+  }
+  return data;
+}
+
 export function verifyToken(
-  token: string
-): { userId: number; role: string; hotelId: number; guestId?: number; staffDepartment?: string | null } | null {
+  token: string,
+): Omit<SessionTokenPayload, "iat" | "exp"> & { iat: number; exp?: number } | null {
   try {
-    const dotIdx = token.indexOf(".");
-    if (dotIdx === -1) return null;
-    const payloadB64 = token.slice(0, dotIdx);
-    const sig = token.slice(dotIdx + 1);
-    if (!payloadB64 || !sig) return null;
-    const payload = Buffer.from(payloadB64, "base64").toString("utf-8");
-    const expectedSig = crypto
-      .createHmac("sha256", env.SESSION_SECRET!)
-      .update(payload)
-      .digest("hex");
-    if (
-      !crypto.timingSafeEqual(
-        Buffer.from(sig, "hex"),
-        Buffer.from(expectedSig, "hex")
-      )
-    ) {
-      return null;
-    }
-    const data = JSON.parse(payload) as {
-      userId: number;
-      role: string;
-      hotelId: number;
-      guestId?: number;
-      staffDepartment?: string | null;
-      iat: number;
-      exp?: number;
-    };
-    if (data.exp && Date.now() > data.exp) return null;
+    const data = parseSignedToken(token);
+    if (!data?.exp) return null;
+    if (Date.now() > data.exp) return null;
     return data;
+  } catch {
+    return null;
+  }
+}
+
+/** Accept valid or recently-expired tokens for POST /auth/refresh. */
+export function verifyTokenForRefresh(token: string): SessionTokenPayload | null {
+  try {
+    const data = parseSignedToken(token);
+    if (!data?.exp) return null;
+    if (Date.now() <= data.exp) return data;
+    if (tokenWithinRefreshGrace(data.exp)) return data;
+    return null;
   } catch {
     return null;
   }

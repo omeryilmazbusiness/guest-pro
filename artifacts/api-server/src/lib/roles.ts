@@ -1,3 +1,5 @@
+import { sessionTtlForRole } from "./session-policy";
+
 /**
  * Central role and permission definitions for Guest Pro.
  *
@@ -126,11 +128,11 @@ export function isValidDepartment(dept: unknown): dept is StaffDepartment {
 
 /**
  * Token TTL in milliseconds by role.
- * Used in generateToken — personnel gets the same 12-hour window as managers.
+ * Guest and hotel staff use persistent sliding sessions (refreshed via POST /auth/refresh).
  */
 export const TOKEN_TTL_BY_ROLE: Record<string, number> = {
-  [PLATFORM_ADMIN_ROLE]: 8 * 60 * 60 * 1000,
-  manager: 12 * 60 * 60 * 1000,
-  personnel: 12 * 60 * 60 * 1000,
-  guest: 7 * 24 * 60 * 60 * 1000,
+  [PLATFORM_ADMIN_ROLE]: sessionTtlForRole(PLATFORM_ADMIN_ROLE),
+  manager: sessionTtlForRole("manager"),
+  personnel: sessionTtlForRole("personnel"),
+  guest: sessionTtlForRole(GUEST_ROLE),
 };

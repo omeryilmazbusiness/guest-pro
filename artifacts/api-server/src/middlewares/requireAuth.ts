@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { verifyToken } from "../lib/auth";
+import { verifyToken, verifyTokenForRefresh } from "../lib/auth";
 import { isStaffRole } from "../lib/roles";
 import {
   canAccessGuestOperations,
@@ -26,6 +26,27 @@ declare global {
       };
     }
   }
+}
+
+/** Verifies Bearer token (including recently expired) for POST /auth/refresh. */
+export function requireRefreshableAuth(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  const token = authHeader.slice(7);
+  const payload = verifyTokenForRefresh(token);
+  if (!payload) {
+    res.status(401).json({ error: "Invalid or expired token" });
+    return;
+  }
+  req.session = payload;
+  next();
 }
 
 /** Verifies the Bearer token and attaches the decoded session to req.session. */

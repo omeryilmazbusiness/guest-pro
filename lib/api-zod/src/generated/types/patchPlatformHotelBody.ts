@@ -6,8 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface SendMessageRequest {
-  content: string;
-  /** @nullable */
-  language?: string | null;
-}
+export type PatchPlatformHotelBody = {
+  isActive: boolean;
+};

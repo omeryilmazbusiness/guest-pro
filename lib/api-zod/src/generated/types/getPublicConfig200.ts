@@ -6,12 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface QuickAction {
-  id: number;
-  hotelId: number;
-  label: string;
+export type GetPublicConfig200 = {
   /** @nullable */
-  icon?: string | null;
-  category: string;
-  sortOrder: number;
-}
+  defaultHotelSlug?: string | null;
+};

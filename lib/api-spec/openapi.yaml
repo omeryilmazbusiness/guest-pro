@@ -75,6 +75,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
 
+  /auth/refresh:
+    post:
+      operationId: refreshSession
+      tags: [auth]
+      summary: Refresh persistent guest or staff session (sliding expiration)
+      responses:
+        "200":
+          description: New session token issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid, expired, or revoked session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Access denied (e.g. stay window)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /auth/google/status:
     get:
       operationId: getGoogleAuthStatus

@@ -5,7 +5,9 @@
  * Guest Pro Hotel Concierge API
  * OpenAPI spec version: 0.1.0
  */
+import type { QrLoginErrorResponseCode } from './qrLoginErrorResponseCode';
 
-export interface ErrorResponse {
+export interface QrLoginErrorResponse {
   error: string;
+  code: QrLoginErrorResponseCode;
 }

@@ -3,11 +3,20 @@ import { useGetMe, setAuthTokenGetter, getGetMeQueryKey } from "@workspace/api-c
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { getLogoutNavigateTarget } from "@/lib/tenant-path";
+import { usePersistentSession } from "@/hooks/use-persistent-session";
 
 const TOKEN_KEY = "guestpro_token";
 
-// Initialize the global fetch configuration immediately
 setAuthTokenGetter(() => localStorage.getItem(TOKEN_KEY));
+
+function isUnauthorizedError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    (error as { status: number }).status === 401
+  );
+}
 
 export function useAuth() {
   const queryClient = useQueryClient();
@@ -29,19 +38,29 @@ export function useAuth() {
     setLocation(getLogoutNavigateTarget(), { replace: true });
   }, [setToken, queryClient, setLocation]);
 
-  const { data: user, isLoading, isError } = useGetMe({
+  const { data: user, isLoading, isError, error } = useGetMe({
     query: {
       queryKey: getGetMeQueryKey(),
       enabled: !!token,
-      retry: false,
+      retry: (failureCount, err) => {
+        if (isUnauthorizedError(err)) return false;
+        return failureCount < 2;
+      },
+      staleTime: 5 * 60 * 1000,
     },
   });
 
+  usePersistentSession({
+    token,
+    setToken,
+    onSessionInvalid: logoutAuth,
+  });
+
   useEffect(() => {
-    if (isError) {
+    if (isError && isUnauthorizedError(error)) {
       logoutAuth();
     }
-  }, [isError, logoutAuth]);
+  }, [isError, error, logoutAuth]);
 
   return {
     user,

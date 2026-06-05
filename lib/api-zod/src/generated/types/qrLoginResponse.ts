@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CurrentUser } from './currentUser';
-import type { LoginResponseRole } from './loginResponseRole';
+import type { QrLoginResponseRole } from './qrLoginResponseRole';
 
-export interface LoginResponse {
-  role: LoginResponseRole;
+export interface QrLoginResponse {
+  role: QrLoginResponseRole;
   token: string;
   user: CurrentUser;
 }

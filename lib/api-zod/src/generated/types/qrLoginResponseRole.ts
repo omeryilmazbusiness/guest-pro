@@ -6,11 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type CurrentUserRole = typeof CurrentUserRole[keyof typeof CurrentUserRole];
+export type QrLoginResponseRole = typeof QrLoginResponseRole[keyof typeof QrLoginResponseRole];
 
 
-export const CurrentUserRole = {
-  manager: 'manager',
-  personnel: 'personnel',
+export const QrLoginResponseRole = {
   guest: 'guest',
 } as const;

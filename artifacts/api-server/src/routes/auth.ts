@@ -15,7 +15,9 @@ import {
   recordFailedLogin,
   clearFailedLogins,
 } from "../lib/auth";
-import { requireAuth } from "../middlewares/requireAuth";
+import { requireAuth, requireRefreshableAuth } from "../middlewares/requireAuth";
+import { refreshSession } from "../lib/session-refresh";
+import type { SessionTokenPayload } from "../lib/session-policy";
 import { isStaffRole } from "../lib/roles";
 import { env } from "../config/env";
 import { logger } from "../lib/logger";
@@ -265,6 +267,22 @@ router.post("/auth/login", async (req, res): Promise<void> => {
 });
 
 // ---------------------------------------------------------------------------
+// POST /auth/refresh — sliding persistent session for guest & staff
+// ---------------------------------------------------------------------------
+router.post("/auth/refresh", requireRefreshableAuth, async (req, res): Promise<void> => {
+  const result = await refreshSession(req.session! as SessionTokenPayload);
+  if (!result.ok) {
+    res.status(result.status).json({ error: result.error, code: result.code });
+    return;
+  }
+  res.json({
+    role: result.role,
+    token: result.token,
+    user: result.user,
+  });
+});
+
+// ---------------------------------------------------------------------------
 // POST /auth/logout
 // ---------------------------------------------------------------------------
 router.post("/auth/logout", (_req, res): void => {
@@ -284,6 +302,10 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, session.userId));
     if (!user) {
       res.status(401).json({ error: "User not found" });
+      return;
+    }
+    if (user.isActive === false) {
+      res.status(401).json({ error: "Account deactivated", code: "account_deactivated" });
       return;
     }
     // Return the DB role, not the session role, so a permission change takes effect on next /auth/me call
