@@ -220,17 +220,26 @@
 		transform: translateX(-50%) translateY(-50%);
 	}
 
-	/* YouTube hero — cover-fit background, muted autoplay via IFrame API */
+	/* YouTube hero — poster stays visible; only the stream layer fades in */
+	.hero-video-wrapper.force-video {
+		opacity: 1;
+	}
+
 	.hero-video-wrapper.force-video .bgvid-youtube {
 		position: absolute;
 		inset: 0;
 		overflow: hidden;
 		z-index: 1;
 		pointer-events: none;
+		opacity: 0;
+		transition: opacity 0.6s ease;
 	}
 
-	.hero-video-wrapper.force-video .bgvid-youtube-frame,
-	.hero-video-wrapper.force-video .bgvid-youtube-frame iframe {
+	.hero-video-wrapper.force-video.guestpro-video-ready .bgvid-youtube {
+		opacity: 1;
+	}
+
+	.hero-video-wrapper.force-video .bgvid-youtube-frame {
 		position: absolute;
 		top: 50%;
 		left: 50%;
@@ -245,15 +254,11 @@
 
 	.hero-video-wrapper.force-video .bgvid-overlay {
 		z-index: 2;
-	}
-
-	/* Poster visible immediately; video fades in when ready (avoids black card while 30MB loads) */
-	.hero-video-wrapper.force-video {
 		opacity: 0;
-		transition: opacity 0.5s ease;
+		transition: opacity 0.6s ease;
 	}
 
-	.hero-video-wrapper.force-video.guestpro-video-ready {
+	.hero-video-wrapper.force-video.guestpro-video-ready .bgvid-overlay {
 		opacity: 1;
 	}
 
@@ -261,6 +266,11 @@
 		background-image: url(../images/bauman-placeholder.jpg);
 		background-size: cover;
 		background-position: center center;
+	}
+
+	.section-image.guestpro-hero-poster > img.item-image {
+		position: relative;
+		z-index: 0;
 	}
 
 	/* Guest Pro: subtle dark overlay for background videos */

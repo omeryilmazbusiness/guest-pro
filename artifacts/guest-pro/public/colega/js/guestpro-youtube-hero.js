@@ -1,12 +1,21 @@
 /**
- * Guest Pro — YouTube hero background (muted autoplay loop, no 30MB MP4).
- * Video: https://youtu.be/cdKx1Zv3YKs
+ * Guest Pro — YouTube hero background (direct embed, muted autoplay loop).
+ * https://youtu.be/cdKx1Zv3YKs
  */
 (function (global) {
 	"use strict";
 
+	var LOG = "[GuestPro:Hero]";
 	var DEFAULT_VIDEO_ID = "cdKx1Zv3YKs";
-	var apiQueue = [];
+
+	function heroLog(level, msg, detail) {
+		var fn = console[level] || console.log;
+		if (detail !== undefined) {
+			fn.call(console, LOG, msg, detail);
+		} else {
+			fn.call(console, LOG, msg);
+		}
+	}
 
 	function parseYoutubeVideoId(urlOrId) {
 		var s = String(urlOrId || "").trim();
@@ -30,108 +39,130 @@
 		return DEFAULT_VIDEO_ID;
 	}
 
-	function ensureYoutubeApi(callback) {
-		if (global.YT && global.YT.Player) {
-			callback();
-			return;
-		}
-		apiQueue.push(callback);
-		if (global.__guestproYtApiLoading) return;
-		global.__guestproYtApiLoading = true;
-		global.onYouTubeIframeAPIReady = function () {
-			var q = apiQueue.slice();
-			apiQueue = [];
-			q.forEach(function (fn) {
-				try {
-					fn();
-				} catch (e) {}
-			});
-		};
-		var tag = document.createElement("script");
-		tag.src = "https://www.youtube.com/iframe_api";
-		tag.async = true;
-		var first = document.getElementsByTagName("script")[0];
-		first.parentNode.insertBefore(tag, first);
+	function buildEmbedUrl(videoId, host) {
+		var base =
+			(host || "https://www.youtube.com") + "/embed/" + encodeURIComponent(videoId);
+		var params = new URLSearchParams({
+			autoplay: "1",
+			mute: "1",
+			loop: "1",
+			playlist: videoId,
+			controls: "0",
+			rel: "0",
+			modestbranding: "1",
+			playsinline: "1",
+			enablejsapi: "1",
+			iv_load_policy: "3",
+			disablekb: "1",
+			fs: "0",
+			origin: global.location.origin,
+		});
+		return base + "?" + params.toString();
 	}
 
-	function registerPlayer(player) {
-		global.__guestproYoutubePlayers = global.__guestproYoutubePlayers || [];
-		global.__guestproYoutubePlayers.push(player);
+	function markReady($wrapper, reason) {
+		$wrapper.addClass("guestpro-video-ready");
+		$wrapper.attr("data-guestpro-yt-ready", reason || "unknown");
+		heroLog("info", "video ready", { reason: reason });
+	}
+
+	function mountIframe($wrapper, videoId, host, attempt) {
+		var $yt = $wrapper.find(".bgvid-youtube").first();
+		var $iframe = $yt.find("iframe.bgvid-youtube-frame").first();
+
+		if (!$iframe.length) {
+			$iframe = $(
+				'<iframe class="bgvid-youtube-frame" title="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" loading="eager"></iframe>',
+			);
+			$yt.append($iframe);
+		}
+
+		var url = buildEmbedUrl(videoId, host);
+		heroLog("info", "mount iframe", {
+			attempt: attempt,
+			host: host,
+			videoId: videoId,
+			url: url,
+			inIframe: global.self !== global.top,
+			origin: global.location.origin,
+		});
+
+		var readyTimer = setTimeout(function () {
+			if ($wrapper.attr("data-guestpro-yt-ready")) return;
+			heroLog("warn", "iframe load timeout — showing layer anyway", { attempt: attempt });
+			markReady($wrapper, "timeout");
+		}, 8000);
+
+		$iframe.off("load.guestpro error.guestpro");
+
+		$iframe.on("load.guestpro", function () {
+			clearTimeout(readyTimer);
+			markReady($wrapper, "iframe-load");
+		});
+
+		$iframe.on("error.guestpro", function () {
+			clearTimeout(readyTimer);
+			heroLog("error", "iframe error event", { attempt: attempt, host: host });
+			if (attempt === 1 && host.indexOf("nocookie") === -1) {
+				heroLog("warn", "retrying with youtube-nocookie.com");
+				mountIframe($wrapper, videoId, "https://www.youtube-nocookie.com", 2);
+			} else if (attempt === 2) {
+				markReady($wrapper, "error-fallback-poster");
+			}
+		});
+
+		$iframe.attr("src", url);
+		$wrapper.attr("data-guestpro-yt-init", "1");
 	}
 
 	function initWrapper($wrapper, videoId) {
-		if ($wrapper.attr("data-guestpro-yt-init") === "1") return;
-
-		var $yt = $wrapper.find(".bgvid-youtube").first();
-		var $mount = $yt.find(".bgvid-youtube-frame").first();
-		if (!$mount.length) {
-			$mount = $('<div class="bgvid-youtube-frame"></div>').appendTo($yt);
+		if ($wrapper.attr("data-guestpro-yt-init") === "1") {
+			heroLog("debug", "wrapper already init, skip");
+			return;
 		}
 
-		var mountId = $mount.attr("id");
-		if (!mountId) {
-			mountId = "guestpro-yt-" + Math.random().toString(36).slice(2, 11);
-			$mount.attr("id", mountId);
-		}
+		$wrapper.find("video.bgvid").remove();
 
-		ensureYoutubeApi(function () {
-			var player = new global.YT.Player(mountId, {
-				width: "100%",
-				height: "100%",
-				videoId: videoId,
-				playerVars: {
-					autoplay: 1,
-					mute: 1,
-					loop: 1,
-					playlist: videoId,
-					controls: 0,
-					rel: 0,
-					modestbranding: 1,
-					playsinline: 1,
-					enablejsapi: 1,
-					iv_load_policy: 3,
-					disablekb: 1,
-					fs: 0,
-					origin: global.location.origin,
-				},
-				events: {
-					onReady: function (event) {
-						try {
-							event.target.mute();
-							event.target.playVideo();
-						} catch (e) {}
-						$wrapper.addClass("guestpro-video-ready");
-						$wrapper.attr("data-guestpro-yt-init", "1");
-					},
-					onStateChange: function (event) {
-						if (event.data === global.YT.PlayerState.ENDED) {
-							try {
-								event.target.playVideo();
-							} catch (e) {}
-						}
-					},
-				},
-			});
-			registerPlayer(player);
+		var rect = $wrapper[0] && $wrapper[0].getBoundingClientRect();
+		heroLog("info", "init wrapper", {
+			videoId: videoId,
+			size: rect ? { w: rect.width, h: rect.height } : null,
 		});
 
-		/* Poster visible until player is ready */
-		setTimeout(function () {
-			$wrapper.addClass("guestpro-video-ready");
-		}, 4000);
+		if (rect && (rect.width < 2 || rect.height < 2)) {
+			heroLog("warn", "wrapper has zero size — defer init 300ms");
+			setTimeout(function () {
+				initWrapper($wrapper, videoId);
+			}, 300);
+			return;
+		}
+
+		mountIframe($wrapper, videoId, "https://www.youtube.com", 1);
 	}
 
 	function guestProInitShowcaseHeroVideo() {
+		heroLog("info", "guestProInitShowcaseHeroVideo start");
+
 		var videoId = getHeroYoutubeId();
-		if (!videoId) return;
+		if (!videoId) {
+			heroLog("error", "no YouTube video id in config");
+			return;
+		}
 
 		var $wrappers = $(".hero-video-wrapper.force-video");
-		if ($wrappers.length === 0) return;
+		heroLog("info", "found hero wrappers", { count: $wrappers.length, videoId: videoId });
 
-		$wrappers.each(function () {
+		if ($wrappers.length === 0) {
+			heroLog("warn", "no .hero-video-wrapper.force-video on page");
+			return;
+		}
+
+		$wrappers.each(function (idx) {
 			var $wrapper = $(this);
-			if ($wrapper.find(".bgvid-youtube").length === 0) return;
-			$wrapper.find("video.bgvid").remove();
+			if ($wrapper.find(".bgvid-youtube").length === 0) {
+				heroLog("warn", "wrapper missing .bgvid-youtube", { index: idx });
+				return;
+			}
 			initWrapper($wrapper, videoId);
 		});
 
@@ -140,6 +171,7 @@
 			document.addEventListener(
 				"visibilitychange",
 				function () {
+					heroLog("debug", "visibilitychange", document.visibilityState);
 					if (document.visibilityState !== "visible") return;
 					guestProResumeAllYoutubeHeroes();
 				},
@@ -148,24 +180,33 @@
 		}
 	}
 
-	function guestProPauseAllYoutubeHeroes() {
-		(global.__guestproYoutubePlayers || []).forEach(function (player) {
+	function postToPlayers(command) {
+		$(".bgvid-youtube-frame").each(function () {
 			try {
-				if (player && player.pauseVideo) player.pauseVideo();
-			} catch (e) {}
+				this.contentWindow &&
+					this.contentWindow.postMessage(
+						'{"event":"command","func":"' + command + '","args":""}',
+						"*",
+					);
+			} catch (e) {
+				heroLog("debug", "postMessage failed", e);
+			}
 		});
 	}
 
+	function guestProPauseAllYoutubeHeroes() {
+		heroLog("debug", "pause all YouTube heroes");
+		postToPlayers("pauseVideo");
+	}
+
 	function guestProResumeAllYoutubeHeroes() {
-		(global.__guestproYoutubePlayers || []).forEach(function (player) {
-			try {
-				if (player && player.playVideo) player.playVideo();
-			} catch (e) {}
-		});
+		heroLog("debug", "resume all YouTube heroes");
+		postToPlayers("playVideo");
 	}
 
 	global.guestProInitShowcaseHeroVideo = guestProInitShowcaseHeroVideo;
 	global.guestProPauseAllYoutubeHeroes = guestProPauseAllYoutubeHeroes;
 	global.guestProResumeAllYoutubeHeroes = guestProResumeAllYoutubeHeroes;
 	global.guestProParseYoutubeVideoId = parseYoutubeVideoId;
+	global.guestProHeroLog = heroLog;
 })(window);

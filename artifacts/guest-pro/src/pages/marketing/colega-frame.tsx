@@ -15,8 +15,8 @@ export function MarketingColegaFrame({ page, title }: MarketingColegaFrameProps)
         title={title}
         src={src}
         className="h-[100svh] w-full border-0"
-        referrerPolicy="no-referrer"
-        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+        referrerPolicy="strict-origin-when-cross-origin"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
         loading="eager"
       />
     </div>

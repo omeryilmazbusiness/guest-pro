@@ -21,7 +21,8 @@ const checks = [
   [project.includes("bgvid-youtube"), "project01.html uses YouTube hero container"],
   [!project.includes("bauman.mp4"), "project01.html does not reference bauman.mp4"],
   [config.includes(videoId), "guestpro-config.js includes YouTube video id"],
-  [scripts.includes("iframe_api") && scripts.includes("mute: 1"), "youtube hero script loads IFrame API muted autoplay"],
+  [scripts.includes("buildEmbedUrl") && scripts.includes("mute"), "youtube hero script builds muted autoplay embed"],
+  [index.includes('class="bgvid-youtube-frame"'), "index.html has YouTube iframe element"],
   [scripts.includes("guestProInitShowcaseHeroVideo"), "youtube hero script exports init"],
   [index.includes("guestpro-youtube-hero.js"), "index.html loads youtube hero script"],
 ];
