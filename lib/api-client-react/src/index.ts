@@ -1,4 +1,5 @@
 export * from "./generated/api";
 export * from "./generated/api.schemas";
+export * from "./guest-management";
 export { setBaseUrl, setAuthTokenGetter, setHotelSlugGetter, customFetch } from "./custom-fetch";
-export type { AuthTokenGetter } from "./custom-fetch";
+export type { AuthTokenGetter, ErrorType } from "./custom-fetch";
