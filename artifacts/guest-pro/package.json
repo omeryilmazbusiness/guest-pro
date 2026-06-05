@@ -10,6 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node ../../node_modules/.pnpm/tsx@4.21.0/node_modules/tsx/dist/cli.mjs --test src/lib/passport/passport.unit.test.ts src/lib/marketing-routes.unit.test.ts src/lib/colega-youtube-hero.unit.test.ts",
     "colega:self-test": "node scripts/self-test-colega-hero.mjs",
+    "marketing:self-test": "node scripts/self-test-marketing-pages.mjs",
     "generate:favicons": "node scripts/generate-favicons.mjs"
   },
   "devDependencies": {

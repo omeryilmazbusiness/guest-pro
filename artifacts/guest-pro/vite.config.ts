@@ -9,9 +9,41 @@ const port = Number(process.env.VITE_DEV_PORT ?? process.env.WEB_PORT ?? "5173")
 const basePath = process.env.BASE_PATH ?? "/";
 const startUrl = basePath === "/" ? "/" : `${basePath}/`;
 
+/** Serve Colega about/contact at /about and /contact (not React iframe shell). */
+function guestProMarketingPagesPlugin() {
+  const map: Record<string, string> = {
+    "/about": "/colega/about.html",
+    "/contact": "/colega/contact.html",
+  };
+  const rewrite = (
+    req: { url?: string },
+    _res: unknown,
+    next: () => void,
+  ) => {
+    const raw = req.url || "/";
+    const [pathname, search = ""] = raw.split("?");
+    const normalized = pathname.replace(/\/+$/, "") || "/";
+    const target = map[normalized];
+    if (target) {
+      req.url = target + (search ? `?${search}` : "");
+    }
+    next();
+  };
+  return {
+    name: "guestpro-marketing-pages",
+    configureServer(server) {
+      server.middlewares.use(rewrite);
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(rewrite);
+    },
+  };
+}
+
 export default defineConfig({
   base: basePath,
   plugins: [
+    guestProMarketingPagesPlugin(),
     react(),
     tailwindcss(),
     VitePWA({

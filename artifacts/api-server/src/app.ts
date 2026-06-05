@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express, { type Express, type Request, type Response } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
@@ -65,6 +65,16 @@ const staticDir = path.join(repoRoot, "artifacts", "guest-pro", "dist", "public"
 if (env.NODE_ENV === "production" && existsSync(staticDir)) {
   logger.info({ staticDir }, "Serving frontend static files");
 
+  const colegaDir = path.join(staticDir, "colega");
+  const sendColegaPage =
+    (file: string) =>
+    (_req: Request, res: Response) => {
+      res.setHeader("Cache-Control", "no-cache");
+      res.sendFile(path.join(colegaDir, file));
+    };
+  app.get(["/about", "/about/"], sendColegaPage("about.html"));
+  app.get(["/contact", "/contact/"], sendColegaPage("contact.html"));
+
   app.use(
     express.static(staticDir, {
       maxAge: "1y",
@@ -79,6 +89,15 @@ if (env.NODE_ENV === "production" && existsSync(staticDir)) {
 
   // SPA fallback — never return index.html for static asset paths (e.g. missing .mp4 → HTML breaks video)
   app.get("{*path}", (req, res) => {
+    if (
+      req.path === "/about" ||
+      req.path === "/contact" ||
+      req.path.startsWith("/about/") ||
+      req.path.startsWith("/contact/")
+    ) {
+      res.status(404).end();
+      return;
+    }
     if (req.path === "/colega" || req.path.startsWith("/colega/")) {
       res.status(404).end();
       return;
