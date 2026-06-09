@@ -68,26 +68,54 @@
     {
       "idx": 9,
       "version": "7",
+      "when": 1777496950000,
+      "tag": "0009_employee_routine_tasks",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1777496960000,
+      "tag": "0010_routine_task_fk_set_null",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1777496970000,
+      "tag": "0011_hotel_ai_budget",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1777496980000,
+      "tag": "0012_daily_task_insights",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
       "when": 1777497000000,
       "tag": "0013_menu_item_image",
       "breakpoints": true
     },
     {
-      "idx": 10,
+      "idx": 14,
       "version": "7",
       "when": 1777497100000,
       "tag": "0014_hotel_floor_wifi",
       "breakpoints": true
     },
     {
-      "idx": 11,
+      "idx": 15,
       "version": "7",
       "when": 1777497200000,
       "tag": "0015_hotel_nearby_places",
       "breakpoints": true
     },
     {
-      "idx": 12,
+      "idx": 16,
       "version": "7",
       "when": 1777497300000,
       "tag": "0016_hotel_nearby_settings",

@@ -143,7 +143,7 @@ async function bootstrap(): Promise<void> {
     }
   } catch (err) {
     if (env.NODE_ENV === "production") {
-      logger.fatal({ err }, "Migration failed — refusing to start");
+      logger.fatal({ err }, "Production startup failed after migrations — refusing to start");
       process.exit(1);
     }
 
