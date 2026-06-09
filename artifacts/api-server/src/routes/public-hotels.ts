@@ -4,6 +4,7 @@ import { db, hotelsTable, hotelBrandingTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { isReservedHotelSlug } from "../lib/reserved-slugs";
 import { hotelLogoFilePath, resolveHotelLogoUrl } from "../lib/hotel-logo-storage";
+import { menuItemImageFilePath, menuItemImageExists } from "../lib/menu-item-image-storage";
 import fs from "node:fs";
 
 const router: IRouter = Router();
@@ -83,6 +84,32 @@ router.get("/public/hotels/:slug/logo", async (req, res): Promise<void> => {
     return;
   }
 
+  res.setHeader("Content-Type", "image/jpeg");
+  res.setHeader("Cache-Control", "public, max-age=86400, stale-while-revalidate=604800");
+  res.sendFile(filePath);
+});
+
+/** GET /public/hotels/:slug/menu-items/:itemId/image — menu item photo for guest UI */
+router.get("/public/hotels/:slug/menu-items/:itemId/image", async (req, res): Promise<void> => {
+  const slug = String(req.params.slug ?? "").trim().toLowerCase();
+  const itemId = parseInt(String(req.params.itemId ?? ""), 10);
+  if (!slug || isReservedHotelSlug(slug) || isNaN(itemId)) {
+    res.status(404).end();
+    return;
+  }
+
+  const [hotel] = await db.select({ id: hotelsTable.id }).from(hotelsTable).where(eq(hotelsTable.slug, slug));
+  if (!hotel) {
+    res.status(404).end();
+    return;
+  }
+
+  if (!(await menuItemImageExists(hotel.id, itemId))) {
+    res.status(404).end();
+    return;
+  }
+
+  const filePath = menuItemImageFilePath(hotel.id, itemId);
   res.setHeader("Content-Type", "image/jpeg");
   res.setHeader("Cache-Control", "public, max-age=86400, stale-while-revalidate=604800");
   res.sendFile(filePath);

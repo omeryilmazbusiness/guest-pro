@@ -38,7 +38,7 @@ export function HotelBrandMark({
   const alt = altProp ?? appName;
   const name = hotelName || appName;
   const sizeClass = SIZE[variant];
-  const hasLogo = Boolean(getHotelLogoSrc(slug, logoUrl));
+  const hasLogo = Boolean(logoUrl && getHotelLogoSrc(slug, logoUrl));
 
   if (hasLogo && slug) {
     return (

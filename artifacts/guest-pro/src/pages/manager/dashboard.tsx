@@ -44,8 +44,6 @@ import {
   Bell,
   X,
   Settings,
-  FileText,
-  ChefHat,
 } from "lucide-react";
 import {
   useListGuests,
@@ -87,7 +85,13 @@ import { StaffRequestsBoard } from "@/components/manager/StaffRequestsBoard";
 import { NewRequestAlert } from "@/components/manager/NewRequestAlert";
 import { WelcomeAreaAlertBanner } from "@/components/manager/WelcomeAreaAlertBanner";
 import { DailySummaryTab } from "@/components/manager/DailySummaryTab";
-import { QuickReportModal } from "@/components/manager/QuickReportModal";
+import { DailyTaskInsightBanner } from "@/components/manager/DailyTaskInsightBanner";
+import { DailyTaskInsightSheet } from "@/components/manager/DailyTaskInsightSheet";
+import { getDailyTaskInsight } from "@/lib/analytics";
+import {
+  dismissDailyTaskInsight,
+  isDailyTaskInsightDismissed,
+} from "@/lib/daily-task-insight-dismiss";
 import { StaffTeamTab } from "@/components/manager/StaffTeamTab";
 import { TasksTab } from "@/components/manager/tasks/TasksTab";
 import { GuestSearchFilterBar } from "@/components/manager/GuestSearchFilterBar";
@@ -193,12 +197,12 @@ export default function ManagerDashboard() {
 
   const needsGuestData = Boolean(
     staffScope &&
-      (staffScope.canViewGuests || staffScope.scope === "operations_personnel"),
+      (staffScope.canViewGuests || staffScope.scope === "staff_personnel"),
   );
 
   const needsTracking = Boolean(
     staffScope &&
-      (staffScope.canViewGuests || staffScope.scope === "operations_personnel"),
+      (staffScope.canViewGuests || staffScope.scope === "staff_personnel"),
   );
 
   // ── Data
@@ -285,8 +289,32 @@ export default function ManagerDashboard() {
     }
   }, [staffScope, activeTab]);
 
-  // ── Quick Report modal
-  const [quickReportOpen, setQuickReportOpen] = useState(false);
+  // ── Daily task insight (18:00 report)
+  const [taskInsightSheetOpen, setTaskInsightSheetOpen] = useState(false);
+  const [insightBannerDismissed, setInsightBannerDismissed] = useState(false);
+
+  const canSeeTaskInsight =
+    staffScope?.canAccessTab("tasks") || staffScope?.scope === "department_manager";
+
+  const { data: dailyTaskInsight } = useQuery({
+    queryKey: ["daily-task-insight", locale],
+    queryFn: () => getDailyTaskInsight(locale),
+    enabled: !!canSeeTaskInsight && isAuthenticated,
+    refetchInterval: 30_000,
+  });
+
+  const showInsightBanner =
+    !!dailyTaskInsight &&
+    !insightBannerDismissed &&
+    !isDailyTaskInsightDismissed(dailyTaskInsight.id);
+
+  const openTaskInsight = useCallback(() => {
+    if (dailyTaskInsight) {
+      dismissDailyTaskInsight(dailyTaskInsight.id);
+      setInsightBannerDismissed(true);
+    }
+    setTaskInsightSheetOpen(true);
+  }, [dailyTaskInsight]);
 
   // ── Open request count (updated by StaffRequestsBoard)
   const [openRequestCount, setOpenRequestCount] = useState(0);
@@ -313,9 +341,10 @@ export default function ManagerDashboard() {
 
   // ── Auth guard
   useEffect(() => {
-    if (!isAuthenticated) goTo(ROUTES.login);
+    if (!isAuthenticated) goTo(ROUTES.managerLogin);
     else if (user && !isStaffRole(user.role)) goTo(ROUTES.guest);
     else if (staffScope?.scope === "restaurant_personnel") goTo(ROUTES.restaurant);
+    else if (staffScope?.scope === "staff_personnel") goTo(ROUTES.staff);
   }, [isAuthenticated, user, staffScope, goTo]);
 
   // ── Permissions (scope-aware)
@@ -487,9 +516,7 @@ export default function ManagerDashboard() {
         canCreateGuest={canCreate}
         onTabChange={setActiveTab}
         onCreateGuest={handleNavigateCreate}
-        onQuickReport={() => setQuickReportOpen(true)}
         onSettings={() => goTo(ROUTES.managerSettings)}
-        onRestaurant={() => goTo(ROUTES.restaurant)}
         rightSlot={
           <>
             {canCreate && (
@@ -501,30 +528,6 @@ export default function ManagerDashboard() {
               >
                 <Plus className="mr-1 h-3.5 w-3.5" />
                 {t.newGuest}
-              </Button>
-            )}
-            {staffScope.isGeneralManager && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => goTo(ROUTES.restaurant)}
-                className="hidden h-8 w-8 rounded-xl text-zinc-400 hover:bg-amber-50 hover:text-amber-600 touch-manipulation sm:flex"
-                aria-label={t.restaurantDashboard}
-                title={t.restaurantDashboard}
-              >
-                <ChefHat className="h-3.5 w-3.5" />
-              </Button>
-            )}
-            {staffScope.isGeneralManager && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setQuickReportOpen(true)}
-                className="hidden h-8 w-8 rounded-xl text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 touch-manipulation sm:flex"
-                aria-label={t.quickReport}
-                title={t.quickReport}
-              >
-                <FileText className="h-3.5 w-3.5" />
               </Button>
             )}
             {staffScope.isGeneralManager && (
@@ -562,7 +565,9 @@ export default function ManagerDashboard() {
       )}
 
       {/* ── Scrollable main content ── */}
-      <main className="max-w-2xl mx-auto px-4 py-5 pb-28 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <main
+        className={`max-w-2xl mx-auto px-4 py-5 pb-28 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300${showInsightBanner ? " pt-24" : ""}`}
+      >
 
         {/* ─── Presence overview ─── */}
         {!isLoading && overviewVariant ? (
@@ -582,6 +587,11 @@ export default function ManagerDashboard() {
                 staffScope.canAccessTab("team")
                   ? () => setActiveTab("team")
                   : undefined
+              }
+              dailyTaskInsight={dailyTaskInsight}
+              insightPending={!dailyTaskInsight}
+              onAiInsightPress={
+                staffScope.scope === "department_manager" ? openTaskInsight : undefined
               }
               t={t}
             />
@@ -783,6 +793,8 @@ export default function ManagerDashboard() {
             externalCreateOpen={staffCreateOpen}
             onExternalCreateOpenChange={setStaffCreateOpen}
             lockedDepartment={staffScope.departmentScope ?? undefined}
+            showDepartmentManagers={staffScope.isGeneralManager}
+            isGeneralManager={staffScope.isGeneralManager}
           />
         )}
 
@@ -877,13 +889,16 @@ export default function ManagerDashboard() {
       {/* ── Welcome-area alert banner — shows when anonymous guests call for help ── */}
       <WelcomeAreaAlertBanner enabled={isAuthenticated && !!user} />
 
-      {/* ── Quick Report modal (manager-only) ── */}
-      {staffScope.isGeneralManager && (
-        <QuickReportModal
-          open={quickReportOpen}
-          onClose={() => setQuickReportOpen(false)}
-        />
+      {showInsightBanner && dailyTaskInsight && (
+        <DailyTaskInsightBanner insight={dailyTaskInsight} t={t} onOpen={openTaskInsight} />
       )}
+
+      <DailyTaskInsightSheet
+        open={taskInsightSheetOpen}
+        onClose={() => setTaskInsightSheetOpen(false)}
+        insight={dailyTaskInsight ?? null}
+        t={t}
+      />
     </div>
   );
 }

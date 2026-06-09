@@ -3,12 +3,17 @@ import { Loader2 } from "lucide-react";
 import { HotelTenantProvider, useHotelTenant } from "@/hooks/use-hotel-tenant";
 import { ROUTES } from "@/lib/app-routes";
 import Login from "@/pages/login";
+import GuestLoginPage from "@/pages/login/guest-login";
+import ManagerLoginPage from "@/pages/login/manager-login";
+import PersonelLoginPage from "@/pages/login/personel-login";
+import RestaurantLoginPage from "@/pages/login/restaurant-login";
 import GuestHome from "@/pages/guest/home";
 import GuestChat from "@/pages/guest/chat";
 import GuestFlow from "@/pages/guest/flow";
 import GuestAutoLogin from "@/pages/guest/auto-login";
 import PassportScanPage from "@/pages/guest/passport-scan";
 import GuestWelcoming from "@/pages/guest/welcoming";
+import StaffPortalPage from "@/pages/staff/dashboard";
 import RestaurantDashboard from "@/pages/restaurant/dashboard";
 import ManagerDashboard from "@/pages/manager/dashboard";
 import CreateGuest from "@/pages/manager/create-guest";
@@ -55,6 +60,10 @@ function HotelTenantGate() {
   return (
     <Switch>
       <Route path={ROUTES.login} component={Login} />
+      <Route path={ROUTES.guestLogin} component={GuestLoginPage} />
+      <Route path={ROUTES.managerLogin} component={ManagerLoginPage} />
+      <Route path={ROUTES.personelLogin} component={PersonelLoginPage} />
+      <Route path={ROUTES.restaurantLogin} component={RestaurantLoginPage} />
       <Route path={ROUTES.welcoming} component={GuestWelcoming} />
       <Route path={ROUTES.guest} component={GuestHome} />
       <Route path={ROUTES.guestChat} component={GuestChat} />
@@ -63,7 +72,10 @@ function HotelTenantGate() {
       <Route path={ROUTES.guestPassportScan} component={PassportScanPage} />
       <Route path={ROUTES.manager} component={ManagerDashboard} />
       <Route path={ROUTES.managerCreateGuest} component={CreateGuest} />
+      <Route path={`${ROUTES.managerSettings}/guest`} component={ManagerSettings} />
+      <Route path={`${ROUTES.managerSettings}/tracking`} component={ManagerSettings} />
       <Route path={ROUTES.managerSettings} component={ManagerSettings} />
+      <Route path={ROUTES.staff} component={StaffPortalPage} />
       <Route path={ROUTES.restaurant} component={RestaurantDashboard} />
       <Route component={NotFound} />
     </Switch>

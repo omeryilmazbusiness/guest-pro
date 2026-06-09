@@ -1,5 +1,5 @@
 import { db, platformAdminsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { authenticatePlatformAdmin, generatePlatformAdminToken } from "../auth";
 import { env } from "../../config/env";
 import { getEmailDeliveryMode, getEmailSender } from "../email/create-email-sender";
@@ -73,6 +73,17 @@ export class PlatformLoginAuthService {
     }
 
     log?.stage("credentials_verify");
+
+    const [{ adminCount }] = await db
+      .select({ adminCount: sql<number>`count(*)::int` })
+      .from(platformAdminsTable);
+    if (Number(adminCount) === 0) {
+      throw new PlatformAuthError(
+        "No platform admin account exists. Set PLATFORM_ADMIN_EMAIL and PLATFORM_ADMIN_PASSWORD in .env and restart the API server.",
+        503,
+      );
+    }
+
     const admin = await authenticatePlatformAdmin(email, password);
     if (!admin) {
       const afterFail = await platformLoginLockout.recordFailure(normalized);

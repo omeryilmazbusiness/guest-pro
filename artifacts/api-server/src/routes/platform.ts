@@ -32,6 +32,10 @@ import {
   clearHotelLogo,
   resolveHotelLogoUrl,
 } from "../lib/hotel-logo-storage";
+import {
+  hotelAiBudgetService,
+  hotelAiConfigRepository,
+} from "../lib/hotel-ai";
 
 const router: IRouter = Router();
 
@@ -84,6 +88,18 @@ const changePasswordSchema = z.object({
 const resetManagerPasswordSchema = z.object({
   newPassword: z.string().min(8).max(200),
 });
+
+const patchHotelAiConfigSchema = z
+  .object({
+    monthlyTokenBudget: z.number().int().min(0).max(10_000_000).nullable().optional(),
+    maxOutputTokensTaskReport: z.number().int().min(100).max(8192).nullable().optional(),
+    maxOutputTokensDailySummary: z.number().int().min(100).max(8192).nullable().optional(),
+    maxOutputTokensQuickReport: z.number().int().min(100).max(8192).nullable().optional(),
+    taskReportsEnabled: z.boolean().optional(),
+    dailySummariesEnabled: z.boolean().optional(),
+    quickReportsEnabled: z.boolean().optional(),
+  })
+  .refine((d) => Object.keys(d).length > 0, { message: "No fields to update" });
 
 // GET /platform/auth/me
 router.get("/platform/auth/me", requireAuth, async (req, res): Promise<void> => {
@@ -491,6 +507,69 @@ router.post(
     );
 
     res.json({ ok: true, managerId });
+  },
+);
+
+// GET /platform/hotels/:hotelId/ai-config
+router.get(
+  "/platform/hotels/:hotelId/ai-config",
+  requirePlatformAdmin,
+  async (req, res): Promise<void> => {
+    const hotelId = parseInt(String(req.params.hotelId), 10);
+    if (Number.isNaN(hotelId)) {
+      res.status(400).json({ error: "Invalid hotel id" });
+      return;
+    }
+
+    const [hotel] = await db
+      .select({ id: hotelsTable.id })
+      .from(hotelsTable)
+      .where(eq(hotelsTable.id, hotelId));
+    if (!hotel) {
+      res.status(404).json({ error: "Hotel not found" });
+      return;
+    }
+
+    const context = await hotelAiBudgetService.getContext(hotelId);
+    res.json(context);
+  },
+);
+
+// PATCH /platform/hotels/:hotelId/ai-config
+router.patch(
+  "/platform/hotels/:hotelId/ai-config",
+  requirePlatformAdmin,
+  async (req, res): Promise<void> => {
+    const hotelId = parseInt(String(req.params.hotelId), 10);
+    if (Number.isNaN(hotelId)) {
+      res.status(400).json({ error: "Invalid hotel id" });
+      return;
+    }
+
+    const parsed = patchHotelAiConfigSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid request" });
+      return;
+    }
+
+    const [hotel] = await db
+      .select({ id: hotelsTable.id })
+      .from(hotelsTable)
+      .where(eq(hotelsTable.id, hotelId));
+    if (!hotel) {
+      res.status(404).json({ error: "Hotel not found" });
+      return;
+    }
+
+    await hotelAiConfigRepository.upsertConfig(hotelId, parsed.data);
+    const context = await hotelAiBudgetService.getContext(hotelId);
+
+    await logPlatformAudit(req.session!.userId, "platform_update_hotel_ai_config", {
+      hotelId,
+      patch: parsed.data,
+    }, hotelId);
+
+    res.json(context);
   },
 );
 

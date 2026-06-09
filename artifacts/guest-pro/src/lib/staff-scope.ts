@@ -3,21 +3,19 @@
  * Keep in sync when changing hierarchy rules.
  */
 
-import { STAFF_DEPARTMENTS, type StaffDepartment } from "@/lib/staff";
+import {
+  DEPARTMENT_MANAGER_DEPARTMENTS,
+  STAFF_DEPARTMENTS,
+  type StaffDepartment,
+} from "@/lib/staff";
 
-export const DEPARTMENT_MANAGER_DEPARTMENTS = [
-  "HOUSEKEEPING",
-  "BELLMAN",
-  "RESTAURANT",
-] as const satisfies readonly StaffDepartment[];
-
-export type DepartmentManagerDepartment = (typeof DEPARTMENT_MANAGER_DEPARTMENTS)[number];
+export { DEPARTMENT_MANAGER_DEPARTMENTS, type DepartmentManagerDepartment } from "@/lib/staff";
 
 export type StaffScopeKind =
   | "general_manager"
   | "department_manager"
   | "reception"
-  | "operations_personnel"
+  | "staff_personnel"
   | "restaurant_personnel";
 
 export interface StaffActor {
@@ -27,7 +25,7 @@ export interface StaffActor {
 
 export function isDepartmentManagerDepartment(
   dept: string | null | undefined,
-): dept is DepartmentManagerDepartment {
+): dept is (typeof DEPARTMENT_MANAGER_DEPARTMENTS)[number] {
   return (
     dept != null &&
     (DEPARTMENT_MANAGER_DEPARTMENTS as readonly string[]).includes(dept)
@@ -47,10 +45,10 @@ export function resolveStaffScope(actor: StaffActor): StaffScopeKind {
   if (role === "personnel") {
     if (staffDepartment === "RESTAURANT") return "restaurant_personnel";
     if (staffDepartment === "RECEPTION") return "reception";
-    return "operations_personnel";
+    return "staff_personnel";
   }
 
-  return "operations_personnel";
+  return "staff_personnel";
 }
 
 export function getDepartmentScope(actor: StaffActor): StaffDepartment | null {
@@ -90,13 +88,13 @@ export type ManagerDashboardTab =
 export function getVisibleManagerTabs(scope: StaffScopeKind): ManagerDashboardTab[] {
   switch (scope) {
     case "general_manager":
-      return ["team", "tasks", "guests", "summary"];
+      return ["team", "guests", "summary"];
     case "department_manager":
       return ["team", "tasks"];
     case "reception":
       return ["guests"];
-    case "operations_personnel":
-      return ["rooms", "requests"];
+    case "staff_personnel":
+      return [];
     case "restaurant_personnel":
       return [];
   }
@@ -105,12 +103,12 @@ export function getVisibleManagerTabs(scope: StaffScopeKind): ManagerDashboardTa
 export function getDefaultManagerTab(scope: StaffScopeKind): ManagerDashboardTab {
   switch (scope) {
     case "general_manager":
-    case "department_manager":
       return "team";
+    case "department_manager":
+      return "tasks";
     case "reception":
       return "guests";
-    case "operations_personnel":
-      return "requests";
+    case "staff_personnel":
     case "restaurant_personnel":
       return "guests";
   }
@@ -132,7 +130,7 @@ export function scopeLabel(
     general_manager: "General Manager",
     department_manager: department ? `${department} Manager` : "Department Manager",
     reception: "Reception",
-    operations_personnel: department ?? "Operations",
+    staff_personnel: department ?? "Staff",
     restaurant_personnel: "Restaurant",
   };
   return labels?.[scope] ?? defaults[scope];
@@ -140,4 +138,8 @@ export function scopeLabel(
 
 export function isValidStaffDepartment(dept: unknown): dept is StaffDepartment {
   return (STAFF_DEPARTMENTS as readonly unknown[]).includes(dept);
+}
+
+export function isEmployeePortalDepartment(dept: string | null | undefined): boolean {
+  return dept != null && dept !== "RECEPTION" && dept !== "RESTAURANT";
 }

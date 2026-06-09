@@ -185,6 +185,21 @@ router.delete("/tracking/networks/:id", requireManager, async (req, res): Promis
 });
 
 // ---------------------------------------------------------------------------
+// GET /tracking/guest-settings — guest: is presence tracking enabled?
+// ---------------------------------------------------------------------------
+router.get("/tracking/guest-settings", requireGuest, async (req, res): Promise<void> => {
+  const hotelId = req.session!.hotelId;
+
+  const [config] = await db
+    .select({ isEnabled: hotelTrackingConfigsTable.isEnabled })
+    .from(hotelTrackingConfigsTable)
+    .where(eq(hotelTrackingConfigsTable.hotelId, hotelId))
+    .limit(1);
+
+  res.json({ enabled: config?.isEnabled === true });
+});
+
+// ---------------------------------------------------------------------------
 // POST /tracking/heartbeat — guest presence heartbeat
 // ---------------------------------------------------------------------------
 router.post("/tracking/heartbeat", requireGuest, async (req, res): Promise<void> => {

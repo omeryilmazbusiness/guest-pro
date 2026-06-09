@@ -27,8 +27,27 @@ const verifySchema = z.object({
 });
 
 const verificationEmailSchema = z.object({
-  verificationEmail: z.string().email(),
+  verificationEmail: z.string().email().optional(),
 });
+
+const platformAiDefaultsSchema = z.object({
+  defaultMonthlyTokenBudget: z.number().int().min(0).max(10_000_000),
+  starterMonthlyBudget: z.number().int().min(0).max(10_000_000),
+  growthMonthlyBudget: z.number().int().min(0).max(10_000_000),
+  enterpriseMonthlyBudget: z.number().int().min(0).max(10_000_000),
+  defaultMaxOutputTaskReport: z.number().int().min(100).max(8192),
+  defaultMaxOutputDailySummary: z.number().int().min(100).max(8192),
+  defaultMaxOutputQuickReport: z.number().int().min(100).max(8192),
+});
+
+const patchPlatformSettingsSchema = z
+  .object({
+    verificationEmail: z.string().email().optional(),
+    ai: platformAiDefaultsSchema.partial().optional(),
+  })
+  .refine((d) => d.verificationEmail !== undefined || d.ai !== undefined, {
+    message: "No fields to update",
+  });
 
 function handleAuthError(
   err: unknown,
@@ -102,27 +121,39 @@ router.post("/platform/auth/verify-otp", async (req, res): Promise<void> => {
   }
 });
 
-// GET /platform/settings — security settings (authenticated)
-router.get("/platform/settings", requirePlatformAdmin, async (req, res): Promise<void> => {
-  const verificationEmail = await platformSettingsRepository.getVerificationEmail();
-  res.json({ verificationEmail });
+// GET /platform/settings — security + AI defaults (authenticated)
+router.get("/platform/settings", requirePlatformAdmin, async (_req, res): Promise<void> => {
+  const settings = await platformSettingsRepository.getSettings();
+  res.json(settings);
 });
 
-// PATCH /platform/settings — update verification email
+// PATCH /platform/settings — update verification email and/or AI defaults
 router.patch("/platform/settings", requirePlatformAdmin, async (req, res): Promise<void> => {
-  const parsed = verificationEmailSchema.safeParse(req.body);
+  const parsed = patchPlatformSettingsSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid request" });
     return;
   }
-  const verificationEmail = await platformSettingsRepository.setVerificationEmail(
-    parsed.data.verificationEmail,
-    req.session!.userId,
-  );
+
+  let verificationEmail = await platformSettingsRepository.getVerificationEmail();
+  if (parsed.data.verificationEmail) {
+    verificationEmail = await platformSettingsRepository.setVerificationEmail(
+      parsed.data.verificationEmail,
+      req.session!.userId,
+    );
+  }
+
+  let ai = (await platformSettingsRepository.getSettings()).ai;
+  if (parsed.data.ai) {
+    ai = await platformSettingsRepository.updateAiDefaults(parsed.data.ai, req.session!.userId);
+  }
+
   await logPlatformAudit(req.session!.userId, "platform_update_settings", {
-    verificationEmail,
+    verificationEmail: parsed.data.verificationEmail,
+    ai: parsed.data.ai,
   });
-  res.json({ verificationEmail });
+
+  res.json({ verificationEmail, ai });
 });
 
 export default router;

@@ -16,7 +16,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { X, UtensilsCrossed, Bell, Heart, LayoutGrid } from "lucide-react";
+import { X, UtensilsCrossed, Hammer, Heart, LayoutGrid } from "lucide-react";
 import {
   listServiceRequests,
   type ServiceRequest,
@@ -36,7 +36,7 @@ interface AlertEntry {
 
 const TYPE_ICON: Record<ServiceRequestType, React.FC<{ className?: string }>> = {
   FOOD_ORDER: UtensilsCrossed,
-  SUPPORT_REQUEST: Bell,
+  SUPPORT_REQUEST: Hammer,
   CARE_PROFILE_UPDATE: Heart,
   GENERAL_SERVICE_REQUEST: LayoutGrid,
 };

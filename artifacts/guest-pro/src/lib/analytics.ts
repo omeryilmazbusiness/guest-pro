@@ -52,12 +52,83 @@ export interface RequestAnalyticsSnapshot {
   unresolverdRatio: number;
 }
 
-/** The enriched quick-report response with 4-section AI output */
-export interface QuickReportResponse extends RequestAnalyticsSnapshot {
-  summary: string[];
-  complaintAnalysis: string[];
-  timingInsights: string[];
-  recommendations: string[];
+/** Task performance metrics (shared base). */
+export interface StaffPerformanceAnalytics {
+  totalTasks: number;
+  completedTasks: number;
+  pendingTasks: number;
+  overdueTasks: number;
+  completionRate: number;
+  departments: StaffPerformanceDepartment[];
+}
+
+export interface StaffPerformanceEmployee {
+  id: number;
+  name: string;
+  employeeNumber: string | null;
+  department: string | null;
+  completed: number;
+  pending: number;
+  overdue: number;
+  total: number;
+}
+
+export interface StaffPerformanceDepartment {
+  department: string;
+  label: string;
+  completed: number;
+  pending: number;
+  overdue: number;
+  total: number;
+  employees: StaffPerformanceEmployee[];
+}
+
+export interface DailyTaskInsightRecord {
+  id: number;
+  hotelId: number;
+  staffDepartment: string;
+  date: string;
+  summary: string;
+  finishedOnTime: string[];
+  finishedLate: string[];
+  notFinished: string[];
+  generatedAt: string;
+}
+
+export async function getDailyTaskInsight(
+  locale = "tr",
+  date?: string,
+): Promise<DailyTaskInsightRecord | null> {
+  const params = new URLSearchParams({ locale });
+  if (date) params.set("date", date);
+  return customFetch<DailyTaskInsightRecord | null>(`/api/analytics/daily-task-insight?${params}`);
+}
+
+export interface TaskPerformanceReportResponse extends StaffPerformanceAnalytics {
+  periodStart: string;
+  periodEnd: string;
+  employees: {
+    id: number;
+    name: string;
+    department: string | null;
+    assigned: number;
+    completed: number;
+    onTimeOrEarly: number;
+    lateCompleted: number;
+    overdueOpen: number;
+    onTimeRate: number;
+  }[];
+  chart: { name: string; onTimeRate: number; completed: number }[];
+  aiSummary: string;
+  aiFinishedOnTime: string[];
+  aiFinishedLate: string[];
+  aiNotFinished: string[];
+  aiEmployeeNotes: string[];
+  insightId: number | null;
+  insightGeneratedAt: string | null;
+  insightPending: boolean;
+  aiUsage?: HotelAiUsageSnapshot;
+  aiBudgetLimited?: boolean;
 }
 
 export interface DailySummaryRecord {
@@ -70,10 +141,27 @@ export interface DailySummaryRecord {
   createdAt: string;
 }
 
-// ─── API calls ────────────────────────────────────────────────────────────────
+export interface HotelAiUsageSnapshot {
+  periodKey: string;
+  tokensUsed: number;
+  requestCount: number;
+  monthlyBudget: number;
+  remainingTokens: number;
+  usagePercent: number;
+  byFeature: {
+    taskReport: number;
+    dailySummary: number;
+    quickReport: number;
+  };
+}
 
-export async function getQuickReport(): Promise<QuickReportResponse> {
-  return customFetch<QuickReportResponse>("/api/analytics/quick-report");
+export async function getTaskPerformanceReport(
+  from: string,
+  to: string,
+  locale = "tr",
+): Promise<TaskPerformanceReportResponse> {
+  const params = new URLSearchParams({ from, to, locale });
+  return customFetch<TaskPerformanceReportResponse>(`/api/analytics/tasks-report?${params}`);
 }
 
 export async function getDailySummaries(): Promise<DailySummaryRecord[]> {

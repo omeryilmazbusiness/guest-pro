@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocale } from "@/hooks/use-locale";
 import {
@@ -26,11 +27,13 @@ import {
   AlertCircle,
   Trash2,
   UtensilsCrossed,
-  Bell,
-  Heart,
+  Hammer,
+  HeartPulse,
   CheckCircle2,
 } from "lucide-react";
 import { createServiceRequest } from "@/lib/service-requests";
+import { syncMyRequestToCache } from "@/lib/guest-my-requests-cache";
+import { markGuestDashboardScrollRestore } from "@/lib/guest-dashboard-scroll";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Message, QuickAction } from "@workspace/api-client-react";
@@ -69,6 +72,7 @@ const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
 export default function GuestChat() {
   const { user, isAuthenticated, logoutAuth } = useAuth();
   const goTo = useTenantNav();
+  const queryClient = useQueryClient();
   const { appName } = useHotelDisplay();
   const logoutMutation = useLogout();
   const { t, voiceLocale } = useLocale();
@@ -149,7 +153,7 @@ export default function GuestChat() {
   // ── Auth guard ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isAuthenticated) {
-      goTo(ROUTES.login);
+      goTo(ROUTES.guestLogin);
     } else if (user?.role !== "guest") {
       goTo(ROUTES.manager);
     }
@@ -474,18 +478,20 @@ export default function GuestChat() {
     const summary = (summaryPrefixes[activeChatMode] || "") + rawSummary.slice(0, 500);
 
     try {
-      await createServiceRequest({
+      const created = await createServiceRequest({
         requestType: typeMap[activeChatMode],
         summary,
         sourceSessionId: sessionId ?? undefined,
       });
+      syncMyRequestToCache(queryClient, created);
+      markGuestDashboardScrollRestore();
       setShowRequestCreated(true);
     } catch {
       toast.error(t.chatCreateRequestError);
     } finally {
       setIsCreatingRequest(false);
     }
-  }, [sessionId, activeChatMode, messages, t]);
+  }, [sessionId, activeChatMode, messages, t, queryClient]);
 
   if (!isAuthenticated || user?.role !== "guest") return null;
 
@@ -493,8 +499,8 @@ export default function GuestChat() {
 
   const MODE_CONFIG = {
     food: { icon: UtensilsCrossed, label: t.flowFoodLabel, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" },
-    support: { icon: Bell, label: t.flowSupportLabel, color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-200" },
-    care: { icon: Heart, label: t.flowCareLabel, color: "text-rose-500", bg: "bg-rose-50", border: "border-rose-200" },
+    support: { icon: Hammer, label: t.flowSupportLabel, color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-200" },
+    care: { icon: HeartPulse, label: t.flowCareLabel, color: "text-rose-500", bg: "bg-rose-50", border: "border-rose-200" },
     general: { icon: MessageSquare, label: "", color: "text-zinc-500", bg: "bg-zinc-50", border: "border-zinc-200" },
   };
   const modeConfig = MODE_CONFIG[activeChatMode];

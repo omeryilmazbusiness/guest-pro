@@ -4,6 +4,10 @@
 
 import type { GuestTranslations } from "@/lib/i18n";
 import type { ServiceRequest, ServiceRequestType } from "./service-requests";
+import {
+  parseConciergeBooking,
+  buildConciergeSummary,
+} from "./guest-concierge";
 
 type T = GuestTranslations;
 
@@ -178,6 +182,21 @@ export function buildDisplaySummary(request: ServiceRequest, t?: T): string {
   if (!sd) return summary;
 
   if (requestType === "FOOD_ORDER") {
+    const items = sd.items as
+      | Array<{ itemName?: string; item?: string; quantity?: number; note?: string | null }>
+      | undefined;
+    if (Array.isArray(items) && items.length > 0) {
+      return items
+        .map((line) => {
+          const name = line.itemName ?? line.item ?? "";
+          const qty = line.quantity && line.quantity > 1 ? `${line.quantity}× ` : "";
+          const note = line.note ? ` (${line.note})` : "";
+          return `${qty}${name}${note}`.trim();
+        })
+        .filter(Boolean)
+        .join(", ");
+    }
+
     const item = sd.item as string | undefined;
     const qty = sd.quantity as number | undefined;
     const cat = displayFoodCategory(sd.category as string | undefined, t);
@@ -216,6 +235,16 @@ export function buildDisplaySummary(request: ServiceRequest, t?: T): string {
     if (comfortKey && comfortKey !== "STANDARD") parts.push(displayComfort(comfortKey, t));
     if (serviceKey) parts.push(displayService(serviceKey, t));
     return parts.length > 0 ? parts.join(", ") : summary;
+  }
+
+  if (requestType === "GENERAL_SERVICE_REQUEST") {
+    const booking = parseConciergeBooking(sd as Record<string, unknown>);
+    if (booking) {
+      if (t) {
+        return buildConciergeSummary(t, booking.service, booking.when, booking.notes ?? "");
+      }
+      return summary;
+    }
   }
 
   return summary;

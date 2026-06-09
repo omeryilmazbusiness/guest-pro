@@ -14,6 +14,10 @@ export function isAppRouteSegment(path: string): boolean {
   const p = path.split("?")[0] ?? path;
   return (
     p === ROUTES.login ||
+    p === ROUTES.guestLogin ||
+    p === ROUTES.managerLogin ||
+    p === ROUTES.personelLogin ||
+    p === ROUTES.restaurantLogin ||
     p === ROUTES.guest ||
     p === ROUTES.guestChat ||
     p === ROUTES.guestFlow ||
@@ -23,7 +27,8 @@ export function isAppRouteSegment(path: string): boolean {
     p === ROUTES.manager ||
     p === ROUTES.managerCreateGuest ||
     p === ROUTES.managerSettings ||
-    p === ROUTES.restaurant
+    p === ROUTES.restaurant ||
+    p === ROUTES.staff
   );
 }
 
@@ -92,7 +97,7 @@ export function hotelPath(slug: string, segment: string): string {
 }
 
 export function hotelLoginPath(slug: string): string {
-  return hotelPath(slug, ROUTES.login);
+  return hotelPath(slug, ROUTES.guestLogin);
 }
 
 export function hotelGuestPath(slug: string): string {
@@ -101,6 +106,95 @@ export function hotelGuestPath(slug: string): string {
 
 export function hotelManagerPath(slug: string): string {
   return hotelPath(slug, ROUTES.manager);
+}
+
+export function hotelManagerLoginPath(slug: string): string {
+  return hotelPath(slug, ROUTES.managerLogin);
+}
+
+export function hotelPersonelLoginPath(slug: string): string {
+  return hotelPath(slug, ROUTES.personelLogin);
+}
+
+/** Role at sign-out time (from /me) or null when session already expired. */
+export type LogoutUserRole = "manager" | "personnel" | "guest" | string | null | undefined;
+
+function pathRest(pathname: string): string {
+  const parsed = parseTenantPath(pathname);
+  if (parsed) return parsed.rest || "/";
+  const bare = pathname.split("?")[0] ?? pathname;
+  return bare.startsWith("/") ? bare : `/${bare}`;
+}
+
+/** Login segment when role is unknown — infer from current app area. */
+export function inferLogoutLoginSegment(pathname = window.location.pathname): string {
+  const rest = pathRest(pathname);
+
+  if (
+    rest === ROUTES.manager ||
+    rest.startsWith(`${ROUTES.manager}/`) ||
+    rest === ROUTES.managerLogin ||
+    rest === ROUTES.managerSettings ||
+    rest.startsWith(`${ROUTES.managerSettings}/`) ||
+    rest === ROUTES.managerCreateGuest ||
+    rest.startsWith(`${ROUTES.managerCreateGuest}/`)
+  ) {
+    return ROUTES.managerLogin;
+  }
+
+  if (
+    rest === ROUTES.restaurant ||
+    rest.startsWith(`${ROUTES.restaurant}/`) ||
+    rest === ROUTES.restaurantLogin
+  ) {
+    return ROUTES.restaurantLogin;
+  }
+
+  if (
+    rest === ROUTES.staff ||
+    rest.startsWith(`${ROUTES.staff}/`) ||
+    rest === ROUTES.personelLogin
+  ) {
+    return ROUTES.personelLogin;
+  }
+
+  if (
+    rest === ROUTES.guest ||
+    rest.startsWith(`${ROUTES.guest}/`) ||
+    rest === ROUTES.guestLogin ||
+    rest === ROUTES.guestChat ||
+    rest.startsWith(`${ROUTES.guestChat}`) ||
+    rest === ROUTES.guestFlow ||
+    rest.startsWith(`${ROUTES.guestFlow}/`) ||
+    rest === ROUTES.guestAutoLogin ||
+    rest.startsWith(`${ROUTES.guestAutoLogin}/`) ||
+    rest === ROUTES.guestPassportScan ||
+    rest.startsWith(`${ROUTES.guestPassportScan}/`) ||
+    rest === ROUTES.login
+  ) {
+    return ROUTES.guestLogin;
+  }
+
+  return ROUTES.guestLogin;
+}
+
+/** Tenant-relative login path segment for the signing-out user. */
+export function getLogoutLoginSegment(
+  role?: LogoutUserRole,
+  pathname = window.location.pathname,
+): string {
+  const rest = pathRest(pathname);
+  if (
+    rest === ROUTES.restaurant ||
+    rest.startsWith(`${ROUTES.restaurant}/`) ||
+    rest === ROUTES.restaurantLogin
+  ) {
+    return ROUTES.restaurantLogin;
+  }
+  if (role === "manager") return ROUTES.managerLogin;
+  if (role === "personnel") return ROUTES.personelLogin;
+  if (role === "guest") return ROUTES.guestLogin;
+  return inferLogoutLoginSegment(pathname);
 }
 
 /** Parse /{slug}/guest → { slug, rest } or null if not a tenant path. */
@@ -137,7 +231,7 @@ export function fixDuplicateTenantSlugPath(pathname: string): string | null {
   }
 
   if (!changed) return null;
-  const segment = rest === "/" ? ROUTES.login : rest;
+  const segment = rest === "/" ? ROUTES.guestLogin : rest;
   return hotelPath(slug, segment);
 }
 
@@ -146,9 +240,14 @@ export function wouterAbsolutePath(fullPath: string): string {
   return fullPath.startsWith("~") ? fullPath : `~${fullPath}`;
 }
 
-/** After sign-out: tenant login when URL is /{slug}/…, else marketing home. */
-export function getLogoutNavigateTarget(pathname = window.location.pathname): string {
+/** After sign-out: role-specific tenant login, or marketing home when no slug. */
+export function getLogoutNavigateTarget(
+  pathname = window.location.pathname,
+  role?: LogoutUserRole,
+): string {
   const slug = getHotelSlugFromPath(pathname);
-  if (slug) return wouterAbsolutePath(hotelLoginPath(slug));
+  if (slug) {
+    return wouterAbsolutePath(hotelPath(slug, getLogoutLoginSegment(role, pathname)));
+  }
   return ROUTES.marketingHome;
 }

@@ -13,6 +13,7 @@ import { db, staffTasksTable, usersTable, TASK_STATUSES } from "@workspace/db";
 import { and, eq, lt, gt, ne, asc } from "drizzle-orm";
 import { requireStaffManager } from "../middlewares/requireAuth";
 import { getDepartmentScope } from "../lib/staff-scope";
+import { ensureDailyRoutineTasks, utcDateString } from "../lib/routine-tasks";
 import { logger } from "../lib/logger";
 
 function paramStr(val: string | string[]): string {
@@ -138,6 +139,9 @@ router.get("/tasks", requireStaffManager, async (req, res): Promise<void> => {
   }
 
   const session = req.session!;
+  const dateStr = utcDateString(from);
+  await ensureDailyRoutineTasks(hotelId, dateStr);
+
   const deptScope = getDepartmentScope({
     role: session.role,
     staffDepartment: session.staffDepartment,

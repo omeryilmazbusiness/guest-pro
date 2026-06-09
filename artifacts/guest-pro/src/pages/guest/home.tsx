@@ -11,8 +11,9 @@ import { ROUTES } from "@/lib/app-routes";
 import { useOptionalHotelTenant } from "@/hooks/use-hotel-tenant";
 import { useTenantNav } from "@/hooks/use-tenant-nav";
 import { useHotelDisplay } from "@/hooks/use-hotel-display";
-import { Mic, Bot, ArrowRight, MessageSquare } from "lucide-react";
+import { Bot, ArrowRight, MessageSquare } from "lucide-react";
 import { GuestDashboardHeader } from "@/components/guest/GuestDashboardHeader";
+import { GuestVoiceMicHero } from "@/components/guest/GuestVoiceMicHero";
 import { GUEST_SECTION_IDS } from "@/lib/guest-dashboard-nav";
 import { getWelcomingStrings } from "@/lib/welcoming/hotel-content";
 import { getWelcomingLanguage } from "@/lib/welcoming/languages";
@@ -27,10 +28,15 @@ import { StayKeyCard } from "@/components/guest/StayKeyCard";
 import { GuestNearbySection } from "@/components/guest/GuestNearbySection";
 import { DailyBillCard } from "@/components/guest/DailyBillCard";
 import { ServiceQuickActions, type QuickActionMode } from "@/components/guest/ServiceQuickActions";
-import { GuestMyRequestsSection } from "@/components/guest/GuestMyRequestsSection";
+import { GuestMyRequestsPanel } from "@/components/guest/GuestMyRequestsPanel";
 import { GuestHotelQuickLinks } from "@/components/guest/GuestHotelQuickLinks";
 import { GuestAtYourServicePanel } from "@/components/guest/GuestAtYourServicePanel";
 import { listMyRequests, type ServiceRequest } from "@/lib/service-requests";
+import { MY_REQUESTS_QUERY_KEY } from "@/lib/guest-my-requests-cache";
+import {
+  consumeGuestDashboardScrollRestore,
+  markGuestDashboardScrollRestore,
+} from "@/lib/guest-dashboard-scroll";
 
 export default function GuestHome() {
   const { user, isAuthenticated, logoutAuth } = useAuth();
@@ -49,17 +55,28 @@ export default function GuestHome() {
   const { data: quickActions } = useListQuickActions();
   const appName = displayAppName || branding?.appName || "Guest Pro";
   const { data: myRequests } = useQuery({
-    queryKey: ["my-requests"],
+    queryKey: MY_REQUESTS_QUERY_KEY,
     queryFn: listMyRequests,
-    staleTime: 30_000,
+    staleTime: 15_000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchInterval: 30_000,
     enabled: isAuthenticated && user?.role === "guest",
   });
+
+  useEffect(() => {
+    const y = consumeGuestDashboardScrollRestore();
+    if (y == null) return;
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: y, behavior: "auto" });
+    });
+  }, []);
 
   // Auth redirect guard — /welcoming is a public kiosk and must NEVER
   // be part of the authenticated guest flow.
   useEffect(() => {
     if (!isAuthenticated) {
-      goTo(ROUTES.login);
+      goTo(ROUTES.guestLogin);
       return;
     }
     if (user?.role !== "guest") {
@@ -69,7 +86,7 @@ export default function GuestHome() {
 
   const handleDeleteRequest = useCallback(
     (id: number) => {
-      queryClient.setQueryData<ServiceRequest[]>(["my-requests"], (prev) =>
+      queryClient.setQueryData<ServiceRequest[]>(MY_REQUESTS_QUERY_KEY, (prev) =>
         prev?.filter((r) => r.id !== id)
       );
     },
@@ -89,6 +106,7 @@ export default function GuestHome() {
   const goToVoice = () => goTo(`${ROUTES.guestChat}?voice=1`);
 
   const handleQuickAction = (mode: QuickActionMode) => {
+    markGuestDashboardScrollRestore();
     goTo(`${ROUTES.guestFlow}?mode=${mode}`);
   };
 
@@ -135,7 +153,6 @@ export default function GuestHome() {
     <div className="min-h-[100dvh] bg-[#F8F8F8]">
       <GuestDashboardHeader
         appName={appName}
-        t={t}
         nearbyLabel={t.nearbySection}
         showRequestsSection={myRequests !== undefined}
         onLogout={handleLogout}
@@ -163,39 +180,12 @@ export default function GuestHome() {
             </p>
 
             {/* Large mic button */}
-            <div className="relative flex items-center justify-center mb-4">
-              {voice.isListening && (
-                <>
-                  <div
-                    className="absolute rounded-full bg-white/8 transition-transform duration-100"
-                    style={{
-                      width: 100,
-                      height: 100,
-                      transform: `scale(${1 + Math.min(voice.amplitude * 0.5, 0.5)})`,
-                    }}
-                  />
-                  <div
-                    className="absolute rounded-full bg-white/12 transition-transform duration-150"
-                    style={{
-                      width: 80,
-                      height: 80,
-                      transform: `scale(${1 + Math.min(voice.amplitude * 0.35, 0.35)})`,
-                    }}
-                  />
-                </>
-              )}
-              <button
-                onClick={handleMicTap}
-                className={`relative z-10 w-[4.25rem] h-[4.25rem] rounded-full flex items-center justify-center transition-all duration-200 active:scale-95 shadow-lg ${
-                  voice.isListening
-                    ? "bg-white text-zinc-900 shadow-white/25"
-                    : "bg-white/10 text-white border border-white/20 hover:bg-white/20"
-                }`}
-                aria-label={voice.isListening ? t.cancel : t.voiceLabel}
-              >
-                <Mic className="w-7 h-7" />
-              </button>
-            </div>
+            <GuestVoiceMicHero
+              isListening={voice.isListening}
+              amplitude={voice.amplitude}
+              onClick={handleMicTap}
+              ariaLabel={voice.isListening ? t.cancel : t.voiceLabel}
+            />
 
             {/* State label */}
             <p className="text-[12px] text-zinc-400 min-h-[18px]">
@@ -264,13 +254,14 @@ export default function GuestHome() {
         {/* ── Hızlı Hizmetler — Service Quick Actions ── */}
         <section id={GUEST_SECTION_IDS.quickActions} className="mb-1 scroll-mt-[72px]">
           <ServiceQuickActions onAction={handleQuickAction} t={t} />
+          <div id={GUEST_SECTION_IDS.requests}>
+            <GuestMyRequestsPanel
+              requests={myRequests}
+              t={t}
+              onDelete={handleDeleteRequest}
+            />
+          </div>
         </section>
-
-        <GuestMyRequestsSection
-          requests={myRequests}
-          t={t}
-          onDelete={handleDeleteRequest}
-        />
 
         {/* ── Yakın Çevre ── */}
         <section id={GUEST_SECTION_IDS.nearby} className="mb-4 scroll-mt-[72px]">

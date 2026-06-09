@@ -147,6 +147,7 @@ export interface WelcomingStrings {
   placeTypeMarket: string;
   placeTypePharmacy: string;
   placeTypeBazaar: string;
+  placeTypeMall: string;
   placeTypeRestaurant: string;
   placeTypeOther: string;
   registerQrLabel: string;
@@ -191,6 +192,7 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
     placeTypeMarket:      "Supermarket",
     placeTypePharmacy:    "Pharmacy",
     placeTypeBazaar:      "Grand Bazaar",
+    placeTypeMall:        "Shopping Mall",
     placeTypeRestaurant:  "Restaurant",
     placeTypeOther:       "Place",
     registerQrLabel:     "Scan QR to register",
@@ -233,6 +235,7 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
     placeTypeMarket:      "Süpermarket",
     placeTypePharmacy:    "Eczane",
     placeTypeBazaar:      "Kapalıçarşı",
+    placeTypeMall:        "Alışveriş Merkezi",
     placeTypeRestaurant:  "Restoran",
     placeTypeOther:       "Yer",
     registerQrLabel:     "Kayıt için QR kodu okut",
@@ -275,6 +278,7 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
     placeTypeMarket:      "Супермаркет",
     placeTypePharmacy:    "Аптека",
     placeTypeBazaar:      "Гранд-базар",
+    placeTypeMall:        "Торговый центр",
     placeTypeRestaurant:  "Ресторан",
     placeTypeOther:       "Место",
     registerQrLabel:     "Сканируйте QR для регистрации",
@@ -317,6 +321,7 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
     placeTypeMarket:      "सुपरमार्केट",
     placeTypePharmacy:    "फार्मेसी",
     placeTypeBazaar:      "ग्रैंड बाज़ार",
+    placeTypeMall:        "शॉपिंग मॉल",
     placeTypeRestaurant:  "रेस्तरां",
     placeTypeOther:       "स्थान",
     registerQrLabel:     "पंजीकरण के लिए QR स्कैन करें",
@@ -359,6 +364,7 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
     placeTypeMarket:      "سپر مارکیٹ",
     placeTypePharmacy:    "فارمیسی",
     placeTypeBazaar:      "گرینڈ بازار",
+    placeTypeMall:        "شاپنگ مال",
     placeTypeRestaurant:  "ریستوران",
     placeTypeOther:       "جگہ",
     registerQrLabel:     "رجسٹریشن کے لیے QR اسکین کریں",
@@ -401,6 +407,7 @@ export const WELCOMING_STRINGS: Record<WelcomingLocale, WelcomingStrings> = {
     placeTypeMarket:      "スーパーマーケット",
     placeTypePharmacy:    "薬局",
     placeTypeBazaar:      "グランドバザール",
+    placeTypeMall:        "ショッピングモール",
     placeTypeRestaurant:  "レストラン",
     placeTypeOther:       "場所",
     registerQrLabel:     "QRコードをスキャンして登録",

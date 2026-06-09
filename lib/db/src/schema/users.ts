@@ -12,16 +12,43 @@ export const STAFF_DEPARTMENTS = [
   "BELLMAN",
   "RECEPTION",
   "RESTAURANT",
+  "KITCHEN",
+  "FINANCIAL_ACCOUNTING",
+  "SECURITY",
+  "MAINTENANCE",
+  "MARKETING",
+  "SPA_GYM",
 ] as const;
 
 export type StaffDepartment = (typeof STAFF_DEPARTMENTS)[number];
 
 export const DEPARTMENT_LABELS: Record<StaffDepartment, string> = {
   HOUSEKEEPING: "Housekeeping",
-  BELLMAN:      "Bellman",
-  RECEPTION:    "Reception",
-  RESTAURANT:   "Restaurant",
+  BELLMAN: "Bellman",
+  RECEPTION: "Reception",
+  RESTAURANT: "Restaurant",
+  KITCHEN: "Kitchen",
+  FINANCIAL_ACCOUNTING: "Financial & Accounting",
+  SECURITY: "Security",
+  MAINTENANCE: "Maintenance",
+  MARKETING: "Marketing",
+  SPA_GYM: "Spa & Gym",
 };
+
+/** Departments that can have a department manager (manager + staffDepartment). */
+export const DEPARTMENT_MANAGER_DEPARTMENTS = [
+  "HOUSEKEEPING",
+  "BELLMAN",
+  "RECEPTION",
+  "KITCHEN",
+  "FINANCIAL_ACCOUNTING",
+  "SECURITY",
+  "MAINTENANCE",
+  "MARKETING",
+  "SPA_GYM",
+] as const satisfies readonly StaffDepartment[];
+
+export type DepartmentManagerDepartment = (typeof DEPARTMENT_MANAGER_DEPARTMENTS)[number];
 
 // ---------------------------------------------------------------------------
 // Users table — hotel staff (managers and personnel)
@@ -47,6 +74,8 @@ export const usersTable = pgTable("users", {
   isActive: boolean("is_active").notNull().default(true),
   firstName: text("first_name"),
   lastName: text("last_name"),
+  /** 4-digit employee number — unique per hotel; used for staff portal login. */
+  employeeNumber: text("employee_number"),
   avatarUrl: text("avatar_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

@@ -11,8 +11,6 @@ import {
   TrendingUp,
   Plus,
   Settings,
-  FileText,
-  ChefHat,
   type LucideIcon,
 } from "lucide-react";
 import type { StaffTranslations } from "@/lib/staff-i18n";
@@ -27,9 +25,7 @@ export type { ManagerDashboardTab };
 export type ManagerNavAction =
   | { type: "tab"; tab: ManagerDashboardTab }
   | { type: "create-guest" }
-  | { type: "quick-report" }
-  | { type: "settings" }
-  | { type: "restaurant" };
+  | { type: "settings" };
 
 export interface ManagerDashboardNavItem {
   id: string;
@@ -112,20 +108,6 @@ const NAV_DEFS: NavDef[] = [
     resolveLabel: ({ t }) => t.newGuest,
     action: { type: "create-guest" },
     isVisible: (c) => c.canCreateGuest,
-  },
-  {
-    id: "quick-report",
-    icon: FileText,
-    resolveLabel: ({ t }) => t.quickReport,
-    action: { type: "quick-report" },
-    isVisible: (c) => c.isGeneralManager,
-  },
-  {
-    id: "restaurant",
-    icon: ChefHat,
-    resolveLabel: ({ t }) => t.restaurantDashboard,
-    action: { type: "restaurant" },
-    isVisible: (c) => c.isGeneralManager,
   },
   {
     id: "settings",

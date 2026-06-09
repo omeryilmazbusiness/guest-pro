@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import {
   UtensilsCrossed,
-  Bell,
+  Hammer,
   Heart,
   Layers,
   Clock,
@@ -44,7 +44,7 @@ const TYPE_CONFIG: Record<ServiceRequestType, TypeConfig> = {
     borderColor: "border-zinc-100",
   },
   SUPPORT_REQUEST: {
-    icon: Bell,
+    icon: Hammer,
     label: "Destek Talebi",
     iconBg: "bg-zinc-100",
     iconColor: "text-zinc-500",

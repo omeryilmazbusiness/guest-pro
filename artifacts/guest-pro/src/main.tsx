@@ -4,8 +4,13 @@ import App from "./App";
 import "./index.css";
 import { getHotelSlugFromPath } from "@/lib/hotel-slug-from-path";
 import { colegaPageForPath } from "@/lib/marketing-routes";
+import { clearStaleServiceWorkersInDev } from "@/lib/dev-unregister-service-workers";
 
 setHotelSlugGetter(() => getHotelSlugFromPath());
+
+function mountApp() {
+  createRoot(document.getElementById("root")!).render(<App />);
+}
 
 const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
 const colegaPage = colegaPageForPath(pathname);
@@ -22,5 +27,5 @@ if (colegaPage && colegaPage !== "index.html") {
     window.location.reload();
   }
 } else {
-  createRoot(document.getElementById("root")!).render(<App />);
+  void clearStaleServiceWorkersInDev().finally(mountApp);
 }

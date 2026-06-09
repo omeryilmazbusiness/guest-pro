@@ -104,6 +104,107 @@ function foodStructuredData(data: Record<string, unknown> | null): FoodStructure
   };
 }
 
+interface FoodOrderLine {
+  menuItemId: number | null;
+  itemName: string | null;
+  category: string | null;
+  quantity: number;
+  unitPrice: string | null;
+  currency: string;
+  menuType: string | null;
+}
+
+function parseFoodOrderLine(entry: unknown): FoodOrderLine | null {
+  if (!entry || typeof entry !== "object") return null;
+  const row = entry as Record<string, unknown>;
+  const itemName =
+    typeof row.itemName === "string"
+      ? row.itemName
+      : typeof row.item === "string"
+        ? row.item
+        : null;
+  if (!itemName) return null;
+  return {
+    menuItemId:
+      typeof row.menuItemId === "number"
+        ? row.menuItemId
+        : Number(row.menuItemId) || null,
+    itemName,
+    category: typeof row.category === "string" ? row.category : null,
+    quantity:
+      typeof row.quantity === "number"
+        ? Math.max(1, row.quantity)
+        : parseInt(String(row.quantity ?? "1"), 10) || 1,
+    unitPrice:
+      row.unitPrice != null
+        ? String(row.unitPrice)
+        : row.priceAmount != null
+          ? String(row.priceAmount)
+          : null,
+    currency: typeof row.currency === "string" ? row.currency : "TRY",
+    menuType: typeof row.menuType === "string" ? row.menuType : null,
+  };
+}
+
+function parseFoodOrderLines(data: Record<string, unknown> | null): FoodOrderLine[] {
+  if (!data || !Array.isArray(data.items)) return [];
+  return data.items
+    .map(parseFoodOrderLine)
+    .filter((line): line is FoodOrderLine => line !== null);
+}
+
+async function syncMultiFoodOrderFolio(
+  request: ServiceRequest,
+  lines: FoodOrderLine[],
+): Promise<void> {
+  let total = 0;
+  let currency = "TRY";
+  let category: FolioCategory = "FOOD";
+  const descriptions: string[] = [];
+
+  for (const line of lines) {
+    const qty = Math.max(1, line.quantity);
+    let unitAmount = parseAmount(line.unitPrice);
+    const price = await resolveMenuPrice(
+      request.hotelId,
+      line.menuItemId,
+      line.itemName,
+      line.category,
+    );
+    if (price) {
+      unitAmount = price.unitAmount;
+      currency = price.currency;
+      category = folioCategoryFromMenu(price.menuType);
+    } else if (unitAmount != null) {
+      currency = line.currency;
+      category = folioCategoryFromMenu(line.menuType);
+    }
+
+    if (unitAmount == null) continue;
+    total += unitAmount * qty;
+    descriptions.push(qty > 1 ? `${line.itemName} × ${qty}` : line.itemName!);
+  }
+
+  if (total <= 0 || descriptions.length === 0) {
+    logger.debug({ requestId: request.id }, "Folio: multi food order has no priced lines");
+    return;
+  }
+
+  const chargeDate = chargeDateFromRequest(new Date(request.createdAt));
+  await upsertFolioEntry({
+    guestId: request.guestId,
+    hotelId: request.hotelId,
+    serviceRequestId: request.id,
+    chargeDate,
+    category,
+    description: descriptions.join(", "),
+    quantity: 1,
+    unitAmount: formatAmount(total),
+    lineTotal: formatAmount(total),
+    currency,
+  });
+}
+
 async function resolveMenuPrice(
   hotelId: number,
   menuItemId: number | null,
@@ -173,7 +274,15 @@ export async function syncFolioFromServiceRequest(request: ServiceRequest): Prom
 }
 
 async function syncFoodOrderFolio(request: ServiceRequest): Promise<void> {
-  const data = foodStructuredData(request.structuredData as Record<string, unknown> | null);
+  const raw = request.structuredData as Record<string, unknown> | null;
+  const multiItems = parseFoodOrderLines(raw);
+
+  if (multiItems.length > 0) {
+    await syncMultiFoodOrderFolio(request, multiItems);
+    return;
+  }
+
+  const data = foodStructuredData(raw);
   const qty = Math.max(1, data.quantity);
   const itemLabel =
     data.itemName ??

@@ -21,25 +21,57 @@ export const STAFF_DEPARTMENTS = [
   "BELLMAN",
   "RECEPTION",
   "RESTAURANT",
+  "KITCHEN",
+  "FINANCIAL_ACCOUNTING",
+  "SECURITY",
+  "MAINTENANCE",
+  "MARKETING",
+  "SPA_GYM",
 ] as const;
 
 export type StaffDepartment = (typeof STAFF_DEPARTMENTS)[number];
 
 export const DEPARTMENT_LABELS: Record<StaffDepartment, string> = {
   HOUSEKEEPING: "Housekeeping",
-  BELLMAN:      "Bellman",
-  RECEPTION:    "Reception",
-  RESTAURANT:   "Restaurant",
+  BELLMAN: "Bellman",
+  RECEPTION: "Reception",
+  RESTAURANT: "Restaurant",
+  KITCHEN: "Kitchen",
+  FINANCIAL_ACCOUNTING: "Financial & Accounting",
+  SECURITY: "Security",
+  MAINTENANCE: "Maintenance",
+  MARKETING: "Marketing",
+  SPA_GYM: "Spa & Gym",
 };
+
+export const DEPARTMENT_MANAGER_DEPARTMENTS = [
+  "HOUSEKEEPING",
+  "BELLMAN",
+  "RECEPTION",
+  "KITCHEN",
+  "FINANCIAL_ACCOUNTING",
+  "SECURITY",
+  "MAINTENANCE",
+  "MARKETING",
+  "SPA_GYM",
+] as const satisfies readonly StaffDepartment[];
+
+export type DepartmentManagerDepartment = (typeof DEPARTMENT_MANAGER_DEPARTMENTS)[number];
 
 export const DEPARTMENT_COLOURS: Record<
   StaffDepartment,
   { bg: string; text: string; border: string }
 > = {
-  HOUSEKEEPING: { bg: "bg-teal-50",   text: "text-teal-700",   border: "border-teal-100" },
-  BELLMAN:      { bg: "bg-violet-50", text: "text-violet-700", border: "border-violet-100" },
-  RECEPTION:    { bg: "bg-sky-50",    text: "text-sky-700",    border: "border-sky-100" },
-  RESTAURANT:   { bg: "bg-amber-50",  text: "text-amber-700",  border: "border-amber-100" },
+  HOUSEKEEPING: { bg: "bg-teal-50", text: "text-teal-700", border: "border-teal-100" },
+  BELLMAN: { bg: "bg-violet-50", text: "text-violet-700", border: "border-violet-100" },
+  RECEPTION: { bg: "bg-sky-50", text: "text-sky-700", border: "border-sky-100" },
+  RESTAURANT: { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-100" },
+  KITCHEN: { bg: "bg-orange-50", text: "text-orange-700", border: "border-orange-100" },
+  FINANCIAL_ACCOUNTING: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-100" },
+  SECURITY: { bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-100" },
+  MAINTENANCE: { bg: "bg-yellow-50", text: "text-yellow-700", border: "border-yellow-100" },
+  MARKETING: { bg: "bg-pink-50", text: "text-pink-700", border: "border-pink-100" },
+  SPA_GYM: { bg: "bg-cyan-50", text: "text-cyan-700", border: "border-cyan-100" },
 };
 
 export interface StaffMember {
@@ -47,6 +79,7 @@ export interface StaffMember {
   email: string;
   firstName: string | null;
   lastName: string | null;
+  employeeNumber: string | null;
   role: string;
   staffDepartment: StaffDepartment | null;
   isActive: boolean;
@@ -108,6 +141,7 @@ export interface CreateStaffInput {
   password: string;
   firstName: string;
   lastName: string;
+  employeeNumber: string;
   staffDepartment: StaffDepartment;
 }
 
@@ -118,11 +152,74 @@ export async function createStaff(data: CreateStaffInput): Promise<StaffMember> 
   });
 }
 
+// ── Department managers (General Manager only) ───────────────────────────────
+
+export interface DepartmentManager {
+  id: number;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  role: "manager";
+  staffDepartment: DepartmentManagerDepartment;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CreateDepartmentManagerInput {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  staffDepartment: DepartmentManagerDepartment;
+}
+
+export interface UpdateDepartmentManagerInput {
+  firstName?: string;
+  lastName?: string;
+  isActive?: boolean;
+  password?: string;
+}
+
+export async function listDepartmentManagers(): Promise<DepartmentManager[]> {
+  return apiFetch<DepartmentManager[]>("/api/staff/department-managers");
+}
+
+export async function createDepartmentManager(
+  data: CreateDepartmentManagerInput,
+): Promise<DepartmentManager> {
+  return apiFetch<DepartmentManager>("/api/staff/department-managers", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateDepartmentManager(
+  id: number,
+  data: UpdateDepartmentManagerInput,
+): Promise<DepartmentManager> {
+  return apiFetch<DepartmentManager>(`/api/staff/department-managers/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deactivateDepartmentManager(id: number): Promise<void> {
+  await apiFetch<null>(`/api/staff/department-managers/${id}`, { method: "DELETE" });
+}
+
+export async function permanentDeleteDepartmentManager(id: number): Promise<void> {
+  await apiFetch<null>(`/api/staff/department-managers/${id}?permanent=true`, {
+    method: "DELETE",
+  });
+}
+
 export interface UpdateStaffInput {
   firstName?: string;
   lastName?: string;
+  employeeNumber?: string;
   staffDepartment?: StaffDepartment;
   isActive?: boolean;
+  password?: string;
 }
 
 export async function updateStaff(
@@ -187,4 +284,9 @@ export interface StaffInfo {
 export function staffDisplayName(member: StaffMember): string {
   const full = [member.firstName, member.lastName].filter(Boolean).join(" ");
   return full || member.email;
+}
+
+export function departmentManagerDisplayName(manager: DepartmentManager): string {
+  const full = [manager.firstName, manager.lastName].filter(Boolean).join(" ");
+  return full || manager.email;
 }

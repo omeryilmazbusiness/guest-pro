@@ -4,6 +4,7 @@ import {
   Store,
   UtensilsCrossed,
   MapPin,
+  ShoppingBag,
   type LucideIcon,
 } from "lucide-react";
 import type { NearbyPlace } from "./types";
@@ -15,6 +16,7 @@ export type NearbyTypeLabelKey =
   | "placeTypeMarket"
   | "placeTypePharmacy"
   | "placeTypeBazaar"
+  | "placeTypeMall"
   | "placeTypeRestaurant"
   | "placeTypeOther";
 
@@ -22,6 +24,7 @@ export const NEARBY_TYPE_ORDER: NearbyPlaceType[] = [
   "market",
   "pharmacy",
   "bazaar",
+  "mall",
   "restaurant",
   "other",
 ];
@@ -60,6 +63,14 @@ export const NEARBY_TYPE_META: Record<
     iconColor: "text-amber-700",
     chipActive: "bg-amber-600 text-white border-amber-600",
     chipIdle: "bg-white text-amber-800 border-amber-100",
+  },
+  mall: {
+    icon: ShoppingBag,
+    labelKey: "placeTypeMall",
+    iconWrap: "bg-violet-50 border-violet-100",
+    iconColor: "text-violet-600",
+    chipActive: "bg-violet-600 text-white border-violet-600",
+    chipIdle: "bg-white text-violet-700 border-violet-100",
   },
   restaurant: {
     icon: UtensilsCrossed,

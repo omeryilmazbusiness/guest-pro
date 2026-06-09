@@ -1,277 +1,322 @@
-import { useState, useMemo, useCallback } from "react";
-import { MapPin, Search, ChevronRight, X, ChevronLeft } from "lucide-react";
+import { useMemo, useState, useCallback, useRef, useEffect } from "react";
+import {
+  MapPin,
+  ChevronRight,
+  Navigation,
+  Building2,
+  X,
+  Search,
+  SlidersHorizontal,
+  Check,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { dash } from "@/lib/guest-dashboard-ui";
 import { tFmt, type GuestTranslations } from "@/lib/i18n";
 import type { WelcomingStrings } from "@/lib/welcoming/hotel-content";
-import type { NearbyPlace } from "@/lib/welcoming/types";
+import type { NearbyPlace, PlaceCoords } from "@/lib/welcoming/types";
+import { resolveHotelCenter, sortPlacesByProximity } from "@/lib/nearby/nearby-distance";
 import {
-  NEARBY_TYPE_META,
   NEARBY_TYPE_ORDER,
+  NEARBY_TYPE_META,
   getNearbyTypeLabel,
   type NearbyPlaceType,
 } from "@/lib/welcoming/nearby-place-meta";
+import { filterNearbyPlaces, type NearbyFilterKey } from "@/lib/nearby/nearby-filter";
 import { NearbyPlaceTypeIcon } from "@/components/welcoming/NearbyPlaceTypeIcon";
 import { NearbyDialogShell } from "@/components/welcoming/NearbyDialogShell";
 import { NearbyPlaceDetail } from "@/components/welcoming/NearbyPlaceDetail";
-
-type FilterKey = "all" | NearbyPlaceType;
-type ModalView = { mode: "list" } | { mode: "detail"; place: NearbyPlace };
+import { GuestNearbyMapEmbed } from "@/components/guest/nearby/GuestNearbyMapEmbed";
 
 interface GuestNearbyExplorerProps {
   places: NearbyPlace[];
+  hotelCenter: PlaceCoords | null;
+  hotelLabel?: string | null;
   s: WelcomingStrings;
   t: GuestTranslations;
+  locale?: string;
   className?: string;
 }
 
-function PlaceRow({
+function NearestRow({
   place,
-  s,
+  active,
   onSelect,
 }: {
   place: NearbyPlace;
-  s: WelcomingStrings;
+  active: boolean;
   onSelect: (place: NearbyPlace) => void;
 }) {
-  const typeLabel = getNearbyTypeLabel(s, place.type);
   return (
     <button
       type="button"
       onClick={() => onSelect(place)}
-      className="group flex w-full items-center gap-2.5 rounded-xl border border-zinc-100 bg-white px-3 py-2.5 text-start transition-all hover:border-zinc-200 hover:shadow-sm active:scale-[0.99]"
+      className={cn(
+        "group flex w-full items-center gap-3 rounded-2xl border px-3 py-2.5 text-start transition-all active:scale-[0.99]",
+        active
+          ? "border-teal-200/90 bg-white shadow-md ring-1 ring-teal-500/20"
+          : "border-transparent bg-white/95 hover:border-zinc-200/80 hover:bg-white hover:shadow-sm",
+      )}
     >
       <NearbyPlaceTypeIcon type={place.type} size="sm" />
       <span className="min-w-0 flex-1">
-        <p className="truncate text-[14px] font-semibold leading-snug text-zinc-900">{place.name}</p>
-        <p className="mt-0.5 text-[11px] text-zinc-500">{typeLabel}</p>
+        <p className="truncate text-[14px] font-semibold text-zinc-900">{place.name}</p>
+        {place.distance !== "—" && (
+          <p className="text-[10px] font-medium text-zinc-400">{place.distance}</p>
+        )}
       </span>
-      <span className="shrink-0 text-[10px] font-semibold text-zinc-500 rounded-md border border-zinc-100 bg-zinc-50 px-1.5 py-0.5">
-        {place.distance}
-      </span>
-      <ChevronRight className="h-4 w-4 shrink-0 text-zinc-300 group-hover:text-zinc-500" />
+      <ChevronRight className="h-4 w-4 shrink-0 text-zinc-300 transition-colors group-hover:text-teal-600" />
     </button>
   );
 }
 
-export function GuestNearbyExplorer({ places, s, t, className }: GuestNearbyExplorerProps) {
-  const [open, setOpen] = useState(false);
-  const [view, setView] = useState<ModalView>({ mode: "list" });
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<FilterKey>("all");
+export function GuestNearbyExplorer({
+  places,
+  hotelCenter: hotelCenterProp,
+  hotelLabel,
+  s,
+  t,
+  locale = "en",
+  className,
+}: GuestNearbyExplorerProps) {
+  const [previewPlace, setPreviewPlace] = useState<NearbyPlace | null>(null);
+  const [modalPlace, setModalPlace] = useState<NearbyPlace | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<NearbyFilterKey>("all");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
 
-  const preview = places.slice(0, 2);
+  const hotelCenter = useMemo(
+    () => resolveHotelCenter(hotelCenterProp, places),
+    [hotelCenterProp, places],
+  );
+
+  const typeLabelFn = useCallback(
+    (type: NearbyPlaceType) => getNearbyTypeLabel(s, type),
+    [s],
+  );
 
   const filteredPlaces = useMemo(() => {
-    let list = places;
-    if (filter !== "all") {
-      list = list.filter((p) => p.type === filter);
-    }
-    const q = query.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter((p) => {
-      const typeLabel = getNearbyTypeLabel(s, p.type).toLowerCase();
-      return p.name.toLowerCase().includes(q) || typeLabel.includes(q);
-    });
-  }, [places, filter, query, s]);
+    const filtered = filterNearbyPlaces(places, typeFilter, searchQuery, typeLabelFn);
+    return sortPlacesByProximity(filtered, hotelCenter, locale);
+  }, [places, typeFilter, searchQuery, typeLabelFn, hotelCenter, locale]);
 
-  const openList = useCallback(() => {
-    setQuery("");
-    setFilter("all");
-    setView({ mode: "list" });
-    setOpen(true);
-  }, []);
+  const mapPlace = previewPlace;
 
-  const openDetail = useCallback((place: NearbyPlace) => {
-    setView({ mode: "detail", place });
-    setOpen(true);
+  const availableTypes = useMemo(
+    () => NEARBY_TYPE_ORDER.filter((type) => places.some((p) => p.type === type)),
+    [places],
+  );
+
+  const openPlace = useCallback((place: NearbyPlace) => {
+    setPreviewPlace(place);
+    setModalPlace(place);
   }, []);
 
   const closeModal = useCallback(() => {
-    setOpen(false);
-    setQuery("");
-    setFilter("all");
-    setView({ mode: "list" });
+    setModalPlace(null);
   }, []);
 
-  const backToList = useCallback(() => {
-    setView({ mode: "list" });
-  }, []);
+  useEffect(() => {
+    if (!filterOpen) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setFilterOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [filterOpen]);
 
-  const handleEscape = useCallback(() => {
-    if (view.mode === "detail") backToList();
-    else closeModal();
-  }, [view.mode, backToList, closeModal]);
-
-  const filterChips: { key: FilterKey; label: string }[] = [
-    { key: "all", label: t.nearbyFilterAll },
-    ...NEARBY_TYPE_ORDER.filter((type) => places.some((p) => p.type === type)).map((type) => ({
-      key: type as FilterKey,
-      label: getNearbyTypeLabel(s, type),
-    })),
-  ];
-
-  const isDetail = view.mode === "detail";
+  const filterActive = typeFilter !== "all";
 
   return (
     <>
       <article
         className={cn(
           dash.lightCard,
-          "w-full overflow-hidden bg-gradient-to-br from-white via-white to-teal-50/30",
-          open && "ring-2 ring-teal-500/20 border-teal-200/60",
+          "w-full overflow-hidden border border-teal-100/70 bg-gradient-to-br from-white via-teal-50/20 to-violet-50/30 shadow-[0_12px_40px_-16px_rgba(13,148,136,0.35)]",
           className,
         )}
         aria-label={s.nearbySection}
       >
-        <button
-          type="button"
-          onClick={openList}
-          className="flex w-full items-start gap-2.5 border-b border-zinc-100/80 px-3.5 pt-3 pb-2 text-start transition-colors hover:bg-zinc-50/50"
-        >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-teal-100 bg-teal-50">
-            <MapPin className="h-4 w-4 text-teal-600" strokeWidth={1.75} />
-          </span>
-          <span className="min-w-0 flex-1 pt-0.5">
-            <p className="text-[14px] font-semibold leading-snug text-zinc-900">{s.nearbySection}</p>
-            <p className="mt-0.5 text-[12px] text-zinc-500">{t.nearbyTapHint}</p>
-          </span>
-          <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-zinc-400" />
-        </button>
-
-        <div className="space-y-1.5 p-2">
-          {preview.map((place) => (
-            <button
-              key={place.name}
-              type="button"
-              onClick={() => openDetail(place)}
-              className="flex w-full items-center gap-2 rounded-lg bg-zinc-50/80 px-2 py-1.5 text-start transition-colors hover:bg-white hover:shadow-sm active:scale-[0.99]"
-            >
-              <NearbyPlaceTypeIcon type={place.type} size="sm" />
-              <span className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-medium text-zinc-800">{place.name}</p>
-                <p className="text-[10px] text-zinc-400">{getNearbyTypeLabel(s, place.type)}</p>
+        <div className="relative overflow-hidden border-b border-white/60 px-4 pb-3.5 pt-4">
+          <div
+            className="pointer-events-none absolute -end-8 -top-8 h-28 w-28 rounded-full bg-gradient-to-br from-teal-200/40 to-violet-200/30 blur-2xl"
+            aria-hidden
+          />
+          <div className="relative flex items-start gap-2.5">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-teal-100 bg-gradient-to-br from-teal-100/80 to-white shadow-sm">
+              <MapPin className="h-[19px] w-[19px] text-teal-600" strokeWidth={1.75} />
+            </span>
+            <span className="min-w-0 flex-1 pt-0.5">
+              <p className="text-[16px] font-bold leading-snug tracking-tight text-zinc-900">
+                {s.nearbySection}
+              </p>
+              <p className="mt-0.5 text-[12px] text-zinc-500">{t.nearbyTapHint}</p>
+            </span>
+            {hotelCenter && (
+              <span className="flex items-center gap-1 rounded-full border border-teal-200/80 bg-white/90 px-2.5 py-1 text-[10px] font-semibold text-teal-800 shadow-sm">
+                <Building2 className="h-3 w-3" />
+                {t.nearbyHotelLabel}
               </span>
-              <span className="text-[10px] font-medium text-zinc-400">{place.distance}</span>
-              <ChevronRight className="h-3.5 w-3.5 text-zinc-300" />
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={openList}
-            className="flex w-full items-center justify-center gap-1 pt-0.5 text-[12px] font-semibold text-teal-700 hover:text-teal-800"
-          >
-            {tFmt(t.nearbyViewAll, { count: String(places.length) })}
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-3 p-3 sm:p-4">
+          <GuestNearbyMapEmbed
+            hotelCenter={hotelCenter}
+            hotelLabel={hotelLabel}
+            selectedPlace={mapPlace}
+            mapUnavailableLabel={t.nearbyMapUnavailable}
+            hotelPinLabel={t.nearbyHotelLabel}
+          />
+
+          <div ref={filterRef} className="relative">
+            <div className="flex items-center gap-2 rounded-2xl border border-zinc-100 bg-white/95 px-3 py-2 shadow-sm backdrop-blur-sm">
+              <Search className="h-4 w-4 shrink-0 text-zinc-400" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t.nearbySearchPlaceholder}
+                className="min-w-0 flex-1 bg-transparent text-[13px] text-zinc-800 outline-none placeholder:text-zinc-400"
+                aria-label={t.nearbySearchPlaceholder}
+              />
+              <button
+                type="button"
+                onClick={() => setFilterOpen((v) => !v)}
+                className={cn(
+                  "relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-colors",
+                  filterActive || filterOpen
+                    ? "bg-teal-50 text-teal-700"
+                    : "text-zinc-400 hover:bg-zinc-50 hover:text-zinc-600",
+                )}
+                aria-label={t.nearbyFilterAll}
+                aria-expanded={filterOpen}
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                {filterActive && (
+                  <span className="absolute end-1 top-1 h-1.5 w-1.5 rounded-full bg-teal-500" />
+                )}
+              </button>
+            </div>
+
+            {filterOpen && (
+              <div className="absolute inset-x-0 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTypeFilter("all");
+                    setFilterOpen(false);
+                  }}
+                  className={cn(
+                    "flex w-full items-center gap-2.5 px-3.5 py-2.5 text-start text-[13px] transition-colors hover:bg-zinc-50",
+                    typeFilter === "all" ? "font-semibold text-teal-700" : "text-zinc-700",
+                  )}
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-100">
+                    <MapPin className="h-3.5 w-3.5 text-zinc-500" />
+                  </span>
+                  <span className="flex-1">{t.nearbyFilterAll}</span>
+                  {typeFilter === "all" && <Check className="h-4 w-4 text-teal-600" />}
+                </button>
+                {availableTypes.map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => {
+                      setTypeFilter(type);
+                      setFilterOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-2.5 border-t border-zinc-50 px-3.5 py-2.5 text-start text-[13px] transition-colors hover:bg-zinc-50",
+                      typeFilter === type ? "font-semibold text-teal-700" : "text-zinc-700",
+                    )}
+                  >
+                    <NearbyPlaceTypeIcon type={type} size="sm" className="!h-7 !w-7 !rounded-lg" />
+                    <span className="flex-1">{getNearbyTypeLabel(s, type)}</span>
+                    {typeFilter === type && <Check className="h-4 w-4 text-teal-600" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {availableTypes.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {availableTypes.map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setTypeFilter((prev) => (prev === type ? "all" : type))}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-semibold transition-all",
+                    typeFilter === type
+                      ? NEARBY_TYPE_META[type].chipActive
+                      : NEARBY_TYPE_META[type].chipIdle,
+                  )}
+                >
+                  <NearbyPlaceTypeIcon type={type} size="sm" className="!h-4 !w-4 !rounded-sm" />
+                  {getNearbyTypeLabel(s, type)}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="flex min-h-0 flex-col">
+            <div className="mb-2 flex items-center justify-between gap-2 px-0.5">
+              <h3 className="flex items-center gap-1.5 text-[13px] font-semibold text-zinc-800">
+                <Navigation className="h-3.5 w-3.5 text-teal-600" strokeWidth={2} />
+                {t.nearbyNearestTitle}
+              </h3>
+              <span className="text-[10px] font-medium text-zinc-400">
+                {tFmt(t.nearbyViewAll, { count: String(filteredPlaces.length) })}
+              </span>
+            </div>
+
+            <div className="max-h-[280px] min-h-[160px] space-y-1 overflow-y-auto overscroll-contain rounded-2xl border border-zinc-100/80 bg-white/70 p-1.5 backdrop-blur-sm">
+              {filteredPlaces.length === 0 ? (
+                <p className="px-3 py-8 text-center text-[12px] leading-relaxed text-zinc-500">
+                  {searchQuery || filterActive ? t.nearbyNoResults : t.nearbyEmptyPlaces}
+                </p>
+              ) : (
+                filteredPlaces.map((place) => (
+                  <NearestRow
+                    key={place.id ?? place.name}
+                    place={place}
+                    active={previewPlace?.id === place.id}
+                    onSelect={openPlace}
+                  />
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </article>
 
       <NearbyDialogShell
-        open={open}
+        open={modalPlace != null}
         onClose={closeModal}
-        onEscape={handleEscape}
-        ariaLabel={isDetail ? view.place.name : s.nearbySection}
+        onEscape={closeModal}
+        ariaLabel={modalPlace?.name ?? s.nearbySection}
         closeLabel={t.cancel}
       >
-        <div className="relative flex min-h-0 flex-1 flex-col">
-          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-zinc-100 px-3 py-2.5">
-            {isDetail ? (
+        {modalPlace && (
+          <div className="relative flex min-h-0 flex-1 flex-col">
+            <div className="absolute end-3 top-3 z-10">
               <button
                 type="button"
-                onClick={backToList}
-                className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[13px] font-semibold text-teal-700 transition-colors hover:bg-teal-50"
+                onClick={closeModal}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white/95 text-zinc-500 shadow-sm backdrop-blur transition-colors hover:bg-zinc-100"
+                aria-label={t.cancel}
               >
-                <ChevronLeft className="h-4 w-4" />
-                {t.nearbyBackToList}
+                <X className="h-4 w-4" />
               </button>
-            ) : (
-              <div className="min-w-0 flex-1 ps-1">
-                <h2 className="text-[16px] font-semibold tracking-tight text-zinc-900">
-                  {s.nearbySection}
-                </h2>
-                <p className="text-[11px] text-zinc-500">
-                  {tFmt(t.nearbyViewAll, { count: String(places.length) })}
-                </p>
-              </div>
-            )}
-            <button
-              type="button"
-              onClick={closeModal}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-500 transition-colors hover:bg-zinc-100"
-              aria-label={t.cancel}
-            >
-              <X className="h-4 w-4" />
-            </button>
+            </div>
+            <NearbyPlaceDetail place={modalPlace} s={s} guestOrigin={hotelCenter} />
           </div>
-
-          {isDetail ? (
-            <NearbyPlaceDetail key={view.place.name} place={view.place} s={s} />
-          ) : (
-            <>
-              <div className="shrink-0 space-y-2.5 border-b border-zinc-50 px-4 py-3">
-                <label className="relative block">
-                  <Search
-                    className={cn(
-                      "pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400",
-                      typeof document !== "undefined" && document.documentElement.dir === "rtl"
-                        ? "right-3"
-                        : "left-3",
-                    )}
-                  />
-                  <input
-                    type="search"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder={t.nearbySearchPlaceholder}
-                    className="h-10 w-full rounded-xl border border-zinc-200 bg-zinc-50/80 ps-9 pe-3 text-[14px] text-zinc-900 placeholder:text-zinc-400 focus:border-teal-300/60 focus:outline-none focus:ring-2 focus:ring-teal-500/25"
-                  />
-                </label>
-                <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
-                  {filterChips.map((chip) => {
-                    const active = filter === chip.key;
-                    const meta =
-                      chip.key === "all" ? null : NEARBY_TYPE_META[chip.key as NearbyPlaceType];
-                    return (
-                      <button
-                        key={chip.key}
-                        type="button"
-                        onClick={() => setFilter(chip.key)}
-                        className={cn(
-                          "shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-semibold transition-all duration-200",
-                          active
-                            ? meta
-                              ? meta.chipActive
-                              : "bg-zinc-900 text-white border-zinc-900"
-                            : meta
-                              ? meta.chipIdle
-                              : "bg-white text-zinc-600 border-zinc-200",
-                        )}
-                      >
-                        {chip.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain px-4 py-3">
-                {filteredPlaces.length === 0 ? (
-                  <p className="py-8 text-center text-[13px] text-zinc-500">{t.nearbyNoResults}</p>
-                ) : (
-                  filteredPlaces.map((place) => (
-                    <PlaceRow
-                      key={place.name}
-                      place={place}
-                      s={s}
-                      onSelect={(p) => setView({ mode: "detail", place: p })}
-                    />
-                  ))
-                )}
-              </div>
-            </>
-          )}
-        </div>
+        )}
       </NearbyDialogShell>
     </>
   );

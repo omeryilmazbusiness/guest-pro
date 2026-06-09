@@ -7,14 +7,16 @@ import {
   Bot,
   KeyRound,
   Zap,
-  ClipboardList,
   MapPin,
   Receipt,
   Building2,
   Sparkles,
+  Hammer,
   type LucideIcon,
 } from "lucide-react";
 import type { GuestTranslations } from "@/lib/i18n";
+
+type NavIcon = LucideIcon;
 
 /** DOM ids for scroll targets (must match home.tsx section elements). */
 export const GUEST_SECTION_IDS = {
@@ -40,14 +42,14 @@ export interface GuestDashboardNavContext {
 export interface GuestDashboardNavItem {
   id: string;
   sectionId: GuestSectionId;
-  icon: LucideIcon;
+  icon: NavIcon;
   label: string;
 }
 
 type NavItemDef = {
   id: string;
   sectionId: GuestSectionId;
-  icon: LucideIcon;
+  icon: NavIcon;
   resolveLabel: (ctx: GuestDashboardNavContext) => string;
   isVisible?: (ctx: GuestDashboardNavContext) => boolean;
 };
@@ -80,7 +82,7 @@ const NAV_ITEM_DEFS: NavItemDef[] = [
   {
     id: "requests",
     sectionId: GUEST_SECTION_IDS.requests,
-    icon: ClipboardList,
+    icon: Hammer,
     resolveLabel: ({ t }) => t.myRequestsTitle,
     isVisible: ({ showRequests }) => showRequests,
   },

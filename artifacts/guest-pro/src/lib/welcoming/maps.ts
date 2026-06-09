@@ -21,20 +21,34 @@ export function buildGoogleMapsLink(coords: PlaceCoords, placeName: string): str
 
 /**
  * Returns a Google Maps directions URL from the hotel to the place.
- * "daddr" = destination address. Origin is left to the user's device.
+ * Uses lat,lng destination only — never a free-text place_id (causes wrong routing).
  */
-export function buildGoogleMapsDirectionsLink(coords: PlaceCoords, placeName: string): string {
-  const dest = encodeURIComponent(`${coords.lat},${coords.lng}`);
-  const label = encodeURIComponent(placeName);
-  return `https://www.google.com/maps/dir/?api=1&destination=${dest}&destination_place_id=${label}&travelmode=walking`;
+export function buildGoogleMapsDirectionsLink(
+  coords: PlaceCoords,
+  _placeName?: string,
+  origin?: PlaceCoords,
+): string {
+  const params = new URLSearchParams({
+    api: "1",
+    travelmode: "walking",
+    destination: `${coords.lat},${coords.lng}`,
+  });
+  if (origin && Number.isFinite(origin.lat) && Number.isFinite(origin.lng)) {
+    params.set("origin", `${origin.lat},${origin.lng}`);
+  }
+  return `https://www.google.com/maps/dir/?${params.toString()}`;
 }
 
 /**
  * Returns the URL that the QR code should encode.
  * Scanning the QR on a phone opens Google Maps ready for navigation.
  */
-export function buildQrPayload(coords: PlaceCoords, placeName: string): string {
-  return buildGoogleMapsDirectionsLink(coords, placeName);
+export function buildQrPayload(
+  coords: PlaceCoords,
+  placeName: string,
+  origin?: PlaceCoords,
+): string {
+  return buildGoogleMapsDirectionsLink(coords, placeName, origin);
 }
 
 /**
@@ -50,4 +64,100 @@ export function buildOsmEmbedUrl(coords: PlaceCoords): string {
     coords.lat + margin,
   ].join(",");
   return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coords.lat},${coords.lng}`;
+}
+
+/**
+ * Google Maps iframe embed for a single point — no JS API key required.
+ * The q= parameter pins the hotel location on the embedded map.
+ */
+export function buildGoogleMapsHotelEmbedUrl(
+  center: PlaceCoords,
+  zoom = 15,
+  label?: string | null,
+): string {
+  const coords = `${center.lat},${center.lng}`;
+  const trimmedLabel = label?.trim();
+  const q = trimmedLabel
+    ? `${coords}(${trimmedLabel.replace(/\s+/g, "+")})`
+    : coords;
+  return `https://maps.google.com/maps?q=${q}&hl=en&z=${zoom}&output=embed`;
+}
+
+/**
+ * OpenStreetMap embed framing hotel + optional nearby place (hotel marker always shown).
+ */
+export function buildOsmBoundsEmbedUrl(
+  hotel: PlaceCoords,
+  place?: PlaceCoords | null,
+  padding = 0.006,
+  marker?: PlaceCoords | null,
+): string {
+  const points = place ? [hotel, place] : [hotel];
+  const lats = points.map((p) => p.lat);
+  const lngs = points.map((p) => p.lng);
+  const bbox = [
+    Math.min(...lngs) - padding,
+    Math.min(...lats) - padding,
+    Math.max(...lngs) + padding,
+    Math.max(...lats) + padding,
+  ].join(",");
+  const pin = marker ?? place ?? hotel;
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${pin.lat},${pin.lng}`;
+}
+
+/** Degree span between two coords (cheap pre-check before map framing). */
+export function coordSpanDegrees(a: PlaceCoords, b: PlaceCoords): number {
+  return Math.max(Math.abs(a.lat - b.lat), Math.abs(a.lng - b.lng));
+}
+
+/** Zoom level for Google hotel embed when a place is selected nearby. */
+export function computeNearbyMapZoom(hotel: PlaceCoords, place: PlaceCoords): number {
+  const span = coordSpanDegrees(hotel, place);
+  if (span > 0.08) return 12;
+  if (span > 0.04) return 13;
+  if (span > 0.02) return 14;
+  return 15;
+}
+
+/**
+ * Guest nearby map — always anchors on the GM-configured hotel pin.
+ * Never uses route/directions embed (unreliable without API key, hides hotel pin).
+ */
+export function buildGuestNearbyMapEmbedUrl(
+  hotel: PlaceCoords,
+  options?: {
+    selectedPlace?: PlaceCoords | null;
+    hotelLabel?: string | null;
+  },
+): string | null {
+  if (!Number.isFinite(hotel.lat) || !Number.isFinite(hotel.lng)) return null;
+
+  const selectedPlace = options?.selectedPlace;
+  if (!selectedPlace) {
+    return buildGoogleMapsHotelEmbedUrl(hotel, 15, options?.hotelLabel);
+  }
+
+  const span = coordSpanDegrees(hotel, selectedPlace);
+  // Different region / bad coordinates — keep hotel map stable.
+  if (span > 2) {
+    return buildGoogleMapsHotelEmbedUrl(hotel, 15, options?.hotelLabel);
+  }
+  if (span > 0.003) {
+    return buildOsmBoundsEmbedUrl(hotel, selectedPlace, 0.006, selectedPlace);
+  }
+  return buildGoogleMapsHotelEmbedUrl(hotel, 16, options?.hotelLabel);
+}
+
+/**
+ * @deprecated Route iframe embed is unreliable without Maps Embed API key.
+ * Use buildGuestNearbyMapEmbedUrl for previews; deep links for directions.
+ */
+export function buildGoogleMapsRouteEmbedUrl(
+  origin: PlaceCoords,
+  destination: PlaceCoords,
+): string {
+  return (
+    `https://maps.google.com/maps?saddr=${origin.lat},${origin.lng}` +
+    `&daddr=${destination.lat},${destination.lng}&hl=en&z=14&output=embed`
+  );
 }

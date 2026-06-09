@@ -6,6 +6,7 @@ import {
   canManageStaff,
   isGeneralManager,
   isAnyManager,
+  resolveStaffScope,
 } from "../lib/staff-scope";
 /**
  * Safely extract a single string from an Express 5 route param.
@@ -133,6 +134,22 @@ export function requireStaff(req: Request, res: Response, next: NextFunction): v
   requireAuth(req, res, () => {
     if (!isStaffRole(req.session?.role ?? "")) {
       res.status(403).json({ error: "Staff access required" });
+      return;
+    }
+    next();
+  });
+}
+
+/** Staff employee portal — field personnel (not reception/restaurant). */
+export function requireStaffPersonnel(req: Request, res: Response, next: NextFunction): void {
+  requireAuth(req, res, () => {
+    const session = req.session!;
+    const scope = resolveStaffScope({
+      role: session.role,
+      staffDepartment: session.staffDepartment,
+    });
+    if (scope !== "staff_personnel") {
+      res.status(403).json({ error: "Staff portal access required" });
       return;
     }
     next();

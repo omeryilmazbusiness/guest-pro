@@ -13,7 +13,7 @@ import {
   RefreshCw,
   Inbox,
   UtensilsCrossed,
-  Bell,
+  Hammer,
   Heart,
   LayoutGrid,
   ChevronDown,
@@ -51,7 +51,7 @@ const GROUPS: GroupConfig[] = [
   {
     type: "SUPPORT_REQUEST",
     label: "Destek Talepleri",
-    icon: Bell,
+    icon: Hammer,
     iconBg: "bg-zinc-100",
     iconColor: "text-zinc-500",
     dotColor: "bg-zinc-400",

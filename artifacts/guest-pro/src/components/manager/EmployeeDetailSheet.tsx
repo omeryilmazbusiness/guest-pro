@@ -8,10 +8,17 @@ import {
   ShieldCheck,
   Trash2,
   Mail,
+  KeyRound,
   Sparkles,
   ConciergeBell,
   Luggage,
   UtensilsCrossed,
+  ChefHat,
+  Shield,
+  Wrench,
+  Megaphone,
+  Dumbbell,
+  Calculator,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ManagerCenterSheet } from "@/components/manager/ManagerCenterSheet";
@@ -32,6 +39,12 @@ const DEPT_ICONS: Record<StaffDepartment, React.FC<{ className?: string }>> = {
   RECEPTION: ConciergeBell,
   BELLMAN: Luggage,
   RESTAURANT: UtensilsCrossed,
+  KITCHEN: ChefHat,
+  FINANCIAL_ACCOUNTING: Calculator,
+  SECURITY: Shield,
+  MAINTENANCE: Wrench,
+  MARKETING: Megaphone,
+  SPA_GYM: Dumbbell,
 };
 
 export interface EmployeeDetailSheetProps {
@@ -42,6 +55,7 @@ export interface EmployeeDetailSheetProps {
   onDeactivate: (m: StaffMember) => void;
   onReactivate: (m: StaffMember) => void;
   onPermanentDelete: (m: StaffMember) => void;
+  onResetPassword?: (m: StaffMember) => void;
   t: StaffTranslations;
 }
 
@@ -53,6 +67,7 @@ export function EmployeeDetailSheet({
   onDeactivate,
   onReactivate,
   onPermanentDelete,
+  onResetPassword,
   t,
 }: EmployeeDetailSheetProps) {
   if (!member) return null;
@@ -131,6 +146,14 @@ export function EmployeeDetailSheet({
             Email
           </p>
           <p className="mt-1 truncate font-mono text-sm text-zinc-700">{member.email}</p>
+          {member.employeeNumber && (
+            <>
+              <p className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
+                Employee No.
+              </p>
+              <p className="mt-1 font-mono text-sm text-zinc-700">#{member.employeeNumber}</p>
+            </>
+          )}
         </div>
 
         <div className="mt-5 flex flex-col gap-2">
@@ -145,6 +168,20 @@ export function EmployeeDetailSheet({
             <Pencil className="h-4 w-4 text-zinc-500" />
             {t.editEmployee}
           </Button>
+
+          {onResetPassword && (
+            <Button
+              variant="outline"
+              className="h-11 w-full justify-start gap-2.5 rounded-xl border-zinc-200"
+              onClick={() => {
+                onClose();
+                onResetPassword(member);
+              }}
+            >
+              <KeyRound className="h-4 w-4 text-zinc-500" />
+              {t.resetPassword}
+            </Button>
+          )}
 
           {member.isActive ? (
             <Button

@@ -32,9 +32,7 @@ export interface ManagerDashboardHeaderProps {
   canCreateGuest: boolean;
   onTabChange: (tab: ManagerDashboardTab) => void;
   onCreateGuest: () => void;
-  onQuickReport: () => void;
   onSettings: () => void;
-  onRestaurant: () => void;
   rightSlot: React.ReactNode;
 }
 
@@ -54,9 +52,7 @@ export function ManagerDashboardHeader({
   canCreateGuest,
   onTabChange,
   onCreateGuest,
-  onQuickReport,
   onSettings,
-  onRestaurant,
   rightSlot,
 }: ManagerDashboardHeaderProps) {
   const isMobile = useIsMobile();
@@ -87,18 +83,12 @@ export function ManagerDashboardHeader({
         case "create-guest":
           onCreateGuest();
           break;
-        case "quick-report":
-          onQuickReport();
-          break;
         case "settings":
           onSettings();
           break;
-        case "restaurant":
-          onRestaurant();
-          break;
       }
     },
-    [onTabChange, onCreateGuest, onQuickReport, onSettings, onRestaurant],
+    [onTabChange, onCreateGuest, onSettings],
   );
 
   return (

@@ -4,7 +4,7 @@
 
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { Globe, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { GuestDashboardNavItem } from "@/lib/guest-dashboard-nav";
 import { HotelBrandMark } from "@/components/HotelBrandMark";
@@ -19,7 +19,9 @@ interface GuestMobileNavDrawerProps {
   menuTitle: string;
   appName: string;
   closeLabel: string;
+  languageLabel: string;
   onSelectItem: (sectionId: string) => void;
+  onLanguageClick: () => void;
 }
 
 export function GuestMobileNavDrawer({
@@ -29,7 +31,9 @@ export function GuestMobileNavDrawer({
   menuTitle,
   appName,
   closeLabel,
+  languageLabel,
   onSelectItem,
+  onLanguageClick,
 }: GuestMobileNavDrawerProps) {
   const { dir } = useLocale();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -130,6 +134,26 @@ export function GuestMobileNavDrawer({
             );
           })}
         </ul>
+
+        <div className="shrink-0 border-t border-white/10 px-2 py-2">
+          <button
+            type="button"
+            onClick={onLanguageClick}
+            className={cn(
+              "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-start transition-colors",
+              "hover:bg-white/8 active:bg-white/12 active:scale-[0.99]",
+            )}
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
+              <Globe className="h-[18px] w-[18px] text-white" strokeWidth={1.75} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[15px] font-medium leading-snug text-white">
+                {languageLabel}
+              </span>
+            </span>
+          </button>
+        </div>
       </nav>
     </div>,
     document.body,

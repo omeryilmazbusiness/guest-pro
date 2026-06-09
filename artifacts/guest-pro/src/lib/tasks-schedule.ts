@@ -9,6 +9,18 @@ import type { StaffMember } from "@/lib/staff";
 export const WORK_HOUR_START = 6;
 export const WORK_HOUR_END = 22;
 
+/** Daily timeline: one-hour columns from 07:00 through 11:59 PM (17 slots). */
+export const DAILY_TIMELINE_START_HOUR = 7;
+export const DAILY_TIMELINE_END_HOUR = 24;
+export const DAILY_TIMELINE_SLOT_COUNT =
+  DAILY_TIMELINE_END_HOUR - DAILY_TIMELINE_START_HOUR;
+export const DAILY_TIMELINE_COLUMN_PX = 46;
+
+/** Half-hour start slots for task create/edit (07:00–23:30). */
+export const TASK_SCHEDULE_DURATION_MINUTES = [30, 60, 90, 120, 180] as const;
+export const DAILY_TIMELINE_LANE_HEIGHT_PX = 28;
+export const DAILY_TIMELINE_ROW_PAD_PX = 8;
+
 /** Pixel width of one hour column in schedule grids. */
 export const HOUR_COLUMN_PX = 52;
 /** Height of one task lane within a row. */
@@ -154,6 +166,162 @@ export interface TaskBarGeometry {
 }
 
 /** Maps a task to horizontal position within the day timeline (0–100%). */
+export function getDailyTimelineHours(): number[] {
+  return Array.from(
+    { length: DAILY_TIMELINE_SLOT_COUNT },
+    (_, i) => DAILY_TIMELINE_START_HOUR + i,
+  );
+}
+
+export function formatHourSlotHeader(hour: number, locale = "en"): string {
+  const { hour: h, period } = formatHourColumnLabel(hour, locale);
+  return period ? `${h} ${period}` : h;
+}
+
+export function formatHourColumnLabel(
+  hour: number,
+  locale = "en",
+): { hour: string; period: string } {
+  const d = new Date();
+  d.setHours(hour, 0, 0, 0);
+  const parts = new Intl.DateTimeFormat(locale, {
+    hour: "numeric",
+    hour12: true,
+  }).formatToParts(d);
+  const hourPart = parts.find((p) => p.type === "hour")?.value ?? String(hour);
+  const period = parts.find((p) => p.type === "dayPeriod")?.value ?? "";
+  return { hour: hourPart, period };
+}
+
+export function getTaskScheduleStartSlots(): { hour: number; minute: number }[] {
+  const slots: { hour: number; minute: number }[] = [];
+  for (let h = DAILY_TIMELINE_START_HOUR; h < DAILY_TIMELINE_END_HOUR; h++) {
+    slots.push({ hour: h, minute: 0 }, { hour: h, minute: 30 });
+  }
+  return slots;
+}
+
+export function splitDatetimeLocal(value: string): {
+  date: Date;
+  hour: number;
+  minute: number;
+} | null {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return { date: startOfDay(d), hour: d.getHours(), minute: d.getMinutes() };
+}
+
+export function mergeDatetimeLocal(date: Date, hour: number, minute: number): string {
+  const d = new Date(date);
+  d.setHours(hour, minute, 0, 0);
+  return toDatetimeLocalValue(d.toISOString());
+}
+
+export function durationMinutesBetween(startValue: string, endValue: string): number {
+  const start = new Date(startValue).getTime();
+  const end = new Date(endValue).getTime();
+  if (Number.isNaN(start) || Number.isNaN(end) || end <= start) return 60;
+  return Math.round((end - start) / 60_000);
+}
+
+export function addMinutesToDatetimeLocal(startValue: string, minutes: number): string {
+  const d = new Date(startValue);
+  d.setMinutes(d.getMinutes() + minutes);
+  return toDatetimeLocalValue(d.toISOString());
+}
+
+export function formatScheduleDateLabel(date: Date, locale: string): string {
+  return date.toLocaleDateString(locale, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+export function formatScheduleTimeLabel(isoOrLocal: string, locale: string): string {
+  const d = new Date(isoOrLocal);
+  return d.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
+}
+
+export function formatScheduleTimeSlot(hour: number, minute: number, locale: string): string {
+  const d = new Date();
+  d.setHours(hour, minute, 0, 0);
+  return d.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
+}
+
+export function getDailyTimelineStart(day: Date): Date {
+  const d = new Date(day);
+  d.setHours(DAILY_TIMELINE_START_HOUR, 0, 0, 0);
+  return d;
+}
+
+export function getDailyTimelineEnd(day: Date): Date {
+  const d = new Date(day);
+  d.setHours(DAILY_TIMELINE_END_HOUR, 0, 0, 0);
+  return d;
+}
+
+/** Maps a task to horizontal position within the daily timeline (0–100%). */
+export function getTaskBarInDailyTimeline(
+  task: StaffTask,
+  day: Date,
+): TaskBarGeometry | null {
+  if (!taskOverlapsDay(task, day)) return null;
+
+  const winStart = getDailyTimelineStart(day).getTime();
+  const winEnd = getDailyTimelineEnd(day).getTime();
+  const winMs = winEnd - winStart;
+
+  const taskStart = Math.max(new Date(task.scheduledStartAt).getTime(), winStart);
+  const taskEnd = Math.min(new Date(task.scheduledEndAt).getTime(), winEnd);
+  if (taskEnd <= taskStart) return null;
+
+  const leftPct = ((taskStart - winStart) / winMs) * 100;
+  const widthPct = ((taskEnd - taskStart) / winMs) * 100;
+  if (widthPct < 0.15) return null;
+
+  return { leftPct, widthPct: Math.max(widthPct, 0.4) };
+}
+
+/** Lane layout for tasks on one employee row inside the daily timeline. */
+export function layoutTasksInDailyTimeline(
+  tasks: StaffTask[],
+  day: Date,
+): { bars: DayTaskBarLayout[]; laneCount: number } {
+  const items = sortTasksByStart(tasks)
+    .map((task) => {
+      const geom = getTaskBarInDailyTimeline(task, day);
+      return geom ? { task, ...geom } : null;
+    })
+    .filter((x): x is DayTaskBarLayout & { lane?: number } => x !== null)
+    .sort((a, b) => a.leftPct - b.leftPct || a.widthPct - b.widthPct);
+
+  const laneEnds: number[] = [];
+  const bars: DayTaskBarLayout[] = [];
+
+  for (const item of items) {
+    let lane = laneEnds.findIndex((end) => end <= item.leftPct + 0.5);
+    if (lane === -1) {
+      lane = laneEnds.length;
+      laneEnds.push(0);
+    }
+    laneEnds[lane] = item.leftPct + item.widthPct;
+    bars.push({ task: item.task, leftPct: item.leftPct, widthPct: item.widthPct, lane });
+  }
+
+  return { bars, laneCount: Math.max(1, laneEnds.length) };
+}
+
+export function dailyTimelineRowHeight(laneCount: number): number {
+  return Math.max(
+    44,
+    laneCount * DAILY_TIMELINE_LANE_HEIGHT_PX + DAILY_TIMELINE_ROW_PAD_PX * 2,
+  );
+}
+
+/** Maps a task to horizontal position within the full day window (0–100%). */
 export function getTaskBarOnDay(task: StaffTask, day: Date): TaskBarGeometry | null {
   if (!taskOverlapsDay(task, day)) return null;
 
@@ -222,6 +390,23 @@ export function tasksOnDayForAssignee(
   return tasksForAssignee(tasks, assigneeId).filter((t) => taskOverlapsDay(t, day));
 }
 
+export function filterTasksByStatus(
+  tasks: StaffTask[],
+  filter: TaskStatusFilter,
+): StaffTask[] {
+  if (filter === "all") {
+    return tasks.filter((t) => t.status !== "cancelled");
+  }
+  if (filter === "overdue") {
+    return tasks.filter(
+      (t) => t.isOverdue && t.status !== "completed" && t.status !== "cancelled",
+    );
+  }
+  return tasks.filter((t) => t.status === filter);
+}
+
+export type TaskStatusFilter = "all" | "pending" | "in_progress" | "completed" | "overdue";
+
 export function filterTasksBySearch(tasks: StaffTask[], query: string): StaffTask[] {
   const q = query.trim().toLowerCase();
   if (!q) return tasks;
@@ -260,6 +445,88 @@ export function tasksForAssignee(tasks: StaffTask[], assigneeId: number): StaffT
   return tasks.filter((t) => t.assigneeUserId === assigneeId);
 }
 
+export function sortTasksByStart(tasks: StaffTask[]): StaffTask[] {
+  return [...tasks].sort(
+    (a, b) =>
+      new Date(a.scheduledStartAt).getTime() - new Date(b.scheduledStartAt).getTime(),
+  );
+}
+
+export function tasksForDay(tasks: StaffTask[], day: Date): StaffTask[] {
+  return sortTasksByStart(tasks.filter((t) => taskOverlapsDay(t, day)));
+}
+
+export interface HourAssignmentEntry {
+  taskId: number;
+  taskTitle: string;
+  assigneeName: string;
+}
+
+/** Per-hour list of active task ↔ assignee pairs for the assignment summary row. */
+export function buildHourAssignmentMap(
+  tasks: StaffTask[],
+  day: Date,
+): Map<number, HourAssignmentEntry[]> {
+  const hours = getDailyTimelineHours();
+  const map = new Map<number, HourAssignmentEntry[]>();
+  for (const h of hours) {
+    map.set(h, []);
+  }
+
+  const winStart = getDailyTimelineStart(day).getTime();
+  const winEnd = getDailyTimelineEnd(day).getTime();
+
+  for (const task of tasksForDay(tasks, day)) {
+    if (task.status === "cancelled") continue;
+
+    const taskStart = Math.max(new Date(task.scheduledStartAt).getTime(), winStart);
+    const taskEnd = Math.min(new Date(task.scheduledEndAt).getTime(), winEnd);
+    if (taskEnd <= taskStart) continue;
+
+    const assigneeName = assigneeDisplayName(task.assignee);
+    const entry: HourAssignmentEntry = {
+      taskId: task.id,
+      taskTitle: task.title,
+      assigneeName,
+    };
+
+    for (const h of hours) {
+      const slotStart = new Date(day);
+      slotStart.setHours(h, 0, 0, 0);
+      const slotEnd = new Date(day);
+      slotEnd.setHours(h === hours[hours.length - 1] ? 24 : h + 1, 0, 0, 0);
+
+      if (taskStart < slotEnd.getTime() && taskEnd > slotStart.getTime()) {
+        map.get(h)!.push(entry);
+      }
+    }
+  }
+
+  return map;
+}
+
+export function groupTasksByWeekDay(
+  tasks: StaffTask[],
+  weekStart: Date,
+): { day: Date; tasks: StaffTask[] }[] {
+  return Array.from({ length: 7 }, (_, i) => {
+    const day = addDays(weekStart, i);
+    return { day, tasks: tasksForDay(tasks, day) };
+  });
+}
+
+export function formatDayHeading(d: Date, locale: string): string {
+  return d.toLocaleDateString(locale, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
+
+export function isToday(d: Date): boolean {
+  return isSameCalendarDay(d, new Date());
+}
+
 export function toDatetimeLocalValue(iso: string): string {
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -272,9 +539,9 @@ export function fromDatetimeLocalValue(value: string): string {
 
 export function defaultCreateRange(anchor: Date): { start: string; end: string } {
   const start = new Date(anchor);
-  start.setHours(9, 0, 0, 0);
+  start.setHours(DAILY_TIMELINE_START_HOUR, 0, 0, 0);
   const end = new Date(anchor);
-  end.setHours(10, 0, 0, 0);
+  end.setHours(DAILY_TIMELINE_START_HOUR + 1, 0, 0, 0);
   return { start: start.toISOString(), end: end.toISOString() };
 }
 

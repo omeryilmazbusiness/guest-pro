@@ -94,6 +94,9 @@ export async function createHotelWithBranding(input: CreateHotelInput) {
     appName: input.appName?.trim() || input.name.trim(),
   });
 
+  const { hotelAiConfigRepository } = await import("./hotel-ai/repositories");
+  await hotelAiConfigRepository.ensureConfig(hotel.id);
+
   return hotel;
 }
 

@@ -49,8 +49,20 @@ export function LoginTabPanel({ mode, slideDirection, children }: LoginTabPanelP
         <motion.div
           key={mode}
           role="tabpanel"
-          id={mode === "guest" ? "panel-guest" : "panel-manager"}
-          aria-labelledby={mode === "guest" ? "tab-guest" : "tab-manager"}
+          id={
+            mode === "guest"
+              ? "panel-guest"
+              : mode === "employee"
+              ? "panel-employee"
+              : "panel-manager"
+          }
+          aria-labelledby={
+            mode === "guest"
+              ? "tab-guest"
+              : mode === "employee"
+              ? "tab-employee"
+              : "tab-manager"
+          }
           custom={slideDirection}
           variants={variants}
           initial="enter"
@@ -75,8 +87,11 @@ export function LoginTabPanel({ mode, slideDirection, children }: LoginTabPanelP
   );
 }
 
-/** Direction for panel slide: +1 = toward staff, -1 = toward guest. */
+/** Direction for panel slide based on tab order. */
 export function getLoginSlideDirection(from: LoginMode, to: LoginMode): number {
-  if (from === to) return 0;
-  return to === "manager" ? 1 : -1;
+  const order: LoginMode[] = ["guest", "manager", "employee"];
+  const fromIdx = order.indexOf(from);
+  const toIdx = order.indexOf(to);
+  if (fromIdx === toIdx) return 0;
+  return toIdx > fromIdx ? 1 : -1;
 }

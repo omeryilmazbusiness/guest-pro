@@ -512,13 +512,21 @@ components:
       properties:
         type:
           type: string
-          enum: [manager, personnel, guest]
+          enum: [manager, employee, guest]
         email:
           type: ["string", "null"]
         password:
           type: ["string", "null"]
         guestKey:
           type: ["string", "null"]
+        employeeNumber:
+          type: ["string", "null"]
+        hotelSlug:
+          type: ["string", "null"]
+        portal:
+          type: string
+          enum: [manager, restaurant]
+          description: Email/password login portal (defaults to manager)
       required:
         - type
 

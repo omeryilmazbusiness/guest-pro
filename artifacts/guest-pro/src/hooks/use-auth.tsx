@@ -32,12 +32,6 @@ export function useAuth() {
     setTokenState(newToken);
   }, []);
 
-  const logoutAuth = useCallback(() => {
-    setToken(null);
-    queryClient.clear();
-    setLocation(getLogoutNavigateTarget(), { replace: true });
-  }, [setToken, queryClient, setLocation]);
-
   const { data: user, isLoading, isError, error } = useGetMe({
     query: {
       queryKey: getGetMeQueryKey(),
@@ -49,6 +43,14 @@ export function useAuth() {
       staleTime: 5 * 60 * 1000,
     },
   });
+
+  const logoutAuth = useCallback(() => {
+    const role = user?.role ?? null;
+    const target = getLogoutNavigateTarget(window.location.pathname, role);
+    setToken(null);
+    queryClient.clear();
+    setLocation(target, { replace: true });
+  }, [setToken, queryClient, setLocation, user?.role]);
 
   usePersistentSession({
     token,

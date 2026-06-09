@@ -1,70 +1,140 @@
-import { useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { getTranslations, type GuestTranslations } from "@/lib/i18n";
-import { uiLocaleFromVoiceLocale, dirFromUiLocale } from "@/lib/locale";
+import { uiLocaleFromVoiceLocale } from "@/lib/locale";
 import { useOptionalHotelTenant } from "@/hooks/use-hotel-tenant";
 import { getRawPersistedWelcomingLocale, getWelcomingHotelSlug } from "@/lib/welcoming/welcoming-locale";
 import { getWelcomingLanguage } from "@/lib/welcoming/languages";
+import {
+  type GuestUiLocale,
+  GUEST_LOCALE_CHANGE_EVENT,
+  guestDirFromUi,
+  guestVoiceLocaleFromUi,
+  normalizeGuestUiLocale,
+  readGuestLocalePreference,
+  writeGuestLocalePreference,
+} from "@/lib/guest-locale";
+import { updateGuestLanguage } from "@/lib/guest-language-api";
+import { getGetMeQueryKey } from "@workspace/api-client-react";
 
 export interface LocaleContext {
   voiceLocale: string;
-  uiLocale: string;
+  uiLocale: GuestUiLocale;
   dir: "ltr" | "rtl";
   t: GuestTranslations;
+  setLocale: (locale: GuestUiLocale) => void;
 }
 
 const DEFAULT_VOICE_LOCALE = "en-US";
+
+interface ResolvedLocale {
+  voiceLocale: string;
+  uiLocale: GuestUiLocale;
+}
+
+function resolveGuestLocale(
+  userLanguage: string | null | undefined,
+  guestId: number | null | undefined,
+  welcomingSlug: string,
+): ResolvedLocale {
+  const stored = readGuestLocalePreference(guestId);
+  if (stored) {
+    return { uiLocale: stored, voiceLocale: guestVoiceLocaleFromUi(stored) };
+  }
+
+  if (userLanguage) {
+    const uiLocale = normalizeGuestUiLocale(uiLocaleFromVoiceLocale(userLanguage));
+    return { uiLocale, voiceLocale: userLanguage };
+  }
+
+  const welcomingLocale = getRawPersistedWelcomingLocale(welcomingSlug);
+  if (welcomingLocale) {
+    const entry = getWelcomingLanguage(welcomingLocale);
+    const uiLocale = normalizeGuestUiLocale(entry.uiLocale);
+    return { uiLocale, voiceLocale: entry.voiceLocale };
+  }
+
+  return { uiLocale: "en", voiceLocale: DEFAULT_VOICE_LOCALE };
+}
 
 /**
  * Returns the active locale context for the current guest.
  *
  * Priority order (highest wins):
- *   1. Authenticated guest -> user.language from DB
- *      Set at guest creation from countryCode via deriveLocaleFromCountry().
- *      This is the ONLY authoritative source when a guest is logged in.
- *      Kiosk localStorage is completely ignored so that a Russian guest is
- *      never shown Turkish just because the lobby kiosk had Turkish selected.
- *   2. Unauthenticated (passport-scan, welcoming kiosk) -> welcoming localStorage
- *      Lets passport-scan use the language the operator selected on /welcoming.
- *   3. Hard fallback -> en-US
+ *   1. Explicit guest preference (localStorage, keyed by guestId when available)
+ *   2. Authenticated guest -> user.language from DB
+ *   3. Unauthenticated kiosk -> welcoming localStorage
+ *   4. Hard fallback -> en
  */
 export function useLocale(): LocaleContext {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const tenant = useOptionalHotelTenant();
   const welcomingSlug = tenant?.slug ?? getWelcomingHotelSlug();
 
-  let voiceLocale: string;
-  let uiLocale: string;
+  const baseline = useMemo(
+    () => resolveGuestLocale(user?.language, user?.guestId, welcomingSlug),
+    [user?.language, user?.guestId, welcomingSlug],
+  );
 
-  if (user?.language) {
-    // Priority 1: authenticated guest - DB language is authoritative
-    voiceLocale = user.language;
-    uiLocale    = uiLocaleFromVoiceLocale(voiceLocale);
-  } else {
-    // Priority 2: unauthenticated - kiosk welcoming locale
-    const welcomingLocale = getRawPersistedWelcomingLocale(welcomingSlug);
-    if (welcomingLocale) {
-      // getWelcomingLanguage already falls back to English for unknown locales —
-      // no unsafe cast needed. We look up the entry directly.
-      const entry = getWelcomingLanguage(welcomingLocale);
-      uiLocale    = entry.uiLocale;
-      voiceLocale = entry.voiceLocale;
-    } else {
-      // Priority 3: hard fallback
-      voiceLocale = DEFAULT_VOICE_LOCALE;
-      uiLocale    = uiLocaleFromVoiceLocale(voiceLocale);
-    }
-  }
-
-  const dir = dirFromUiLocale(uiLocale);
-  const t   = getTranslations(uiLocale);
+  const [active, setActive] = useState<ResolvedLocale>(baseline);
 
   useEffect(() => {
-    document.documentElement.dir  = dir;
+    setActive(baseline);
+  }, [baseline]);
+
+  useEffect(() => {
+    const onCustom = (event: Event) => {
+      const next = (event as CustomEvent<GuestUiLocale>).detail;
+      setActive({
+        uiLocale: next,
+        voiceLocale: guestVoiceLocaleFromUi(next),
+      });
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (!event.key?.startsWith("guestpro_guest_locale")) return;
+      setActive(resolveGuestLocale(user?.language, user?.guestId, welcomingSlug));
+    };
+
+    window.addEventListener(GUEST_LOCALE_CHANGE_EVENT, onCustom);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(GUEST_LOCALE_CHANGE_EVENT, onCustom);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [user?.language, user?.guestId, welcomingSlug]);
+
+  const { uiLocale, voiceLocale } = active;
+  const dir = guestDirFromUi(uiLocale);
+  const t = getTranslations(uiLocale);
+
+  useEffect(() => {
+    document.documentElement.dir = dir;
     document.documentElement.lang = uiLocale;
-    // NOTE: Do not reset on unmount. During route transitions, unmount/mount
-    // order can cause a brief LTR flash in RTL locales.
   }, [dir, uiLocale]);
 
-  return { voiceLocale, uiLocale, dir, t };
+  const setLocale = useCallback(
+    (next: GuestUiLocale) => {
+      writeGuestLocalePreference(next, user?.guestId);
+      window.dispatchEvent(new CustomEvent(GUEST_LOCALE_CHANGE_EVENT, { detail: next }));
+      setActive({ uiLocale: next, voiceLocale: guestVoiceLocaleFromUi(next) });
+
+      if (user?.role === "guest" && user.guestId) {
+        const voice = guestVoiceLocaleFromUi(next);
+        void updateGuestLanguage(next)
+          .then(() => {
+            queryClient.setQueryData(getGetMeQueryKey(), (current) =>
+              current ? { ...current, language: voice } : current,
+            );
+          })
+          .catch(() => {
+            // UI already switched; preference is in localStorage for this device.
+          });
+      }
+    },
+    [queryClient, user?.guestId, user?.role],
+  );
+
+  return { voiceLocale, uiLocale, dir, t, setLocale };
 }

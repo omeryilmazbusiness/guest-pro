@@ -31,6 +31,7 @@ import {
 } from "@/lib/tasks-schedule";
 import type { StaffMember } from "@/lib/staff";
 import { TaskAssigneePicker } from "@/components/manager/tasks/TaskAssigneePicker";
+import { TaskSchedulePicker } from "@/components/manager/tasks/TaskSchedulePicker";
 
 const fieldClass =
   "h-9 rounded-xl border-zinc-100 bg-zinc-50/50 text-sm shadow-none focus-visible:bg-white focus-visible:ring-zinc-900";
@@ -84,7 +85,7 @@ export function CreateTaskSheet({
   staffLoading = false,
   anchorDate,
 }: CreateTaskSheetProps) {
-  const { t } = useStaffLocale();
+  const { t, locale } = useStaffLocale();
   const schema = useMemo(() => buildSchema(t), [t]);
 
   const activeStaff = useMemo(() => staff.filter((s) => s.isActive), [staff]);
@@ -121,13 +122,19 @@ export function CreateTaskSheet({
     onError: (err: Error) => toast.error(err.message || t.tasksFailed),
   });
 
+  const scheduledStartAt = form.watch("scheduledStartAt");
+  const scheduledEndAt = form.watch("scheduledEndAt");
+  const scheduleError =
+    form.formState.errors.scheduledEndAt?.message ??
+    form.formState.errors.scheduledStartAt?.message;
+
   return (
     <ManagerCenterSheet
       open={open}
       onClose={onClose}
       ariaLabel={t.tasksNewTask}
       closeLabel={t.cancel}
-      className="max-w-md"
+      className="max-w-lg"
     >
       <div className="flex flex-col max-h-[min(88dvh,560px)]">
         <div className="shrink-0 border-b border-zinc-100 px-5 pb-4 pt-5 pr-12">
@@ -211,33 +218,28 @@ export function CreateTaskSheet({
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-2 gap-3">
-                  <FormField
-                    control={form.control}
-                    name="scheduledStartAt"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={labelClass}>{t.tasksStart}</FormLabel>
-                        <FormControl>
-                          <Input type="datetime-local" className={fieldClass} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                <div className="space-y-2">
+                  <TaskSchedulePicker
+                    startValue={scheduledStartAt}
+                    endValue={scheduledEndAt}
+                    onStartChange={(value) =>
+                      form.setValue("scheduledStartAt", value, {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      })
+                    }
+                    onEndChange={(value) =>
+                      form.setValue("scheduledEndAt", value, {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      })
+                    }
+                    locale={locale}
+                    t={t}
                   />
-                  <FormField
-                    control={form.control}
-                    name="scheduledEndAt"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={labelClass}>{t.tasksEnd}</FormLabel>
-                        <FormControl>
-                          <Input type="datetime-local" className={fieldClass} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {scheduleError ? (
+                    <p className="text-[11px] font-medium text-destructive">{scheduleError}</p>
+                  ) : null}
                 </div>
               </div>
 

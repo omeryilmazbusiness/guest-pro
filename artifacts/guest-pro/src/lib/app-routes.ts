@@ -12,6 +12,10 @@ export const ROUTES = {
   platform: "/platform",
   platformLogin: "/platform/login",
   login: "/login",
+  guestLogin: "/guest-login",
+  managerLogin: "/manager-login",
+  personelLogin: "/personel-login",
+  restaurantLogin: "/restaurant-login",
   guest: "/guest",
   guestChat: "/guest/chat",
   guestFlow: "/guest/flow",
@@ -21,6 +25,7 @@ export const ROUTES = {
   managerSettings: "/manager/settings",
   managerCreateGuest: "/manager/guests/new",
   restaurant: "/restaurant",
+  staff: "/staff",
   welcoming: "/welcoming",
 } as const;
 
@@ -43,6 +48,6 @@ export function hasAuthCallbackQuery(search: string): boolean {
 }
 
 export function loginPathWithSearch(search = ""): string {
-  if (!search) return ROUTES.login;
-  return `${ROUTES.login}${search.startsWith("?") ? search : `?${search}`}`;
+  if (!search) return ROUTES.guestLogin;
+  return `${ROUTES.guestLogin}${search.startsWith("?") ? search : `?${search}`}`;
 }

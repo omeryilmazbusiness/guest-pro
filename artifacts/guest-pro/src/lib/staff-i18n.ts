@@ -55,6 +55,15 @@ export interface StaffTranslations {
   deactivateEmployee: string;
   reactivateEmployee: string;
   deleteEmployeePerm: string;
+  resetPassword: string;
+  resetPasswordFor: string;
+  confirmPassword: string;
+  confirmPasswordRequired: string;
+  passwordsMismatch: string;
+  passwordUpdated: string;
+  deleteDeptManagerTitle: string;
+  deleteDeptManagerDesc: string;
+  deptManagerUpdated: string;
 
   addStaffMember: string;
   addStaffSubtitle: string;
@@ -137,6 +146,14 @@ export interface StaffTranslations {
   tasksAssignee: string;
   tasksStart: string;
   tasksEnd: string;
+  tasksDate: string;
+  tasksDuration: string;
+  tasksScheduleWhen: string;
+  tasksDuration30m: string;
+  tasksDuration1h: string;
+  tasksDuration90m: string;
+  tasksDuration2h: string;
+  tasksDuration3h: string;
   tasksCreate: string;
   tasksSave: string;
   tasksComplete: string;
@@ -159,6 +176,91 @@ export interface StaffTranslations {
   tasksDeleteConfirm: string;
   tasksEmptyDescription: string;
   tasksCreateHint: string;
+  tasksTableTask: string;
+  tasksTableEmployee: string;
+  tasksTableDaySchedule: string;
+  tasksScheduleByEmployee: string;
+  tasksScheduleByTask: string;
+  tasksSectionEmployeeHint: string;
+  tasksSectionTaskHint: string;
+  tasksLegendTitle: string;
+  tasksScrollHint: string;
+  tasksHourAssignments: string;
+  tasksNoTasksToday: string;
+  tasksTableTime: string;
+  tasksTableStatus: string;
+  tasksTableDay: string;
+  tasksFilterAll: string;
+  tasksFilterAllShort: string;
+  tasksDayShort: string;
+  tasksWeekShort: string;
+  tasksExportShort: string;
+  tasksNewShort: string;
+  tasksSearchShort: string;
+  tasksScheduleEmployeeShort: string;
+  tasksScheduleTaskShort: string;
+  tasksHourAssignShort: string;
+  tasksRoutineShort: string;
+  tasksPerformanceShort: string;
+  tasksAiShort: string;
+  tasksStatusPendingShort: string;
+  tasksStatusInProgressShort: string;
+  tasksStatusCompletedShort: string;
+  tasksOverdueShort: string;
+  tasksExpandTable: string;
+  tasksExpandHint: string;
+  tasksAiOnTimeShort: string;
+  tasksAiLateShort: string;
+  tasksAiNotFinishedShort: string;
+  tasksPerformanceTitle: string;
+  tasksPerformanceSubtitle: string;
+  tasksPerformanceOnTime: string;
+  tasksPerformanceDone: string;
+  tasksPerformanceAssigned: string;
+  tasksNoPerformanceData: string;
+  tasksAiDailyReport: string;
+  tasksAiDailyReportHint: string;
+  tasksAiInsight: string;
+  tasksAiAnalyzing: string;
+  tasksAiAnalysisTitle: string;
+  tasksAiAnalysisFailed: string;
+  tasksAiRetry: string;
+  tasksAiByEmployee: string;
+  tasksAiOnTime: string;
+  tasksAiLate: string;
+  tasksAiNotFinished: string;
+  tasksAiNobodyOnTime: string;
+  tasksAiNobodyLate: string;
+  tasksAiNobodyOverdue: string;
+  tasksAiBudgetLimited: string;
+  tasksAiTokenUsage: string;
+  tasksAiDailyBannerTitle: string;
+  tasksAiDailyBannerAction: string;
+  tasksAiOverviewLabel: string;
+  tasksAiOverviewPending: string;
+  tasksExportExcel: string;
+  tasksExportSuccess: string;
+  tasksExportEmpty: string;
+  tasksExportReportTitle: string;
+  tasksExportPeriod: string;
+  tasksExportView: string;
+  tasksExportHotel: string;
+  tasksExportGeneratedAt: string;
+  tasksExportTaskCount: string;
+  tasksExportRoutineCount: string;
+  tasksExportSheetSummary: string;
+  tasksExportSheetTasks: string;
+  tasksExportSheetRoutines: string;
+  tasksExportColId: string;
+  tasksExportColStart: string;
+  tasksExportColEnd: string;
+  tasksExportColDurationMin: string;
+  tasksExportColDepartment: string;
+  tasksExportColCompletedAt: string;
+  tasksExportColCreatedAt: string;
+  tasksExportColActive: string;
+  tasksExportYes: string;
+  tasksExportNo: string;
 
   // ── Guest filter bar ──────────────────────────────────────────────────────
   searchPlaceholder: string;
@@ -236,6 +338,37 @@ export interface StaffTranslations {
   roomServiceMenuEmpty: string;
   dailyMenuTab: string;
   roomServiceTab: string;
+  editMenuItem: string;
+  menuUpdated: string;
+  menuUploadPhoto: string;
+  menuRemovePhoto: string;
+  menuPhotoSaved: string;
+  menuPhotoRemoved: string;
+  deleteItem: string;
+  menuImportExcel: string;
+  menuDownloadTemplate: string;
+  menuImportPreview: string;
+  menuImportConfirm: string;
+  menuImportDone: string;
+  menuImportEmpty: string;
+  menuEditorSubtitle: string;
+  menuSectionBasics: string;
+  menuSectionPricing: string;
+  menuSectionGuestInfo: string;
+  menuFieldName: string;
+  menuFieldDescription: string;
+  menuFieldCategory: string;
+  menuFieldPrice: string;
+  menuFieldPortion: string;
+  menuFieldAllergens: string;
+  menuFieldSortOrder: string;
+  menuFieldCurrency: string;
+  menuFieldDate: string;
+  menuFieldVisible: string;
+  menuFieldVisibleHint: string;
+  menuFieldPhotoHint: string;
+  menuChangePhoto: string;
+  menuPhotoTooLarge: string;
 
   // ── Menu category labels ─────────────────────────────────────────────────
   catBreakfast: string;
@@ -265,6 +398,64 @@ export interface StaffTranslations {
   placeholderCurrentQty: string;
   placeholderLowStockThreshold: string;
   placeholderNotes: string;
+
+  // ── Settings — floor Wi-Fi ───────────────────────────────────────────────
+  settingsCategoryGuest: string;
+  settingsCategoryGuestDesc: string;
+  settingsCategoryTracking: string;
+  settingsCategoryTrackingDesc: string;
+  settingsHubIntro: string;
+  settingsHotelLocationTitle: string;
+  settingsHotelLocationSubtitle: string;
+  settingsHotelLocationHint: string;
+  settingsHotelLocationLabel: string;
+  settingsHotelLocationLabelPlaceholder: string;
+  settingsHotelLocationSave: string;
+  settingsHotelLocationSaved: string;
+  settingsHotelLocationLoadFailed: string;
+  settingsHotelLocationSaveFailed: string;
+  settingsFloorWifiTitle: string;
+  settingsFloorWifiSubtitle: string;
+  settingsFloorWifiHint: string;
+  settingsFloorWifiLoadFailed: string;
+  settingsFloorWifiSaved: string;
+  settingsFloorWifiSaveFailed: string;
+  settingsFloorKey: string;
+  settingsFloorKeyHint: string;
+  settingsFloorLabel: string;
+  settingsFloorLabelPlaceholder: string;
+  settingsFloorRow: string;
+  settingsWifiPassword: string;
+  settingsWifiSsid: string;
+  settingsAddFloor: string;
+  settingsSaveFloors: string;
+  settingsRemoveFloor: string;
+  optionalLabel: string;
+
+  // ── Settings — nearby places ─────────────────────────────────────────────
+  settingsNearbyTitle: string;
+  settingsNearbySubtitle: string;
+  settingsNearbyHint: string;
+  settingsNearbyLoadFailed: string;
+  settingsNearbySaved: string;
+  settingsNearbySaveFailed: string;
+  settingsNearbyInvalidCoords: string;
+  settingsNearbyName: string;
+  settingsNearbyNamePlaceholder: string;
+  settingsNearbyType: string;
+  settingsNearbyAddress: string;
+  settingsNearbyAddressPlaceholder: string;
+  settingsNearbyDescription: string;
+  settingsNearbyDescriptionPlaceholder: string;
+  settingsNearbyLat: string;
+  settingsNearbyLng: string;
+  settingsNearbyCoordsHint: string;
+  settingsNearbyCoordsSwapped: string;
+  settingsNearbyTooFarFromHotel: string;
+  settingsNearbyRow: string;
+  settingsNearbyAdd: string;
+  settingsNearbySave: string;
+  settingsNearbyRemove: string;
 
   // ── Care tab ─────────────────────────────────────────────────────────────
   careTitle: string;
@@ -320,6 +511,16 @@ const en: StaffTranslations = {
   deactivateEmployee: "Deactivate",
   reactivateEmployee: "Reactivate",
   deleteEmployeePerm: "Delete permanently",
+  resetPassword: "Reset password",
+  resetPasswordFor: "Reset password for {name}",
+  confirmPassword: "Confirm password",
+  confirmPasswordRequired: "Confirm the new password",
+  passwordsMismatch: "Passwords do not match",
+  passwordUpdated: "Password updated",
+  deleteDeptManagerTitle: "Delete department manager?",
+  deleteDeptManagerDesc:
+    "{name} will be permanently removed. This cannot be undone and they will no longer be able to log in.",
+  deptManagerUpdated: "Department manager updated",
 
   addStaffMember: "Add team member",
   addStaffSubtitle: "Create login credentials and assign a department.",
@@ -399,6 +600,14 @@ const en: StaffTranslations = {
   tasksAssignee: "Assignee",
   tasksStart: "Start",
   tasksEnd: "End",
+  tasksDate: "Date",
+  tasksDuration: "Duration",
+  tasksScheduleWhen: "Schedule",
+  tasksDuration30m: "30 min",
+  tasksDuration1h: "1 hour",
+  tasksDuration90m: "1.5 hours",
+  tasksDuration2h: "2 hours",
+  tasksDuration3h: "3 hours",
   tasksCreate: "Create task",
   tasksSave: "Save",
   tasksComplete: "Mark complete",
@@ -421,6 +630,91 @@ const en: StaffTranslations = {
   tasksDeleteConfirm: "Remove this task from the schedule?",
   tasksEmptyDescription: "No description",
   tasksCreateHint: "Assign to an employee with a time window",
+  tasksTableTask: "Task",
+  tasksTableEmployee: "Employee",
+  tasksTableDaySchedule: "Today's schedule",
+  tasksScheduleByEmployee: "By employee",
+  tasksScheduleByTask: "By task",
+  tasksSectionEmployeeHint: "Rows are staff, columns are hours — tap a block for details",
+  tasksSectionTaskHint: "Rows are tasks with hour-by-hour assignee summary",
+  tasksLegendTitle: "Legend",
+  tasksScrollHint: "Swipe",
+  tasksHourAssignments: "Hour assignments",
+  tasksNoTasksToday: "No tasks scheduled",
+  tasksTableTime: "Time",
+  tasksTableStatus: "Status",
+  tasksTableDay: "Day",
+  tasksFilterAll: "All",
+  tasksFilterAllShort: "All",
+  tasksDayShort: "Day",
+  tasksWeekShort: "Week",
+  tasksExportShort: "Excel",
+  tasksNewShort: "New",
+  tasksSearchShort: "Search",
+  tasksScheduleEmployeeShort: "Staff",
+  tasksScheduleTaskShort: "Tasks",
+  tasksHourAssignShort: "Assign",
+  tasksRoutineShort: "Routine",
+  tasksPerformanceShort: "Stats",
+  tasksAiShort: "AI",
+  tasksStatusPendingShort: "Wait",
+  tasksStatusInProgressShort: "Active",
+  tasksStatusCompletedShort: "Done",
+  tasksOverdueShort: "Late",
+  tasksExpandTable: "Expand",
+  tasksExpandHint: "Tap a task to view or edit",
+  tasksAiOnTimeShort: "On time",
+  tasksAiLateShort: "Late",
+  tasksAiNotFinishedShort: "Open",
+  tasksPerformanceTitle: "Team performance",
+  tasksPerformanceSubtitle: "On-time completion rate by employee",
+  tasksPerformanceOnTime: "On-time %",
+  tasksPerformanceDone: "done",
+  tasksPerformanceAssigned: "Assigned",
+  tasksNoPerformanceData: "No completed tasks to chart yet.",
+  tasksAiDailyReport: "AI daily report",
+  tasksAiDailyReportHint: "Who finished on time, who was late, who did not finish — by name",
+  tasksAiInsight: "AI insight",
+  tasksAiAnalyzing: "Analyzing task data…",
+  tasksAiAnalysisTitle: "AI analysis",
+  tasksAiAnalysisFailed: "Could not load AI analysis. Check your connection or try again.",
+  tasksAiRetry: "Try again",
+  tasksAiByEmployee: "By employee",
+  tasksAiOnTime: "Finished on time or early",
+  tasksAiLate: "Finished late",
+  tasksAiNotFinished: "Not finished / overdue",
+  tasksAiNobodyOnTime: "No one in this group.",
+  tasksAiNobodyLate: "No one finished late.",
+  tasksAiNobodyOverdue: "No overdue or open tasks.",
+  tasksAiBudgetLimited: "Monthly AI token budget reached. Contact platform admin.",
+  tasksAiTokenUsage: "AI tokens this month",
+  tasksAiDailyBannerTitle: "Daily task report is ready",
+  tasksAiDailyBannerAction: "View",
+  tasksAiOverviewLabel: "AI",
+  tasksAiOverviewPending: "Daily report at 6:00 PM",
+  tasksExportExcel: "Export Excel",
+  tasksExportSuccess: "Excel file downloaded",
+  tasksExportEmpty: "No tasks to export for this period",
+  tasksExportReportTitle: "Guest Pro — Task Schedule Export",
+  tasksExportPeriod: "Period",
+  tasksExportView: "View",
+  tasksExportHotel: "Hotel",
+  tasksExportGeneratedAt: "Generated",
+  tasksExportTaskCount: "Scheduled tasks",
+  tasksExportRoutineCount: "Routine templates",
+  tasksExportSheetSummary: "Summary",
+  tasksExportSheetTasks: "Tasks",
+  tasksExportSheetRoutines: "Routines",
+  tasksExportColId: "ID",
+  tasksExportColStart: "Start",
+  tasksExportColEnd: "End",
+  tasksExportColDurationMin: "Duration (min)",
+  tasksExportColDepartment: "Department",
+  tasksExportColCompletedAt: "Completed at",
+  tasksExportColCreatedAt: "Created at",
+  tasksExportColActive: "Active",
+  tasksExportYes: "Yes",
+  tasksExportNo: "No",
 
   searchPlaceholder: "Name, room, or key…",
   searchRoomPlaceholder: "Search room number…",
@@ -488,6 +782,37 @@ const en: StaffTranslations = {
   roomServiceMenuEmpty: "Room service menu is empty",
   dailyMenuTab: "📅 Daily Menu",
   roomServiceTab: "🛎 Room Service",
+  editMenuItem: "Edit item",
+  menuUpdated: "Menu item updated",
+  menuUploadPhoto: "Add photo",
+  menuRemovePhoto: "Remove photo",
+  menuPhotoSaved: "Photo saved",
+  menuPhotoRemoved: "Photo removed",
+  deleteItem: "Delete item",
+  menuImportExcel: "Import Excel",
+  menuDownloadTemplate: "Template",
+  menuImportPreview: "{count} items ready · {skipped} rows skipped",
+  menuImportConfirm: "Import all",
+  menuImportDone: "{count} menu items imported",
+  menuImportEmpty: "No valid rows found in the file",
+  menuEditorSubtitle: "Shown to guests in the food ordering flow",
+  menuSectionBasics: "Basics",
+  menuSectionPricing: "Pricing",
+  menuSectionGuestInfo: "Guest details",
+  menuFieldName: "Item name",
+  menuFieldDescription: "Description",
+  menuFieldCategory: "Category",
+  menuFieldPrice: "Price",
+  menuFieldPortion: "Portion / calories",
+  menuFieldAllergens: "Allergens & notes",
+  menuFieldSortOrder: "Sort order",
+  menuFieldCurrency: "Currency",
+  menuFieldDate: "Available date",
+  menuFieldVisible: "Visible to guests",
+  menuFieldVisibleHint: "Hidden items won't appear on guest menus",
+  menuFieldPhotoHint: "JPEG, PNG or WebP · max 3 MB",
+  menuChangePhoto: "Change photo",
+  menuPhotoTooLarge: "Image must be under 3 MB",
 
   catBreakfast: "Breakfast",
   catSoup: "Soup",
@@ -515,6 +840,62 @@ const en: StaffTranslations = {
   placeholderCurrentQty: "Current quantity",
   placeholderLowStockThreshold: "Low-stock alert threshold",
   placeholderNotes: "Notes (optional)",
+
+  settingsCategoryGuest: "Guest experience",
+  settingsCategoryGuestDesc: "Information shown on the guest home screen.",
+  settingsCategoryTracking: "Presence & tracking",
+  settingsCategoryTrackingDesc: "Geofence, network rules, and guest location.",
+  settingsHubIntro: "Choose a category to configure guest-facing features or hotel presence tracking.",
+  settingsHotelLocationTitle: "Hotel map pin",
+  settingsHotelLocationSubtitle: "Fixed location shown on the guest nearby map as your hotel.",
+  settingsHotelLocationHint: "Enter GPS coordinates from Google Maps (right-click → coordinates). This pin is the starting point for directions and distance sorting.",
+  settingsHotelLocationLabel: "Pin label",
+  settingsHotelLocationLabelPlaceholder: "Grand Hotel Istanbul",
+  settingsHotelLocationSave: "Save hotel location",
+  settingsHotelLocationSaved: "Hotel map pin saved.",
+  settingsHotelLocationLoadFailed: "Failed to load hotel location.",
+  settingsHotelLocationSaveFailed: "Failed to save hotel location.",
+  settingsFloorWifiTitle: "Floor Wi-Fi passwords",
+  settingsFloorWifiSubtitle: "Assign a Wi-Fi password per floor — guests see the password for their room's floor.",
+  settingsFloorWifiHint: "Floor key is matched from the room number (e.g. room 301 → key 3, room 1205 → key 12).",
+  settingsFloorWifiLoadFailed: "Failed to load floor Wi-Fi settings.",
+  settingsFloorWifiSaved: "Floor Wi-Fi settings saved.",
+  settingsFloorWifiSaveFailed: "Failed to save floor Wi-Fi settings.",
+  settingsFloorKey: "Floor key",
+  settingsFloorKeyHint: "Digits used to match room numbers",
+  settingsFloorLabel: "Display label",
+  settingsFloorLabelPlaceholder: "3rd Floor",
+  settingsFloorRow: "Floor {n}",
+  settingsWifiPassword: "Wi-Fi password",
+  settingsWifiSsid: "Network name (SSID)",
+  settingsAddFloor: "Add another floor",
+  settingsSaveFloors: "Save floor Wi-Fi",
+  settingsRemoveFloor: "Remove floor",
+  optionalLabel: "Optional",
+
+  settingsNearbyTitle: "Nearby places",
+  settingsNearbySubtitle: "Define pharmacies, markets, bazaars and malls shown on the guest map.",
+  settingsNearbyHint: "Enter GPS coordinates from Google Maps (right-click → coordinates). Distances are calculated from the hotel map pin above.",
+  settingsNearbyLoadFailed: "Failed to load nearby places.",
+  settingsNearbySaved: "Nearby places saved.",
+  settingsNearbySaveFailed: "Failed to save nearby places.",
+  settingsNearbyInvalidCoords: "Latitude and longitude must be valid numbers for each place.",
+  settingsNearbyName: "Place name",
+  settingsNearbyNamePlaceholder: "City Pharmacy",
+  settingsNearbyType: "Category",
+  settingsNearbyAddress: "Address",
+  settingsNearbyAddressPlaceholder: "123 Main Street",
+  settingsNearbyDescription: "Short description",
+  settingsNearbyDescriptionPlaceholder: "Open 24 hours",
+  settingsNearbyLat: "Latitude",
+  settingsNearbyLng: "Longitude",
+  settingsNearbyCoordsHint: "From Google Maps — paste lat,lng or a Maps link",
+  settingsNearbyCoordsSwapped: "Latitude and longitude were auto-corrected (they looked swapped).",
+  settingsNearbyTooFarFromHotel: "Place is too far from the hotel pin (>50 km). Check coordinates.",
+  settingsNearbyRow: "Place {n}",
+  settingsNearbyAdd: "Add place",
+  settingsNearbySave: "Save nearby places",
+  settingsNearbyRemove: "Remove place",
 
   careTitle: "Care Recommendations",
   careRefreshBtn: "Refresh with AI",
@@ -567,6 +948,16 @@ const tr: StaffTranslations = {
   deactivateEmployee: "Pasifleştir",
   reactivateEmployee: "Yeniden aktifleştir",
   deleteEmployeePerm: "Kalıcı olarak sil",
+  resetPassword: "Şifreyi sıfırla",
+  resetPasswordFor: "{name} için şifre sıfırla",
+  confirmPassword: "Şifreyi onayla",
+  confirmPasswordRequired: "Yeni şifreyi onaylayın",
+  passwordsMismatch: "Şifreler eşleşmiyor",
+  passwordUpdated: "Şifre güncellendi",
+  deleteDeptManagerTitle: "Departman müdürü silinsin mi?",
+  deleteDeptManagerDesc:
+    "{name} kalıcı olarak kaldırılacak. Bu işlem geri alınamaz ve artık giriş yapamaz.",
+  deptManagerUpdated: "Departman müdürü güncellendi",
 
   addStaffMember: "Çalışan ekle",
   addStaffSubtitle: "Giriş bilgilerini oluşturun ve departman atayın.",
@@ -646,6 +1037,14 @@ const tr: StaffTranslations = {
   tasksAssignee: "Atanan",
   tasksStart: "Başlangıç",
   tasksEnd: "Bitiş",
+  tasksDate: "Tarih",
+  tasksDuration: "Süre",
+  tasksScheduleWhen: "Zamanlama",
+  tasksDuration30m: "30 dk",
+  tasksDuration1h: "1 saat",
+  tasksDuration90m: "1,5 saat",
+  tasksDuration2h: "2 saat",
+  tasksDuration3h: "3 saat",
   tasksCreate: "Görev oluştur",
   tasksSave: "Kaydet",
   tasksComplete: "Tamamlandı işaretle",
@@ -668,6 +1067,91 @@ const tr: StaffTranslations = {
   tasksDeleteConfirm: "Bu görevi programdan kaldırmak istiyor musunuz?",
   tasksEmptyDescription: "Açıklama yok",
   tasksCreateHint: "Çalışana zaman aralığı ile atayın",
+  tasksTableTask: "Görev",
+  tasksTableEmployee: "Çalışan",
+  tasksTableDaySchedule: "Günün programı",
+  tasksScheduleByEmployee: "Çalışana göre",
+  tasksScheduleByTask: "Göreve göre",
+  tasksSectionEmployeeHint: "Satırlar personel, sütunlar saatler — detay için bloğa dokunun",
+  tasksSectionTaskHint: "Satırlar görevler, saatlik atama özeti",
+  tasksLegendTitle: "Renkler",
+  tasksScrollHint: "Kaydır",
+  tasksHourAssignments: "Saat atamaları",
+  tasksNoTasksToday: "Planlanmış görev yok",
+  tasksTableTime: "Saat",
+  tasksTableStatus: "Durum",
+  tasksTableDay: "Gün",
+  tasksFilterAll: "Tümü",
+  tasksFilterAllShort: "Tümü",
+  tasksDayShort: "Gün",
+  tasksWeekShort: "Hafta",
+  tasksExportShort: "Excel",
+  tasksNewShort: "Yeni",
+  tasksSearchShort: "Ara",
+  tasksScheduleEmployeeShort: "Personel",
+  tasksScheduleTaskShort: "Görev",
+  tasksHourAssignShort: "Atama",
+  tasksRoutineShort: "Rutin",
+  tasksPerformanceShort: "Performans",
+  tasksAiShort: "AI",
+  tasksStatusPendingShort: "Bekliyor",
+  tasksStatusInProgressShort: "Devam",
+  tasksStatusCompletedShort: "Tamam",
+  tasksOverdueShort: "Gecikmiş",
+  tasksExpandTable: "Genişlet",
+  tasksExpandHint: "Göreve dokunarak görüntüle veya düzenle",
+  tasksAiOnTimeShort: "Zamanında",
+  tasksAiLateShort: "Geç",
+  tasksAiNotFinishedShort: "Açık",
+  tasksPerformanceTitle: "Ekip performansı",
+  tasksPerformanceSubtitle: "Çalışan bazında zamanında tamamlama oranı",
+  tasksPerformanceOnTime: "Zamanında %",
+  tasksPerformanceDone: "tamam",
+  tasksPerformanceAssigned: "Atanan",
+  tasksNoPerformanceData: "Grafik için henüz tamamlanmış görev yok.",
+  tasksAiDailyReport: "AI günlük rapor",
+  tasksAiDailyReportHint: "Kim zamanında bitirdi, kim geç kaldı, kim bitiremedi — isim isim",
+  tasksAiInsight: "AI yorumu",
+  tasksAiAnalyzing: "Görev verileri analiz ediliyor…",
+  tasksAiAnalysisTitle: "AI analizi",
+  tasksAiAnalysisFailed: "AI analizi yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin.",
+  tasksAiRetry: "Tekrar dene",
+  tasksAiByEmployee: "Çalışan bazında",
+  tasksAiOnTime: "Zamanında veya erken bitirenler",
+  tasksAiLate: "Geç bitirenler",
+  tasksAiNotFinished: "Bitiremeyenler / gecikenler",
+  tasksAiNobodyOnTime: "Bu grupta kimse yok.",
+  tasksAiNobodyLate: "Geç bitiren yok.",
+  tasksAiNobodyOverdue: "Geciken veya açık görev yok.",
+  tasksAiBudgetLimited: "Aylık AI kotası doldu. Platform yöneticisiyle iletişime geçin.",
+  tasksAiTokenUsage: "Bu ay AI token",
+  tasksAiDailyBannerTitle: "Günlük görev raporu hazır",
+  tasksAiDailyBannerAction: "Gör",
+  tasksAiOverviewLabel: "AI",
+  tasksAiOverviewPending: "Günlük rapor 18:00'de",
+  tasksExportExcel: "Excel indir",
+  tasksExportSuccess: "Excel dosyası indirildi",
+  tasksExportEmpty: "Bu dönemde dışa aktarılacak görev yok",
+  tasksExportReportTitle: "Guest Pro — Görev Planı Dışa Aktarım",
+  tasksExportPeriod: "Dönem",
+  tasksExportView: "Görünüm",
+  tasksExportHotel: "Otel",
+  tasksExportGeneratedAt: "Oluşturulma",
+  tasksExportTaskCount: "Planlanmış görev",
+  tasksExportRoutineCount: "Rutin şablon",
+  tasksExportSheetSummary: "Özet",
+  tasksExportSheetTasks: "Görevler",
+  tasksExportSheetRoutines: "Rutinler",
+  tasksExportColId: "ID",
+  tasksExportColStart: "Başlangıç",
+  tasksExportColEnd: "Bitiş",
+  tasksExportColDurationMin: "Süre (dk)",
+  tasksExportColDepartment: "Departman",
+  tasksExportColCompletedAt: "Tamamlanma",
+  tasksExportColCreatedAt: "Oluşturulma",
+  tasksExportColActive: "Aktif",
+  tasksExportYes: "Evet",
+  tasksExportNo: "Hayır",
 
   searchPlaceholder: "Ad, oda veya anahtar…",
   searchRoomPlaceholder: "Oda numarası ara…",
@@ -735,6 +1219,37 @@ const tr: StaffTranslations = {
   roomServiceMenuEmpty: "Oda servisi menüsü boş",
   dailyMenuTab: "📅 Günlük Menü",
   roomServiceTab: "🛎 Oda Servisi",
+  editMenuItem: "Öğeyi düzenle",
+  menuUpdated: "Menü öğesi güncellendi",
+  menuUploadPhoto: "Fotoğraf ekle",
+  menuRemovePhoto: "Fotoğrafı kaldır",
+  menuPhotoSaved: "Fotoğraf kaydedildi",
+  menuPhotoRemoved: "Fotoğraf kaldırıldı",
+  deleteItem: "Öğeyi sil",
+  menuImportExcel: "Excel içe aktar",
+  menuDownloadTemplate: "Şablon",
+  menuImportPreview: "{count} öğe hazır · {skipped} satır atlandı",
+  menuImportConfirm: "Tümünü aktar",
+  menuImportDone: "{count} menü öğesi aktarıldı",
+  menuImportEmpty: "Dosyada geçerli satır bulunamadı",
+  menuEditorSubtitle: "Misafir yemek sipariş ekranında görünür",
+  menuSectionBasics: "Temel bilgiler",
+  menuSectionPricing: "Fiyatlandırma",
+  menuSectionGuestInfo: "Misafir bilgileri",
+  menuFieldName: "Ürün adı",
+  menuFieldDescription: "Açıklama",
+  menuFieldCategory: "Kategori",
+  menuFieldPrice: "Fiyat",
+  menuFieldPortion: "Porsiyon / kalori",
+  menuFieldAllergens: "Alerjen & notlar",
+  menuFieldSortOrder: "Sıralama",
+  menuFieldCurrency: "Para birimi",
+  menuFieldDate: "Geçerli tarih",
+  menuFieldVisible: "Misafire görünür",
+  menuFieldVisibleHint: "Kapalı öğeler misafir menüsünde gösterilmez",
+  menuFieldPhotoHint: "JPEG, PNG veya WebP · en fazla 3 MB",
+  menuChangePhoto: "Fotoğrafı değiştir",
+  menuPhotoTooLarge: "Görsel 3 MB'dan küçük olmalı",
 
   catBreakfast: "Kahvaltı",
   catSoup: "Çorba",
@@ -762,6 +1277,62 @@ const tr: StaffTranslations = {
   placeholderCurrentQty: "Mevcut miktar",
   placeholderLowStockThreshold: "Düşük stok uyardı eşiği",
   placeholderNotes: "Notlar (opsiyonel)",
+
+  settingsCategoryGuest: "Misafir deneyimi",
+  settingsCategoryGuestDesc: "Misafir ana ekranında gösterilen bilgiler.",
+  settingsCategoryTracking: "Konum ve takip",
+  settingsCategoryTrackingDesc: "Geofence, ağ kuralları ve misafir konumu.",
+  settingsHubIntro: "Misafir deneyimi veya otel takibi için bir kategori seçin.",
+  settingsHotelLocationTitle: "Otel harita pini",
+  settingsHotelLocationSubtitle: "Misafir yakın yerler haritasında otelinizin sabit konumu.",
+  settingsHotelLocationHint: "Google Maps'ten koordinatları girin (sağ tık → koordinatlar). Yol tarifi ve mesafe sıralaması bu noktadan başlar.",
+  settingsHotelLocationLabel: "Pin etiketi",
+  settingsHotelLocationLabelPlaceholder: "Grand Hotel İstanbul",
+  settingsHotelLocationSave: "Otel konumunu kaydet",
+  settingsHotelLocationSaved: "Otel harita pini kaydedildi.",
+  settingsHotelLocationLoadFailed: "Otel konumu yüklenemedi.",
+  settingsHotelLocationSaveFailed: "Otel konumu kaydedilemedi.",
+  settingsFloorWifiTitle: "Kat Wi-Fi şifreleri",
+  settingsFloorWifiSubtitle: "Her kata bir Wi-Fi şifresi atayın — misafirler odalarının bulunduğu katın şifresini görür.",
+  settingsFloorWifiHint: "Kat anahtarı oda numarasından eşleştirilir (ör. oda 301 → anahtar 3, oda 1205 → anahtar 12).",
+  settingsFloorWifiLoadFailed: "Kat Wi-Fi ayarları yüklenemedi.",
+  settingsFloorWifiSaved: "Kat Wi-Fi ayarları kaydedildi.",
+  settingsFloorWifiSaveFailed: "Kat Wi-Fi ayarları kaydedilemedi.",
+  settingsFloorKey: "Kat anahtarı",
+  settingsFloorKeyHint: "Oda numaralarıyla eşleşen rakamlar",
+  settingsFloorLabel: "Görünen ad",
+  settingsFloorLabelPlaceholder: "3. Kat",
+  settingsFloorRow: "{n}. Kat",
+  settingsWifiPassword: "Wi-Fi şifresi",
+  settingsWifiSsid: "Ağ adı (SSID)",
+  settingsAddFloor: "Başka kat ekle",
+  settingsSaveFloors: "Kat Wi-Fi kaydet",
+  settingsRemoveFloor: "Katı kaldır",
+  optionalLabel: "Opsiyonel",
+
+  settingsNearbyTitle: "Yakın yerler",
+  settingsNearbySubtitle: "Misafir haritasında gösterilecek eczane, market, çarşı ve AVM'leri tanımlayın.",
+  settingsNearbyHint: "Google Maps'ten koordinatları girin (sağ tık → koordinatlar). Mesafeler yukarıdaki otel harita pininden hesaplanır.",
+  settingsNearbyLoadFailed: "Yakın yerler yüklenemedi.",
+  settingsNearbySaved: "Yakın yerler kaydedildi.",
+  settingsNearbySaveFailed: "Yakın yerler kaydedilemedi.",
+  settingsNearbyInvalidCoords: "Her yer için enlem ve boylam geçerli sayı olmalıdır.",
+  settingsNearbyName: "Yer adı",
+  settingsNearbyNamePlaceholder: "Şehir Eczanesi",
+  settingsNearbyType: "Kategori",
+  settingsNearbyAddress: "Adres",
+  settingsNearbyAddressPlaceholder: "Atatürk Cad. No: 12",
+  settingsNearbyDescription: "Kısa açıklama",
+  settingsNearbyDescriptionPlaceholder: "7/24 açık",
+  settingsNearbyLat: "Enlem",
+  settingsNearbyLng: "Boylam",
+  settingsNearbyCoordsHint: "Google Maps'ten — lat,lng veya Maps linki yapıştırın",
+  settingsNearbyCoordsSwapped: "Enlem ve boylam otomatik düzeltildi (yer değiştirmiş görünüyordu).",
+  settingsNearbyTooFarFromHotel: "Yer otel pininden çok uzak (>50 km). Koordinatları kontrol edin.",
+  settingsNearbyRow: "Yer {n}",
+  settingsNearbyAdd: "Yer ekle",
+  settingsNearbySave: "Yakın yerleri kaydet",
+  settingsNearbyRemove: "Yeri kaldır",
 
   careTitle: "Care Önerileri",
   careRefreshBtn: "AI ile Yenile",
@@ -814,6 +1385,16 @@ const ar: StaffTranslations = {
   deactivateEmployee: "إلغاء التفعيل",
   reactivateEmployee: "إعادة التفعيل",
   deleteEmployeePerm: "حذف نهائي",
+  resetPassword: "إعادة تعيين كلمة المرور",
+  resetPasswordFor: "إعادة تعيين كلمة المرور لـ {name}",
+  confirmPassword: "تأكيد كلمة المرور",
+  confirmPasswordRequired: "أكد كلمة المرور الجديدة",
+  passwordsMismatch: "كلمتا المرور غير متطابقتين",
+  passwordUpdated: "تم تحديث كلمة المرور",
+  deleteDeptManagerTitle: "حذف مدير القسم؟",
+  deleteDeptManagerDesc:
+    "سيتم إزالة {name} نهائياً. لا يمكن التراجع عن ذلك ولن يتمكن من تسجيل الدخول.",
+  deptManagerUpdated: "تم تحديث مدير القسم",
 
   addStaffMember: "إضافة موظف",
   addStaffSubtitle: "أنشئ بيانات الدخول وعيّن القسم.",
@@ -893,6 +1474,14 @@ const ar: StaffTranslations = {
   tasksAssignee: "المكلف",
   tasksStart: "البداية",
   tasksEnd: "النهاية",
+  tasksDate: "التاريخ",
+  tasksDuration: "المدة",
+  tasksScheduleWhen: "الجدولة",
+  tasksDuration30m: "30 د",
+  tasksDuration1h: "ساعة",
+  tasksDuration90m: "1.5 س",
+  tasksDuration2h: "ساعتان",
+  tasksDuration3h: "3 س",
   tasksCreate: "إنشاء مهمة",
   tasksSave: "حفظ",
   tasksComplete: "تعيين كمكتملة",
@@ -915,6 +1504,91 @@ const ar: StaffTranslations = {
   tasksDeleteConfirm: "إزالة هذه المهمة من الجدول؟",
   tasksEmptyDescription: "لا يوجد وصف",
   tasksCreateHint: "عيّن لموظف مع نافذة زمنية",
+  tasksTableTask: "المهمة",
+  tasksTableEmployee: "الموظف",
+  tasksTableDaySchedule: "جدول اليوم",
+  tasksScheduleByEmployee: "حسب الموظف",
+  tasksScheduleByTask: "حسب المهمة",
+  tasksSectionEmployeeHint: "الصفوف موظفون والأعمدة ساعات — اضغط على الخانة للتفاصيل",
+  tasksSectionTaskHint: "الصفوف مهام مع ملخص التعيين لكل ساعة",
+  tasksLegendTitle: "دليل الألوان",
+  tasksScrollHint: "اسحب",
+  tasksHourAssignments: "تعيينات الساعة",
+  tasksNoTasksToday: "لا مهام مجدولة",
+  tasksTableTime: "الوقت",
+  tasksTableStatus: "الحالة",
+  tasksTableDay: "اليوم",
+  tasksFilterAll: "الكل",
+  tasksFilterAllShort: "الكل",
+  tasksDayShort: "يوم",
+  tasksWeekShort: "أسبوع",
+  tasksExportShort: "Excel",
+  tasksNewShort: "جديد",
+  tasksSearchShort: "بحث",
+  tasksScheduleEmployeeShort: "موظف",
+  tasksScheduleTaskShort: "مهمة",
+  tasksHourAssignShort: "تعيين",
+  tasksRoutineShort: "روتين",
+  tasksPerformanceShort: "أداء",
+  tasksAiShort: "AI",
+  tasksStatusPendingShort: "انتظار",
+  tasksStatusInProgressShort: "نشط",
+  tasksStatusCompletedShort: "تم",
+  tasksOverdueShort: "متأخر",
+  tasksExpandTable: "توسيع",
+  tasksExpandHint: "اضغط على المهمة للعرض أو التعديل",
+  tasksAiOnTimeShort: "في الوقت",
+  tasksAiLateShort: "متأخر",
+  tasksAiNotFinishedShort: "مفتوح",
+  tasksPerformanceTitle: "أداء الفريق",
+  tasksPerformanceSubtitle: "نسبة الإنجاز في الوقت لكل موظف",
+  tasksPerformanceOnTime: "في الوقت %",
+  tasksPerformanceDone: "منجزة",
+  tasksPerformanceAssigned: "المكلفة",
+  tasksNoPerformanceData: "لا مهام مكتملة للرسم البياني بعد.",
+  tasksAiDailyReport: "تقرير AI اليومي",
+  tasksAiDailyReportHint: "من أنجز في الوقت، من تأخر، من لم ينجز — بالاسم",
+  tasksAiInsight: "رؤية AI",
+  tasksAiAnalyzing: "جاري تحليل بيانات المهام…",
+  tasksAiAnalysisTitle: "تحليل AI",
+  tasksAiAnalysisFailed: "تعذر تحميل تحليل AI. تحقق من الاتصال وحاول مرة أخرى.",
+  tasksAiRetry: "حاول مرة أخرى",
+  tasksAiByEmployee: "حسب الموظف",
+  tasksAiOnTime: "أنجز في الوقت أو قبله",
+  tasksAiLate: "أنجز متأخراً",
+  tasksAiNotFinished: "لم ينجز / متأخر",
+  tasksAiNobodyOnTime: "لا أحد في هذه المجموعة.",
+  tasksAiNobodyLate: "لا أحد أنجز متأخراً.",
+  tasksAiNobodyOverdue: "لا مهام متأخرة أو مفتوحة.",
+  tasksAiBudgetLimited: "تم استنفاد حصة AI الشهرية. تواصل مع مسؤول المنصة.",
+  tasksAiTokenUsage: "رموز AI هذا الشهر",
+  tasksAiDailyBannerTitle: "تقرير المهام اليومي جاهز",
+  tasksAiDailyBannerAction: "عرض التقرير",
+  tasksAiOverviewLabel: "AI",
+  tasksAiOverviewPending: "تقرير يومي الساعة 6:00 مساءً",
+  tasksExportExcel: "تصدير Excel",
+  tasksExportSuccess: "تم تنزيل ملف Excel",
+  tasksExportEmpty: "لا مهام للتصدير في هذه الفترة",
+  tasksExportReportTitle: "Guest Pro — تصدير جدول المهام",
+  tasksExportPeriod: "الفترة",
+  tasksExportView: "العرض",
+  tasksExportHotel: "الفندق",
+  tasksExportGeneratedAt: "تاريخ الإنشاء",
+  tasksExportTaskCount: "المهام المجدولة",
+  tasksExportRoutineCount: "قوالب الروتين",
+  tasksExportSheetSummary: "ملخص",
+  tasksExportSheetTasks: "المهام",
+  tasksExportSheetRoutines: "الروتين",
+  tasksExportColId: "المعرف",
+  tasksExportColStart: "البداية",
+  tasksExportColEnd: "النهاية",
+  tasksExportColDurationMin: "المدة (د)",
+  tasksExportColDepartment: "القسم",
+  tasksExportColCompletedAt: "اكتمل في",
+  tasksExportColCreatedAt: "أُنشئ في",
+  tasksExportColActive: "نشط",
+  tasksExportYes: "نعم",
+  tasksExportNo: "لا",
 
   searchPlaceholder: "الاسم أو الغرفة أو المفتاح…",
   searchRoomPlaceholder: "ابحث عن رقم الغرفة…",
@@ -982,6 +1656,37 @@ const ar: StaffTranslations = {
   roomServiceMenuEmpty: "قائمة خدمة الغرف فارغة",
   dailyMenuTab: "📅 القائمة اليومية",
   roomServiceTab: "🛎 خدمة الغرف",
+  editMenuItem: "تعديل العنصر",
+  menuUpdated: "تم تحديث عنصر القائمة",
+  menuUploadPhoto: "إضافة صورة",
+  menuRemovePhoto: "إزالة الصورة",
+  menuPhotoSaved: "تم حفظ الصورة",
+  menuPhotoRemoved: "تمت إزالة الصورة",
+  deleteItem: "حذف العنصر",
+  menuImportExcel: "استيراد Excel",
+  menuDownloadTemplate: "قالب",
+  menuImportPreview: "{count} عناصر جاهزة · تم تخطي {skipped} صف",
+  menuImportConfirm: "استيراد الكل",
+  menuImportDone: "تم استيراد {count} عنصر",
+  menuImportEmpty: "لم يتم العثور على صفوف صالحة",
+  menuEditorSubtitle: "يظهر للضيوف في شاشة طلب الطعام",
+  menuSectionBasics: "أساسيات",
+  menuSectionPricing: "التسعير",
+  menuSectionGuestInfo: "تفاصيل الضيف",
+  menuFieldName: "اسم الصنف",
+  menuFieldDescription: "الوصف",
+  menuFieldCategory: "الفئة",
+  menuFieldPrice: "السعر",
+  menuFieldPortion: "الحصة / السعرات",
+  menuFieldAllergens: "مسببات الحساسية",
+  menuFieldSortOrder: "ترتيب العرض",
+  menuFieldCurrency: "العملة",
+  menuFieldDate: "تاريخ التوفر",
+  menuFieldVisible: "مرئي للضيوف",
+  menuFieldVisibleHint: "العناصر المخفية لا تظهر في قائمة الضيوف",
+  menuFieldPhotoHint: "JPEG أو PNG أو WebP · حد أقصى 3 م.ب.",
+  menuChangePhoto: "تغيير الصورة",
+  menuPhotoTooLarge: "يجب أن تكون الصورة أقل من 3 م.ب.",
 
   catBreakfast: "الإفطار",
   catSoup: "الشوربة",
@@ -1009,6 +1714,62 @@ const ar: StaffTranslations = {
   placeholderCurrentQty: "الكمية الحالية",
   placeholderLowStockThreshold: "حد تنبيه انخفاض المخزون",
   placeholderNotes: "ملاحظات (اختياري)",
+
+  settingsCategoryGuest: "تجربة الضيف",
+  settingsCategoryGuestDesc: "المعلومات المعروضة على الشاشة الرئيسية للضيف.",
+  settingsCategoryTracking: "التواجد والتتبع",
+  settingsCategoryTrackingDesc: "السياج الجغرافي وقواعد الشبكة وموقع الضيف.",
+  settingsHubIntro: "اختر فئة لإعداد تجربة الضيف أو تتبع تواجد الفندق.",
+  settingsHotelLocationTitle: "موقع الفندق على الخريطة",
+  settingsHotelLocationSubtitle: "الموقع الثابت الذي يظهر للضيف على خريطة الأماكن القريبة.",
+  settingsHotelLocationHint: "أدخل إحداثيات GPS من Google Maps. هذه النقطة هي بداية الاتجاهات وترتيب المسافات.",
+  settingsHotelLocationLabel: "تسمية الدبوس",
+  settingsHotelLocationLabelPlaceholder: "فندق جراند إسطنبول",
+  settingsHotelLocationSave: "حفظ موقع الفندق",
+  settingsHotelLocationSaved: "تم حفظ موقع الفندق على الخريطة.",
+  settingsHotelLocationLoadFailed: "تعذّر تحميل موقع الفندق.",
+  settingsHotelLocationSaveFailed: "تعذّر حفظ موقع الفندق.",
+  settingsFloorWifiTitle: "كلمات مرور Wi-Fi حسب الطابق",
+  settingsFloorWifiSubtitle: "عيّن كلمة مرور Wi-Fi لكل طابق — يرى الضيوف كلمة مرور طابق غرفتهم.",
+  settingsFloorWifiHint: "يُطابق مفتاح الطابق من رقم الغرفة (مثلاً غرفة 301 → مفتاح 3، غرفة 1205 → مفتاح 12).",
+  settingsFloorWifiLoadFailed: "تعذّر تحميل إعدادات Wi-Fi للطوابق.",
+  settingsFloorWifiSaved: "تم حفظ إعدادات Wi-Fi للطوابق.",
+  settingsFloorWifiSaveFailed: "تعذّر حفظ إعدادات Wi-Fi للطوابق.",
+  settingsFloorKey: "مفتاح الطابق",
+  settingsFloorKeyHint: "الأرقام المستخدمة لمطابقة أرقام الغرف",
+  settingsFloorLabel: "التسمية المعروضة",
+  settingsFloorLabelPlaceholder: "الطابق الثالث",
+  settingsFloorRow: "الطابق {n}",
+  settingsWifiPassword: "كلمة مرور Wi-Fi",
+  settingsWifiSsid: "اسم الشبكة (SSID)",
+  settingsAddFloor: "إضافة طابق آخر",
+  settingsSaveFloors: "حفظ Wi-Fi الطوابق",
+  settingsRemoveFloor: "إزالة الطابق",
+  optionalLabel: "اختياري",
+
+  settingsNearbyTitle: "الأماكن القريبة",
+  settingsNearbySubtitle: "حدّد الصيدليات والأسواق والمراكز التجارية المعروضة على خريطة الضيف.",
+  settingsNearbyHint: "أدخل إحداثيات GPS من Google Maps. يرى الضيوف الأماكن مرتبة حسب المسافة.",
+  settingsNearbyLoadFailed: "تعذّر تحميل الأماكن القريبة.",
+  settingsNearbySaved: "تم حفظ الأماكن القريبة.",
+  settingsNearbySaveFailed: "تعذّر حفظ الأماكن القريبة.",
+  settingsNearbyInvalidCoords: "يجب أن تكون خطوط الطول والعرض أرقاماً صالحة.",
+  settingsNearbyName: "اسم المكان",
+  settingsNearbyNamePlaceholder: "صيدلية المدينة",
+  settingsNearbyType: "الفئة",
+  settingsNearbyAddress: "العنوان",
+  settingsNearbyAddressPlaceholder: "123 الشارع الرئيسي",
+  settingsNearbyDescription: "وصف قصير",
+  settingsNearbyDescriptionPlaceholder: "مفتوح 24 ساعة",
+  settingsNearbyLat: "خط العرض",
+  settingsNearbyLng: "خط الطول",
+  settingsNearbyCoordsHint: "من Google Maps — الصق lat,lng أو رابط الخريطة",
+  settingsNearbyCoordsSwapped: "تم تصحيح خط العرض والطول تلقائياً (يبدو أنهما مقلوبان).",
+  settingsNearbyTooFarFromHotel: "المكان بعيد جداً عن موقع الفندق (>50 كم). تحقق من الإحداثيات.",
+  settingsNearbyRow: "مكان {n}",
+  settingsNearbyAdd: "إضافة مكان",
+  settingsNearbySave: "حفظ الأماكن القريبة",
+  settingsNearbyRemove: "إزالة المكان",
 
   careTitle: "توصيات الرعاية",
   careRefreshBtn: "تحديث بالذكاء الاصطناعي",
@@ -1057,7 +1818,7 @@ export function staffScopeLabel(
       return t.scopeReception;
     case "restaurant_personnel":
       return t.scopeRestaurant;
-    case "operations_personnel":
+    case "staff_personnel":
       return deptLabel || "Staff";
   }
 }

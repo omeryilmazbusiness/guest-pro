@@ -8,7 +8,7 @@
     "build": "node ./build.mjs",
     "start": "DOTENV_CONFIG_PATH=../../.env node --import dotenv/config --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "tsx --test src/lib/chat-actions.unit.test.ts src/lib/session-policy.unit.test.ts src/lib/platform-auth/platform-login-lockout.unit.test.ts",
+    "test": "tsx --test src/lib/chat-actions.unit.test.ts src/lib/session-policy.unit.test.ts src/lib/platform-auth/platform-login-lockout.unit.test.ts src/routes/routine-tasks.unit.test.ts",
     "session:self-test": "node scripts/self-test-persistent-session.mjs"
   },
   "dependencies": {

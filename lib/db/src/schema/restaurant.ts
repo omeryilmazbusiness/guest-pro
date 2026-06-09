@@ -70,6 +70,8 @@ export const restaurantMenuItemsTable = pgTable("restaurant_menu_items", {
   portionInfo: text("portion_info"),
   /** Sort order within the same category. */
   sortOrder: integer("sort_order").notNull().default(0),
+  /** Public URL path for guest-facing menu item photo (e.g. /api/public/hotels/:slug/menu-items/:id/image). */
+  imageUrl: text("image_url"),
   createdByUserId: integer("created_by_user_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })

@@ -47,16 +47,43 @@ export const STAFF_DEPARTMENTS = [
   "BELLMAN",
   "RECEPTION",
   "RESTAURANT",
+  "KITCHEN",
+  "FINANCIAL_ACCOUNTING",
+  "SECURITY",
+  "MAINTENANCE",
+  "MARKETING",
+  "SPA_GYM",
 ] as const;
 
 export type StaffDepartment = (typeof STAFF_DEPARTMENTS)[number];
 
 export const DEPARTMENT_LABELS: Record<StaffDepartment, string> = {
   HOUSEKEEPING: "Housekeeping",
-  BELLMAN:      "Bellman",
-  RECEPTION:    "Reception",
-  RESTAURANT:   "Restaurant",
+  BELLMAN: "Bellman",
+  RECEPTION: "Reception",
+  RESTAURANT: "Restaurant",
+  KITCHEN: "Kitchen",
+  FINANCIAL_ACCOUNTING: "Financial & Accounting",
+  SECURITY: "Security",
+  MAINTENANCE: "Maintenance",
+  MARKETING: "Marketing",
+  SPA_GYM: "Spa & Gym",
 };
+
+/** Departments eligible for department-manager scope. */
+export const DEPARTMENT_MANAGER_DEPARTMENTS = [
+  "HOUSEKEEPING",
+  "BELLMAN",
+  "RECEPTION",
+  "KITCHEN",
+  "FINANCIAL_ACCOUNTING",
+  "SECURITY",
+  "MAINTENANCE",
+  "MARKETING",
+  "SPA_GYM",
+] as const satisfies readonly StaffDepartment[];
+
+export type DepartmentManagerDepartment = (typeof DEPARTMENT_MANAGER_DEPARTMENTS)[number];
 
 // ---------------------------------------------------------------------------
 // Permission definitions

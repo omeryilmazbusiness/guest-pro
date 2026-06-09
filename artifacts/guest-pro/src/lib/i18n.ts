@@ -16,6 +16,8 @@ export interface GuestTranslations {
   cancel: string;
   navMenuTitle: string;
   navMenuOpen: string;
+  languageMenuLabel: string;
+  languageSheetTitle: string;
   logout: string;
   logoutSuccess: string;
   room: string;
@@ -37,6 +39,12 @@ export interface GuestTranslations {
   staySection: string;
   stayAboutTitle: string;
   guestKeyLabel: string;
+  stayWifiTitle: string;
+  stayWifiFloor: string;
+  stayWifiNetwork: string;
+  stayWifiPasswordLabel: string;
+  stayWifiCopy: string;
+  stayWifiCopied: string;
   copyKey: string;
   keyCopied: string;
   noActiveKey: string;
@@ -48,9 +56,18 @@ export interface GuestTranslations {
   nearbyViewAll: string; // {count}
   nearbyNoResults: string;
   nearbyBackToList: string;
+  nearbyNearestTitle: string;
+  nearbyMapLoading: string;
+  nearbyMapUnavailable: string;
+  nearbyLocationHint: string;
+  nearbyEmptyPlaces: string;
+  nearbyHotelLabel: string;
+  nearbyLoadFailed: string;
+  nearbyRetry: string;
   nearbySection: string;
 
   quickActionsSection: string;
+  quickActionsOthersSection: string;
   touchToAsk: string;
 
   infoSection: string;
@@ -137,6 +154,15 @@ export interface GuestTranslations {
   flowFoodConfirmQ: string;
   flowMenuLoading: string;
   flowMenuEmpty: string;
+  flowFoodAllTab: string;
+  flowFoodSelectHint: string;
+  flowFoodQty: string;
+  flowFoodItemNote: string;
+  flowFoodItemNotePlaceholder: string;
+  flowFoodPlaceOrder: string;
+  flowFoodItemsSelected: string;
+  flowFoodLinesSelected: string;
+  flowFoodNoItems: string;
   flowConfirmCategoryLabel: string;
 
   // ── Flow — Food categories ───────────────────────────────────────────────
@@ -270,6 +296,24 @@ export interface GuestTranslations {
   quickActionCareTitle: string;
   quickActionCareSubtitle: string;
 
+  conciergeLaundry: string;
+  conciergeSpa: string;
+  conciergeTaxi: string;
+  conciergeSalon: string;
+  conciergeSheetTitle: string;
+  conciergeSheetSubtitle: string;
+  conciergeWhenLabel: string;
+  conciergeWhenAsap: string;
+  conciergeWhenMorning: string;
+  conciergeWhenAfternoon: string;
+  conciergeWhenEvening: string;
+  conciergeWhenTomorrow: string;
+  conciergeNotesLabel: string;
+  conciergeNotesPlaceholder: string;
+  conciergeSubmit: string;
+  conciergeSuccessToast: string;
+  conciergeSummary: string;
+
   hotelConnectSection: string;
   receptionLiveTitle: string;
   receptionLiveSubtitle: string;
@@ -306,6 +350,16 @@ export interface GuestTranslations {
   reqStatusOpen: string;
   reqStatusInProgress: string;
   reqStatusResolved: string;
+  myRequestsTabOpen: string;
+  myRequestsTabPreparing: string;
+  myRequestsTabCompleted: string;
+  myRequestsActiveHint: string;
+  myRequestsTapToView: string;
+  fulfillmentStepReceived: string;
+  fulfillmentStepKitchen: string;
+  fulfillmentStepEnRoute: string;
+  fulfillmentStepDone: string;
+  fulfillmentEtaMinutes: string;
   reqDeleteLabel: string;
   reqDeleteConfirm: string;
   reqDeletedToast: string;
@@ -360,6 +414,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     cancel: "Cancel",
     navMenuTitle: "Menu",
     navMenuOpen: "Open menu",
+    languageMenuLabel: "Language",
+    languageSheetTitle: "Choose language",
     logout: "Log out",
     logoutSuccess: "Safe travels!",
     room: "Room",
@@ -380,20 +436,35 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     staySection: "Your Stay",
     stayAboutTitle: "About your stay",
     guestKeyLabel: "Guest key",
+    stayWifiTitle: "Wi-Fi",
+    stayWifiFloor: "Floor {floor}",
+    stayWifiNetwork: "Network",
+    stayWifiPasswordLabel: "Password",
+    stayWifiCopy: "Copy",
+    stayWifiCopied: "Copied",
     copyKey: "Copy",
     keyCopied: "Copied",
     noActiveKey: "No active key on file",
     stayActive: "Stay active",
     chatLink: "Chat",
-    nearbyTapHint: "Tap to browse nearby places",
+    nearbyTapHint: "Tap a place for details and walking directions",
     nearbySearchPlaceholder: "Search places…",
     nearbyFilterAll: "All",
     nearbyViewAll: "View all {count} places",
     nearbyNoResults: "No places match your search",
     nearbyBackToList: "All places",
+    nearbyNearestTitle: "Find nearest",
+    nearbyMapLoading: "Loading map…",
+    nearbyMapUnavailable: "Map preview unavailable",
+    nearbyLocationHint: "Enable location to see distances from you",
+    nearbyEmptyPlaces: "No nearby places configured yet",
+    nearbyHotelLabel: "Hotel",
+    nearbyLoadFailed: "Could not load nearby places",
+    nearbyRetry: "Try again",
     nearbySection: "Nearby",
 
     quickActionsSection: "Quick Actions",
+    quickActionsOthersSection: "Others",
     touchToAsk: "Touch to ask →",
 
     infoSection: "At Your Service",
@@ -472,6 +543,15 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowFoodConfirmQ: "Confirm your order",
     flowMenuLoading: "Loading…",
     flowMenuEmpty: "No items on the menu",
+    flowFoodAllTab: "All",
+    flowFoodSelectHint: "Tap items to build your order",
+    flowFoodQty: "Quantity",
+    flowFoodItemNote: "Note",
+    flowFoodItemNotePlaceholder: "Allergies, cooking preference…",
+    flowFoodPlaceOrder: "Send order",
+    flowFoodItemsSelected: "{count} servings",
+    flowFoodLinesSelected: "{count} dishes selected",
+    flowFoodNoItems: "Select at least one item",
     flowConfirmCategoryLabel: "Category",
 
     flowCatBreakfast: "Breakfast",
@@ -593,6 +673,24 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     quickActionCareTitle: "Care About Me",
     quickActionCareSubtitle: "Your preferences",
 
+    conciergeLaundry: "Laundry",
+    conciergeSpa: "Spa & Wellness",
+    conciergeTaxi: "Taxi",
+    conciergeSalon: "Salon",
+    conciergeSheetTitle: "{service} booking",
+    conciergeSheetSubtitle: "Reception will confirm your reservation.",
+    conciergeWhenLabel: "When",
+    conciergeWhenAsap: "ASAP",
+    conciergeWhenMorning: "This morning",
+    conciergeWhenAfternoon: "This afternoon",
+    conciergeWhenEvening: "This evening",
+    conciergeWhenTomorrow: "Tomorrow",
+    conciergeNotesLabel: "Notes (optional)",
+    conciergeNotesPlaceholder: "e.g. pick-up time, treatment preference…",
+    conciergeSubmit: "Send to reception",
+    conciergeSuccessToast: "Request sent — reception will confirm shortly.",
+    conciergeSummary: "{service} · {when}",
+
     hotelConnectSection: "Hotel",
     receptionLiveTitle: "Reception",
     receptionLiveSubtitle: "Chat live with our front desk team",
@@ -628,6 +726,16 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqStatusOpen: "Open",
     reqStatusInProgress: "In Progress",
     reqStatusResolved: "Completed",
+    myRequestsTabOpen: "Open",
+    myRequestsTabPreparing: "Preparing",
+    myRequestsTabCompleted: "Done",
+    myRequestsActiveHint: "{n} active request(s)",
+    myRequestsTapToView: "Tap to view your requests",
+    fulfillmentStepReceived: "Received",
+    fulfillmentStepKitchen: "Kitchen",
+    fulfillmentStepEnRoute: "On the way",
+    fulfillmentStepDone: "Delivered",
+    fulfillmentEtaMinutes: "Est. ~{n} min",
     reqDeleteLabel: "Remove",
     reqDeleteConfirm: "Delete?",
     reqDeletedToast: "Request removed",
@@ -677,6 +785,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     cancel: "İptal",
     navMenuTitle: "Menü",
     navMenuOpen: "Menüyü aç",
+    languageMenuLabel: "Dil",
+    languageSheetTitle: "Dil seçin",
     logout: "Çıkış yap",
     logoutSuccess: "Güvenli yolculuklar!",
     room: "Oda",
@@ -697,20 +807,35 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     staySection: "Konaklamanız",
     stayAboutTitle: "Konaklamanız hakkında",
     guestKeyLabel: "Misafir anahtarı",
+    stayWifiTitle: "Wi-Fi",
+    stayWifiFloor: "{floor}. kat",
+    stayWifiNetwork: "Ağ adı",
+    stayWifiPasswordLabel: "Şifre",
+    stayWifiCopy: "Kopyala",
+    stayWifiCopied: "Kopyalandı",
     copyKey: "Kopyala",
     keyCopied: "Kopyalandı",
     noActiveKey: "Aktif anahtar bulunamadı",
     stayActive: "Konaklama aktif",
     chatLink: "Chat",
-    nearbyTapHint: "Yakın yerleri görmek için dokunun",
+    nearbyTapHint: "Detay ve yol tarifi için yere dokunun",
     nearbySearchPlaceholder: "Yer ara…",
     nearbyFilterAll: "Tümü",
     nearbyViewAll: "Tüm yerler ({count})",
     nearbyNoResults: "Aramanızla eşleşen yer yok",
     nearbyBackToList: "Tüm yerlere dön",
+    nearbyNearestTitle: "En yakın bul",
+    nearbyMapLoading: "Harita yükleniyor…",
+    nearbyMapUnavailable: "Harita önizlemesi kullanılamıyor",
+    nearbyLocationHint: "Mesafeleri görmek için konum izni verin",
+    nearbyEmptyPlaces: "Henüz yakın yer tanımlanmadı",
+    nearbyHotelLabel: "Otel",
+    nearbyLoadFailed: "Yakın yerler yüklenemedi",
+    nearbyRetry: "Tekrar dene",
     nearbySection: "Yakında",
 
     quickActionsSection: "Hızlı İstekler",
+    quickActionsOthersSection: "Diğer",
     touchToAsk: "Sormak için dokun →",
 
     infoSection: "Hizmetinizde",
@@ -789,6 +914,15 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowFoodConfirmQ: "Siparişinizi onaylayın",
     flowMenuLoading: "Yükleniyor…",
     flowMenuEmpty: "Menüde ürün yok",
+    flowFoodAllTab: "Tümü",
+    flowFoodSelectHint: "Siparişe eklemek için ürünlere dokunun",
+    flowFoodQty: "Adet",
+    flowFoodItemNote: "Not",
+    flowFoodItemNotePlaceholder: "Alerji, pişirme tercihi…",
+    flowFoodPlaceOrder: "Siparişi gönder",
+    flowFoodItemsSelected: "{count} porsiyon",
+    flowFoodLinesSelected: "{count} ürün seçildi",
+    flowFoodNoItems: "En az bir ürün seçin",
     flowConfirmCategoryLabel: "Kategori",
 
     flowCatBreakfast: "Kahvaltı",
@@ -910,6 +1044,24 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     quickActionCareTitle: "Care About Me",
     quickActionCareSubtitle: "Tercihleriniz",
 
+    conciergeLaundry: "Çamaşırhane",
+    conciergeSpa: "Spa & Wellness",
+    conciergeTaxi: "Taksi",
+    conciergeSalon: "Salon",
+    conciergeSheetTitle: "{service} rezervasyonu",
+    conciergeSheetSubtitle: "Resepsiyon rezervasyonunuzu onaylayacak.",
+    conciergeWhenLabel: "Ne zaman",
+    conciergeWhenAsap: "En kısa sürede",
+    conciergeWhenMorning: "Bu sabah",
+    conciergeWhenAfternoon: "Bu öğleden sonra",
+    conciergeWhenEvening: "Bu akşam",
+    conciergeWhenTomorrow: "Yarın",
+    conciergeNotesLabel: "Not (isteğe bağlı)",
+    conciergeNotesPlaceholder: "ör. alım saati, tercih…",
+    conciergeSubmit: "Resepsiyona gönder",
+    conciergeSuccessToast: "Talebiniz gönderildi — resepsiyon kısa sürede onaylayacak.",
+    conciergeSummary: "{service} · {when}",
+
     hotelConnectSection: "Otel",
     receptionLiveTitle: "Resepsiyon",
     receptionLiveSubtitle: "Resepsiyon ekibiyle canlı sohbet",
@@ -945,6 +1097,16 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqStatusOpen: "Açık",
     reqStatusInProgress: "İşlemde",
     reqStatusResolved: "Tamamlandı",
+    myRequestsTabOpen: "Açık",
+    myRequestsTabPreparing: "Hazırlanıyor",
+    myRequestsTabCompleted: "Tamam",
+    myRequestsActiveHint: "{n} aktif talep",
+    myRequestsTapToView: "Taleplerinizi görmek için dokunun",
+    fulfillmentStepReceived: "Alındı",
+    fulfillmentStepKitchen: "Mutfakta",
+    fulfillmentStepEnRoute: "Yolda",
+    fulfillmentStepDone: "Teslim",
+    fulfillmentEtaMinutes: "Tahmini ~{n} dk",
     reqDeleteLabel: "Kaldır",
     reqDeleteConfirm: "Sil?",
     reqDeletedToast: "Talep kaldırıldı",
@@ -994,6 +1156,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     cancel: "إلغاء",
     navMenuTitle: "القائمة",
     navMenuOpen: "فتح القائمة",
+    languageMenuLabel: "اللغة",
+    languageSheetTitle: "اختر اللغة",
     logout: "تسجيل الخروج",
     logoutSuccess: "رحلة موفقة!",
     room: "غرفة",
@@ -1014,6 +1178,12 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     staySection: "إقامتك",
     stayAboutTitle: "حول إقامتك",
     guestKeyLabel: "مفتاح الضيف",
+    stayWifiTitle: "Wi-Fi",
+    stayWifiFloor: "الطابق {floor}",
+    stayWifiNetwork: "الشبكة",
+    stayWifiPasswordLabel: "كلمة المرور",
+    stayWifiCopy: "نسخ",
+    stayWifiCopied: "تم النسخ",
     copyKey: "نسخ",
     keyCopied: "تم النسخ",
     noActiveKey: "لا يوجد مفتاح نشط",
@@ -1025,9 +1195,18 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     nearbyViewAll: "عرض كل الأماكن ({count})",
     nearbyNoResults: "لا توجد نتائج",
     nearbyBackToList: "جميع الأماكن",
+    nearbyNearestTitle: "أقرب الأماكن",
+    nearbyMapLoading: "جاري تحميل الخريطة…",
+    nearbyMapUnavailable: "معاينة الخريطة غير متاحة",
+    nearbyLocationHint: "فعّل الموقع لرؤية المسافات منك",
+    nearbyEmptyPlaces: "لم يتم تعريف أماكن قريبة بعد",
+    nearbyHotelLabel: "الفندق",
+    nearbyLoadFailed: "تعذّر تحميل الأماكن القريبة",
+    nearbyRetry: "إعادة المحاولة",
     nearbySection: "بالقرب",
 
     quickActionsSection: "الإجراءات السريعة",
+    quickActionsOthersSection: "أخرى",
     touchToAsk: "اضغط للسؤال ←",
 
     infoSection: "في خدمتك",
@@ -1106,6 +1285,15 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowFoodConfirmQ: "تأكيد طلبك",
     flowMenuLoading: "جارٍ التحميل…",
     flowMenuEmpty: "لا توجد أصناف في القائمة",
+    flowFoodAllTab: "الكل",
+    flowFoodSelectHint: "اضغط على الأصناف لإضافتها",
+    flowFoodQty: "الكمية",
+    flowFoodItemNote: "ملاحظة",
+    flowFoodItemNotePlaceholder: "حساسية، تفضيلات…",
+    flowFoodPlaceOrder: "إرسال الطلب",
+    flowFoodItemsSelected: "{count} حصص",
+    flowFoodLinesSelected: "{count} أطباق",
+    flowFoodNoItems: "اختر صنفاً واحداً على الأقل",
     flowConfirmCategoryLabel: "الفئة",
 
     flowCatBreakfast: "فطور",
@@ -1227,6 +1415,23 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     quickActionCareTitle: "اعتنِ بي",
     quickActionCareSubtitle: "تفضيلاتك",
 
+    conciergeLaundry: "غسيل",
+    conciergeSpa: "سبا وعافية",
+    conciergeTaxi: "تاكسي",
+    conciergeSalon: "صالون",
+    conciergeSheetTitle: "حجز {service}",
+    conciergeSheetSubtitle: "سيؤكد الاستقبال حجزك.",
+    conciergeWhenLabel: "متى",
+    conciergeWhenAsap: "في أقرب وقت",
+    conciergeWhenMorning: "هذا الصباح",
+    conciergeWhenAfternoon: "بعد الظهر",
+    conciergeWhenEvening: "هذا المساء",
+    conciergeWhenTomorrow: "غداً",
+    conciergeNotesLabel: "ملاحظات (اختياري)",
+    conciergeNotesPlaceholder: "مثلاً وقت الاستلام…",
+    conciergeSubmit: "إرسال للاستقبال",
+    conciergeSuccessToast: "تم إرسال الطلب — سيؤكد الاستقبال قريباً.",
+    conciergeSummary: "{service} · {when}",
 
     hotelConnectSection: "الفندق",
     receptionLiveTitle: "الاستقبال",
@@ -1263,6 +1468,16 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqStatusOpen: "مفتوح",
     reqStatusInProgress: "قيد التنفيذ",
     reqStatusResolved: "مكتمل",
+    myRequestsTabOpen: "مفتوح",
+    myRequestsTabPreparing: "قيد التحضير",
+    myRequestsTabCompleted: "منتهي",
+    myRequestsActiveHint: "{n} طلب نشط",
+    myRequestsTapToView: "اضغط لعرض طلباتك",
+    fulfillmentStepReceived: "تم الاستلام",
+    fulfillmentStepKitchen: "في المطبخ",
+    fulfillmentStepEnRoute: "في الطريق",
+    fulfillmentStepDone: "تم التسليم",
+    fulfillmentEtaMinutes: "تقريباً ~{n} د",
     reqDeleteLabel: "إزالة",
     reqDeleteConfirm: "حذف؟",
     reqDeletedToast: "تمت إزالة الطلب",
@@ -1312,6 +1527,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     cancel: "Отмена",
     navMenuTitle: "Меню",
     navMenuOpen: "Открыть меню",
+    languageMenuLabel: "Язык",
+    languageSheetTitle: "Выберите язык",
     logout: "Выйти",
     logoutSuccess: "Счастливого пути!",
     room: "Номер",
@@ -1332,6 +1549,12 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     staySection: "Ваше пребывание",
     stayAboutTitle: "О вашем проживании",
     guestKeyLabel: "Ключ гостя",
+    stayWifiTitle: "Wi-Fi",
+    stayWifiFloor: "Этаж {floor}",
+    stayWifiNetwork: "Сеть",
+    stayWifiPasswordLabel: "Пароль",
+    stayWifiCopy: "Копировать",
+    stayWifiCopied: "Скопировано",
     copyKey: "Копировать",
     keyCopied: "Скопировано",
     noActiveKey: "Активный ключ не найден",
@@ -1343,9 +1566,18 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     nearbyViewAll: "Все места ({count})",
     nearbyNoResults: "Ничего не найдено",
     nearbyBackToList: "Все места",
+    nearbyNearestTitle: "Ближайшие",
+    nearbyMapLoading: "Загрузка карты…",
+    nearbyMapUnavailable: "Карта недоступна",
+    nearbyLocationHint: "Разрешите геолокацию для расстояний",
+    nearbyEmptyPlaces: "Ближайшие места ещё не настроены",
+    nearbyHotelLabel: "Отель",
+    nearbyLoadFailed: "Не удалось загрузить места рядом",
+    nearbyRetry: "Повторить",
     nearbySection: "Рядом",
 
     quickActionsSection: "Быстрые действия",
+    quickActionsOthersSection: "Другое",
     touchToAsk: "Нажмите, чтобы спросить →",
 
     infoSection: "К вашим услугам",
@@ -1424,6 +1656,15 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowFoodConfirmQ: "Подтвердите ваш заказ",
     flowMenuLoading: "Загрузка…",
     flowMenuEmpty: "В меню нет блюд",
+    flowFoodAllTab: "Все",
+    flowFoodSelectHint: "Нажмите на блюда для заказа",
+    flowFoodQty: "Кол-во",
+    flowFoodItemNote: "Примечание",
+    flowFoodItemNotePlaceholder: "Аллергии, пожелания…",
+    flowFoodPlaceOrder: "Отправить заказ",
+    flowFoodItemsSelected: "{count} порций",
+    flowFoodLinesSelected: "{count} блюд",
+    flowFoodNoItems: "Выберите хотя бы одно блюдо",
     flowConfirmCategoryLabel: "Категория",
 
     flowCatBreakfast: "Завтрак",
@@ -1545,6 +1786,23 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     quickActionCareTitle: "Позаботьтесь обо мне",
     quickActionCareSubtitle: "Ваши предпочтения",
 
+    conciergeLaundry: "Прачечная",
+    conciergeSpa: "Спа и wellness",
+    conciergeTaxi: "Такси",
+    conciergeSalon: "Салон",
+    conciergeSheetTitle: "Бронирование: {service}",
+    conciergeSheetSubtitle: "Ресепшен подтвердит бронь.",
+    conciergeWhenLabel: "Когда",
+    conciergeWhenAsap: "Как можно скорее",
+    conciergeWhenMorning: "Сегодня утром",
+    conciergeWhenAfternoon: "Сегодня днём",
+    conciergeWhenEvening: "Сегодня вечером",
+    conciergeWhenTomorrow: "Завтра",
+    conciergeNotesLabel: "Заметки (необяз.)",
+    conciergeNotesPlaceholder: "напр. время, пожелания…",
+    conciergeSubmit: "Отправить на ресепшен",
+    conciergeSuccessToast: "Запрос отправлен — ресепшен скоро подтвердит.",
+    conciergeSummary: "{service} · {when}",
 
     hotelConnectSection: "Отель",
     receptionLiveTitle: "Ресепшн",
@@ -1581,6 +1839,16 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqStatusOpen: "Открыт",
     reqStatusInProgress: "В работе",
     reqStatusResolved: "Выполнен",
+    myRequestsTabOpen: "Открыт",
+    myRequestsTabPreparing: "Готовится",
+    myRequestsTabCompleted: "Готово",
+    myRequestsActiveHint: "{n} активных",
+    myRequestsTapToView: "Нажмите, чтобы открыть",
+    fulfillmentStepReceived: "Принят",
+    fulfillmentStepKitchen: "На кухне",
+    fulfillmentStepEnRoute: "В пути",
+    fulfillmentStepDone: "Доставлен",
+    fulfillmentEtaMinutes: "Около ~{n} мин",
     reqDeleteLabel: "Удалить",
     reqDeleteConfirm: "Удалить?",
     reqDeletedToast: "Запрос удалён",
@@ -1630,6 +1898,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     cancel: "Abbrechen",
     navMenuTitle: "Menü",
     navMenuOpen: "Menü öffnen",
+    languageMenuLabel: "Sprache",
+    languageSheetTitle: "Sprache wählen",
     logout: "Abmelden",
     logoutSuccess: "Gute Reise!",
     room: "Zimmer",
@@ -1650,6 +1920,12 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     staySection: "Ihr Aufenthalt",
     stayAboutTitle: "Über Ihren Aufenthalt",
     guestKeyLabel: "Gastschlüssel",
+    stayWifiTitle: "Wi-Fi",
+    stayWifiFloor: "Etage {floor}",
+    stayWifiNetwork: "Netzwerk",
+    stayWifiPasswordLabel: "Passwort",
+    stayWifiCopy: "Kopieren",
+    stayWifiCopied: "Kopiert",
     copyKey: "Kopieren",
     keyCopied: "Kopiert",
     noActiveKey: "Kein aktiver Schlüssel",
@@ -1661,9 +1937,18 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     nearbyViewAll: "Alle {count} Orte",
     nearbyNoResults: "Keine Treffer",
     nearbyBackToList: "Alle Orte",
+    nearbyNearestTitle: "In der Nähe finden",
+    nearbyMapLoading: "Karte wird geladen…",
+    nearbyMapUnavailable: "Kartenvorschau nicht verfügbar",
+    nearbyLocationHint: "Standort aktivieren für Entfernungen",
+    nearbyEmptyPlaces: "Noch keine Orte in der Nähe hinterlegt",
+    nearbyHotelLabel: "Hotel",
+    nearbyLoadFailed: "Orte in der Nähe konnten nicht geladen werden",
+    nearbyRetry: "Erneut versuchen",
     nearbySection: "In der Nähe",
 
     quickActionsSection: "Schnellaktionen",
+    quickActionsOthersSection: "Sonstiges",
     touchToAsk: "Tippen zum Fragen →",
 
     infoSection: "Zu Ihren Diensten",
@@ -1742,6 +2027,15 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowFoodConfirmQ: "Bestellung bestätigen",
     flowMenuLoading: "Wird geladen…",
     flowMenuEmpty: "Keine Gerichte auf der Karte",
+    flowFoodAllTab: "Alle",
+    flowFoodSelectHint: "Tippen Sie auf Gerichte zum Bestellen",
+    flowFoodQty: "Menge",
+    flowFoodItemNote: "Notiz",
+    flowFoodItemNotePlaceholder: "Allergien, Wünsche…",
+    flowFoodPlaceOrder: "Bestellung senden",
+    flowFoodItemsSelected: "{count} Portionen",
+    flowFoodLinesSelected: "{count} Gerichte",
+    flowFoodNoItems: "Mindestens ein Gericht wählen",
     flowConfirmCategoryLabel: "Kategorie",
 
     flowCatBreakfast: "Frühstück",
@@ -1863,6 +2157,23 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     quickActionCareTitle: "Kümmere dich um mich",
     quickActionCareSubtitle: "Ihre Präferenzen",
 
+    conciergeLaundry: "Wäscherei",
+    conciergeSpa: "Spa & Wellness",
+    conciergeTaxi: "Taxi",
+    conciergeSalon: "Salon",
+    conciergeSheetTitle: "{service} Buchung",
+    conciergeSheetSubtitle: "Die Rezeption bestätigt Ihre Reservierung.",
+    conciergeWhenLabel: "Wann",
+    conciergeWhenAsap: "So schnell wie möglich",
+    conciergeWhenMorning: "Heute Morgen",
+    conciergeWhenAfternoon: "Heute Nachmittag",
+    conciergeWhenEvening: "Heute Abend",
+    conciergeWhenTomorrow: "Morgen",
+    conciergeNotesLabel: "Notizen (optional)",
+    conciergeNotesPlaceholder: "z. B. Abholzeit…",
+    conciergeSubmit: "An Rezeption senden",
+    conciergeSuccessToast: "Anfrage gesendet — die Rezeption bestätigt in Kürze.",
+    conciergeSummary: "{service} · {when}",
 
     hotelConnectSection: "Hotel",
     receptionLiveTitle: "Rezeption",
@@ -1899,6 +2210,16 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqStatusOpen: "Offen",
     reqStatusInProgress: "In Bearbeitung",
     reqStatusResolved: "Abgeschlossen",
+    myRequestsTabOpen: "Offen",
+    myRequestsTabPreparing: "In Arbeit",
+    myRequestsTabCompleted: "Fertig",
+    myRequestsActiveHint: "{n} aktiv",
+    myRequestsTapToView: "Tippen zum Anzeigen",
+    fulfillmentStepReceived: "Eingegangen",
+    fulfillmentStepKitchen: "Küche",
+    fulfillmentStepEnRoute: "Unterwegs",
+    fulfillmentStepDone: "Geliefert",
+    fulfillmentEtaMinutes: "Ca. ~{n} Min",
     reqDeleteLabel: "Entfernen",
     reqDeleteConfirm: "Löschen?",
     reqDeletedToast: "Anfrage entfernt",
@@ -1948,6 +2269,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     cancel: "Annuler",
     navMenuTitle: "Menu",
     navMenuOpen: "Ouvrir le menu",
+    languageMenuLabel: "Langue",
+    languageSheetTitle: "Choisir la langue",
     logout: "Se déconnecter",
     logoutSuccess: "Bon voyage !",
     room: "Chambre",
@@ -1968,6 +2291,12 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     staySection: "Votre séjour",
     stayAboutTitle: "À propos de votre séjour",
     guestKeyLabel: "Clé invité",
+    stayWifiTitle: "Wi-Fi",
+    stayWifiFloor: "Étage {floor}",
+    stayWifiNetwork: "Réseau",
+    stayWifiPasswordLabel: "Mot de passe",
+    stayWifiCopy: "Copier",
+    stayWifiCopied: "Copié",
     copyKey: "Copier",
     keyCopied: "Copié",
     noActiveKey: "Aucune clé active",
@@ -1979,9 +2308,18 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     nearbyViewAll: "Voir les {count} lieux",
     nearbyNoResults: "Aucun résultat",
     nearbyBackToList: "Tous les lieux",
+    nearbyNearestTitle: "Trouver le plus proche",
+    nearbyMapLoading: "Chargement de la carte…",
+    nearbyMapUnavailable: "Aperçu carte indisponible",
+    nearbyLocationHint: "Activez la localisation pour les distances",
+    nearbyEmptyPlaces: "Aucun lieu à proximité configuré",
+    nearbyHotelLabel: "Hôtel",
+    nearbyLoadFailed: "Impossible de charger les lieux à proximité",
+    nearbyRetry: "Réessayer",
     nearbySection: "À proximité",
 
     quickActionsSection: "Actions rapides",
+    quickActionsOthersSection: "Autres",
     touchToAsk: "Appuyer pour demander →",
 
     infoSection: "À votre service",
@@ -2060,6 +2398,15 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowFoodConfirmQ: "Confirmer votre commande",
     flowMenuLoading: "Chargement…",
     flowMenuEmpty: "Aucun plat au menu",
+    flowFoodAllTab: "Tout",
+    flowFoodSelectHint: "Appuyez sur les plats à commander",
+    flowFoodQty: "Quantité",
+    flowFoodItemNote: "Note",
+    flowFoodItemNotePlaceholder: "Allergies, préférences…",
+    flowFoodPlaceOrder: "Envoyer la commande",
+    flowFoodItemsSelected: "{count} portions",
+    flowFoodLinesSelected: "{count} plats",
+    flowFoodNoItems: "Sélectionnez au moins un plat",
     flowConfirmCategoryLabel: "Catégorie",
 
     flowCatBreakfast: "Petit-déjeuner",
@@ -2181,6 +2528,23 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     quickActionCareTitle: "Prenez soin de moi",
     quickActionCareSubtitle: "Vos préférences",
 
+    conciergeLaundry: "Blanchisserie",
+    conciergeSpa: "Spa & bien-être",
+    conciergeTaxi: "Taxi",
+    conciergeSalon: "Salon",
+    conciergeSheetTitle: "Réservation {service}",
+    conciergeSheetSubtitle: "La réception confirmera votre réservation.",
+    conciergeWhenLabel: "Quand",
+    conciergeWhenAsap: "Dès que possible",
+    conciergeWhenMorning: "Ce matin",
+    conciergeWhenAfternoon: "Cet après-midi",
+    conciergeWhenEvening: "Ce soir",
+    conciergeWhenTomorrow: "Demain",
+    conciergeNotesLabel: "Notes (optionnel)",
+    conciergeNotesPlaceholder: "ex. heure de prise en charge…",
+    conciergeSubmit: "Envoyer à la réception",
+    conciergeSuccessToast: "Demande envoyée — la réception confirmera bientôt.",
+    conciergeSummary: "{service} · {when}",
 
     hotelConnectSection: "Hôtel",
     receptionLiveTitle: "Réception",
@@ -2217,6 +2581,16 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqStatusOpen: "Ouvert",
     reqStatusInProgress: "En cours",
     reqStatusResolved: "Terminé",
+    myRequestsTabOpen: "Ouvert",
+    myRequestsTabPreparing: "En préparation",
+    myRequestsTabCompleted: "Terminé",
+    myRequestsActiveHint: "{n} actif(s)",
+    myRequestsTapToView: "Appuyez pour voir",
+    fulfillmentStepReceived: "Reçu",
+    fulfillmentStepKitchen: "Cuisine",
+    fulfillmentStepEnRoute: "En route",
+    fulfillmentStepDone: "Livré",
+    fulfillmentEtaMinutes: "Env. ~{n} min",
     reqDeleteLabel: "Supprimer",
     reqDeleteConfirm: "Supprimer ?",
     reqDeletedToast: "Demande supprimée",
@@ -2266,6 +2640,8 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     cancel: "Cancelar",
     navMenuTitle: "Menú",
     navMenuOpen: "Abrir menú",
+    languageMenuLabel: "Idioma",
+    languageSheetTitle: "Elegir idioma",
     logout: "Cerrar sesión",
     logoutSuccess: "¡Buen viaje!",
     room: "Habitación",
@@ -2286,6 +2662,12 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     staySection: "Tu estancia",
     stayAboutTitle: "Sobre tu estancia",
     guestKeyLabel: "Clave de huésped",
+    stayWifiTitle: "Wi-Fi",
+    stayWifiFloor: "Planta {floor}",
+    stayWifiNetwork: "Red",
+    stayWifiPasswordLabel: "Contraseña",
+    stayWifiCopy: "Copiar",
+    stayWifiCopied: "Copiado",
     copyKey: "Copiar",
     keyCopied: "Copiado",
     noActiveKey: "Sin clave activa",
@@ -2297,9 +2679,18 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     nearbyViewAll: "Ver los {count} lugares",
     nearbyNoResults: "Sin resultados",
     nearbyBackToList: "Todos los lugares",
+    nearbyNearestTitle: "Encuentra el más cercano",
+    nearbyMapLoading: "Cargando mapa…",
+    nearbyMapUnavailable: "Vista previa no disponible",
+    nearbyLocationHint: "Activa la ubicación para ver distancias",
+    nearbyEmptyPlaces: "Aún no hay lugares cercanos configurados",
+    nearbyHotelLabel: "Hotel",
+    nearbyLoadFailed: "No se pudieron cargar los lugares cercanos",
+    nearbyRetry: "Reintentar",
     nearbySection: "Cerca",
 
     quickActionsSection: "Acciones rápidas",
+    quickActionsOthersSection: "Otros",
     touchToAsk: "Toca para preguntar →",
 
     infoSection: "A tu servicio",
@@ -2378,6 +2769,15 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     flowFoodConfirmQ: "Confirmar tu pedido",
     flowMenuLoading: "Cargando…",
     flowMenuEmpty: "No hay platos en el menú",
+    flowFoodAllTab: "Todo",
+    flowFoodSelectHint: "Toque los platos para pedir",
+    flowFoodQty: "Cantidad",
+    flowFoodItemNote: "Nota",
+    flowFoodItemNotePlaceholder: "Alergias, preferencias…",
+    flowFoodPlaceOrder: "Enviar pedido",
+    flowFoodItemsSelected: "{count} raciones",
+    flowFoodLinesSelected: "{count} platos",
+    flowFoodNoItems: "Seleccione al menos un plato",
     flowConfirmCategoryLabel: "Categoría",
 
     flowCatBreakfast: "Desayuno",
@@ -2499,6 +2899,23 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     quickActionCareTitle: "Cuídame",
     quickActionCareSubtitle: "Tus preferencias",
 
+    conciergeLaundry: "Lavandería",
+    conciergeSpa: "Spa y bienestar",
+    conciergeTaxi: "Taxi",
+    conciergeSalon: "Salón",
+    conciergeSheetTitle: "Reserva de {service}",
+    conciergeSheetSubtitle: "Recepción confirmará su reserva.",
+    conciergeWhenLabel: "Cuándo",
+    conciergeWhenAsap: "Lo antes posible",
+    conciergeWhenMorning: "Esta mañana",
+    conciergeWhenAfternoon: "Esta tarde",
+    conciergeWhenEvening: "Esta noche",
+    conciergeWhenTomorrow: "Mañana",
+    conciergeNotesLabel: "Notas (opcional)",
+    conciergeNotesPlaceholder: "ej. hora de recogida…",
+    conciergeSubmit: "Enviar a recepción",
+    conciergeSuccessToast: "Solicitud enviada — recepción confirmará pronto.",
+    conciergeSummary: "{service} · {when}",
 
     hotelConnectSection: "Hotel",
     receptionLiveTitle: "Recepción",
@@ -2535,6 +2952,16 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     reqStatusOpen: "Abierto",
     reqStatusInProgress: "En progreso",
     reqStatusResolved: "Completado",
+    myRequestsTabOpen: "Abierto",
+    myRequestsTabPreparing: "Preparando",
+    myRequestsTabCompleted: "Hecho",
+    myRequestsActiveHint: "{n} activo(s)",
+    myRequestsTapToView: "Toca para ver",
+    fulfillmentStepReceived: "Recibido",
+    fulfillmentStepKitchen: "Cocina",
+    fulfillmentStepEnRoute: "En camino",
+    fulfillmentStepDone: "Entregado",
+    fulfillmentEtaMinutes: "Aprox. ~{n} min",
     reqDeleteLabel: "Eliminar",
     reqDeleteConfirm: "¿Eliminar?",
     reqDeletedToast: "Solicitud eliminada",

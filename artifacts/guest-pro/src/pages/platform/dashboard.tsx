@@ -17,6 +17,7 @@ import { PlatformHotelManageSheet } from "@/components/platform/PlatformHotelMan
 import { PlatformHotelsList } from "@/components/platform/PlatformHotelsList";
 import { PlatformManagerEditSheet } from "@/components/platform/PlatformManagerEditSheet";
 import { PlatformHotelsTrack } from "@/components/platform/PlatformHotelsTrack";
+import { PlatformAiDefaultsSection } from "@/components/platform/PlatformAiDefaultsSection";
 import {
   changePlatformPassword,
   getPlatformSettings,
@@ -24,6 +25,7 @@ import {
   listPlatformTrack,
   updatePlatformHotel,
   updatePlatformSettings,
+  type PlatformAiDefaults,
   type PlatformHotel,
   type PlatformHotelTrack,
 } from "@/lib/platform-api";
@@ -63,6 +65,7 @@ export default function PlatformDashboard() {
   const [changingPassword, setChangingPassword] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState("");
   const [savingSettings, setSavingSettings] = useState(false);
+  const [savingAiDefaults, setSavingAiDefaults] = useState(false);
   const [togglingHotelId, setTogglingHotelId] = useState<number | null>(null);
   const [manageHotel, setManageHotel] = useState<PlatformHotel | null>(null);
   const [managePanel, setManagePanel] = useState<"default" | "delete">("default");
@@ -115,6 +118,19 @@ export default function PlatformDashboard() {
       toast.error(err instanceof Error ? err.message : "Update failed");
     } finally {
       setTogglingHotelId(null);
+    }
+  };
+
+  const onSaveAiDefaults = async (ai: PlatformAiDefaults) => {
+    setSavingAiDefaults(true);
+    try {
+      await updatePlatformSettings({ ai });
+      await queryClient.invalidateQueries({ queryKey: ["platform-settings"] });
+      toast.success("AI defaults updated");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save AI defaults");
+    } finally {
+      setSavingAiDefaults(false);
     }
   };
 
@@ -276,6 +292,18 @@ export default function PlatformDashboard() {
                   </Button>
                 </form>
               )}
+            </SectionCard>
+
+            <SectionCard
+              title="AI token defaults"
+              description="Platform-wide monthly budgets and max output tokens for manager AI (task reports, daily summaries, quick reports)."
+            >
+              <PlatformAiDefaultsSection
+                defaults={settingsData?.ai}
+                loading={settingsLoading}
+                saving={savingAiDefaults}
+                onSave={onSaveAiDefaults}
+              />
             </SectionCard>
 
             <SectionCard

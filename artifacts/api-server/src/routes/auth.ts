@@ -7,6 +7,7 @@ import { eq, and } from "drizzle-orm";
 import {
   authenticateManager,
   authenticateGuest,
+  authenticateEmployee,
   generateToken,
   verifyToken,
   exchangeGoogleCode,
@@ -46,6 +47,13 @@ const loginSchema = z.discriminatedUnion("type", [
     password: z.string().min(1, "Password required").max(200),
     /** When set, credentials must belong to this hotel tenant (slug). */
     hotelSlug: z.string().min(2).max(64).optional(),
+    /** manager = GM/reception login; restaurant = kitchen/room-service portal */
+    portal: z.enum(["manager", "restaurant"]).optional(),
+  }),
+  z.object({
+    type: z.literal("employee"),
+    employeeNumber: z.string().regex(/^\d{4}$/, "Employee number must be 4 digits"),
+    hotelSlug: z.string().min(2).max(64),
   }),
   z.object({
     type: z.literal("guest"),
@@ -126,7 +134,11 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   const body = parsed.data;
 
   if (body.type === "manager") {
-    const rateLimitKey = `manager:${body.email.toLowerCase()}`;
+    const portal = body.portal ?? "manager";
+    const isRestaurantPortal = portal === "restaurant";
+    const rateLimitKey = isRestaurantPortal
+      ? `restaurant:${body.email.toLowerCase()}`
+      : `manager:${body.email.toLowerCase()}`;
     const rateCheck = await checkLoginRateLimit(rateLimitKey);
     if (!rateCheck.allowed) {
       const waitMin = Math.ceil((rateCheck.retryAfterMs ?? 0) / 60_000);
@@ -157,6 +169,21 @@ router.post("/auth/login", async (req, res): Promise<void> => {
 
     if (!(await assertLoginHotelSlug(body.hotelSlug, user.hotelId, res))) return;
 
+    const isRestaurantStaff =
+      user.role === "personnel" && user.staffDepartment === "RESTAURANT";
+
+    if (isRestaurantStaff && !isRestaurantPortal) {
+      res.status(403).json({
+        error: "Restaurant staff must use the restaurant sign-in page",
+      });
+      return;
+    }
+
+    if (!isRestaurantStaff && isRestaurantPortal) {
+      res.status(401).json({ error: "Invalid credentials" });
+      return;
+    }
+
     await clearFailedLogins(rateLimitKey);
     // Use the user's actual DB role (manager or personnel) — never hardcode "manager"
     const staffRole = user.role;
@@ -170,7 +197,13 @@ router.post("/auth/login", async (req, res): Promise<void> => {
         action: "login_success",
         targetType: "user",
         targetId: user.id,
-        metadata: { email: user.email, provider: "local", role: staffRole, ip: getClientIp(req) },
+        metadata: {
+          email: user.email,
+          provider: "local",
+          role: staffRole,
+          portal,
+          ip: getClientIp(req),
+        },
       })
       .catch(() => {});
 
@@ -187,6 +220,57 @@ router.post("/auth/login", async (req, res): Promise<void> => {
         roomNumber: null,
         guestId: null,
         hotelId: user.hotelId,
+        staffDepartment: user.staffDepartment ?? null,
+      },
+    });
+    return;
+  }
+
+  if (body.type === "employee") {
+    const loginHotelId = await resolveLoginHotelId(body.hotelSlug, res);
+    if (loginHotelId === null || loginHotelId === undefined) return;
+
+    const rateLimitKey = `employee:${loginHotelId}:${body.employeeNumber}`;
+    const rateCheck = await checkLoginRateLimit(rateLimitKey);
+    if (!rateCheck.allowed) {
+      const waitMin = Math.ceil((rateCheck.retryAfterMs ?? 0) / 60_000);
+      res.status(429).json({
+        error: `Too many failed attempts. Try again in ${waitMin} minute${waitMin !== 1 ? "s" : ""}.`,
+      });
+      return;
+    }
+
+    const user = await authenticateEmployee(loginHotelId, body.employeeNumber);
+    if (!user) {
+      await recordFailedLogin(rateLimitKey);
+      res.status(401).json({ error: "Invalid employee number" });
+      return;
+    }
+
+    await clearFailedLogins(rateLimitKey);
+    const token = generateToken(
+      user.id,
+      user.role,
+      user.hotelId,
+      undefined,
+      user.staffDepartment ?? null,
+    );
+
+    res.json({
+      role: user.role,
+      token,
+      user: {
+        id: user.id,
+        role: user.role,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarUrl: user.avatarUrl ?? null,
+        roomNumber: null,
+        guestId: null,
+        hotelId: user.hotelId,
+        staffDepartment: user.staffDepartment,
+        employeeNumber: user.employeeNumber,
       },
     });
     return;

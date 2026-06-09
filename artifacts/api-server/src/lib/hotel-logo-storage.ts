@@ -112,7 +112,17 @@ export async function resolveHotelLogoUrl(
   }
 
   if (storedLogoUrl?.startsWith("/api/public/hotels/")) {
-    return storedLogoUrl;
+    const [row] = await db
+      .select({ id: hotelBrandingTable.id })
+      .from(hotelBrandingTable)
+      .where(eq(hotelBrandingTable.hotelId, hotelId));
+    if (row) {
+      await db
+        .update(hotelBrandingTable)
+        .set({ logoUrl: null })
+        .where(eq(hotelBrandingTable.hotelId, hotelId));
+    }
+    return null;
   }
 
   return null;

@@ -153,7 +153,7 @@ export default function GuestAutoLogin() {
           <div className="w-full flex flex-col gap-3">
             <Button
               className="w-full h-12 rounded-2xl bg-white text-zinc-900 font-medium hover:bg-zinc-100"
-              onClick={() => goTo(ROUTES.login)}
+              onClick={() => goTo(ROUTES.guestLogin)}
             >
               Sign in with Guest Key
             </Button>

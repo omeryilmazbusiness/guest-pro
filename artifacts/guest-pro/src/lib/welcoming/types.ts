@@ -28,9 +28,13 @@ export interface PlaceCoords {
 }
 
 export interface NearbyPlace {
+  id?: number;
   name: string;
-  type: "market" | "pharmacy" | "bazaar" | "restaurant" | "other";
+  type: "market" | "pharmacy" | "bazaar" | "mall" | "restaurant" | "other";
+  /** Street address shown in detail modal */
+  address?: string;
   distance: string;
+  distanceMeters?: number;
   /** Short description shown in the place modal */
   description?: string;
   /** GPS coordinates used for Google Maps links and the map preview */

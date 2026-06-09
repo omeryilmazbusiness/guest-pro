@@ -17,6 +17,7 @@ import { COUNTRIES, countryFlag } from "@/lib/locale";
 import { hotelLoginPath } from "@/lib/tenant-path";
 import { HOTEL_PLAN_TIERS, PLAN_LABELS, type HotelPlanTier } from "@/lib/platform-plans";
 import { HotelLogoUpload } from "@/components/platform/HotelLogoUpload";
+import { PlatformHotelAiSection } from "@/components/platform/PlatformHotelAiSection";
 import { dataUrlToJpegBlob, getHotelLogoSrc } from "@/lib/hotel-logo";
 import {
   deletePlatformHotel,
@@ -143,7 +144,7 @@ export function PlatformHotelManageSheet({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto rounded-2xl sm:max-w-md">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto rounded-2xl sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="font-serif">Manage hotel</DialogTitle>
           <DialogDescription>
@@ -236,6 +237,8 @@ export function PlatformHotelManageSheet({
               className="min-h-[64px] resize-none rounded-xl"
             />
           </div>
+
+          <PlatformHotelAiSection hotel={hotel} />
 
           <div className="flex gap-2 pt-2">
             <Button

@@ -218,6 +218,33 @@ export async function authenticateManager(email: string, password: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Employee portal authentication — 4-digit employee number per hotel
+// ---------------------------------------------------------------------------
+export async function authenticateEmployee(hotelId: number, employeeNumber: string) {
+  const normalized = employeeNumber.trim();
+  if (!/^\d{4}$/.test(normalized)) return null;
+
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(
+      and(
+        eq(usersTable.hotelId, hotelId),
+        eq(usersTable.employeeNumber, normalized),
+        eq(usersTable.role, "personnel"),
+        eq(usersTable.isActive, true),
+      ),
+    );
+
+  if (!user) return null;
+  if (user.staffDepartment === "RECEPTION" || user.staffDepartment === "RESTAURANT") {
+    return null;
+  }
+
+  return user;
+}
+
+// ---------------------------------------------------------------------------
 // Platform super-admin authentication
 // ---------------------------------------------------------------------------
 export async function authenticatePlatformAdmin(email: string, password: string) {

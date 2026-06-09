@@ -33,10 +33,17 @@ import {
   X,
   SlidersHorizontal,
   Check,
+  KeyRound,
   Sparkles,
   ConciergeBell,
   Luggage,
   UtensilsCrossed,
+  ChefHat,
+  Shield,
+  Wrench,
+  Megaphone,
+  Dumbbell,
+  Calculator,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -85,6 +92,8 @@ import { cn } from "@/lib/utils";
 import { useStaffLocale } from "@/hooks/use-staff-locale";
 import { EmployeeDetailSheet } from "@/components/manager/EmployeeDetailSheet";
 import { CreateStaffSheet } from "@/components/manager/CreateStaffSheet";
+import { DepartmentManagersSection } from "@/components/manager/DepartmentManagersSection";
+import { ResetPasswordDialog } from "@/components/manager/ResetPasswordDialog";
 import {
   listStaff,
   updateStaff,
@@ -105,9 +114,15 @@ import {
 
 const DEPT_ICONS: Record<StaffDepartment, React.FC<{ className?: string }>> = {
   HOUSEKEEPING: Sparkles,
-  RECEPTION:    ConciergeBell,
-  BELLMAN:      Luggage,
-  RESTAURANT:   UtensilsCrossed,
+  RECEPTION: ConciergeBell,
+  BELLMAN: Luggage,
+  RESTAURANT: UtensilsCrossed,
+  KITCHEN: ChefHat,
+  FINANCIAL_ACCOUNTING: Calculator,
+  SECURITY: Shield,
+  MAINTENANCE: Wrench,
+  MARKETING: Megaphone,
+  SPA_GYM: Dumbbell,
 };
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -335,6 +350,9 @@ function EmployeeCard({
   onDeactivate,
   onReactivate,
   onPermanentDelete,
+  onResetPassword,
+  showResetPassword = false,
+  resetPasswordLabel,
 }: {
   member:            StaffMember;
   onSelect?:         (m: StaffMember) => void;
@@ -342,6 +360,9 @@ function EmployeeCard({
   onDeactivate:      (m: StaffMember) => void;
   onReactivate:      (m: StaffMember) => void;
   onPermanentDelete: (m: StaffMember) => void;
+  onResetPassword?:  (m: StaffMember) => void;
+  showResetPassword?: boolean;
+  resetPasswordLabel?: string;
 }) {
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -408,6 +429,15 @@ function EmployeeCard({
                   <Pencil className="w-3.5 h-3.5 text-zinc-400" />
                   Edit details
                 </DropdownMenuItem>
+                {showResetPassword && onResetPassword && (
+                  <DropdownMenuItem
+                    onClick={() => onResetPassword(member)}
+                    className="flex items-center gap-2 rounded-lg cursor-pointer"
+                  >
+                    <KeyRound className="w-3.5 h-3.5 text-zinc-400" />
+                    {resetPasswordLabel ?? "Reset password"}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 {member.isActive ? (
                   <DropdownMenuItem
@@ -604,6 +634,10 @@ interface StaffTeamTabProps {
   onExternalCreateOpenChange?: (open: boolean) => void;
   /** Department managers: list and create only within this department. */
   lockedDepartment?: StaffDepartment;
+  /** General Manager: show department manager accounts section. */
+  showDepartmentManagers?: boolean;
+  /** General Manager: reset passwords and permanently delete staff. */
+  isGeneralManager?: boolean;
 }
 
 export function StaffTeamTab({
@@ -611,6 +645,8 @@ export function StaffTeamTab({
   externalCreateOpen,
   onExternalCreateOpenChange,
   lockedDepartment,
+  showDepartmentManagers = false,
+  isGeneralManager = false,
 }: StaffTeamTabProps) {
   const queryClient = useQueryClient();
   const { t } = useStaffLocale();
@@ -646,6 +682,17 @@ export function StaffTeamTab({
     onError:   (err: Error) => toast.error(err.message ?? "Failed to delete"),
   });
 
+  const passwordMutation = useMutation({
+    mutationFn: ({ id, password }: { id: number; password: string }) =>
+      updateStaff(id, { password }),
+    onSuccess: () => {
+      toast.success(t.passwordUpdated);
+      setPasswordTarget(null);
+      queryClient.invalidateQueries({ queryKey: STAFF_QUERY_KEY });
+    },
+    onError: (err: Error) => toast.error(err.message ?? "Failed to update password"),
+  });
+
   const invalidate = useCallback(
     () => queryClient.invalidateQueries({ queryKey: STAFF_QUERY_KEY }),
     [queryClient],
@@ -662,6 +709,7 @@ export function StaffTeamTab({
   // ── Other local UI state
   const [editTarget, setEditTarget]  = useState<StaffMember | null>(null);
   const [detailMember, setDetailMember] = useState<StaffMember | null>(null);
+  const [passwordTarget, setPasswordTarget] = useState<StaffMember | null>(null);
   const [deptFilter, setDeptFilter]  = useState<DeptFilter>(
     lockedDepartment ?? "ALL",
   );
@@ -681,6 +729,8 @@ export function StaffTeamTab({
   // ── Render
   return (
     <div className="space-y-4 pb-10">
+
+      {showDepartmentManagers && <DepartmentManagersSection />}
 
       {/* ── Search bar + filter icon ──────────────────────────────── */}
       {!isLoading && (staff ?? []).length > 0 && (
@@ -770,6 +820,9 @@ export function StaffTeamTab({
                 onDeactivate={(m) => deactivateMutation.mutate(m.id)}
                 onReactivate={(m) => reactivateMutation.mutate(m.id)}
                 onPermanentDelete={(m) => permanentDeleteMutation.mutate(m.id)}
+                showResetPassword={isGeneralManager}
+                onResetPassword={isGeneralManager ? setPasswordTarget : undefined}
+                resetPasswordLabel={t.resetPassword}
               />
             ))}
           </div>
@@ -792,6 +845,9 @@ export function StaffTeamTab({
                 onDeactivate={(m) => deactivateMutation.mutate(m.id)}
                 onReactivate={(m) => reactivateMutation.mutate(m.id)}
                 onPermanentDelete={(m) => permanentDeleteMutation.mutate(m.id)}
+                showResetPassword={isGeneralManager}
+                onResetPassword={isGeneralManager ? setPasswordTarget : undefined}
+                resetPasswordLabel={t.resetPassword}
               />
             ))}
           </div>
@@ -819,8 +875,31 @@ export function StaffTeamTab({
         onDeactivate={(m) => deactivateMutation.mutate(m.id)}
         onReactivate={(m) => reactivateMutation.mutate(m.id)}
         onPermanentDelete={(m) => permanentDeleteMutation.mutate(m.id)}
+        onResetPassword={
+          isGeneralManager
+            ? (m) => {
+                setDetailMember(null);
+                setPasswordTarget(m);
+              }
+            : undefined
+        }
         t={t}
       />
+
+      {isGeneralManager && (
+        <ResetPasswordDialog
+          open={!!passwordTarget}
+          onOpenChange={(open) => !open && setPasswordTarget(null)}
+          subjectName={passwordTarget ? staffDisplayName(passwordTarget) : ""}
+          onSubmit={(password) => {
+            if (passwordTarget) {
+              passwordMutation.mutate({ id: passwordTarget.id, password });
+            }
+          }}
+          isPending={passwordMutation.isPending}
+          t={t}
+        />
+      )}
     </div>
   );
 }

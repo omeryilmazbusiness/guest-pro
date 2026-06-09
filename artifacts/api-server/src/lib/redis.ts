@@ -2,74 +2,110 @@
  * redis.ts
  * Singleton Redis client used for:
  *   - Rate limiting (login brute-force + chat burst)
- *   - OAuth state store (oauthStateStore, googleExchangeCodes)
+ *   - OAuth state store
  *   - Distributed scheduler lock
  *
- * When REDIS_URL is not set (local dev without Redis) the module exports a
- * null client and callers fall back to their in-memory implementations.
+ * Call initRedis() during API startup. When REDIS_URL is missing or unreachable
+ * in development, redisClient stays null and callers use in-memory fallbacks.
  */
 
 import Redis from "ioredis";
 import { logger } from "./logger";
 
-let _client: Redis | null = null;
+export let redisClient: Redis | null = null;
 
-function createClient(): Redis | null {
-  const url = process.env.REDIS_URL;
+let initDone = false;
+
+function isProduction(): boolean {
+  return process.env.NODE_ENV === "production";
+}
+
+function buildClient(url: string): Redis {
+  return new Redis(url, {
+    maxRetriesPerRequest: 2,
+    enableReadyCheck: true,
+    lazyConnect: true,
+    connectTimeout: 5_000,
+    commandTimeout: 3_000,
+    retryStrategy(times) {
+      if (times > 5) return null;
+      return Math.min(times * 300, 2_000);
+    },
+  });
+}
+
+/** Ping Redis at startup; disable client in dev when unreachable. */
+export async function initRedis(): Promise<void> {
+  if (initDone) return;
+  initDone = true;
+
+  const url = process.env.REDIS_URL?.trim();
   if (!url) {
-    if (process.env.NODE_ENV === "production") {
+    if (isProduction()) {
       throw new Error(
-        "[FATAL] REDIS_URL is required in production. " +
-          "Set it to your Redis connection string before deploying."
+        "[FATAL] REDIS_URL is required in production. Set it before deploying.",
       );
     }
     logger.warn(
-      "REDIS_URL not set — falling back to in-memory stores. " +
-        "This is NOT safe for multi-instance or production deployments."
+      "REDIS_URL not set — using in-memory stores (dev only, not multi-instance safe).",
     );
-    return null;
+    redisClient = null;
+    return;
   }
 
-  const client = new Redis(url, {
-    maxRetriesPerRequest: 3,
-    enableReadyCheck: true,
-    lazyConnect: false,
-    connectTimeout: 10_000,
-    commandTimeout: 5_000,
-    // Reconnect with capped exponential back-off
-    retryStrategy(times) {
-      if (times > 10) {
-        logger.error("Redis: max reconnect attempts reached");
-        return null; // stop retrying
-      }
-      return Math.min(times * 200, 3000);
-    },
-  });
+  const client = buildClient(url);
 
-  client.on("connect", () => logger.info("Redis: connected"));
-  client.on("ready", () => logger.info("Redis: ready"));
-  client.on("error", (err) => logger.error({ err }, "Redis: error"));
-  client.on("close", () => logger.warn("Redis: connection closed"));
-  client.on("reconnecting", () => logger.info("Redis: reconnecting"));
+  try {
+    await client.connect();
+    await client.ping();
+    client.on("error", (err) => logger.error({ err }, "Redis: error"));
+    client.on("close", () => logger.warn("Redis: connection closed"));
+    redisClient = client;
+    logger.info("Redis: connected");
+  } catch (err) {
+    try {
+      client.disconnect();
+    } catch {
+      /* ignore */
+    }
+    redisClient = null;
 
-  return client;
+    if (isProduction()) {
+      throw new Error(
+        `Redis unavailable at startup: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+
+    logger.warn(
+      { err },
+      "Redis unreachable (timeout or wrong REDIS_URL) — using in-memory fallbacks for local dev. " +
+        "Unset REDIS_URL or point it to localhost:6379 to silence this.",
+    );
+  }
 }
 
 export function getRedisClient(): Redis | null {
-  if (_client === undefined) {
-    _client = createClient();
-  }
-  return _client;
+  return redisClient;
 }
 
-// Initialise eagerly so connection errors surface at startup
-_client = createClient();
-
-export { _client as redisClient };
+export function isRedisCommandError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const message = String((err as Error).message ?? "");
+  const name = String((err as Error).name ?? "");
+  return (
+    message.includes("Command timed out") ||
+    message.includes("Connection is closed") ||
+    message.includes("ECONNREFUSED") ||
+    message.includes("ETIMEDOUT") ||
+    message.includes("ENOTFOUND") ||
+    name === "MaxRetriesPerRequestError"
+  );
+}
 
 export async function closeRedis(): Promise<void> {
-  if (_client) {
-    await _client.quit();
-    _client = null;
+  if (redisClient) {
+    await redisClient.quit();
+    redisClient = null;
   }
+  initDone = false;
 }

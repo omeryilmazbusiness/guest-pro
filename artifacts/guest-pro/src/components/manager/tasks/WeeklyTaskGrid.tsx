@@ -1,129 +1,125 @@
 /**
- * WeeklyTaskGrid — employees × days; each day shows intra-day time bars.
+ * WeeklyTaskGrid — one card per weekday with expandable tables.
  */
 
 import { useMemo } from "react";
+import { ClipboardList, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { StaffTranslations } from "@/lib/staff-i18n";
 import type { StaffTask } from "@/lib/tasks";
 import {
-  addDays,
-  formatDayLabel,
-  layoutDayTaskBars,
+  formatDayHeading,
+  groupTasksByWeekDay,
+  isToday,
   startOfWeek,
-  tasksOnDayForAssignee,
-  TASK_LANE_HEIGHT_PX,
-  TASK_ROW_MIN_HEIGHT_PX,
   type GridEmployee,
 } from "@/lib/tasks-schedule";
-import { TaskTimelineBar } from "@/components/manager/tasks/TaskTimelineBar";
+import { tasksCard } from "@/lib/tasks-ui";
+import { EmployeeTimelineTable } from "@/components/manager/tasks/EmployeeTimelineTable";
+import { TaskTimelineTable } from "@/components/manager/tasks/TaskTimelineTable";
+import { TasksTableSection } from "@/components/manager/tasks/TasksTableSection";
 
 interface WeeklyTaskGridProps {
   weekAnchor: Date;
   employees: GridEmployee[];
   tasks: StaffTask[];
   locale: string;
+  t: StaffTranslations;
   onTaskClick: (task: StaffTask) => void;
 }
-
-const DAY_COL_MIN_PX = 88;
 
 export function WeeklyTaskGrid({
   weekAnchor,
   employees,
   tasks,
   locale,
+  t,
   onTaskClick,
 }: WeeklyTaskGridProps) {
   const weekStart = useMemo(() => startOfWeek(weekAnchor), [weekAnchor]);
-  const days = useMemo(
-    () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
-    [weekStart],
-  );
 
-  const rowLayouts = useMemo(() => {
-    return employees.map((emp) => {
-      const dayCells = days.map((d) => {
-        const dayTasks = tasksOnDayForAssignee(tasks, emp.id, d);
-        const { bars, laneCount } = layoutDayTaskBars(dayTasks, d);
-        const cellHeight = Math.max(
-          TASK_ROW_MIN_HEIGHT_PX - 8,
-          laneCount * TASK_LANE_HEIGHT_PX + 6,
-        );
-        return { day: d, bars, cellHeight };
-      });
-      const rowHeight = Math.max(
-        TASK_ROW_MIN_HEIGHT_PX,
-        ...dayCells.map((c) => c.cellHeight),
-      );
-      return { emp, dayCells, rowHeight };
-    });
-  }, [employees, tasks, days]);
+  const days = useMemo(
+    () => groupTasksByWeekDay(tasks, weekStart).map(({ day }) => day),
+    [tasks, weekStart],
+  );
 
   if (employees.length === 0) return null;
 
-  const gridCols = `5.75rem repeat(7, minmax(${DAY_COL_MIN_PX}px, 1fr))`;
-
   return (
-    <div className="overflow-x-auto rounded-2xl border border-zinc-100 bg-white shadow-sm">
-      <div
-        className="grid min-w-[40rem] w-full"
-        style={{ gridTemplateColumns: gridCols }}
-        role="table"
-        aria-label="Weekly task schedule"
-      >
-        <div className="sticky left-0 z-20 border-b border-zinc-100 bg-zinc-50/95 px-2 py-2" />
-        {days.map((d) => (
-          <div
-            key={d.toISOString()}
-            role="columnheader"
-            className="border-b border-l border-zinc-100 bg-zinc-50/95 px-1 py-2 text-center text-[10px] font-semibold text-zinc-600"
-          >
-            {formatDayLabel(d, locale)}
-          </div>
-        ))}
+    <div className="space-y-3" aria-label={t.tasksWeekView}>
+      {days.map((day) => {
+        const today = isToday(day);
+        const dayLabel = formatDayHeading(day, locale);
 
-        {rowLayouts.map(({ emp, dayCells, rowHeight }, rowIdx) => (
-          <div key={emp.id} className="contents" role="row">
-            <div
-              role="rowheader"
+        return (
+          <section key={day.toISOString()} className={cn(tasksCard, "overflow-hidden")}>
+            <header
               className={cn(
-                "sticky left-0 z-10 flex items-center border-b border-zinc-50 bg-white px-2 py-2",
-                rowIdx === rowLayouts.length - 1 && "rounded-bl-2xl",
+                "border-b px-3 py-2.5 sm:px-3.5",
+                today
+                  ? "border-sky-100 bg-sky-50/90"
+                  : "border-slate-100 bg-slate-50/50",
               )}
             >
-              <span className="truncate text-[11px] font-semibold text-zinc-800">
-                {emp.name}
-              </span>
-            </div>
-            {dayCells.map(({ day, bars, cellHeight }) => (
-              <div
-                key={day.toISOString()}
-                role="gridcell"
-                className="relative border-b border-l border-zinc-50 bg-zinc-50/20"
-                style={{ height: rowHeight, minHeight: rowHeight }}
+              <h3
+                className={cn(
+                  "text-[13px] font-semibold tracking-tight",
+                  today ? "text-sky-900" : "text-slate-700",
+                )}
               >
-                <div
-                  className="relative mx-0.5 mt-1 rounded-lg bg-white/60 ring-1 ring-zinc-100/80"
-                  style={{ height: cellHeight }}
-                >
-                  {bars.map((bar) => (
-                    <TaskTimelineBar
-                      key={bar.task.id}
-                      task={bar.task}
-                      leftPct={bar.leftPct}
-                      widthPct={bar.widthPct}
-                      lane={bar.lane}
-                      locale={locale}
-                      onClick={onTaskClick}
-                      dense
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
+                {dayLabel}
+              </h3>
+            </header>
+
+            <div className="space-y-0 p-2 sm:p-2.5">
+              <TasksTableSection
+                shell={false}
+                borderAccent={false}
+                icon={Users}
+                title={t.tasksScheduleEmployeeShort}
+                modalTitle={`${dayLabel} · ${t.tasksScheduleByEmployee}`}
+                accent="sky"
+                t={t}
+                renderContent={({ embedded, expanded }) => (
+                  <EmployeeTimelineTable
+                    day={day}
+                    employees={employees}
+                    tasks={tasks}
+                    locale={locale}
+                    t={t}
+                    onTaskClick={onTaskClick}
+                    embedded={embedded}
+                    expanded={expanded}
+                    ariaLabel={`${dayLabel} — ${t.tasksScheduleByEmployee}`}
+                  />
+                )}
+              />
+              <div className="my-2 border-t border-slate-100" />
+              <TasksTableSection
+                shell={false}
+                borderAccent={false}
+                icon={ClipboardList}
+                title={t.tasksScheduleTaskShort}
+                modalTitle={`${dayLabel} · ${t.tasksScheduleByTask}`}
+                accent="violet"
+                t={t}
+                renderContent={({ embedded, expanded }) => (
+                  <TaskTimelineTable
+                    day={day}
+                    tasks={tasks}
+                    locale={locale}
+                    t={t}
+                    onTaskClick={onTaskClick}
+                    embedded={embedded}
+                    expanded={expanded}
+                    ariaLabel={`${dayLabel} — ${t.tasksScheduleByTask}`}
+                  />
+                )}
+              />
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }

@@ -6,17 +6,17 @@ import { useState, useMemo, useCallback } from "react";
 import { LogOut, Menu } from "lucide-react";
 import { HotelBrandMark } from "@/components/HotelBrandMark";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { GuestTranslations } from "@/lib/i18n";
+import { useLocale } from "@/hooks/use-locale";
 import {
   buildGuestDashboardNavItems,
   scrollToGuestSection,
   type GuestDashboardNavItem,
 } from "@/lib/guest-dashboard-nav";
 import { GuestMobileNavDrawer } from "@/components/guest/GuestMobileNavDrawer";
+import { GuestLanguageSheet } from "@/components/guest/GuestLanguageSheet";
 
 interface GuestDashboardHeaderProps {
   appName: string;
-  t: GuestTranslations;
   nearbyLabel: string;
   showRequestsSection: boolean;
   onLogout: () => void;
@@ -24,13 +24,14 @@ interface GuestDashboardHeaderProps {
 
 export function GuestDashboardHeader({
   appName,
-  t,
   nearbyLabel,
   showRequestsSection,
   onLogout,
 }: GuestDashboardHeaderProps) {
   const isMobile = useIsMobile();
+  const { t, uiLocale, setLocale } = useLocale();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
 
   const navItems: GuestDashboardNavItem[] = useMemo(
     () =>
@@ -47,6 +48,11 @@ export function GuestDashboardHeader({
     window.requestAnimationFrame(() => {
       scrollToGuestSection(sectionId, { headerOffsetPx: 72 });
     });
+  }, []);
+
+  const handleLanguageOpen = useCallback(() => {
+    setDrawerOpen(false);
+    window.requestAnimationFrame(() => setLanguageOpen(true));
   }, []);
 
   return (
@@ -90,9 +96,20 @@ export function GuestDashboardHeader({
           menuTitle={t.navMenuTitle}
           appName={appName}
           closeLabel={t.cancel}
+          languageLabel={t.languageMenuLabel}
           onSelectItem={handleNavSelect}
+          onLanguageClick={handleLanguageOpen}
         />
       )}
+
+      <GuestLanguageSheet
+        open={languageOpen}
+        onClose={() => setLanguageOpen(false)}
+        currentLocale={uiLocale}
+        onSelect={setLocale}
+        title={t.languageSheetTitle}
+        cancelLabel={t.cancel}
+      />
     </>
   );
 }

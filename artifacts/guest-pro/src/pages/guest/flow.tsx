@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTenantNav } from "@/hooks/use-tenant-nav";
 import { ROUTES } from "@/lib/app-routes";
 import {
@@ -20,7 +21,8 @@ import {
   MessageSquare,
   Wind,
   Bell,
-  Heart,
+  Hammer,
+  HeartPulse,
   Utensils,
   PenLine,
   ChevronRight,
@@ -29,7 +31,10 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useLocale } from "@/hooks/use-locale";
 import { createServiceRequest, type ServiceRequestType } from "@/lib/service-requests";
+import { syncMyRequestToCache } from "@/lib/guest-my-requests-cache";
+import { markGuestDashboardScrollRestore } from "@/lib/guest-dashboard-scroll";
 import { useGuestMenu, type GuestMenuCategory, type GuestMenuItem } from "@/hooks/use-guest-menu";
+import { FoodOrderScreen } from "@/components/guest/food-order/FoodOrderScreen";
 import type { GuestTranslations } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -42,6 +47,7 @@ interface StepOption {
   label: string;
   subtitle?: string;
   icon: LucideIcon;
+  imageUrl?: string | null;
 }
 
 interface WizardStep {
@@ -179,7 +185,7 @@ function buildCareSteps(t: GuestTranslations): WizardStep[] {
       type: "select",
       skippable: true,
       options: [
-        { value: "STANDARD", label: t.flowComfortStd, subtitle: t.flowComfortStdHint, icon: Heart },
+        { value: "STANDARD", label: t.flowComfortStd, subtitle: t.flowComfortStdHint, icon: HeartPulse },
         { value: "EXTRA_PILLOW", label: t.flowComfortPillow, subtitle: t.flowComfortPillowHint, icon: Moon },
         { value: "EXTRA_BLANKET", label: t.flowComfortBlanket, subtitle: t.flowComfortBlanketHint, icon: Moon },
         { value: "COOL_ROOM", label: t.flowComfortCool, subtitle: t.flowComfortCoolHint, icon: Wind },
@@ -224,13 +230,13 @@ function buildFlowConfig(t: GuestTranslations, mode: FlowMode, liveCategories?: 
       requestType: "SUPPORT_REQUEST",
       accentText: "text-sky-600",
       accentIconBg: "bg-sky-50",
-      icon: Bell,
+      icon: Hammer,
     },
     care: {
       requestType: "CARE_PROFILE_UPDATE",
       accentText: "text-rose-500",
       accentIconBg: "bg-rose-50",
-      icon: Heart,
+      icon: HeartPulse,
     },
   };
 
@@ -397,6 +403,7 @@ function OptionButton({
   onSelect: (value: string, label: string) => void;
 }) {
   const IconComp = option.icon;
+  const hasImage = !!option.imageUrl;
   return (
     <button
       onClick={() => onSelect(option.value, option.label)}
@@ -409,15 +416,19 @@ function OptionButton({
       }`}
     >
       <div
-        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-          selected ? "bg-white/15" : dimmed ? "bg-zinc-100" : "bg-zinc-50"
+        className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${
+          selected ? "bg-white/15 ring-1 ring-white/20" : dimmed ? "bg-zinc-100" : "bg-zinc-50 ring-1 ring-zinc-100"
         }`}
       >
-        <IconComp
-          className={`w-4 h-4 ${
-            selected ? "text-white" : dimmed ? "text-zinc-300" : "text-zinc-500"
-          }`}
-        />
+        {hasImage ? (
+          <img src={option.imageUrl!} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <IconComp
+            className={`w-4 h-4 ${
+              selected ? "text-white" : dimmed ? "text-zinc-300" : "text-zinc-500"
+            }`}
+          />
+        )}
       </div>
       <div className="flex-1 min-w-0">
         <p
@@ -599,6 +610,7 @@ export default function GuidedFlowPage() {
   const { user, isAuthenticated } = useAuth();
   const { t } = useLocale();
   const goTo = useTenantNav();
+  const queryClient = useQueryClient();
 
   const params = new URLSearchParams(window.location.search);
   const rawMode = params.get("mode");
@@ -625,11 +637,21 @@ export default function GuidedFlowPage() {
   const [showCareBranch, setShowCareBranch] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) goTo(ROUTES.login);
+    if (!isAuthenticated) goTo(ROUTES.guestLogin);
     else if (user?.role !== "guest") goTo(ROUTES.manager);
   }, [isAuthenticated, user, goTo]);
 
   if (!isAuthenticated || user?.role !== "guest") return null;
+
+  // ── Food: single-screen multi-select menu (Acıktım) ───────────────────────
+  if (mode === "food" && !isComplete) {
+    return (
+      <FoodOrderScreen
+        onBack={() => goTo(ROUTES.guest)}
+        onComplete={() => setIsComplete(true)}
+      />
+    );
+  }
 
   const currentStep: WizardStep = (() => {
     if (stepIndex >= steps.length) return steps[steps.length - 1];
@@ -648,6 +670,7 @@ export default function GuidedFlowPage() {
                   ? `₺${item.priceAmount}`
                   : (item.description ?? item.portionInfo ?? item.allergenNotes ?? undefined),
               icon: Utensils,
+              imageUrl: item.imageUrl,
             }))
           : [{ value: "__empty__", label: menuLoading ? t.flowMenuLoading : t.flowMenuEmpty, icon: Utensils }];
       return { ...step, options };
@@ -737,11 +760,13 @@ export default function GuidedFlowPage() {
         answerLabels,
         mode === "food" ? itemsByCategory : undefined,
       );
-      await createServiceRequest({
+      const created = await createServiceRequest({
         requestType: config.requestType,
         summary,
         structuredData,
       });
+      syncMyRequestToCache(queryClient, created);
+      markGuestDashboardScrollRestore();
       setIsComplete(true);
     } catch (err) {
       const message = err instanceof Error ? err.message : t.sendFailed;

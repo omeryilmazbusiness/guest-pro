@@ -1,42 +1,53 @@
 /**
- * TasksTab — manager task scheduling (daily / weekly grids + overdue list).
+ * TasksTab — manager task scheduling (daily / weekly tables + overdue list).
  */
 
 import { useCallback, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ClipboardList, Loader2 } from "lucide-react";
+import { ClipboardList, Loader2, SearchX } from "lucide-react";
 import { toast } from "sonner";
 import { useStaffLocale } from "@/hooks/use-staff-locale";
+import { useOptionalHotelTenant } from "@/hooks/use-hotel-tenant";
 import { listStaff } from "@/lib/staff";
+import { listRoutineTasks } from "@/lib/routine-tasks";
+import { exportTasksWorkbook } from "@/lib/tasks-export";
 import {
   TASKS_QUERY_KEY,
   listTasks,
   type StaffTask,
 } from "@/lib/tasks";
+import { tasksCard } from "@/lib/tasks-ui";
+import { cn } from "@/lib/utils";
 import {
   addDays,
   filterTasksBySearch,
+  filterTasksByStatus,
   formatAnchorTitle,
   getDayRangeISO,
   getOverdueTasks,
   getWeekRangeISO,
   staffToGridEmployees,
+  type TaskStatusFilter,
   type TasksViewMode,
 } from "@/lib/tasks-schedule";
 import { TasksToolbar } from "@/components/manager/tasks/TasksToolbar";
 import { DailyTaskGrid } from "@/components/manager/tasks/DailyTaskGrid";
 import { WeeklyTaskGrid } from "@/components/manager/tasks/WeeklyTaskGrid";
 import { OverdueTaskList } from "@/components/manager/tasks/OverdueTaskList";
+import { RoutineTasksSection } from "@/components/manager/tasks/RoutineTasksSection";
 import { CreateTaskSheet } from "@/components/manager/tasks/CreateTaskSheet";
 import { TaskDetailSheet } from "@/components/manager/tasks/TaskDetailSheet";
+import { TaskPerformanceSection } from "@/components/manager/tasks/TaskPerformanceSection";
 
 export function TasksTab() {
   const { t, locale } = useStaffLocale();
+  const tenant = useOptionalHotelTenant();
   const queryClient = useQueryClient();
 
   const [viewMode, setViewMode] = useState<TasksViewMode>("day");
   const [anchorDate, setAnchorDate] = useState(() => new Date());
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<TaskStatusFilter>("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<StaffTask | null>(null);
 
@@ -59,11 +70,17 @@ export function TasksTab() {
     queryFn: () => listTasks(range.from, range.to),
   });
 
+  const { data: routines = [] } = useQuery({
+    queryKey: ["routine-tasks"],
+    queryFn: listRoutineTasks,
+    staleTime: 60_000,
+  });
+
   const employees = useMemo(() => staffToGridEmployees(staff), [staff]);
-  const filteredTasks = useMemo(
-    () => filterTasksBySearch(tasks, search),
-    [tasks, search],
-  );
+  const filteredTasks = useMemo(() => {
+    const searched = filterTasksBySearch(tasks, search);
+    return filterTasksByStatus(searched, statusFilter);
+  }, [tasks, search, statusFilter]);
   const overdue = useMemo(() => getOverdueTasks(tasks), [tasks]);
 
   const title = useMemo(
@@ -83,6 +100,29 @@ export function TasksTab() {
   );
 
   const isLoading = staffLoading || tasksLoading;
+  const hasSearch = search.trim().length > 0;
+  const searchHasNoResults = hasSearch && filteredTasks.length === 0 && tasks.length > 0;
+
+  const handleExport = useCallback(() => {
+    if (filteredTasks.length === 0) {
+      toast.error(t.tasksExportEmpty);
+      return;
+    }
+    try {
+      exportTasksWorkbook({
+        tasks: filteredTasks,
+        routines,
+        viewMode,
+        anchorDate,
+        locale,
+        t,
+        hotelName: tenant?.hotel?.name,
+      });
+      toast.success(t.tasksExportSuccess);
+    } catch {
+      toast.error(t.tasksFailed);
+    }
+  }, [filteredTasks, routines, viewMode, anchorDate, locale, t, tenant?.hotel?.name]);
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
@@ -104,27 +144,33 @@ export function TasksTab() {
           }
           setCreateOpen(true);
         }}
+        onExport={handleExport}
+        exportDisabled={isLoading || filteredTasks.length === 0}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
       />
 
       {isLoading ? (
         <div className="flex justify-center py-16">
-          <Loader2 className="h-7 w-7 animate-spin text-zinc-300" />
+          <Loader2 className="h-7 w-7 animate-spin text-slate-300" />
         </div>
       ) : employees.length === 0 ? (
-        <div className="rounded-2xl border border-zinc-100 bg-white py-12 text-center">
-          <ClipboardList className="mx-auto mb-3 h-10 w-10 text-zinc-200" />
-          <p className="text-sm font-medium text-zinc-700">{t.tasksNoEmployees}</p>
+        <div className={cn(tasksCard, "py-12 text-center")}>
+          <ClipboardList className="mx-auto mb-3 h-10 w-10 text-slate-200" />
+          <p className="text-sm font-medium text-slate-600">{t.tasksNoEmployees}</p>
         </div>
-      ) : filteredTasks.length === 0 && !search ? (
-        <div className="rounded-2xl border border-zinc-100 bg-white py-12 text-center">
-          <ClipboardList className="mx-auto mb-3 h-10 w-10 text-zinc-200" />
-          <p className="text-sm font-medium text-zinc-700">{t.tasksNoTasks}</p>
+      ) : searchHasNoResults ? (
+        <div className={cn(tasksCard, "py-12 text-center")}>
+          <SearchX className="mx-auto mb-3 h-10 w-10 text-slate-200" />
+          <p className="text-sm font-medium text-slate-600">{t.tasksNoTasks}</p>
           <button
             type="button"
-            onClick={() => setCreateOpen(true)}
-            className="mt-4 text-sm font-medium text-zinc-900 underline underline-offset-2"
+            onClick={() => setSearch("")}
+            className="mt-2 flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500 mx-auto"
+            aria-label={t.clearSearch}
+            title={t.clearSearch}
           >
-            {t.tasksNewTask}
+            <SearchX className="h-4 w-4" />
           </button>
         </div>
       ) : viewMode === "day" ? (
@@ -133,6 +179,7 @@ export function TasksTab() {
           employees={employees}
           tasks={filteredTasks}
           locale={locale}
+          t={t}
           onTaskClick={setSelectedTask}
         />
       ) : (
@@ -141,16 +188,31 @@ export function TasksTab() {
           employees={employees}
           tasks={filteredTasks}
           locale={locale}
+          t={t}
           onTaskClick={setSelectedTask}
         />
       )}
 
-      <OverdueTaskList
-        tasks={overdue}
-        t={t}
-        locale={locale}
-        onTaskClick={setSelectedTask}
-      />
+      {!isLoading && employees.length > 0 && (
+        <OverdueTaskList
+          tasks={overdue}
+          t={t}
+          locale={locale}
+          onTaskClick={setSelectedTask}
+        />
+      )}
+
+      {!isLoading && employees.length > 0 && tasks.length > 0 && (
+        <TaskPerformanceSection
+          tasks={filteredTasks.length > 0 ? filteredTasks : tasks}
+          periodFrom={range.from}
+          periodTo={range.to}
+          locale={locale}
+          t={t}
+        />
+      )}
+
+      <RoutineTasksSection staff={staff} />
 
       <CreateTaskSheet
         open={createOpen}

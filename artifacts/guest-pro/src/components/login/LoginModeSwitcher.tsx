@@ -1,5 +1,5 @@
 /**
- * LoginModeSwitcher — iOS-style liquid glass segmented control for login.
+ * LoginModeSwitcher — segmented control for guest / staff / employee login.
  */
 
 import { useCallback } from "react";
@@ -16,8 +16,9 @@ interface TabConfig {
 }
 
 const TABS: TabConfig[] = [
-  { id: "guest", label: "Guest Key", testId: "tab-guest", panelId: "panel-guest" },
+  { id: "guest", label: "Guest", testId: "tab-guest", panelId: "panel-guest" },
   { id: "manager", label: "Staff", testId: "tab-manager", panelId: "panel-manager" },
+  { id: "employee", label: "Employee", testId: "tab-employee", panelId: "panel-employee" },
 ];
 
 interface LoginModeSwitcherProps {
@@ -97,7 +98,7 @@ export function LoginModeSwitcher({ mode, onModeChange, className }: LoginModeSw
                 />
               )}
               <motion.span
-                className="relative z-10 text-sm font-semibold tracking-tight"
+                className="relative z-10 text-xs sm:text-sm font-semibold tracking-tight"
                 animate={{
                   opacity: active ? 1 : 0.55,
                   scale: active ? 1 : 0.97,

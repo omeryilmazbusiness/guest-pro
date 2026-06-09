@@ -1,10 +1,11 @@
 /**
- * TasksToolbar — date navigation, day/week toggle, search, create.
+ * TasksToolbar — icon + small label controls.
  */
 
 import {
   ChevronLeft,
   ChevronRight,
+  FileSpreadsheet,
   Plus,
   Search,
   X,
@@ -13,9 +14,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { StaffTranslations } from "@/lib/staff-i18n";
-import type { TasksViewMode } from "@/lib/tasks-schedule";
-import { Button } from "@/components/ui/button";
+import type { TasksViewMode, TaskStatusFilter } from "@/lib/tasks-schedule";
+import { tasksCard, tasksIconBtn } from "@/lib/tasks-ui";
 import { Input } from "@/components/ui/input";
+import { TasksIconChip } from "@/components/manager/tasks/TasksIconChip";
+import { TasksStatusFilter } from "@/components/manager/tasks/TasksStatusFilter";
 
 interface TasksToolbarProps {
   t: StaffTranslations;
@@ -28,6 +31,10 @@ interface TasksToolbarProps {
   onNext: () => void;
   onToday: () => void;
   onCreate: () => void;
+  onExport: () => void;
+  exportDisabled?: boolean;
+  statusFilter: TaskStatusFilter;
+  onStatusFilterChange: (filter: TaskStatusFilter) => void;
 }
 
 export function TasksToolbar({
@@ -41,96 +48,104 @@ export function TasksToolbar({
   onNext,
   onToday,
   onCreate,
+  onExport,
+  exportDisabled,
+  statusFilter,
+  onStatusFilterChange,
 }: TasksToolbarProps) {
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-1">
+    <div className={cn(tasksCard, "space-y-2.5 p-3")}>
+      <div className="flex items-center gap-1.5">
         <button
           type="button"
           onClick={onPrev}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white border border-zinc-100 text-zinc-600 hover:bg-zinc-50 touch-manipulation"
+          className={tasksIconBtn}
           aria-label={viewMode === "day" ? t.tasksPrevDay : t.tasksPrevWeek}
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
+
         <button
           type="button"
           onClick={onToday}
-          className="flex-1 min-w-0 rounded-xl bg-white border border-zinc-100 px-3 py-2 text-left touch-manipulation hover:bg-zinc-50"
+          className="min-w-0 flex-1 rounded-xl bg-slate-50/90 px-2 py-2 text-center ring-1 ring-slate-100 transition-colors hover:bg-slate-100/80 touch-manipulation"
         >
-          <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">
-            {viewMode === "day" ? t.tasksDayView : t.tasksWeekView}
+          <p className="text-[9px] font-medium uppercase tracking-wide text-slate-400">
+            {viewMode === "day" ? t.tasksDayShort : t.tasksWeekShort}
           </p>
-          <p className="text-sm font-semibold text-zinc-900 truncate">{title}</p>
+          <p className="truncate text-sm font-semibold text-slate-800">{title}</p>
         </button>
+
         <button
           type="button"
           onClick={onNext}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white border border-zinc-100 text-zinc-600 hover:bg-zinc-50 touch-manipulation"
+          className={tasksIconBtn}
           aria-label={viewMode === "day" ? t.tasksNextDay : t.tasksNextWeek}
         >
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="flex gap-1 rounded-2xl bg-zinc-100/90 p-1">
-        <button
-          type="button"
+      <div className="flex items-center gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <TasksIconChip
+          icon={CalendarDays}
+          label={t.tasksDayShort}
+          active={viewMode === "day"}
+          activeClass="bg-sky-500 text-white ring-sky-400"
           onClick={() => onViewModeChange("day")}
-          className={cn(
-            "flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[12px] font-semibold transition-colors touch-manipulation",
-            viewMode === "day"
-              ? "bg-white text-zinc-900 shadow-sm"
-              : "text-zinc-500 hover:text-zinc-700",
-          )}
-        >
-          <CalendarDays className="h-3.5 w-3.5" />
-          {t.tasksDayView}
-        </button>
-        <button
-          type="button"
+          aria-label={t.tasksDayView}
+          aria-pressed={viewMode === "day"}
+        />
+        <TasksIconChip
+          icon={CalendarRange}
+          label={t.tasksWeekShort}
+          active={viewMode === "week"}
+          activeClass="bg-violet-500 text-white ring-violet-400"
           onClick={() => onViewModeChange("week")}
-          className={cn(
-            "flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[12px] font-semibold transition-colors touch-manipulation",
-            viewMode === "week"
-              ? "bg-white text-zinc-900 shadow-sm"
-              : "text-zinc-500 hover:text-zinc-700",
-          )}
-        >
-          <CalendarRange className="h-3.5 w-3.5" />
-          {t.tasksWeekView}
-        </button>
+          aria-label={t.tasksWeekView}
+          aria-pressed={viewMode === "week"}
+        />
+        <TasksIconChip
+          icon={FileSpreadsheet}
+          label={t.tasksExportShort}
+          iconClass="text-emerald-600"
+          inactiveClass="bg-emerald-50/80 text-emerald-700 ring-emerald-200/70 hover:bg-emerald-50"
+          disabled={exportDisabled}
+          onClick={onExport}
+          aria-label={t.tasksExportExcel}
+        />
+        <TasksIconChip
+          icon={Plus}
+          label={t.tasksNewShort}
+          active
+          activeClass="bg-slate-800 text-white ring-slate-700"
+          onClick={onCreate}
+          aria-label={t.tasksNewTask}
+        />
       </div>
 
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+      <div className="flex items-center gap-2">
+        <TasksStatusFilter value={statusFilter} onChange={onStatusFilterChange} t={t} />
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
           <Input
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={t.tasksSearchPlaceholder}
-            className="h-10 rounded-2xl border-zinc-200 bg-white pl-9 pr-8 text-sm shadow-sm"
+            aria-label={t.tasksSearchPlaceholder}
+            placeholder={t.tasksSearchShort}
+            className="h-9 rounded-xl border-slate-200/80 bg-slate-50/50 pl-8 pr-7 text-sm shadow-none ring-1 ring-slate-100 focus-visible:ring-sky-300"
           />
-          {search && (
+          {search ? (
             <button
               type="button"
               onClick={() => onSearchChange("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-slate-400 hover:text-slate-700"
               aria-label={t.clearSearch}
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </button>
-          )}
+          ) : null}
         </div>
-        <Button
-          type="button"
-          onClick={onCreate}
-          size="sm"
-          className="h-10 shrink-0 rounded-2xl px-3.5 shadow-sm shadow-zinc-900/10"
-        >
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline sm:ml-1.5">{t.tasksNewTask}</span>
-        </Button>
       </div>
     </div>
   );

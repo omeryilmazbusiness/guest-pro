@@ -30,25 +30,33 @@ const exchangeKey = (code: string) => `oauth:exchange:${code}`;
 export async function saveOAuthState(state: string, meta: OAuthStateMeta = {}): Promise<void> {
   const payload = JSON.stringify(meta);
   if (redisClient) {
-    await redisClient.set(stateKey(state), payload, "EX", STATE_TTL_SEC);
-    return;
+    try {
+      await redisClient.set(stateKey(state), payload, "EX", STATE_TTL_SEC);
+      return;
+    } catch (err) {
+      logger.warn({ err }, "oauth-state-store: Redis write failed, using memory");
+    }
   }
   memStateStore.set(state, { expiresAt: Date.now() + STATE_TTL_SEC * 1000, meta });
 }
 
 export async function consumeOAuthState(state: string): Promise<OAuthStateMeta | null> {
   if (redisClient) {
-    const result = (await redisClient.eval(
-      `local v = redis.call('GET', KEYS[1])
-       if v then redis.call('DEL', KEYS[1]) return v else return false end`,
-      1,
-      stateKey(state),
-    )) as string | null;
-    if (!result) return null;
     try {
-      return JSON.parse(result) as OAuthStateMeta;
-    } catch {
-      return {};
+      const result = (await redisClient.eval(
+        `local v = redis.call('GET', KEYS[1])
+       if v then redis.call('DEL', KEYS[1]) return v else return false end`,
+        1,
+        stateKey(state),
+      )) as string | null;
+      if (!result) return null;
+      try {
+        return JSON.parse(result) as OAuthStateMeta;
+      } catch {
+        return {};
+      }
+    } catch (err) {
+      logger.warn({ err }, "oauth-state-store: Redis read failed, using memory");
     }
   }
   const entry = memStateStore.get(state);
@@ -64,21 +72,29 @@ export async function consumeOAuthState(state: string): Promise<OAuthStateMeta |
 
 export async function saveExchangeCode(code: string, token: string): Promise<void> {
   if (redisClient) {
-    await redisClient.set(exchangeKey(code), token, "EX", EXCHANGE_TTL_SEC);
-    return;
+    try {
+      await redisClient.set(exchangeKey(code), token, "EX", EXCHANGE_TTL_SEC);
+      return;
+    } catch (err) {
+      logger.warn({ err }, "oauth-state-store: Redis write failed, using memory");
+    }
   }
   memExchangeStore.set(code, { token, expiresAt: Date.now() + EXCHANGE_TTL_SEC * 1000 });
 }
 
 export async function consumeExchangeCode(code: string): Promise<string | null> {
   if (redisClient) {
-    const result = (await redisClient.eval(
-      `local v = redis.call('GET', KEYS[1])
+    try {
+      const result = (await redisClient.eval(
+        `local v = redis.call('GET', KEYS[1])
        if v then redis.call('DEL', KEYS[1]) return v else return false end`,
-      1,
-      exchangeKey(code),
-    )) as string | null;
-    return result ?? null;
+        1,
+        exchangeKey(code),
+      )) as string | null;
+      return result ?? null;
+    } catch (err) {
+      logger.warn({ err }, "oauth-state-store: Redis read failed, using memory");
+    }
   }
   const entry = memExchangeStore.get(code);
   if (!entry) return null;
@@ -87,12 +103,15 @@ export async function consumeExchangeCode(code: string): Promise<string | null> 
   return entry.token;
 }
 
-// ── Periodic in-memory cleanup (dev only) ────────────────────────────────────
-if (!redisClient) {
+// ── Periodic in-memory cleanup ───────────────────────────────────────────────
+let memCleanupStarted = false;
+
+export function ensureOAuthMemoryCleanup(): void {
+  if (memCleanupStarted) return;
+  memCleanupStarted = true;
   setInterval(() => {
     const now = Date.now();
     for (const [k, v] of memStateStore) if (now > v.expiresAt) memStateStore.delete(k);
     for (const [k, v] of memExchangeStore) if (now > v.expiresAt) memExchangeStore.delete(k);
   }, 60_000);
-  logger.warn("oauth-state-store: using in-memory fallback");
 }

@@ -145,11 +145,81 @@ export function platformVerifyOtp(challengeId: string, code: string, email: stri
 }
 
 export function getPlatformSettings() {
-  return platformFetch<{ verificationEmail: string }>("/platform/settings");
+  return platformFetch<PlatformSettingsResponse>("/platform/settings");
 }
 
-export function updatePlatformSettings(body: { verificationEmail: string }) {
-  return platformFetch<{ verificationEmail: string }>("/platform/settings", {
+export interface PlatformAiDefaults {
+  defaultMonthlyTokenBudget: number;
+  starterMonthlyBudget: number;
+  growthMonthlyBudget: number;
+  enterpriseMonthlyBudget: number;
+  defaultMaxOutputTaskReport: number;
+  defaultMaxOutputDailySummary: number;
+  defaultMaxOutputQuickReport: number;
+}
+
+export interface PlatformSettingsResponse {
+  verificationEmail: string;
+  ai: PlatformAiDefaults;
+}
+
+export function updatePlatformSettings(body: {
+  verificationEmail?: string;
+  ai?: Partial<PlatformAiDefaults>;
+}) {
+  return platformFetch<PlatformSettingsResponse>("/platform/settings", {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export interface HotelAiUsageSnapshot {
+  periodKey: string;
+  tokensUsed: number;
+  requestCount: number;
+  monthlyBudget: number;
+  remainingTokens: number;
+  usagePercent: number;
+  byFeature: {
+    taskReport: number;
+    dailySummary: number;
+    quickReport: number;
+  };
+}
+
+export interface HotelAiConfigResponse {
+  config: {
+    hotelId: number;
+    monthlyTokenBudget: number | null;
+    maxOutputTokensTaskReport: number | null;
+    maxOutputTokensDailySummary: number | null;
+    maxOutputTokensQuickReport: number | null;
+    taskReportsEnabled: boolean;
+    dailySummariesEnabled: boolean;
+    quickReportsEnabled: boolean;
+  };
+  usage: HotelAiUsageSnapshot;
+  effectiveMaxOutput: {
+    task_report: number;
+    daily_summary: number;
+    quick_report: number;
+  };
+  featureEnabled: {
+    task_report: boolean;
+    daily_summary: boolean;
+    quick_report: boolean;
+  };
+}
+
+export function getHotelAiConfig(hotelId: number) {
+  return platformFetch<HotelAiConfigResponse>(`/platform/hotels/${hotelId}/ai-config`);
+}
+
+export function updateHotelAiConfig(
+  hotelId: number,
+  body: Partial<HotelAiConfigResponse["config"]>,
+) {
+  return platformFetch<HotelAiConfigResponse>(`/platform/hotels/${hotelId}/ai-config`, {
     method: "PATCH",
     body: JSON.stringify(body),
   });

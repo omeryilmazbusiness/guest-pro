@@ -45,6 +45,18 @@ function Router() {
       <Route path={ROUTES.login}>
         <LegacyTenantRedirect segment={ROUTES.login} />
       </Route>
+      <Route path={ROUTES.guestLogin}>
+        <LegacyTenantRedirect segment={ROUTES.guestLogin} />
+      </Route>
+      <Route path={ROUTES.managerLogin}>
+        <LegacyTenantRedirect segment={ROUTES.managerLogin} />
+      </Route>
+      <Route path={ROUTES.personelLogin}>
+        <LegacyTenantRedirect segment={ROUTES.personelLogin} />
+      </Route>
+      <Route path={ROUTES.restaurantLogin}>
+        <LegacyTenantRedirect segment={ROUTES.restaurantLogin} />
+      </Route>
       <Route path={ROUTES.manager}>
         <LegacyTenantRedirect segment={ROUTES.manager} />
       </Route>
@@ -74,6 +86,9 @@ function Router() {
       </Route>
       <Route path={ROUTES.restaurant}>
         <LegacyTenantRedirect segment={ROUTES.restaurant} />
+      </Route>
+      <Route path={ROUTES.staff}>
+        <LegacyTenantRedirect segment={ROUTES.staff} />
       </Route>
 
       <Route component={NotFound} />

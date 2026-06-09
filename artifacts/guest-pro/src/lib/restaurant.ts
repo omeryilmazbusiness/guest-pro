@@ -40,6 +40,7 @@ export interface RestaurantMenuItem {
   allergenNotes: string | null;
   portionInfo: string | null;
   sortOrder: number;
+  imageUrl: string | null;
   createdByUserId: number | null;
   createdAt: string;
   updatedAt: string;
@@ -153,7 +154,51 @@ export async function deleteMenuItem(id: number): Promise<void> {
   await apiFetch<void>(`/api/restaurant/menu/${id}`, { method: "DELETE" });
 }
 
-// ── Stock ─────────────────────────────────────────────────────────────────────
+export async function bulkCreateMenuItems(
+  items: CreateMenuItemInput[],
+): Promise<{ imported: number; items: RestaurantMenuItem[] }> {
+  return apiFetch<{ imported: number; items: RestaurantMenuItem[] }>(
+    "/api/restaurant/menu/bulk",
+    {
+      method: "POST",
+      body: JSON.stringify({ items }),
+    },
+  );
+}
+
+function getAuthToken(): string | null {
+  return localStorage.getItem("guestpro_token");
+}
+
+export async function uploadMenuItemImage(id: number, image: Blob): Promise<{ imageUrl: string }> {
+  const token = getAuthToken();
+  const res = await fetch(`/api/restaurant/menu/${id}/image`, {
+    method: "PUT",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      "Content-Type": image.type || "application/octet-stream",
+    },
+    body: image,
+  });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(data.error ?? `Upload failed (${res.status})`);
+  }
+  return res.json() as Promise<{ imageUrl: string }>;
+}
+
+export async function deleteMenuItemImage(id: number): Promise<void> {
+  const token = getAuthToken();
+  const res = await fetch(`/api/restaurant/menu/${id}/image`, {
+    method: "DELETE",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok && res.status !== 204) {
+    throw new Error(`Failed to remove image (${res.status})`);
+  }
+}
+
+// ── Stock (legacy API — UI removed) ───────────────────────────────────────────
 
 export async function listStockItems(): Promise<RestaurantStockItem[]> {
   return apiFetch<RestaurantStockItem[]>("/api/restaurant/stock");

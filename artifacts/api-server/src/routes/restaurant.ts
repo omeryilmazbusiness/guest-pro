@@ -33,6 +33,11 @@ import { eq, and, desc, asc, sql } from "drizzle-orm";
 import { requireAuth, requireStaff } from "../middlewares/requireAuth";
 import { analyzeGuestCareForRestaurant } from "../lib/gemini";
 import { logger } from "../lib/logger";
+import {
+  saveMenuItemImage,
+  clearMenuItemImage,
+} from "../lib/menu-item-image-storage";
+import { hotelsTable } from "@workspace/db";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -44,10 +49,7 @@ function paramInt(val: string | string[]): number {
 }
 
 // ---------------------------------------------------------------------------
-// requireRestaurantAccess
-//   Managers pass unconditionally.
-//   Personnel pass only when staffDepartment === "RESTAURANT".
-//   All others → 403.
+// requireRestaurantAccess — restaurant personnel only (separate login portal).
 // ---------------------------------------------------------------------------
 function requireRestaurantAccess(
   req: Request,
@@ -56,11 +58,6 @@ function requireRestaurantAccess(
 ): void {
   requireStaff(req, res, () => {
     const role = req.session?.role;
-    if (role === "manager") {
-      next();
-      return;
-    }
-    // staffDepartment is typed on req.session (see requireAuth.ts declaration)
     if (role === "personnel" && req.session?.staffDepartment === "RESTAURANT") {
       next();
       return;
@@ -168,6 +165,7 @@ router.get("/restaurant/menu", async (req: Request, res: Response): Promise<void
       allergenNotes: restaurantMenuItemsTable.allergenNotes,
       portionInfo: restaurantMenuItemsTable.portionInfo,
       sortOrder: restaurantMenuItemsTable.sortOrder,
+      imageUrl: restaurantMenuItemsTable.imageUrl,
       createdByUserId: restaurantMenuItemsTable.createdByUserId,
       createdAt: restaurantMenuItemsTable.createdAt,
       updatedAt: restaurantMenuItemsTable.updatedAt,
@@ -196,6 +194,82 @@ router.post("/restaurant/menu", requireRestaurantAccess, async (req: Request, re
 
   logger.info({ itemId: item!.id, hotelId, userId }, "Restaurant menu item created");
   res.status(201).json(item);
+});
+
+/** POST /restaurant/menu/bulk — import many menu items at once */
+const bulkMenuImportSchema = z.object({
+  items: z.array(createMenuItemSchema).min(1).max(200),
+});
+
+router.post("/restaurant/menu/bulk", requireRestaurantAccess, async (req: Request, res: Response): Promise<void> => {
+  const hotelId = req.session!.hotelId;
+  const userId = req.session!.userId;
+
+  const parsed = bulkMenuImportSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid request" });
+    return;
+  }
+
+  const rows = parsed.data.items.map((item) => ({
+    ...item,
+    hotelId,
+    createdByUserId: userId,
+  }));
+
+  const inserted = await db
+    .insert(restaurantMenuItemsTable)
+    .values(rows)
+    .returning();
+
+  logger.info({ hotelId, userId, count: inserted.length }, "Restaurant menu bulk import");
+  res.status(201).json({ imported: inserted.length, items: inserted });
+});
+
+/** PUT /restaurant/menu/:id/image — raw JPEG/PNG/WebP body (max 3 MB) */
+router.put("/restaurant/menu/:id/image", requireRestaurantAccess, async (req: Request, res: Response): Promise<void> => {
+  const hotelId = req.session!.hotelId;
+  const id = paramInt(req.params.id!);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid item ID" }); return; }
+
+  const [existing] = await db
+    .select({ id: restaurantMenuItemsTable.id })
+    .from(restaurantMenuItemsTable)
+    .where(and(
+      eq(restaurantMenuItemsTable.id, id),
+      eq(restaurantMenuItemsTable.hotelId, hotelId),
+    ));
+  if (!existing) { res.status(404).json({ error: "Menu item not found" }); return; }
+
+  const [hotel] = await db
+    .select({ slug: hotelsTable.slug })
+    .from(hotelsTable)
+    .where(eq(hotelsTable.id, hotelId));
+  if (!hotel) { res.status(404).json({ error: "Hotel not found" }); return; }
+
+  const body = req.body;
+  if (!Buffer.isBuffer(body) || body.length === 0) {
+    res.status(400).json({ error: "Image body required" });
+    return;
+  }
+
+  try {
+    const imageUrl = await saveMenuItemImage(hotelId, hotel.slug, id, body);
+    res.json({ imageUrl });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Upload failed";
+    res.status(400).json({ error: message });
+  }
+});
+
+/** DELETE /restaurant/menu/:id/image */
+router.delete("/restaurant/menu/:id/image", requireRestaurantAccess, async (req: Request, res: Response): Promise<void> => {
+  const hotelId = req.session!.hotelId;
+  const id = paramInt(req.params.id!);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid item ID" }); return; }
+
+  await clearMenuItemImage(hotelId, id);
+  res.status(204).send();
 });
 
 /** PATCH /restaurant/menu/:id */

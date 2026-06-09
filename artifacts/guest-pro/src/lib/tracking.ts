@@ -52,6 +52,10 @@ export interface GuestPresence {
   lastSeenAt: string | null;
 }
 
+export interface GuestTrackingSettings {
+  enabled: boolean;
+}
+
 export interface HeartbeatPayload {
   lat: number | null;
   lng: number | null;
@@ -143,6 +147,11 @@ export async function deleteTrackingNetwork(id: number): Promise<void> {
   await customFetch<void>(`${BASE}/tracking/networks/${id}`, {
     method: "DELETE",
   });
+}
+
+/** Whether the hotel has guest presence tracking enabled (guest session). */
+export async function fetchGuestTrackingSettings(): Promise<GuestTrackingSettings> {
+  return customFetch<GuestTrackingSettings>(`${BASE}/tracking/guest-settings`);
 }
 
 export async function sendPresenceHeartbeat(

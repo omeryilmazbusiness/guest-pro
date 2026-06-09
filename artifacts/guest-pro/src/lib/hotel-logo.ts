@@ -1,4 +1,4 @@
-/** Build a cache-busted logo URL for <img src> */
+/** Build a cache-busted logo URL for <img src>. Requires an explicit logoUrl from the API. */
 export function getHotelLogoSrc(
   slug: string,
   logoUrl?: string | null,
@@ -10,8 +10,6 @@ export function getHotelLogoSrc(
     path = logoUrl;
   } else if (logoUrl?.startsWith("data:image/")) {
     return logoUrl;
-  } else if (slug) {
-    path = `/api/public/hotels/${encodeURIComponent(slug)}/logo`;
   }
 
   if (!path) return null;

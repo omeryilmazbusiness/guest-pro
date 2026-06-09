@@ -128,6 +128,36 @@
  *   75 →  90% (2100 – 2520ms): slide out to right + fade out
  *   90 → 100% (2520 – 2800ms): invisible, waiting for next mount
  */
+@keyframes guest-mic-spectrum-bloom {
+  0%, 100% {
+    opacity: 0.42;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 0.68;
+    transform: scale(1.045);
+  }
+}
+
+@keyframes guest-mic-spectrum-halo {
+  0%, 100% {
+    opacity: 0.28;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.48;
+    transform: scale(1.03);
+  }
+}
+
+.guest-mic-spectrum-bloom {
+  animation: guest-mic-spectrum-bloom 4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.guest-mic-spectrum-halo {
+  animation: guest-mic-spectrum-halo 4s cubic-bezier(0.45, 0, 0.55, 1) infinite 0.6s;
+}
+
 @keyframes greeting-slide {
   0%   { opacity: 0; transform: translateX(-18px); }
   15%  { opacity: 1; transform: translateX(0);     }

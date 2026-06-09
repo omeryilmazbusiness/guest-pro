@@ -11,7 +11,8 @@ import app from "./app";
 import { env } from "./config/env";
 import { logger } from "./lib/logger";
 import { startScheduler } from "./lib/scheduler";
-import { closeRedis } from "./lib/redis";
+import { closeRedis, initRedis, redisClient } from "./lib/redis";
+import { ensureOAuthMemoryCleanup } from "./lib/oauth-state-store";
 import { pool } from "@workspace/db";
 import { runMigrations } from "@workspace/db";
 
@@ -83,6 +84,16 @@ function isDatabaseUnreachable(err: unknown): boolean {
 async function bootstrap(): Promise<void> {
   let dbReady = false;
 
+  try {
+    await initRedis();
+    if (!redisClient) {
+      ensureOAuthMemoryCleanup();
+    }
+  } catch (err) {
+    logger.fatal({ err }, "Redis startup failed");
+    process.exit(1);
+  }
+
   // T-09: Run pending migrations before accepting traffic (required in production).
   try {
     logger.info("Running database migrations...");
@@ -91,6 +102,13 @@ async function bootstrap(): Promise<void> {
     await ensureLogosDirectory();
     logger.info("Migrations complete");
     dbReady = true;
+
+    if (env.NODE_ENV !== "production") {
+      const { ensureDevPlatformAdmin } = await import(
+        "./lib/platform-auth/ensure-dev-platform-admin"
+      );
+      await ensureDevPlatformAdmin();
+    }
 
     const {
       getEmailDeliveryMode,

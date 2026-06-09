@@ -46,6 +46,12 @@ app.use((req, res, next) => {
       limit: "3mb",
     })(req, res, next);
   }
+  if (req.method === "PUT" && /^\/api\/restaurant\/menu\/\d+\/image\/?$/.test(req.path)) {
+    return express.raw({
+      type: ["image/jpeg", "image/png", "image/webp", "application/octet-stream"],
+      limit: "3mb",
+    })(req, res, next);
+  }
   next();
 });
 

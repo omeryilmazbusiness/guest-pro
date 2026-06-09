@@ -16,6 +16,13 @@ import {
   ConciergeBell,
   Luggage,
   UtensilsCrossed,
+  Hash,
+  ChefHat,
+  Shield,
+  Wrench,
+  Megaphone,
+  Dumbbell,
+  Calculator,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -45,6 +52,12 @@ const DEPT_ICONS: Record<StaffDepartment, LucideIcon> = {
   RECEPTION: ConciergeBell,
   BELLMAN: Luggage,
   RESTAURANT: UtensilsCrossed,
+  KITCHEN: ChefHat,
+  FINANCIAL_ACCOUNTING: Calculator,
+  SECURITY: Shield,
+  MAINTENANCE: Wrench,
+  MARKETING: Megaphone,
+  SPA_GYM: Dumbbell,
 };
 
 function buildCreateSchema(t: StaffTranslations) {
@@ -53,6 +66,7 @@ function buildCreateSchema(t: StaffTranslations) {
     lastName: z.string().min(1, t.staffLastNameRequired).max(80),
     email: z.string().email(t.staffEmailInvalid),
     password: z.string().min(8, t.staffPasswordMin),
+    employeeNumber: z.string().regex(/^\d{4}$/, "Employee number must be 4 digits"),
     staffDepartment: z.enum(STAFF_DEPARTMENTS, {
       errorMap: () => ({ message: t.staffDeptRequired }),
     }),
@@ -89,6 +103,7 @@ export function CreateStaffSheet({
       lastName: "",
       email: "",
       password: "",
+      employeeNumber: "",
       staffDepartment: undefined,
     },
   });
@@ -100,6 +115,7 @@ export function CreateStaffSheet({
       lastName: "",
       email: "",
       password: "",
+      employeeNumber: "",
       staffDepartment: lockedDepartment ?? undefined,
     });
   }, [open, form, lockedDepartment]);
@@ -235,6 +251,33 @@ export function CreateStaffSheet({
                           autoComplete="new-password"
                           className={cn(fieldClass, "pl-9")}
                           {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage className="text-[11px]" />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="employeeNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={labelClass}>Employee No.</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Hash className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
+                        <Input
+                          inputMode="numeric"
+                          maxLength={4}
+                          placeholder="0000"
+                          autoComplete="off"
+                          className={cn(fieldClass, "pl-9 font-mono tracking-widest")}
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(e.target.value.replace(/\D/g, "").slice(0, 4))
+                          }
                         />
                       </div>
                     </FormControl>

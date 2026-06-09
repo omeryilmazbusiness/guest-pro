@@ -2,12 +2,12 @@
  * TaskDetailSheet — view, complete, edit, or cancel a staff task.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2, Loader2, Pencil, Trash2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useStaffLocale } from "@/hooks/use-staff-locale";
 import type { StaffTranslations } from "@/lib/staff-i18n";
@@ -24,16 +24,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   assigneeDisplayName,
   cancelTask,
   updateTask,
@@ -44,6 +34,7 @@ import { fromDatetimeLocalValue, toDatetimeLocalValue } from "@/lib/tasks-schedu
 import type { StaffMember } from "@/lib/staff";
 import { cn } from "@/lib/utils";
 import { TaskAssigneePicker } from "@/components/manager/tasks/TaskAssigneePicker";
+import { TaskSchedulePicker } from "@/components/manager/tasks/TaskSchedulePicker";
 
 const fieldClass =
   "h-9 rounded-xl border-zinc-100 bg-zinc-50/50 text-sm shadow-none focus-visible:bg-white focus-visible:ring-zinc-900";
@@ -110,8 +101,16 @@ export function TaskDetailSheet({
   });
 
   useEffect(() => {
+    if (!open) {
+      setConfirmDelete(false);
+      setEditing(false);
+    }
+  }, [open]);
+
+  useEffect(() => {
     if (!task || !open) return;
     setEditing(false);
+    setConfirmDelete(false);
     form.reset({
       title: task.title,
       description: task.description ?? "",
@@ -120,6 +119,14 @@ export function TaskDetailSheet({
       scheduledEndAt: toDatetimeLocalValue(task.scheduledEndAt),
     });
   }, [task, open, form]);
+
+  const handleSheetClose = useCallback(() => {
+    if (confirmDelete) {
+      setConfirmDelete(false);
+      return;
+    }
+    onClose();
+  }, [confirmDelete, onClose]);
 
   const completeMutation = useMutation({
     mutationFn: () => updateTask(task!.id, { status: "completed" }),
@@ -159,21 +166,65 @@ export function TaskDetailSheet({
     onError: (err: Error) => toast.error(err.message || t.tasksFailed),
   });
 
+  const scheduledStartAt = form.watch("scheduledStartAt");
+  const scheduledEndAt = form.watch("scheduledEndAt");
+  const scheduleError =
+    form.formState.errors.scheduledEndAt?.message ??
+    form.formState.errors.scheduledStartAt?.message;
+
   if (!task) return null;
 
   const start = new Date(task.scheduledStartAt);
   const end = new Date(task.scheduledEndAt);
   const canComplete = task.status !== "completed" && task.status !== "cancelled";
+  const sheetBusy =
+    completeMutation.isPending || saveMutation.isPending || deleteMutation.isPending;
 
   return (
-    <>
-      <ManagerCenterSheet
-        open={open}
-        onClose={onClose}
-        ariaLabel={t.tasksDetail}
-        closeLabel={t.cancel}
-        className="max-w-md"
-      >
+    <ManagerCenterSheet
+      open={open}
+      onClose={handleSheetClose}
+      ariaLabel={confirmDelete ? t.tasksDelete : t.tasksDetail}
+      closeLabel={t.cancel}
+      className="max-w-lg"
+    >
+      {confirmDelete ? (
+        <div className="flex flex-col">
+          <div className="px-5 pb-2 pt-8 text-center">
+            <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+              <AlertTriangle className="h-6 w-6" strokeWidth={1.75} />
+            </span>
+            <h2 className="text-base font-semibold text-zinc-900">{t.tasksDelete}</h2>
+            <p className="mt-2 text-sm text-zinc-500 leading-relaxed">{t.tasksDeleteConfirm}</p>
+            <p className="mt-3 rounded-xl bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-800">
+              {task.title}
+            </p>
+          </div>
+          <div className="flex gap-2 border-t border-zinc-100 px-5 py-4">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 flex-1 rounded-2xl"
+              disabled={deleteMutation.isPending}
+              onClick={() => setConfirmDelete(false)}
+            >
+              {t.cancel}
+            </Button>
+            <Button
+              type="button"
+              className="h-11 flex-1 rounded-2xl bg-red-600 text-white hover:bg-red-700"
+              disabled={deleteMutation.isPending}
+              onClick={() => deleteMutation.mutate()}
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                t.tasksDelete
+              )}
+            </Button>
+          </div>
+        </div>
+      ) : (
         <div className="flex flex-col max-h-[min(88dvh,560px)]">
           <div className="shrink-0 border-b border-zinc-100 px-5 pb-4 pt-5 pr-12">
             <div className="flex items-start justify-between gap-2">
@@ -261,33 +312,28 @@ export function TaskDetailSheet({
                       </FormItem>
                     )}
                   />
-                  <div className="grid grid-cols-2 gap-3">
-                    <FormField
-                      control={form.control}
-                      name="scheduledStartAt"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className={labelClass}>{t.tasksStart}</FormLabel>
-                          <FormControl>
-                            <Input type="datetime-local" className={fieldClass} {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                  <div className="space-y-2">
+                    <TaskSchedulePicker
+                      startValue={scheduledStartAt}
+                      endValue={scheduledEndAt}
+                      onStartChange={(value) =>
+                        form.setValue("scheduledStartAt", value, {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        })
+                      }
+                      onEndChange={(value) =>
+                        form.setValue("scheduledEndAt", value, {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        })
+                      }
+                      locale={locale}
+                      t={t}
                     />
-                    <FormField
-                      control={form.control}
-                      name="scheduledEndAt"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className={labelClass}>{t.tasksEnd}</FormLabel>
-                          <FormControl>
-                            <Input type="datetime-local" className={fieldClass} {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {scheduleError ? (
+                      <p className="text-[11px] font-medium text-destructive">{scheduleError}</p>
+                    ) : null}
                   </div>
                 </div>
                 <div className="shrink-0 flex gap-2 border-t border-zinc-100 px-5 py-4">
@@ -296,11 +342,20 @@ export function TaskDetailSheet({
                     variant="outline"
                     className="flex-1 h-10 rounded-2xl"
                     onClick={() => setEditing(false)}
+                    disabled={sheetBusy}
                   >
                     {t.cancel}
                   </Button>
-                  <Button type="submit" disabled={saveMutation.isPending} className="flex-1 h-10 rounded-2xl">
-                    {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t.tasksSave}
+                  <Button
+                    type="submit"
+                    disabled={saveMutation.isPending}
+                    className="flex-1 h-10 rounded-2xl"
+                  >
+                    {saveMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      t.tasksSave
+                    )}
                   </Button>
                 </div>
               </form>
@@ -320,7 +375,7 @@ export function TaskDetailSheet({
                     type="button"
                     className="h-10 w-full rounded-2xl"
                     onClick={() => completeMutation.mutate()}
-                    disabled={completeMutation.isPending}
+                    disabled={sheetBusy}
                   >
                     {completeMutation.isPending ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -338,6 +393,7 @@ export function TaskDetailSheet({
                     variant="outline"
                     className="flex-1 h-10 rounded-2xl"
                     onClick={() => setEditing(true)}
+                    disabled={sheetBusy}
                   >
                     <Pencil className="mr-1.5 h-3.5 w-3.5" />
                     {t.tasksEdit}
@@ -347,6 +403,7 @@ export function TaskDetailSheet({
                     variant="outline"
                     className="flex-1 h-10 rounded-2xl text-red-600 hover:text-red-700 hover:bg-red-50"
                     onClick={() => setConfirmDelete(true)}
+                    disabled={sheetBusy}
                   >
                     <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                     {t.tasksDelete}
@@ -356,30 +413,7 @@ export function TaskDetailSheet({
             </>
           )}
         </div>
-      </ManagerCenterSheet>
-
-      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t.tasksDelete}</AlertDialogTitle>
-            <AlertDialogDescription>{t.tasksDeleteConfirm}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700"
-              onClick={() => deleteMutation.mutate()}
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                t.tasksDelete
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+      )}
+    </ManagerCenterSheet>
   );
 }

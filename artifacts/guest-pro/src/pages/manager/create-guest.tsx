@@ -15,7 +15,7 @@ export default function CreateGuest() {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!isAuthenticated) setLocation(ROUTES.login);
+    if (!isAuthenticated) setLocation(ROUTES.managerLogin);
     else if (user && !isStaffRole(user.role)) setLocation("/guest");
   }, [isAuthenticated, user, setLocation]);
 

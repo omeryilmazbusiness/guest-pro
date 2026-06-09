@@ -39,15 +39,25 @@ function guestProMarketingPagesPlugin() {
   };
 }
 
+const pwaDevEnabled = process.env.VITE_PWA_DEV === "1";
+const enablePwa = process.env.NODE_ENV === "production" || pwaDevEnabled;
+
 export default defineConfig({
   base: basePath,
   plugins: [
     guestProMarketingPagesPlugin(),
     react(),
     tailwindcss(),
-    VitePWA({
-      registerType: "autoUpdate",
-      devOptions: { enabled: true, type: "module" },
+    ...(enablePwa
+      ? [
+          VitePWA({
+            registerType: "autoUpdate",
+            injectRegister: "auto",
+            devOptions: {
+              enabled: pwaDevEnabled,
+              type: "module",
+              navigateFallback: basePath === "/" ? "/index.html" : `${basePath}/index.html`,
+            },
       includeAssets: [
         "favicon.ico",
         "favicon-16x16.png",
@@ -77,6 +87,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        navigationPreload: false,
         navigateFallback: basePath === "/" ? "/index.html" : `${basePath}/index.html`,
         navigateFallbackDenylist: [
           /^\/api(?:\/|$)/,
@@ -96,7 +107,9 @@ export default defineConfig({
           },
         ],
       },
-    }),
+          }),
+        ]
+      : []),
   ],
   resolve: {
     alias: {
@@ -115,6 +128,11 @@ export default defineConfig({
     host: "0.0.0.0",
     allowedHosts: true,
     fs: { strict: true, deny: ["**/.*"] },
+    hmr: {
+      protocol: "ws",
+      host: "localhost",
+      clientPort: port,
+    },
     proxy: {
       "/api": {
         target: process.env.VITE_API_PROXY_TARGET ?? "http://localhost:3000",

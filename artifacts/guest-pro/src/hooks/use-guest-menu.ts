@@ -32,7 +32,7 @@ export const CATEGORY_ICONS: Record<MenuCategory, LucideIcon> = {
 
 // ── Category sort order (breakfast first, drinks/other last) ──────────────────
 
-const CATEGORY_ORDER: MenuCategory[] = [
+export const CATEGORY_ORDER: MenuCategory[] = [
   "BREAKFAST",
   "SOUP",
   "SALAD",
@@ -64,11 +64,21 @@ export interface GuestMenuItem {
   allergenNotes: string | null;
   portionInfo: string | null;
   sortOrder: number;
+  imageUrl: string | null;
+}
+
+export interface GuestMenuSection {
+  key: MenuCategory;
+  label: string;
+  icon: LucideIcon;
+  items: GuestMenuItem[];
 }
 
 export interface UseGuestMenuResult {
   categories: GuestMenuCategory[];
+  sections: GuestMenuSection[];
   itemsByCategory: Record<string, GuestMenuItem[]>;
+  allItems: GuestMenuItem[];
   isLoading: boolean;
   hasLiveData: boolean;
 }
@@ -115,6 +125,7 @@ export function useGuestMenu(): UseGuestMenuResult {
       allergenNotes: item.allergenNotes,
       portionInfo:  item.portionInfo,
       sortOrder:    item.sortOrder,
+      imageUrl:     item.imageUrl ?? null,
     }));
 
   // Group by category
@@ -131,35 +142,46 @@ export function useGuestMenu(): UseGuestMenuResult {
   }
 
   // Build category list in defined order, skip empty categories
-  const categories: GuestMenuCategory[] = CATEGORY_ORDER.filter(
-    (k) => (grouped[k]?.length ?? 0) > 0
+  const categoryLabel = (k: MenuCategory): string =>
+    k === "BREAKFAST"
+      ? t.flowCatBreakfast
+      : k === "SOUP"
+        ? t.flowCatSoup
+        : k === "SALAD"
+          ? t.flowCatSalad
+          : k === "APPETIZER"
+            ? t.flowCatAppetizer
+            : k === "MAIN_COURSE"
+              ? t.flowCatMain
+              : k === "DESSERT"
+                ? t.flowCatDessert
+                : k === "SNACK"
+                  ? t.flowCatSnack
+                  : k === "BEVERAGE"
+                    ? t.flowCatDrinks
+                    : t.flowCatOther;
+
+  const sections: GuestMenuSection[] = CATEGORY_ORDER.filter(
+    (k) => (grouped[k]?.length ?? 0) > 0,
   ).map((k) => ({
-    key:       k,
-    label:
-      k === "BREAKFAST"
-        ? t.flowCatBreakfast
-        : k === "SOUP"
-          ? t.flowCatSoup
-          : k === "SALAD"
-            ? t.flowCatSalad
-            : k === "APPETIZER"
-              ? t.flowCatAppetizer
-              : k === "MAIN_COURSE"
-                ? t.flowCatMain
-                : k === "DESSERT"
-                  ? t.flowCatDessert
-                  : k === "SNACK"
-                    ? t.flowCatSnack
-                    : k === "BEVERAGE"
-                      ? t.flowCatDrinks
-                      : t.flowCatOther,
-    itemCount: grouped[k]!.length,
-    icon:      CATEGORY_ICONS[k],
+    key: k,
+    label: categoryLabel(k),
+    icon: CATEGORY_ICONS[k],
+    items: grouped[k]!,
+  }));
+
+  const categories: GuestMenuCategory[] = sections.map((s) => ({
+    key: s.key,
+    label: s.label,
+    itemCount: s.items.length,
+    icon: s.icon,
   }));
 
   return {
     categories,
+    sections,
     itemsByCategory: grouped,
+    allItems,
     isLoading,
     hasLiveData: allItems.length > 0,
   };

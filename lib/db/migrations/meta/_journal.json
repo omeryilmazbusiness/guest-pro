@@ -64,6 +64,34 @@
       "when": 1777496900000,
       "tag": "0008_platform_auth_security",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1777497000000,
+      "tag": "0013_menu_item_image",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1777497100000,
+      "tag": "0014_hotel_floor_wifi",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1777497200000,
+      "tag": "0015_hotel_nearby_places",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1777497300000,
+      "tag": "0016_hotel_nearby_settings",
+      "breakpoints": true
     }
   ]
 }

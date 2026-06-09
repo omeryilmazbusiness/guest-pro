@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useLocale } from "@/hooks/use-locale";
 import { HOTEL_CONFIG } from "@/lib/welcoming/hotel-content";
 import { createServiceRequest } from "@/lib/service-requests";
+import { syncMyRequestToCache } from "@/lib/guest-my-requests-cache";
 import { cn } from "@/lib/utils";
 import { dash } from "@/lib/guest-dashboard-ui";
 
@@ -32,7 +33,7 @@ export function GuestAtYourServicePanel({ appName = "Guest Pro" }: GuestAtYourSe
     }
     setSubmittingFeedback(true);
     try {
-      await createServiceRequest({
+      const created = await createServiceRequest({
         requestType: "GENERAL_SERVICE_REQUEST",
         summary: `Guest feedback · ${rating}★${comment.trim() ? ` · ${comment.trim().slice(0, 80)}` : ""}`,
         structuredData: {
@@ -41,10 +42,10 @@ export function GuestAtYourServicePanel({ appName = "Guest Pro" }: GuestAtYourSe
           comment: comment.trim() || null,
         },
       });
+      syncMyRequestToCache(queryClient, created);
       toast.success(t.feedbackSuccessToast);
       setComment("");
       setRating(0);
-      void queryClient.invalidateQueries({ queryKey: ["my-requests"] });
     } catch {
       toast.error(t.sendFailed);
     } finally {
@@ -57,14 +58,14 @@ export function GuestAtYourServicePanel({ appName = "Guest Pro" }: GuestAtYourSe
     if (!text) return;
     setSubmittingComplaint(true);
     try {
-      await createServiceRequest({
+      const created = await createServiceRequest({
         requestType: "SUPPORT_REQUEST",
         summary: text.slice(0, 200),
         structuredData: { kind: "guest_complaint_suggestion", message: text },
       });
+      syncMyRequestToCache(queryClient, created);
       toast.success(t.complaintSuccessToast);
       setComplaint("");
-      void queryClient.invalidateQueries({ queryKey: ["my-requests"] });
     } catch {
       toast.error(t.sendFailed);
     } finally {

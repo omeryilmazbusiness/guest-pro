@@ -1,46 +1,35 @@
 /**
  * useTrackingHeartbeat — Guest presence heartbeat hook.
  *
- * Requests geolocation and sends a heartbeat to the backend so the server
- * can resolve the guest's tracking status (IN_HOTEL_AND_ON_WIFI, etc.).
- *
- * ── Rate-limit design ──────────────────────────────────────────────────────
- * The hook does NOT send a null "UNKNOWN" heartbeat on mount.
- * Reason: doing so stamps lastSentAt and then the rate limiter blocks the
- * real GPS position that arrives 1-5 s later via watchPosition, leaving the
- * guest permanently at UNKNOWN until the full 60 s interval expires.
- *
- * Instead:
- *  - The first heartbeat with real coordinates is ALWAYS sent immediately
- *    (rate limit is bypassed for the very first successful position).
- *  - Subsequent positions are rate-limited to at most once per 60 s.
- *  - If geolocation is unsupported or denied, a single null heartbeat is
- *    sent so the backend records UNKNOWN — but this only happens AFTER the
- *    real attempt has failed, so it never clobbers a pending GPS fix.
- *
- * ── Accuracy filtering ─────────────────────────────────────────────────────
- * Positions with accuracy > MAX_ACCURACY_METERS (500 m) are skipped.
- * The backend will keep the previous snapshot until a better fix arrives.
- * This prevents a coarse IP-only geolocation blob from overriding a good
- * GPS fix that placed the guest inside the hotel.
- *
- * ── Privacy ────────────────────────────────────────────────────────────────
- * Location is only sent to this app's own backend.
- * Permission denied / unsupported is handled cleanly — no errors surfaced.
+ * Sends periodic heartbeats (coordinates + server-seen IP) when hotel tracking
+ * is enabled. Does NOT call geolocation when tracking is off or permission is
+ * denied — avoids CoreLocation console noise on desktop Safari.
  */
 
 import { useEffect, useRef, useCallback } from "react";
-import { sendPresenceHeartbeat } from "@/lib/tracking";
+import { useQuery } from "@tanstack/react-query";
+import { sendPresenceHeartbeat, fetchGuestTrackingSettings } from "@/lib/tracking";
+import {
+  isGeolocationSupported,
+  queryGeolocationPermission,
+  readPositionOnce,
+} from "@/lib/geolocation";
 
-const HEARTBEAT_INTERVAL_MS = 60_000;   // min time between heartbeats
-const FALLBACK_TIMEOUT_MS   = 12_000;   // send null if no position in 12 s
-const MAX_ACCURACY_METERS   = 500;      // skip positions coarser than this
+const HEARTBEAT_INTERVAL_MS = 60_000;
+const MAX_ACCURACY_METERS = 500;
+const GUEST_SETTINGS_KEY = ["tracking", "guest-settings"] as const;
 
 export function useTrackingHeartbeat() {
-  const lastSentAt       = useRef<number>(0);
-  const hasSentFirst     = useRef<boolean>(false);  // true after first real send
-  const watchIdRef       = useRef<number | null>(null);
-  const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSentAt = useRef(0);
+  const geoBlockedRef = useRef(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const { data: settings } = useQuery({
+    queryKey: GUEST_SETTINGS_KEY,
+    queryFn: fetchGuestTrackingSettings,
+    staleTime: 5 * 60_000,
+    retry: 1,
+  });
 
   const dispatchHeartbeat = useCallback(
     (lat: number | null, lng: number | null, accuracy: number | null) => {
@@ -48,98 +37,53 @@ export function useTrackingHeartbeat() {
         // Heartbeat failures must not affect the guest UX.
       });
       lastSentAt.current = Date.now();
-      hasSentFirst.current = true;
     },
-    []
+    [],
   );
 
-  const tryHeartbeat = useCallback(
-    (lat: number | null, lng: number | null, accuracy: number | null) => {
-      const isFirstEver = !hasSentFirst.current;
-
-      // Always send the very first real position — do not rate-limit it.
-      if (isFirstEver) {
-        dispatchHeartbeat(lat, lng, accuracy);
-        return;
-      }
-
-      // Subsequent: respect the rate limit.
-      if (Date.now() - lastSentAt.current >= HEARTBEAT_INTERVAL_MS) {
-        dispatchHeartbeat(lat, lng, accuracy);
-      }
-    },
-    [dispatchHeartbeat]
-  );
-
-  useEffect(() => {
-    // ── No geolocation support ───────────────────────────────────────────
-    if (!("geolocation" in navigator)) {
+  const runCycle = useCallback(async () => {
+    if (geoBlockedRef.current || !isGeolocationSupported()) {
       dispatchHeartbeat(null, null, null);
       return;
     }
 
-    // ── Fallback: if no position arrives in FALLBACK_TIMEOUT_MS, send null
-    // This handles the case where the user dismisses the permission prompt or
-    // the device takes too long to get a fix.
-    fallbackTimerRef.current = setTimeout(() => {
-      if (!hasSentFirst.current) {
-        dispatchHeartbeat(null, null, null);
-      }
-    }, FALLBACK_TIMEOUT_MS);
+    const permission = await queryGeolocationPermission();
+    if (permission === "denied") {
+      geoBlockedRef.current = true;
+      dispatchHeartbeat(null, null, null);
+      return;
+    }
 
-    // ── watchPosition ────────────────────────────────────────────────────
-    const onPosition = (pos: GeolocationPosition) => {
-      // Clear the fallback timer — we got a real position.
-      if (fallbackTimerRef.current !== null) {
-        clearTimeout(fallbackTimerRef.current);
-        fallbackTimerRef.current = null;
-      }
+    const position = await readPositionOnce();
+    if (!position) {
+      dispatchHeartbeat(null, null, null);
+      return;
+    }
 
-      const { latitude, longitude, accuracy } = pos.coords;
+    if (position.accuracy > MAX_ACCURACY_METERS) {
+      dispatchHeartbeat(null, null, position.accuracy);
+      return;
+    }
 
-      // Skip coarse positions to avoid geofence false-positives.
-      // Still send null so backend knows we're alive but can't place us.
-      if (accuracy > MAX_ACCURACY_METERS) {
-        tryHeartbeat(null, null, accuracy);
-        return;
-      }
+    dispatchHeartbeat(position.lat, position.lng, position.accuracy);
+  }, [dispatchHeartbeat]);
 
-      tryHeartbeat(latitude, longitude, accuracy);
-    };
+  useEffect(() => {
+    if (settings === undefined) return;
+    if (!settings.enabled) return;
 
-    const onError = () => {
-      // Clear the fallback timer — we got a definitive error.
-      if (fallbackTimerRef.current !== null) {
-        clearTimeout(fallbackTimerRef.current);
-        fallbackTimerRef.current = null;
-      }
-      // Send one null heartbeat so backend records UNKNOWN.
-      if (!hasSentFirst.current) {
-        dispatchHeartbeat(null, null, null);
-      }
-    };
+    void runCycle();
 
-    const geoOptions: PositionOptions = {
-      enableHighAccuracy: true,   // GPS-grade accuracy for indoor geofencing
-      timeout: 15_000,
-      maximumAge: 30_000,
-    };
-
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      onPosition,
-      onError,
-      geoOptions,
-    );
+    intervalRef.current = setInterval(() => {
+      if (Date.now() - lastSentAt.current < HEARTBEAT_INTERVAL_MS - 2_000) return;
+      void runCycle();
+    }, HEARTBEAT_INTERVAL_MS);
 
     return () => {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
-      if (fallbackTimerRef.current !== null) {
-        clearTimeout(fallbackTimerRef.current);
-        fallbackTimerRef.current = null;
+      if (intervalRef.current !== null) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
-  }, [dispatchHeartbeat, tryHeartbeat]);
+  }, [settings, runCycle]);
 }

@@ -24,7 +24,7 @@ function defaultState(): LockoutState {
 
 async function readState(email: string): Promise<LockoutState> {
   const key = KEY_PREFIX + email;
-  if (redisClient) {
+  if (redisClient && process.env.NODE_ENV === "production") {
     try {
       const raw = await withAsyncTimeout(
         "platform-lockout redis get",
@@ -42,7 +42,7 @@ async function readState(email: string): Promise<LockoutState> {
 
 async function writeState(email: string, state: LockoutState): Promise<void> {
   const key = KEY_PREFIX + email;
-  if (redisClient) {
+  if (redisClient && process.env.NODE_ENV === "production") {
     try {
       const ttlSec = 24 * 60 * 60;
       await withAsyncTimeout(
@@ -116,7 +116,7 @@ export class PlatformLoginLockoutService {
 
   async clear(email: string): Promise<void> {
     const normalized = this.normalizeEmail(email);
-    if (redisClient) {
+    if (redisClient && process.env.NODE_ENV === "production") {
       try {
         await withAsyncTimeout(
           "platform-lockout redis del",

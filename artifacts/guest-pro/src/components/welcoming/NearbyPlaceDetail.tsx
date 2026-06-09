@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { MapPin, Navigation, QrCode } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { cn } from "@/lib/utils";
-import type { NearbyPlace } from "@/lib/welcoming/types";
+import type { NearbyPlace, PlaceCoords } from "@/lib/welcoming/types";
 import type { WelcomingStrings } from "@/lib/welcoming/hotel-content";
 import { getNearbyTypeLabel } from "@/lib/welcoming/nearby-place-meta";
 import { NearbyPlaceTypeIcon } from "./NearbyPlaceTypeIcon";
@@ -16,9 +16,17 @@ import {
   buildOsmEmbedUrl,
 } from "@/lib/welcoming/maps";
 
-function QrPanel({ place, s }: { place: NearbyPlace; s: WelcomingStrings }) {
+function QrPanel({
+  place,
+  s,
+  guestOrigin,
+}: {
+  place: NearbyPlace;
+  s: WelcomingStrings;
+  guestOrigin?: PlaceCoords | null;
+}) {
   if (!place.coords) return null;
-  const qrValue = buildQrPayload(place.coords, place.name);
+  const qrValue = buildQrPayload(place.coords, place.name, guestOrigin ?? undefined);
   return (
     <div className="mt-4 border-t border-zinc-100 pt-4 flex flex-col items-center gap-3">
       <div className="rounded-2xl border border-zinc-100 bg-white p-3 shadow-sm">
@@ -60,14 +68,15 @@ function MapEmbed({ place }: { place: NearbyPlace }) {
 interface NearbyPlaceDetailProps {
   place: NearbyPlace;
   s: WelcomingStrings;
+  guestOrigin?: PlaceCoords | null;
   className?: string;
 }
 
-export function NearbyPlaceDetail({ place, s, className }: NearbyPlaceDetailProps) {
+export function NearbyPlaceDetail({ place, s, guestOrigin, className }: NearbyPlaceDetailProps) {
   const [showQr, setShowQr] = useState(false);
   const typeLabel = getNearbyTypeLabel(s, place.type);
   const mapsLink = place.coords
-    ? buildGoogleMapsDirectionsLink(place.coords, place.name)
+    ? buildGoogleMapsDirectionsLink(place.coords, place.name, guestOrigin ?? undefined)
     : `https://www.google.com/maps/search/${encodeURIComponent(place.name)}`;
 
   useEffect(() => {
@@ -93,6 +102,9 @@ export function NearbyPlaceDetail({ place, s, className }: NearbyPlaceDetailProp
                 {place.distance}
               </span>
             </div>
+            {place.address && (
+              <p className="mt-2 text-[12px] leading-snug text-zinc-500">{place.address}</p>
+            )}
           </div>
         </div>
       </div>
@@ -128,7 +140,7 @@ export function NearbyPlaceDetail({ place, s, className }: NearbyPlaceDetailProp
             </button>
           )}
         </div>
-        {showQr && <QrPanel place={place} s={s} />}
+        {showQr && <QrPanel place={place} s={s} guestOrigin={guestOrigin} />}
       </div>
     </div>
   );
