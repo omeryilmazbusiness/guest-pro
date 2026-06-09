@@ -120,6 +120,13 @@
       "when": 1777497300000,
       "tag": "0016_hotel_nearby_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1777497400000,
+      "tag": "0017_backfill_skipped_schema",
+      "breakpoints": true
     }
   ]
 }
