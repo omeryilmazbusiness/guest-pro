@@ -14,7 +14,11 @@ import { startScheduler } from "./lib/scheduler";
 import { closeRedis, initRedis, redisClient } from "./lib/redis";
 import { ensureOAuthMemoryCleanup } from "./lib/oauth-state-store";
 import { pool } from "@workspace/db";
-import { runMigrations } from "@workspace/db";
+import {
+  errorMessage,
+  initializeDatabase,
+  initializeOptionalServices,
+} from "./lib/startup-services";
 
 const port = Number(process.env["PORT"] ?? "3000");
 
@@ -23,9 +27,6 @@ if (Number.isNaN(port) || port <= 0) {
 }
 
 // ── T-13: Unhandled rejection / exception handlers ───────────────────────────
-// Catch programming errors that escape async boundaries.
-// Log at fatal level so they surface in monitoring, then exit with non-zero
-// code so the process manager (Docker, PM2, k8s) restarts the pod.
 process.on("unhandledRejection", (reason) => {
   logger.fatal({ reason }, "Unhandled promise rejection — shutting down");
   process.exit(1);
@@ -37,7 +38,6 @@ process.on("uncaughtException", (err) => {
 });
 
 // ── T-13: Graceful shutdown ──────────────────────────────────────────────────
-// Module-level server reference so the shutdown handler can close it.
 let server: ReturnType<typeof app.listen>;
 
 async function shutdown(signal: string): Promise<void> {
@@ -45,8 +45,8 @@ async function shutdown(signal: string): Promise<void> {
 
   server.close(async () => {
     try {
-      await closeRedis();       // 1. Release Redis connection
-      await pool.end();         // 2. Drain the PostgreSQL pool
+      await closeRedis();
+      await pool.end();
       logger.info("Shutdown complete");
       process.exit(0);
     } catch (err) {
@@ -55,7 +55,6 @@ async function shutdown(signal: string): Promise<void> {
     }
   });
 
-  // Force-kill if graceful shutdown takes more than 15 s
   setTimeout(() => {
     logger.error("Graceful shutdown timed out — forcing exit");
     process.exit(1);
@@ -80,7 +79,6 @@ function isDatabaseUnreachable(err: unknown): boolean {
   return false;
 }
 
-// ── Startup ──────────────────────────────────────────────────────────────────
 async function bootstrap(): Promise<void> {
   let dbReady = false;
 
@@ -94,56 +92,14 @@ async function bootstrap(): Promise<void> {
     process.exit(1);
   }
 
-  // T-09: Run pending migrations before accepting traffic (required in production).
   try {
-    logger.info("Running database migrations...");
-    await runMigrations();
-    const { ensureLogosDirectory } = await import("./lib/hotel-logo-storage");
-    await ensureLogosDirectory();
-    logger.info("Migrations complete");
-    dbReady = true;
-
-    if (env.NODE_ENV !== "production") {
-      const { ensureDevPlatformAdmin } = await import(
-        "./lib/platform-auth/ensure-dev-platform-admin"
-      );
-      await ensureDevPlatformAdmin();
-    }
-
-    const {
-      getEmailDeliveryMode,
-      getResendFrom,
-      validateEmailDeliveryForProduction,
-      verifyProductionEmailDelivery,
-    } = await import("./config/email-delivery");
-    const { verifyResendForProduction } = await import("./config/resend-domains");
-    const { platformSettingsRepository } = await import(
-      "./lib/platform-auth/platform-settings-repository"
-    );
-    if (env.NODE_ENV === "production") {
-      validateEmailDeliveryForProduction();
-      await verifyProductionEmailDelivery();
-    }
-    const mode = getEmailDeliveryMode();
-    const verificationEmail = await platformSettingsRepository.getVerificationEmail();
-    if (env.NODE_ENV === "production" && mode === "resend") {
-      await verifyResendForProduction(verificationEmail);
-      const { resetEmailSender } = await import("./lib/email/create-email-sender");
-      resetEmailSender();
-    }
-    if (mode === "console") {
-      logger.warn(
-        "Platform OTP emails log to console only — set RESEND_API_KEY or GMAIL_APP_PASSWORD",
-      );
-    } else {
-      logger.info(
-        { mode, verificationEmail, from: mode === "resend" ? getResendFrom() : undefined },
-        `Platform OTP email: ${mode} configured`,
-      );
-    }
+    dbReady = await initializeDatabase();
   } catch (err) {
     if (env.NODE_ENV === "production") {
-      logger.fatal({ err }, "Production startup failed after migrations — refusing to start");
+      logger.fatal(
+        { err, error: errorMessage(err) },
+        "Database migration failed — refusing to start",
+      );
       process.exit(1);
     }
 
@@ -154,10 +110,14 @@ async function bootstrap(): Promise<void> {
       );
     } else {
       logger.warn(
-        { err },
+        { err, error: errorMessage(err) },
         "Database startup failed — HTTP server will start but hotel/app routes may error",
       );
     }
+  }
+
+  if (dbReady) {
+    await initializeOptionalServices();
   }
 
   server = app.listen(port, "0.0.0.0", () => {
