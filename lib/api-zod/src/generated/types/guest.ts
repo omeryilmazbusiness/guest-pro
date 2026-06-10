@@ -18,4 +18,6 @@ export interface Guest {
   createdAt: Date;
   /** @nullable */
   guestKey?: string | null;
+  /** @nullable */
+  wifiNetworkId?: number | null;
 }

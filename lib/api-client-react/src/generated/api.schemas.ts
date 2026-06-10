@@ -22,8 +22,19 @@ export type LoginRequestType = typeof LoginRequestType[keyof typeof LoginRequest
 
 export const LoginRequestType = {
   manager: 'manager',
-  personnel: 'personnel',
+  employee: 'employee',
   guest: 'guest',
+} as const;
+
+/**
+ * Email/password login portal (defaults to manager)
+ */
+export type LoginRequestPortal = typeof LoginRequestPortal[keyof typeof LoginRequestPortal];
+
+
+export const LoginRequestPortal = {
+  manager: 'manager',
+  restaurant: 'restaurant',
 } as const;
 
 export interface LoginRequest {
@@ -34,6 +45,12 @@ export interface LoginRequest {
   password?: string | null;
   /** @nullable */
   guestKey?: string | null;
+  /** @nullable */
+  employeeNumber?: string | null;
+  /** @nullable */
+  hotelSlug?: string | null;
+  /** Email/password login portal (defaults to manager) */
+  portal?: LoginRequestPortal;
 }
 
 export type LoginResponseRole = typeof LoginResponseRole[keyof typeof LoginResponseRole];
@@ -102,6 +119,8 @@ export interface Guest {
   createdAt: string;
   /** @nullable */
   guestKey?: string | null;
+  /** @nullable */
+  wifiNetworkId?: number | null;
 }
 
 export interface CreateGuestRequest {
@@ -109,6 +128,9 @@ export interface CreateGuestRequest {
   lastName: string;
   roomNumber: string;
   countryCode: string;
+  checkInDate?: string;
+  checkOutDate?: string;
+  wifiNetworkId?: number;
 }
 
 export interface CreateGuestResponse {

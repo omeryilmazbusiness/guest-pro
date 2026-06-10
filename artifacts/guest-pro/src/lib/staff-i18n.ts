@@ -414,22 +414,22 @@ export interface StaffTranslations {
   settingsHotelLocationSaved: string;
   settingsHotelLocationLoadFailed: string;
   settingsHotelLocationSaveFailed: string;
-  settingsFloorWifiTitle: string;
-  settingsFloorWifiSubtitle: string;
-  settingsFloorWifiHint: string;
-  settingsFloorWifiLoadFailed: string;
-  settingsFloorWifiSaved: string;
-  settingsFloorWifiSaveFailed: string;
-  settingsFloorKey: string;
-  settingsFloorKeyHint: string;
-  settingsFloorLabel: string;
-  settingsFloorLabelPlaceholder: string;
-  settingsFloorRow: string;
+  settingsWifiNetworksTitle: string;
+  settingsWifiNetworksSubtitle: string;
+  settingsWifiNetworksHint: string;
+  settingsWifiNetworksLoadFailed: string;
+  settingsWifiNetworksSaved: string;
+  settingsWifiNetworksSaveFailed: string;
+  settingsWifiNetworkRow: string;
+  settingsWifiName: string;
   settingsWifiPassword: string;
-  settingsWifiSsid: string;
-  settingsAddFloor: string;
-  settingsSaveFloors: string;
-  settingsRemoveFloor: string;
+  settingsAddWifiNetwork: string;
+  settingsSaveWifiNetworks: string;
+  settingsRemoveWifiNetwork: string;
+  guestWifiNetwork: string;
+  guestWifiNetworkRequired: string;
+  guestWifiNetworkPlaceholder: string;
+  guestWifiNetworkEmpty: string;
   optionalLabel: string;
 
   // ── Settings — nearby places ─────────────────────────────────────────────
@@ -855,22 +855,22 @@ const en: StaffTranslations = {
   settingsHotelLocationSaved: "Hotel map pin saved.",
   settingsHotelLocationLoadFailed: "Failed to load hotel location.",
   settingsHotelLocationSaveFailed: "Failed to save hotel location.",
-  settingsFloorWifiTitle: "Floor Wi-Fi passwords",
-  settingsFloorWifiSubtitle: "Assign a Wi-Fi password per floor — guests see the password for their room's floor.",
-  settingsFloorWifiHint: "Floor key is matched from the room number (e.g. room 301 → key 3, room 1205 → key 12).",
-  settingsFloorWifiLoadFailed: "Failed to load floor Wi-Fi settings.",
-  settingsFloorWifiSaved: "Floor Wi-Fi settings saved.",
-  settingsFloorWifiSaveFailed: "Failed to save floor Wi-Fi settings.",
-  settingsFloorKey: "Floor key",
-  settingsFloorKeyHint: "Digits used to match room numbers",
-  settingsFloorLabel: "Display label",
-  settingsFloorLabelPlaceholder: "3rd Floor",
-  settingsFloorRow: "Floor {n}",
+  settingsWifiNetworksTitle: "Guest Wi-Fi networks",
+  settingsWifiNetworksSubtitle: "Define Wi-Fi networks guests can be assigned during check-in.",
+  settingsWifiNetworksHint: "Each network needs a name and password. Staff assign one network per guest at check-in.",
+  settingsWifiNetworksLoadFailed: "Failed to load Wi-Fi networks.",
+  settingsWifiNetworksSaved: "Wi-Fi networks saved.",
+  settingsWifiNetworksSaveFailed: "Failed to save Wi-Fi networks.",
+  settingsWifiNetworkRow: "Network {n}",
+  settingsWifiName: "Network name",
   settingsWifiPassword: "Wi-Fi password",
-  settingsWifiSsid: "Network name (SSID)",
-  settingsAddFloor: "Add another floor",
-  settingsSaveFloors: "Save floor Wi-Fi",
-  settingsRemoveFloor: "Remove floor",
+  settingsAddWifiNetwork: "Add another network",
+  settingsSaveWifiNetworks: "Save Wi-Fi networks",
+  settingsRemoveWifiNetwork: "Remove network",
+  guestWifiNetwork: "Wi-Fi network",
+  guestWifiNetworkRequired: "Please select a Wi-Fi network",
+  guestWifiNetworkPlaceholder: "Select network…",
+  guestWifiNetworkEmpty: "No Wi-Fi networks configured",
   optionalLabel: "Optional",
 
   settingsNearbyTitle: "Nearby places",
@@ -1292,22 +1292,22 @@ const tr: StaffTranslations = {
   settingsHotelLocationSaved: "Otel harita pini kaydedildi.",
   settingsHotelLocationLoadFailed: "Otel konumu yüklenemedi.",
   settingsHotelLocationSaveFailed: "Otel konumu kaydedilemedi.",
-  settingsFloorWifiTitle: "Kat Wi-Fi şifreleri",
-  settingsFloorWifiSubtitle: "Her kata bir Wi-Fi şifresi atayın — misafirler odalarının bulunduğu katın şifresini görür.",
-  settingsFloorWifiHint: "Kat anahtarı oda numarasından eşleştirilir (ör. oda 301 → anahtar 3, oda 1205 → anahtar 12).",
-  settingsFloorWifiLoadFailed: "Kat Wi-Fi ayarları yüklenemedi.",
-  settingsFloorWifiSaved: "Kat Wi-Fi ayarları kaydedildi.",
-  settingsFloorWifiSaveFailed: "Kat Wi-Fi ayarları kaydedilemedi.",
-  settingsFloorKey: "Kat anahtarı",
-  settingsFloorKeyHint: "Oda numaralarıyla eşleşen rakamlar",
-  settingsFloorLabel: "Görünen ad",
-  settingsFloorLabelPlaceholder: "3. Kat",
-  settingsFloorRow: "{n}. Kat",
+  settingsWifiNetworksTitle: "Misafir Wi-Fi ağları",
+  settingsWifiNetworksSubtitle: "Check-in sırasında misafirlere atanacak Wi-Fi ağlarını tanımlayın.",
+  settingsWifiNetworksHint: "Her ağ için ad ve şifre girin. Personel check-in sırasında misafire bir ağ atar.",
+  settingsWifiNetworksLoadFailed: "Wi-Fi ağları yüklenemedi.",
+  settingsWifiNetworksSaved: "Wi-Fi ağları kaydedildi.",
+  settingsWifiNetworksSaveFailed: "Wi-Fi ağları kaydedilemedi.",
+  settingsWifiNetworkRow: "{n}. Ağ",
+  settingsWifiName: "Ağ adı",
   settingsWifiPassword: "Wi-Fi şifresi",
-  settingsWifiSsid: "Ağ adı (SSID)",
-  settingsAddFloor: "Başka kat ekle",
-  settingsSaveFloors: "Kat Wi-Fi kaydet",
-  settingsRemoveFloor: "Katı kaldır",
+  settingsAddWifiNetwork: "Başka ağ ekle",
+  settingsSaveWifiNetworks: "Wi-Fi ağlarını kaydet",
+  settingsRemoveWifiNetwork: "Ağı kaldır",
+  guestWifiNetwork: "Wi-Fi ağı",
+  guestWifiNetworkRequired: "Lütfen bir Wi-Fi ağı seçin",
+  guestWifiNetworkPlaceholder: "Ağ seçin…",
+  guestWifiNetworkEmpty: "Tanımlı Wi-Fi ağı yok",
   optionalLabel: "Opsiyonel",
 
   settingsNearbyTitle: "Yakın yerler",
@@ -1729,22 +1729,22 @@ const ar: StaffTranslations = {
   settingsHotelLocationSaved: "تم حفظ موقع الفندق على الخريطة.",
   settingsHotelLocationLoadFailed: "تعذّر تحميل موقع الفندق.",
   settingsHotelLocationSaveFailed: "تعذّر حفظ موقع الفندق.",
-  settingsFloorWifiTitle: "كلمات مرور Wi-Fi حسب الطابق",
-  settingsFloorWifiSubtitle: "عيّن كلمة مرور Wi-Fi لكل طابق — يرى الضيوف كلمة مرور طابق غرفتهم.",
-  settingsFloorWifiHint: "يُطابق مفتاح الطابق من رقم الغرفة (مثلاً غرفة 301 → مفتاح 3، غرفة 1205 → مفتاح 12).",
-  settingsFloorWifiLoadFailed: "تعذّر تحميل إعدادات Wi-Fi للطوابق.",
-  settingsFloorWifiSaved: "تم حفظ إعدادات Wi-Fi للطوابق.",
-  settingsFloorWifiSaveFailed: "تعذّر حفظ إعدادات Wi-Fi للطوابق.",
-  settingsFloorKey: "مفتاح الطابق",
-  settingsFloorKeyHint: "الأرقام المستخدمة لمطابقة أرقام الغرف",
-  settingsFloorLabel: "التسمية المعروضة",
-  settingsFloorLabelPlaceholder: "الطابق الثالث",
-  settingsFloorRow: "الطابق {n}",
+  settingsWifiNetworksTitle: "شبكات Wi-Fi للضيوف",
+  settingsWifiNetworksSubtitle: "عرّف شبكات Wi-Fi التي يمكن تعيينها للضيوف عند تسجيل الوصول.",
+  settingsWifiNetworksHint: "كل شبكة تحتاج اسمًا وكلمة مرور. يعيّن الموظف شبكة واحدة لكل ضيف عند تسجيل الوصول.",
+  settingsWifiNetworksLoadFailed: "تعذّر تحميل شبكات Wi-Fi.",
+  settingsWifiNetworksSaved: "تم حفظ شبكات Wi-Fi.",
+  settingsWifiNetworksSaveFailed: "تعذّر حفظ شبكات Wi-Fi.",
+  settingsWifiNetworkRow: "الشبكة {n}",
+  settingsWifiName: "اسم الشبكة",
   settingsWifiPassword: "كلمة مرور Wi-Fi",
-  settingsWifiSsid: "اسم الشبكة (SSID)",
-  settingsAddFloor: "إضافة طابق آخر",
-  settingsSaveFloors: "حفظ Wi-Fi الطوابق",
-  settingsRemoveFloor: "إزالة الطابق",
+  settingsAddWifiNetwork: "إضافة شبكة أخرى",
+  settingsSaveWifiNetworks: "حفظ شبكات Wi-Fi",
+  settingsRemoveWifiNetwork: "إزالة الشبكة",
+  guestWifiNetwork: "شبكة Wi-Fi",
+  guestWifiNetworkRequired: "يرجى اختيار شبكة Wi-Fi",
+  guestWifiNetworkPlaceholder: "اختر الشبكة…",
+  guestWifiNetworkEmpty: "لا توجد شبكات Wi-Fi مُعرَّفة",
   optionalLabel: "اختياري",
 
   settingsNearbyTitle: "الأماكن القريبة",

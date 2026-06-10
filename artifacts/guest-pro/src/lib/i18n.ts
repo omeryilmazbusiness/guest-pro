@@ -31,6 +31,7 @@ export interface GuestTranslations {
   listeningState: string;
   voiceHint: string;
   goToVoiceChat: string;
+  voiceSendToChat: string;
 
   askSomethingLabel: string;
   askSomethingTitle: string;
@@ -428,6 +429,7 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     listeningState: "Listening…",
     voiceHint: "Tap the microphone and start speaking",
     goToVoiceChat: "Switch to voice chat",
+    voiceSendToChat: "Send to chat",
 
     askSomethingLabel: "Ask by Text",
     askSomethingTitle: "Ask Something",
@@ -447,7 +449,7 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     noActiveKey: "No active key on file",
     stayActive: "Stay active",
     chatLink: "Chat",
-    nearbyTapHint: "Tap a place for details and walking directions",
+    nearbyTapHint: "Tap a place for details and directions",
     nearbySearchPlaceholder: "Search places…",
     nearbyFilterAll: "All",
     nearbyViewAll: "View all {count} places",
@@ -799,6 +801,7 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     listeningState: "Dinleniyor…",
     voiceHint: "Mikrofona dokunun ve konuşmaya başlayın",
     goToVoiceChat: "Sesli sohbete geç",
+    voiceSendToChat: "Sohbete gönder",
 
     askSomethingLabel: "Yazarak Sor",
     askSomethingTitle: "Bir Şey Sor",
@@ -1170,6 +1173,7 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     listeningState: "جارٍ الاستماع…",
     voiceHint: "اضغط على الميكروفون وابدأ الحديث",
     goToVoiceChat: "الانتقال إلى المحادثة الصوتية",
+    voiceSendToChat: "إرسال إلى المحادثة",
 
     askSomethingLabel: "اسأل كتابةً",
     askSomethingTitle: "اسأل عن أي شيء",
@@ -1189,7 +1193,7 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     noActiveKey: "لا يوجد مفتاح نشط",
     stayActive: "الإقامة نشطة",
     chatLink: "محادثة",
-    nearbyTapHint: "اضغط لتصفح الأماكن القريبة",
+    nearbyTapHint: "اضغط للتفاصيل واتجاهات المشي",
     nearbySearchPlaceholder: "ابحث عن أماكن…",
     nearbyFilterAll: "الكل",
     nearbyViewAll: "عرض كل الأماكن ({count})",
@@ -1541,6 +1545,7 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     listeningState: "Слушаю…",
     voiceHint: "Нажмите на микрофон и начните говорить",
     goToVoiceChat: "Перейти к голосовому чату",
+    voiceSendToChat: "Отправить в чат",
 
     askSomethingLabel: "Спросить текстом",
     askSomethingTitle: "Задать вопрос",
@@ -1560,7 +1565,7 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     noActiveKey: "Активный ключ не найден",
     stayActive: "Проживание активно",
     chatLink: "Чат",
-    nearbyTapHint: "Нажмите, чтобы просмотреть места рядом",
+    nearbyTapHint: "Нажмите для деталей и маршрута",
     nearbySearchPlaceholder: "Поиск мест…",
     nearbyFilterAll: "Все",
     nearbyViewAll: "Все места ({count})",
@@ -1912,6 +1917,7 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     listeningState: "Höre zu…",
     voiceHint: "Tippen Sie auf das Mikrofon und beginnen Sie zu sprechen",
     goToVoiceChat: "Zum Sprachchat wechseln",
+    voiceSendToChat: "An Chat senden",
 
     askSomethingLabel: "Per Text fragen",
     askSomethingTitle: "Etwas fragen",
@@ -1931,7 +1937,7 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     noActiveKey: "Kein aktiver Schlüssel",
     stayActive: "Aufenthalt aktiv",
     chatLink: "Chat",
-    nearbyTapHint: "Tippen, um Orte in der Nähe zu durchsuchen",
+    nearbyTapHint: "Tippen für Details und Wegbeschreibung",
     nearbySearchPlaceholder: "Orte suchen…",
     nearbyFilterAll: "Alle",
     nearbyViewAll: "Alle {count} Orte",
@@ -2283,6 +2289,7 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     listeningState: "En écoute…",
     voiceHint: "Appuyez sur le microphone et commencez à parler",
     goToVoiceChat: "Passer au chat vocal",
+    voiceSendToChat: "Envoyer au chat",
 
     askSomethingLabel: "Demander par écrit",
     askSomethingTitle: "Poser une question",
@@ -2302,7 +2309,7 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     noActiveKey: "Aucune clé active",
     stayActive: "Séjour actif",
     chatLink: "Chat",
-    nearbyTapHint: "Appuyez pour parcourir les lieux à proximité",
+    nearbyTapHint: "Appuyez pour les détails et l'itinéraire",
     nearbySearchPlaceholder: "Rechercher…",
     nearbyFilterAll: "Tout",
     nearbyViewAll: "Voir les {count} lieux",
@@ -2654,6 +2661,7 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     listeningState: "Escuchando…",
     voiceHint: "Toca el micrófono y empieza a hablar",
     goToVoiceChat: "Cambiar al chat de voz",
+    voiceSendToChat: "Enviar al chat",
 
     askSomethingLabel: "Preguntar por texto",
     askSomethingTitle: "Preguntar algo",
@@ -2673,7 +2681,7 @@ const translations: Record<SupportedLocale, GuestTranslations> = {
     noActiveKey: "Sin clave activa",
     stayActive: "Estancia activa",
     chatLink: "Chat",
-    nearbyTapHint: "Toca para ver lugares cercanos",
+    nearbyTapHint: "Toca para detalles e indicaciones",
     nearbySearchPlaceholder: "Buscar lugares…",
     nearbyFilterAll: "Todos",
     nearbyViewAll: "Ver los {count} lugares",

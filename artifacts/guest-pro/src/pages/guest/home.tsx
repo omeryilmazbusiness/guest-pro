@@ -1,4 +1,5 @@
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocale } from "@/hooks/use-locale";
@@ -20,7 +21,7 @@ import { getWelcomingLanguage } from "@/lib/welcoming/languages";
 import { toast } from "sonner";
 import { useVoice } from "@/hooks/use-voice";
 import { tFmt } from "@/lib/i18n";
-import { MicrophoneButton } from "@/components/chat/MicrophoneButton";
+import { GuestVoiceListeningOverlay } from "@/components/guest/GuestVoiceListeningOverlay";
 import { useInstallPrompt } from "@/hooks/use-install-prompt";
 import { InstallSheet } from "@/components/InstallSheet";
 import { useTrackingHeartbeat } from "@/hooks/use-tracking-heartbeat";
@@ -37,6 +38,9 @@ import {
   consumeGuestDashboardScrollRestore,
   markGuestDashboardScrollRestore,
 } from "@/lib/guest-dashboard-scroll";
+import { useGuestHomeReady } from "@/hooks/use-guest-home-ready";
+import { GuestHomeSkeleton } from "@/components/guest/GuestHomeSkeleton";
+import { GUEST_CONTENT_ENTER, GUEST_PAGE_FADE } from "@/lib/guest-motion";
 
 export default function GuestHome() {
   const { user, isAuthenticated, logoutAuth } = useAuth();
@@ -47,6 +51,8 @@ export default function GuestHome() {
   const { t, voiceLocale, uiLocale } = useLocale();
   const tenant = useOptionalHotelTenant();
   const { appName: displayAppName } = useHotelDisplay();
+  const { isBootstrapping } = useGuestHomeReady();
+  const reduceMotion = useReducedMotion();
 
   // Start presence heartbeat — sends location + backend IP for tracking.
   useTrackingHeartbeat();
@@ -111,15 +117,36 @@ export default function GuestHome() {
   };
 
   const voiceStopRef = useRef<(() => void) | null>(null);
+  const [voiceOverlayOpen, setVoiceOverlayOpen] = useState(false);
+
+  const closeVoiceOverlay = useCallback(() => {
+    voiceStopRef.current?.();
+    setVoiceOverlayOpen(false);
+  }, []);
+
+  const sendVoiceToChat = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      setVoiceOverlayOpen(false);
+      goTo(`${ROUTES.guestChat}?q=${encodeURIComponent(trimmed)}&voice=1`);
+    },
+    [goTo],
+  );
 
   const voice = useVoice({
-    onResult: (transcript, _lang) => {
-      voiceStopRef.current?.();
-      if (transcript.trim()) {
-        goTo(`${ROUTES.guestChat}?q=${encodeURIComponent(transcript)}&voice=1`);
+    onResult: (transcript) => {
+      const trimmed = transcript.trim();
+      if (!trimmed) {
+        closeVoiceOverlay();
+        return;
       }
+      sendVoiceToChat(trimmed);
     },
-    onError: (msg) => toast.error(msg),
+    onError: (msg) => {
+      toast.error(msg);
+      closeVoiceOverlay();
+    },
     defaultLang: voiceLocale,
     messages: {
       notSupported: t.voiceNotSupported,
@@ -132,16 +159,18 @@ export default function GuestHome() {
   voiceStopRef.current = voice.stopListening;
 
   const handleMicTap = () => {
-    if (voice.isListening) {
-      voice.stopListening();
+    if (voice.isListening || voiceOverlayOpen) {
+      closeVoiceOverlay();
     } else {
-      voice.startListening();
+      setVoiceOverlayOpen(true);
+      void voice.startListening();
     }
   };
 
-  if (!isAuthenticated || user?.role !== "guest") return null;
+  if (!isBootstrapping && (!isAuthenticated || user?.role !== "guest")) return null;
 
-  const guestUser = user as typeof user & { guestKeyDisplay?: string | null };
+  const guest = user!;
+  const guestUser = guest as typeof guest & { guestKeyDisplay?: string | null };
   const welcomingLocale = getWelcomingLanguage(uiLocale).uiLocale;
   const welcomingStrings = getWelcomingStrings(welcomingLocale);
 
@@ -150,7 +179,25 @@ export default function GuestHome() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-[#F8F8F8]">
+    <>
+    <AnimatePresence mode="wait">
+      {isBootstrapping ? (
+        <motion.div
+          key="guest-home-skeleton"
+          initial={{ opacity: 1 }}
+          exit={{ opacity: 0, scale: 0.992, filter: reduceMotion ? "none" : "blur(2px)" }}
+          transition={reduceMotion ? { duration: 0.15 } : { ...GUEST_PAGE_FADE, duration: 0.48 }}
+        >
+          <GuestHomeSkeleton />
+        </motion.div>
+      ) : (
+    <motion.div
+      key="guest-home-content"
+      className="min-h-[100dvh] bg-[#F8F8F8]"
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.992 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={reduceMotion ? { duration: 0.2 } : GUEST_CONTENT_ENTER}
+    >
       <GuestDashboardHeader
         appName={appName}
         nearbyLabel={t.nearbySection}
@@ -162,7 +209,7 @@ export default function GuestHome() {
         {/* Welcome line */}
         <div className="pt-5 pb-1 text-center">
           <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-widest">
-            {tFmt(t.welcome, { name: user.firstName ?? "" })}
+            {tFmt(t.welcome, { name: guest.firstName ?? "" })}
           </p>
         </div>
 
@@ -245,9 +292,9 @@ export default function GuestHome() {
         >
           <StayKeyCard
             guestKeyDisplay={guestUser.guestKeyDisplay}
-            roomNumber={user.roomNumber ?? undefined}
-            firstName={user.firstName ?? undefined}
-            lastName={user.lastName ?? undefined}
+            roomNumber={guest.roomNumber ?? undefined}
+            firstName={guest.firstName ?? undefined}
+            lastName={guest.lastName ?? undefined}
           />
         </section>
 
@@ -291,35 +338,22 @@ export default function GuestHome() {
 
       {/* Install bottom sheet */}
       {!install.isAlreadyInstalled && <InstallSheet install={install} />}
-
-      {/* Floating mic overlay when listening from home */}
-      {voice.isListening && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-6 animate-in fade-in duration-200">
-          <div className="bg-zinc-900 rounded-3xl px-8 py-10 flex flex-col items-center gap-5 shadow-2xl mx-6 max-w-xs w-full border border-white/8">
-            <MicrophoneButton
-              isConversationActive={voice.isListening}
-              isListening={voice.isListening}
-              amplitude={voice.amplitude}
-              isSupported={voice.isSupported}
-              onToggle={handleMicTap}
-              variant="hero"
-              size="lg"
-            />
-            <div className="text-center">
-              <p className="text-[15px] font-medium text-white">{t.listeningState}</p>
-              <p className="text-[13px] text-zinc-400 mt-1">
-                {voice.transcript || t.voiceSubtitle}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => voice.stopListening()}
-            className="text-white/50 text-[14px] hover:text-white/80 transition-colors"
-          >
-            {t.cancel}
-          </button>
-        </div>
+    </motion.div>
       )}
-    </div>
+    </AnimatePresence>
+
+      {!isBootstrapping && (
+        <GuestVoiceListeningOverlay
+          open={voiceOverlayOpen}
+          listening={voice.isListening}
+          amplitude={voice.amplitude}
+          transcript={voice.transcript}
+          listeningLabel={t.listeningState}
+          subtitle={t.voiceSubtitle}
+          cancelLabel={t.cancel}
+          onCancel={closeVoiceOverlay}
+        />
+      )}
+    </>
   );
 }

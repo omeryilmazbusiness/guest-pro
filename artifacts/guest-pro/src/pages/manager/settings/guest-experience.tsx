@@ -6,7 +6,7 @@ import { can, Permission } from "@/lib/permissions";
 import { ROUTES } from "@/lib/app-routes";
 import { SettingsShell } from "@/components/manager/settings/SettingsShell";
 import { SettingsCategoryHeader } from "@/components/manager/settings/SettingsSectionCard";
-import { FloorWifiSettingsSection } from "@/components/manager/settings/FloorWifiSettingsSection";
+import { WifiNetworksSettingsSection } from "@/components/manager/settings/WifiNetworksSettingsSection";
 import { NearbyHotelLocationSection } from "@/components/manager/settings/NearbyHotelLocationSection";
 import { NearbyPlacesSettingsSection } from "@/components/manager/settings/NearbyPlacesSettingsSection";
 
@@ -36,7 +36,7 @@ export default function GuestExperienceSettingsPage() {
         />
         <NearbyHotelLocationSection />
         <NearbyPlacesSettingsSection />
-        <FloorWifiSettingsSection />
+        <WifiNetworksSettingsSection />
       </div>
     </SettingsShell>
   );

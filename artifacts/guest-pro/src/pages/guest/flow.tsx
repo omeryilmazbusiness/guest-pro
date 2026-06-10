@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTenantNav } from "@/hooks/use-tenant-nav";
 import { ROUTES } from "@/lib/app-routes";
@@ -37,6 +38,7 @@ import { useGuestMenu, type GuestMenuCategory, type GuestMenuItem } from "@/hook
 import { FoodOrderScreen } from "@/components/guest/food-order/FoodOrderScreen";
 import type { GuestTranslations } from "@/lib/i18n";
 import { toast } from "sonner";
+import { GUEST_CONTENT_ENTER, GUEST_STEP_SPRING } from "@/lib/guest-motion";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -635,6 +637,7 @@ export default function GuidedFlowPage() {
 
   // Care branch: shown after typing in freetext step and pressing Next
   const [showCareBranch, setShowCareBranch] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     if (!isAuthenticated) goTo(ROUTES.guestLogin);
@@ -783,7 +786,12 @@ export default function GuidedFlowPage() {
   if (isComplete) {
     const IconComp = config.icon;
     return (
-      <div className="min-h-[100dvh] bg-[#F8F8F8] flex flex-col items-center justify-center px-6 text-center animate-in fade-in duration-500">
+      <motion.div
+        className="min-h-[100dvh] bg-[#F8F8F8] flex flex-col items-center justify-center px-6 text-center"
+        initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={reduceMotion ? { duration: 0.2 } : GUEST_CONTENT_ENTER}
+      >
         <div className="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center mb-5">
           <CheckCircle2 className="w-8 h-8 text-white" />
         </div>
@@ -798,11 +806,11 @@ export default function GuidedFlowPage() {
         </p>
         <button
           onClick={() => goTo(ROUTES.guest)}
-          className="bg-zinc-900 text-white rounded-2xl px-8 py-4 text-[15px] font-semibold shadow-md active:scale-95 transition-all"
+          className="guest-tactile-pill bg-zinc-900 text-white rounded-2xl px-8 py-4 text-[15px] font-semibold shadow-md active:scale-95 transition-all"
         >
           {t.flowSuccessReturn}
         </button>
-      </div>
+      </motion.div>
     );
   }
 
@@ -851,9 +859,14 @@ export default function GuidedFlowPage() {
 
       {/* Content */}
       <main className="flex-1 overflow-y-auto">
-        <div
-          key={stepIndex}
-          className="max-w-lg mx-auto px-4 pt-7 pb-36 animate-in fade-in slide-in-from-bottom-2 duration-250"
+        <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={`${stepIndex}-${showCareBranch ? "branch" : "main"}`}
+          className="max-w-lg mx-auto px-4 pt-7 pb-36"
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 24, y: 8 }}
+          animate={{ opacity: 1, x: 0, y: 0 }}
+          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -18, y: -4 }}
+          transition={reduceMotion ? { duration: 0.15 } : GUEST_STEP_SPRING}
         >
           {/* Question */}
           <div className="mb-5">
@@ -941,7 +954,8 @@ export default function GuidedFlowPage() {
             />
           )}
 
-        </div>
+        </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* Footer CTA */}

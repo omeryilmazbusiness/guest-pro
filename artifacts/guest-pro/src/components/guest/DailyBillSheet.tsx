@@ -1,4 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { GUEST_OVERLAY_FADE, GUEST_SHEET_SPRING } from "@/lib/guest-motion";
 import {
   X,
   Receipt,
@@ -84,6 +87,7 @@ function LineRow({
 export function DailyBillSheet({ open, onClose }: DailyBillSheetProps) {
   const { user } = useAuth();
   const { t, uiLocale } = useLocale();
+  const reduceMotion = useReducedMotion();
   const [selectedDate, setSelectedDate] = useState(todayIsoDate());
 
   const { data: bill, isLoading } = useDailyBill(selectedDate);
@@ -98,26 +102,46 @@ export function DailyBillSheet({ open, onClose }: DailyBillSheetProps) {
       .slice(0, 8);
   }, [daysData]);
 
-  if (!open) return null;
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
 
   const subtotal = bill ? formatMoney(bill.subtotal, bill.currency, uiLocale) : "—";
   const hasLines = (bill?.lines.length ?? 0) > 0;
 
-  return (
-    <>
-      <div
-        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px] animate-in fade-in duration-200"
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <AnimatePresence>
+      {open && (
+        <>
+      <motion.button
+        type="button"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={reduceMotion ? { duration: 0.01 } : GUEST_OVERLAY_FADE}
+        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[4px]"
         onClick={onClose}
-        aria-hidden="true"
+        aria-label={t.billClose}
       />
 
-      <div
+      <motion.div
         role="dialog"
         aria-modal="true"
         aria-label={t.billSheetTitle}
-        className="fixed bottom-0 inset-x-0 z-50 animate-in slide-in-from-bottom duration-300 max-h-[min(92dvh,720px)] flex flex-col"
+        initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: "100%" }}
+        animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+        exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: "100%" }}
+        transition={reduceMotion ? { duration: 0.15 } : GUEST_SHEET_SPRING}
+        className="fixed bottom-0 inset-x-0 z-50 max-h-[min(92dvh,720px)] flex flex-col"
       >
-        <div className="bg-white rounded-t-[28px] shadow-2xl flex flex-col max-h-[inherit] overflow-hidden">
+        <div className="bg-white rounded-t-[1.5rem] shadow-2xl shadow-zinc-900/15 flex flex-col max-h-[inherit] overflow-hidden border border-zinc-100/80">
           <div className="flex justify-center pt-3 pb-1 shrink-0">
             <div className="w-10 h-1 rounded-full bg-zinc-200" />
           </div>
@@ -202,7 +226,10 @@ export function DailyBillSheet({ open, onClose }: DailyBillSheetProps) {
             <p className="text-[11px] text-zinc-400 leading-relaxed text-center">{t.billRoomChargeNote}</p>
           </div>
         </div>
-      </div>
-    </>
+      </motion.div>
+        </>
+      )}
+    </AnimatePresence>,
+    document.body,
   );
 }

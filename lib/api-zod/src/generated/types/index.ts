@@ -22,6 +22,7 @@ export * from './guestQrLoginParams';
 export * from './healthStatus';
 export * from './hotelBranding';
 export * from './loginRequest';
+export * from './loginRequestPortal';
 export * from './loginRequestType';
 export * from './loginResponse';
 export * from './loginResponseRole';

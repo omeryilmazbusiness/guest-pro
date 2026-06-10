@@ -614,6 +614,8 @@ components:
           format: date-time
         guestKey:
           type: ["string", "null"]
+        wifiNetworkId:
+          type: ["integer", "null"]
       required:
         - id
         - firstName
@@ -634,6 +636,12 @@ components:
           type: string
         countryCode:
           type: string
+        checkInDate:
+          type: string
+        checkOutDate:
+          type: string
+        wifiNetworkId:
+          type: integer
       required:
         - firstName
         - lastName

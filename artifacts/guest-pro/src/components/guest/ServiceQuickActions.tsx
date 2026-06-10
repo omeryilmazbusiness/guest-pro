@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { dash } from "@/lib/guest-dashboard-ui";
 import type { GuestTranslations } from "@/lib/i18n";
 import { GuestConciergeQuickActions } from "@/components/guest/GuestConciergeQuickActions";
+import { GuestTactileTile } from "@/components/guest/GuestTactileTile";
 
 export type QuickActionMode = "food" | "support" | "care";
 
@@ -62,42 +63,19 @@ export function ServiceQuickActions({ onAction, t }: ServiceQuickActionsProps) {
     <section aria-label={t.quickActionsSection}>
       <h3 className={dash.sectionTitle}>{t.quickActionsSection}</h3>
       <div className="grid grid-cols-3 gap-2.5">
-        {ACTION_CONFIGS.map((action) => {
-          const Icon = action.icon;
-          return (
-            <button
-              key={action.mode}
-              type="button"
-              onClick={() => onAction(action.mode)}
-              className={cn(
-                "group flex flex-col items-center justify-center gap-2.5",
-                "rounded-[1.35rem] px-2 py-4 min-h-[7.5rem]",
-                "shadow-lg transition-all duration-200",
-                "hover:brightness-105 hover:shadow-xl active:scale-[0.97]",
-                action.tile,
-                action.shadow,
-              )}
-            >
-              <span
-                className={cn(
-                  "flex h-11 w-11 items-center justify-center rounded-2xl",
-                  "transition-transform duration-200 group-hover:scale-105",
-                  action.iconWrap,
-                )}
-              >
-                <Icon className={cn("h-5 w-5", action.iconColor)} strokeWidth={1.75} />
-              </span>
-              <span
-                className={cn(
-                  "text-[11px] font-semibold leading-tight text-center line-clamp-2 px-0.5",
-                  action.labelColor,
-                )}
-              >
-                {labels[action.mode]}
-              </span>
-            </button>
-          );
-        })}
+        {ACTION_CONFIGS.map((action) => (
+          <GuestTactileTile
+            key={action.mode}
+            onClick={() => onAction(action.mode)}
+            className={cn("hover:brightness-105 hover:shadow-xl", action.tile, action.shadow)}
+            icon={action.icon}
+            iconWrapClassName={action.iconWrap}
+            iconClassName={action.iconColor}
+            labelClassName={action.labelColor}
+            label={labels[action.mode]}
+            commitHaptic
+          />
+        ))}
       </div>
 
       <GuestConciergeQuickActions t={t} />

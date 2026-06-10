@@ -15,6 +15,7 @@ export interface UpdateGuestRequest {
   countryCode?: string;
   checkInDate?: string;
   checkOutDate?: string;
+  wifiNetworkId?: number | null;
 }
 
 export type UpdateGuestResponse = Guest;

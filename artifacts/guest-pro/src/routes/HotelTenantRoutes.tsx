@@ -7,11 +7,13 @@ import GuestLoginPage from "@/pages/login/guest-login";
 import ManagerLoginPage from "@/pages/login/manager-login";
 import PersonelLoginPage from "@/pages/login/personel-login";
 import RestaurantLoginPage from "@/pages/login/restaurant-login";
-import GuestHome from "@/pages/guest/home";
-import GuestChat from "@/pages/guest/chat";
-import GuestFlow from "@/pages/guest/flow";
-import GuestAutoLogin from "@/pages/guest/auto-login";
-import PassportScanPage from "@/pages/guest/passport-scan";
+import {
+  GuestHomePage,
+  GuestChatPage,
+  GuestFlowPage,
+  GuestAutoLoginPage,
+  GuestPassportScanPage,
+} from "@/routes/guest-route-pages";
 import GuestWelcoming from "@/pages/guest/welcoming";
 import StaffPortalPage from "@/pages/staff/dashboard";
 import RestaurantDashboard from "@/pages/restaurant/dashboard";
@@ -65,11 +67,11 @@ function HotelTenantGate() {
       <Route path={ROUTES.personelLogin} component={PersonelLoginPage} />
       <Route path={ROUTES.restaurantLogin} component={RestaurantLoginPage} />
       <Route path={ROUTES.welcoming} component={GuestWelcoming} />
-      <Route path={ROUTES.guest} component={GuestHome} />
-      <Route path={ROUTES.guestChat} component={GuestChat} />
-      <Route path={ROUTES.guestFlow} component={GuestFlow} />
-      <Route path={ROUTES.guestAutoLogin} component={GuestAutoLogin} />
-      <Route path={ROUTES.guestPassportScan} component={PassportScanPage} />
+      <Route path={ROUTES.guest} component={GuestHomePage} />
+      <Route path={ROUTES.guestChat} component={GuestChatPage} />
+      <Route path={ROUTES.guestFlow} component={GuestFlowPage} />
+      <Route path={ROUTES.guestAutoLogin} component={GuestAutoLoginPage} />
+      <Route path={ROUTES.guestPassportScan} component={GuestPassportScanPage} />
       <Route path={ROUTES.manager} component={ManagerDashboard} />
       <Route path={ROUTES.managerCreateGuest} component={CreateGuest} />
       <Route path={`${ROUTES.managerSettings}/guest`} component={ManagerSettings} />

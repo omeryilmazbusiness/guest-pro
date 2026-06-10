@@ -2,6 +2,7 @@ import { pgTable, serial, text, timestamp, integer, boolean, date } from "drizzl
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { hotelsTable } from "./hotels";
+import { hotelWifiNetworksTable } from "./hotel-wifi-networks";
 
 export const guestsTable = pgTable("guests", {
   id: serial("id").primaryKey(),
@@ -27,6 +28,11 @@ export const guestsTable = pgTable("guests", {
   originalCheckOutDate: date("original_check_out_date"),
   isExtended: boolean("is_extended").notNull().default(false),
   extensionCount: integer("extension_count").notNull().default(0),
+
+  /** Assigned hotel Wi-Fi network for this guest's stay */
+  wifiNetworkId: integer("wifi_network_id").references(() => hotelWifiNetworksTable.id, {
+    onDelete: "set null",
+  }),
 
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

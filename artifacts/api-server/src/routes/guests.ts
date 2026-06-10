@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { IRouter, Request } from "express";
-import { db, guestsTable, guestKeysTable, auditLogsTable } from "@workspace/db";
+import { db, guestsTable, guestKeysTable, auditLogsTable, hotelWifiNetworksTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
 import {
   requireGuestOperations,
@@ -43,9 +43,28 @@ const GUEST_SELECT = {
   originalCheckOutDate: guestsTable.originalCheckOutDate,
   isExtended: guestsTable.isExtended,
   extensionCount: guestsTable.extensionCount,
+  wifiNetworkId: guestsTable.wifiNetworkId,
   createdAt: guestsTable.createdAt,
   guestKey: guestKeysTable.keyDisplay,
 } as const;
+
+async function resolveWifiNetworkId(
+  hotelId: number,
+  wifiNetworkId: unknown,
+): Promise<number | null | "invalid"> {
+  if (wifiNetworkId === undefined || wifiNetworkId === null || wifiNetworkId === "") {
+    return null;
+  }
+  const id = typeof wifiNetworkId === "number" ? wifiNetworkId : parseInt(String(wifiNetworkId), 10);
+  if (!Number.isFinite(id) || id <= 0) return "invalid";
+
+  const [network] = await db
+    .select({ id: hotelWifiNetworksTable.id })
+    .from(hotelWifiNetworksTable)
+    .where(and(eq(hotelWifiNetworksTable.id, id), eq(hotelWifiNetworksTable.hotelId, hotelId)));
+
+  return network ? id : "invalid";
+}
 
 // ---------------------------------------------------------------------------
 // GET /guests — list all guests for this hotel
@@ -66,7 +85,8 @@ router.get("/guests", requireGuestOperations, async (req, res): Promise<void> =>
 // POST /guests — create a new guest
 // ---------------------------------------------------------------------------
 router.post("/guests", requireGuestOperations, async (req, res): Promise<void> => {
-  const { firstName, lastName, roomNumber, countryCode, checkInDate, checkOutDate } = req.body;
+  const { firstName, lastName, roomNumber, countryCode, checkInDate, checkOutDate, wifiNetworkId } =
+    req.body;
   const hotelId = req.session!.hotelId;
   const actorId = req.session!.userId;
 
@@ -104,6 +124,21 @@ router.post("/guests", requireGuestOperations, async (req, res): Promise<void> =
   const normalizedCountry = countryCode.trim().toUpperCase();
   const { voiceLocale } = deriveLocaleFromCountry(normalizedCountry);
 
+  const hotelNetworks = await db
+    .select({ id: hotelWifiNetworksTable.id })
+    .from(hotelWifiNetworksTable)
+    .where(eq(hotelWifiNetworksTable.hotelId, hotelId));
+
+  const resolvedWifiId = await resolveWifiNetworkId(hotelId, wifiNetworkId);
+  if (resolvedWifiId === "invalid") {
+    res.status(400).json({ error: "Invalid Wi-Fi network" });
+    return;
+  }
+  if (hotelNetworks.length > 0 && resolvedWifiId === null) {
+    res.status(400).json({ error: "wifiNetworkId is required when hotel Wi-Fi networks are configured" });
+    return;
+  }
+
   const [guest] = await db
     .insert(guestsTable)
     .values({
@@ -117,6 +152,7 @@ router.post("/guests", requireGuestOperations, async (req, res): Promise<void> =
       checkOutDate: validCheckOut,
       // originalCheckOutDate mirrors checkOutDate at creation — never overwritten.
       originalCheckOutDate: validCheckOut,
+      wifiNetworkId: resolvedWifiId,
     })
     .returning();
 
@@ -141,6 +177,7 @@ router.post("/guests", requireGuestOperations, async (req, res): Promise<void> =
       language: voiceLocale,
       checkInDate: validCheckIn,
       checkOutDate: validCheckOut,
+      wifiNetworkId: resolvedWifiId,
     },
   });
 
@@ -162,6 +199,7 @@ router.post("/guests", requireGuestOperations, async (req, res): Promise<void> =
       originalCheckOutDate: guest.originalCheckOutDate,
       isExtended: guest.isExtended,
       extensionCount: guest.extensionCount,
+      wifiNetworkId: guest.wifiNetworkId,
       createdAt: guest.createdAt,
       guestKey: guestKey.keyDisplay,
     },
@@ -210,7 +248,8 @@ router.patch("/guests/:id", requireGuestOperations, async (req, res): Promise<vo
 
   const hotelId = req.session!.hotelId;
   const actorId = req.session!.userId;
-  const { firstName, lastName, roomNumber, countryCode, checkInDate, checkOutDate } = req.body;
+  const { firstName, lastName, roomNumber, countryCode, checkInDate, checkOutDate, wifiNetworkId } =
+    req.body;
 
   const [existing] = await db
     .select()
@@ -232,6 +271,16 @@ router.patch("/guests/:id", requireGuestOperations, async (req, res): Promise<vo
     const normalized = countryCode.trim().toUpperCase();
     updates.countryCode = normalized;
     updates.language = deriveLocaleFromCountry(normalized).voiceLocale;
+  }
+
+  // ── Wi-Fi network ──
+  if (wifiNetworkId !== undefined) {
+    const resolvedWifiId = await resolveWifiNetworkId(hotelId, wifiNetworkId);
+    if (resolvedWifiId === "invalid") {
+      res.status(400).json({ error: "Invalid Wi-Fi network" });
+      return;
+    }
+    updates.wifiNetworkId = resolvedWifiId;
   }
 
   // ── Check-in date ──
@@ -423,6 +472,7 @@ router.post("/guests/:id/renew-key", requireGuestOperations, async (req, res): P
       originalCheckOutDate: existing.originalCheckOutDate,
       isExtended: existing.isExtended,
       extensionCount: existing.extensionCount,
+      wifiNetworkId: existing.wifiNetworkId,
       createdAt: existing.createdAt,
       guestKey: newKey.keyDisplay,
     },

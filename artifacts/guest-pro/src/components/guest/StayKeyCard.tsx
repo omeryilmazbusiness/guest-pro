@@ -10,7 +10,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useLocale } from "@/hooks/use-locale";
-import { useGuestFloorWifi } from "@/hooks/use-guest-floor-wifi";
+import { useGuestWifi } from "@/hooks/use-guest-wifi";
 import { cn } from "@/lib/utils";
 
 interface StayKeyCardProps {
@@ -54,7 +54,7 @@ export function StayKeyCard({
   lastName,
 }: StayKeyCardProps) {
   const { t, uiLocale } = useLocale();
-  const { data: floorWifi } = useGuestFloorWifi(!!roomNumber);
+  const { data: guestWifi } = useGuestWifi(true);
   const keyCopy = useCopyText();
   const wifiCopy = useCopyText();
 
@@ -70,7 +70,7 @@ export function StayKeyCard({
   };
 
   const guestName = [firstName, lastName].filter(Boolean).join(" ") || "—";
-  const showWifi = floorWifi?.configured && floorWifi.wifiPassword;
+  const showWifi = guestWifi?.configured && guestWifi.wifiPassword;
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-zinc-950 border border-zinc-800 shadow-xl shadow-zinc-950/25">
@@ -131,11 +131,11 @@ export function StayKeyCard({
             </p>
           </div>
 
-          {floorWifi!.wifiSsid && (
+          {guestWifi!.name && (
             <div className="min-w-0">
               <p className="text-[10px] font-medium text-zinc-500 mb-1">{t.stayWifiNetwork}</p>
               <p className="font-mono text-[14px] font-semibold text-white tracking-wide truncate">
-                {floorWifi!.wifiSsid}
+                {guestWifi!.name}
               </p>
             </div>
           )}
@@ -144,11 +144,11 @@ export function StayKeyCard({
             <p className="text-[10px] font-medium text-zinc-500 mb-1">{t.stayWifiPasswordLabel}</p>
             <div className="flex items-center gap-2">
               <p className="flex-1 min-w-0 font-mono text-[15px] font-semibold text-white tracking-wide truncate">
-                {floorWifi!.wifiPassword}
+                {guestWifi!.wifiPassword}
               </p>
               <button
                 type="button"
-                onClick={() => wifiCopy.copy(floorWifi!.wifiPassword!)}
+                onClick={() => wifiCopy.copy(guestWifi!.wifiPassword!)}
                 className={cn(
                   "shrink-0 flex items-center gap-1 rounded-xl px-2.5 py-2 text-[11px] font-semibold transition-all active:scale-95",
                   wifiCopy.copied

@@ -21,10 +21,13 @@ export const HealthCheckResponse = zod.object({
  * @summary Login (manager or guest)
  */
 export const LoginBody = zod.object({
-  "type": zod.enum(['manager', 'personnel', 'guest']),
+  "type": zod.enum(['manager', 'employee', 'guest']),
   "email": zod.string().nullish(),
   "password": zod.string().nullish(),
-  "guestKey": zod.string().nullish()
+  "guestKey": zod.string().nullish(),
+  "employeeNumber": zod.string().nullish(),
+  "hotelSlug": zod.string().nullish(),
+  "portal": zod.enum(['manager', 'restaurant']).optional().describe('Email\/password login portal (defaults to manager)')
 })
 
 export const LoginResponse = zod.object({
@@ -152,7 +155,8 @@ export const ListGuestsResponseItem = zod.object({
   "language": zod.string().nullish(),
   "hotelId": zod.number(),
   "createdAt": zod.coerce.date(),
-  "guestKey": zod.string().nullish()
+  "guestKey": zod.string().nullish(),
+  "wifiNetworkId": zod.number().nullish()
 })
 export const ListGuestsResponse = zod.array(ListGuestsResponseItem)
 
@@ -164,7 +168,10 @@ export const CreateGuestBody = zod.object({
   "firstName": zod.string(),
   "lastName": zod.string(),
   "roomNumber": zod.string(),
-  "countryCode": zod.string()
+  "countryCode": zod.string(),
+  "checkInDate": zod.string().optional(),
+  "checkOutDate": zod.string().optional(),
+  "wifiNetworkId": zod.number().optional()
 })
 
 
@@ -184,7 +191,8 @@ export const GetGuestResponse = zod.object({
   "language": zod.string().nullish(),
   "hotelId": zod.number(),
   "createdAt": zod.coerce.date(),
-  "guestKey": zod.string().nullish()
+  "guestKey": zod.string().nullish(),
+  "wifiNetworkId": zod.number().nullish()
 })
 
 

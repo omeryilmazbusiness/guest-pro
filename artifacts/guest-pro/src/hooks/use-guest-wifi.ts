@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchGuestFloorWifi } from "@/lib/floor-wifi";
+import { fetchGuestWifi } from "@/lib/hotel-wifi";
 
-export function useGuestFloorWifi(enabled = true) {
+export function useGuestWifi(enabled = true) {
   return useQuery({
-    queryKey: ["guest-floor-wifi"],
-    queryFn: fetchGuestFloorWifi,
+    queryKey: ["guest-wifi"],
+    queryFn: fetchGuestWifi,
     staleTime: 5 * 60_000,
     enabled,
     retry: (failureCount, error) => {

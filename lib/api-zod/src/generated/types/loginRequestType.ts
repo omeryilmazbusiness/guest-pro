@@ -11,6 +11,6 @@ export type LoginRequestType = typeof LoginRequestType[keyof typeof LoginRequest
 
 export const LoginRequestType = {
   manager: 'manager',
-  personnel: 'personnel',
+  employee: 'employee',
   guest: 'guest',
 } as const;

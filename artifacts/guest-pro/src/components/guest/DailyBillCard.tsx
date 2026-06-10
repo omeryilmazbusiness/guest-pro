@@ -7,6 +7,7 @@ import { tFmt } from "@/lib/i18n";
 import { dash } from "@/lib/guest-dashboard-ui";
 import { cn } from "@/lib/utils";
 import { DailyBillSheet } from "./DailyBillSheet";
+import { triggerHaptic } from "@/lib/haptic";
 
 export function DailyBillCard() {
   const { t, uiLocale } = useLocale();
@@ -25,10 +26,13 @@ export function DailyBillCard() {
         <h3 className={dash.sectionTitle}>{t.billSection}</h3>
         <button
           type="button"
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            triggerHaptic("open");
+            setOpen(true);
+          }}
           className={cn(
             dash.card,
-            "w-full text-start border border-zinc-100 bg-gradient-to-br from-white to-zinc-50/90 shadow-sm px-3.5 py-2.5 flex items-center gap-3 active:scale-[0.99] hover:border-zinc-200 transition-all",
+            "guest-tactile-pill w-full text-start border border-zinc-100 bg-gradient-to-br from-white to-zinc-50/90 shadow-sm px-3.5 py-2.5 flex items-center gap-3 hover:border-zinc-200 transition-all active:scale-[0.98]",
           )}
         >
           <span className={cn(dash.icon, "bg-zinc-900/[0.04] border border-zinc-100 flex items-center justify-center shrink-0")}>

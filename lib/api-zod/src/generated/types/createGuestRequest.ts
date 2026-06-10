@@ -11,4 +11,7 @@ export interface CreateGuestRequest {
   lastName: string;
   roomNumber: string;
   countryCode: string;
+  checkInDate?: string;
+  checkOutDate?: string;
+  wifiNetworkId?: number;
 }

@@ -17,6 +17,8 @@ import {
   Check,
   ScanLine,
 } from "lucide-react";
+import { useHotelWifiNetworks } from "@/hooks/use-hotel-wifi-networks";
+import { WifiNetworkSelectField } from "@/components/manager/WifiNetworkSelectField";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useStaffLocale } from "@/hooks/use-staff-locale";
@@ -53,7 +55,7 @@ import { useQrScannerGun } from "@/hooks/use-qr-scanner-gun";
 import { alpha3ToAlpha2 } from "@/lib/passport/nationality-map";
 import type { PassportData } from "@/lib/passport/types";
 
-function buildGuestSchema(t: StaffTranslations) {
+function buildGuestSchema(t: StaffTranslations, wifiRequired: boolean) {
   return z
     .object({
       firstName: z.string().min(1, t.guestFirstNameRequired),
@@ -62,6 +64,9 @@ function buildGuestSchema(t: StaffTranslations) {
       countryCode: z.string().min(2, t.guestCountryRequired),
       checkInDate: z.string().optional(),
       checkOutDate: z.string().optional(),
+      wifiNetworkId: wifiRequired
+        ? z.number({ message: t.guestWifiNetworkRequired })
+        : z.number().optional(),
     })
     .refine(
       (d) => {
@@ -90,7 +95,9 @@ export function CreateGuestSheet({ open, onClose, onCreated }: CreateGuestSheetP
   const { t } = useStaffLocale();
   const queryClient = useQueryClient();
   const createGuestMutation = useCreateGuest();
-  const schema = useMemo(() => buildGuestSchema(t), [t]);
+  const { data: wifiNetworks = [], isLoading: wifiNetworksLoading } = useHotelWifiNetworks(open);
+  const wifiRequired = wifiNetworks.length > 0;
+  const schema = useMemo(() => buildGuestSchema(t, wifiRequired), [t, wifiRequired]);
   const today = todayIso();
 
   const [countryOpen, setCountryOpen] = useState(false);
@@ -107,6 +114,7 @@ export function CreateGuestSheet({ open, onClose, onCreated }: CreateGuestSheetP
       countryCode: "",
       checkInDate: today,
       checkOutDate: "",
+      wifiNetworkId: undefined,
     },
   });
 
@@ -124,6 +132,7 @@ export function CreateGuestSheet({ open, onClose, onCreated }: CreateGuestSheetP
       countryCode: "",
       checkInDate: today,
       checkOutDate: "",
+      wifiNetworkId: undefined,
     });
   }, [open, form, today]);
 
@@ -159,6 +168,10 @@ export function CreateGuestSheet({ open, onClose, onCreated }: CreateGuestSheetP
   }
 
   function onSubmit(data: GuestFormValues) {
+    if (wifiRequired && !data.wifiNetworkId) {
+      form.setError("wifiNetworkId", { message: t.guestWifiNetworkRequired });
+      return;
+    }
     createGuestMutation.mutate(
       { data },
       {
@@ -195,6 +208,7 @@ export function CreateGuestSheet({ open, onClose, onCreated }: CreateGuestSheetP
       countryCode: "",
       checkInDate: today,
       checkOutDate: "",
+      wifiNetworkId: undefined,
     });
   }
 
@@ -309,6 +323,25 @@ export function CreateGuestSheet({ open, onClose, onCreated }: CreateGuestSheetP
                     </FormItem>
                   )}
                 />
+
+                {wifiRequired && (
+                  <FormField
+                    control={form.control}
+                    name="wifiNetworkId"
+                    render={({ field }) => (
+                      <WifiNetworkSelectField
+                        label={t.guestWifiNetwork}
+                        placeholder={t.guestWifiNetworkPlaceholder}
+                        emptyLabel={t.guestWifiNetworkEmpty}
+                        value={field.value}
+                        onChange={field.onChange}
+                        networks={wifiNetworks}
+                        loading={wifiNetworksLoading}
+                        labelClassName={labelClass}
+                      />
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={form.control}
@@ -448,7 +481,7 @@ export function CreateGuestSheet({ open, onClose, onCreated }: CreateGuestSheetP
                 <Button
                   type="submit"
                   data-testid="button-submit-guest"
-                  disabled={createGuestMutation.isPending}
+                  disabled={createGuestMutation.isPending || wifiNetworksLoading}
                   className="h-10 flex-1 rounded-xl bg-zinc-900 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800"
                 >
                   {createGuestMutation.isPending ? (

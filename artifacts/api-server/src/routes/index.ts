@@ -14,7 +14,7 @@ import staffPortalRouter from "./staff-portal";
 import routineTasksRouter from "./routine-tasks";
 import restaurantRouter from "./restaurant";
 import folioRouter from "./folio";
-import floorWifiRouter from "./floor-wifi";
+import wifiNetworksRouter from "./wifi-networks";
 import nearbyPlacesRouter from "./nearby-places";
 import guestPreferencesRouter from "./guest-preferences";
 import platformRouter from "./platform";
@@ -45,7 +45,7 @@ router.use(staffPortalRouter);
 router.use(routineTasksRouter);
 router.use(restaurantRouter);
 router.use(folioRouter);
-router.use(floorWifiRouter);
+router.use(wifiNetworksRouter);
 router.use(nearbyPlacesRouter);
 router.use(guestPreferencesRouter);
 

@@ -5,6 +5,7 @@
  * Guest Pro Hotel Concierge API
  * OpenAPI spec version: 0.1.0
  */
+import type { LoginRequestPortal } from './loginRequestPortal';
 import type { LoginRequestType } from './loginRequestType';
 
 export interface LoginRequest {
@@ -15,4 +16,10 @@ export interface LoginRequest {
   password?: string | null;
   /** @nullable */
   guestKey?: string | null;
+  /** @nullable */
+  employeeNumber?: string | null;
+  /** @nullable */
+  hotelSlug?: string | null;
+  /** Email/password login portal (defaults to manager) */
+  portal?: LoginRequestPortal;
 }

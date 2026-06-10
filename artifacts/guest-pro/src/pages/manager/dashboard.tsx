@@ -434,6 +434,7 @@ export default function ManagerDashboard() {
       countryCode: string;
       checkInDate?: string;
       checkOutDate?: string;
+      wifiNetworkId?: number;
     }
   ) => {
     await updateGuestMutation.mutateAsync(

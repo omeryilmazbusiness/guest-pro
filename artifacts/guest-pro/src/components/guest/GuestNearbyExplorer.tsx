@@ -1,10 +1,8 @@
 import { useMemo, useState, useCallback, useRef, useEffect } from "react";
 import {
   MapPin,
-  ChevronRight,
   Navigation,
   Building2,
-  X,
   Search,
   SlidersHorizontal,
   Check,
@@ -23,9 +21,10 @@ import {
 } from "@/lib/welcoming/nearby-place-meta";
 import { filterNearbyPlaces, type NearbyFilterKey } from "@/lib/nearby/nearby-filter";
 import { NearbyPlaceTypeIcon } from "@/components/welcoming/NearbyPlaceTypeIcon";
-import { NearbyDialogShell } from "@/components/welcoming/NearbyDialogShell";
 import { NearbyPlaceDetail } from "@/components/welcoming/NearbyPlaceDetail";
 import { GuestNearbyMapEmbed } from "@/components/guest/nearby/GuestNearbyMapEmbed";
+import { GuestNearbyPlaceRow } from "@/components/guest/GuestNearbyPlaceRow";
+import { GuestPremiumSheet } from "@/components/guest/GuestPremiumSheet";
 
 interface GuestNearbyExplorerProps {
   places: NearbyPlace[];
@@ -35,38 +34,6 @@ interface GuestNearbyExplorerProps {
   t: GuestTranslations;
   locale?: string;
   className?: string;
-}
-
-function NearestRow({
-  place,
-  active,
-  onSelect,
-}: {
-  place: NearbyPlace;
-  active: boolean;
-  onSelect: (place: NearbyPlace) => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(place)}
-      className={cn(
-        "group flex w-full items-center gap-3 rounded-2xl border px-3 py-2.5 text-start transition-all active:scale-[0.99]",
-        active
-          ? "border-teal-200/90 bg-white shadow-md ring-1 ring-teal-500/20"
-          : "border-transparent bg-white/95 hover:border-zinc-200/80 hover:bg-white hover:shadow-sm",
-      )}
-    >
-      <NearbyPlaceTypeIcon type={place.type} size="sm" />
-      <span className="min-w-0 flex-1">
-        <p className="truncate text-[14px] font-semibold text-zinc-900">{place.name}</p>
-        {place.distance !== "—" && (
-          <p className="text-[10px] font-medium text-zinc-400">{place.distance}</p>
-        )}
-      </span>
-      <ChevronRight className="h-4 w-4 shrink-0 text-zinc-300 transition-colors group-hover:text-teal-600" />
-    </button>
-  );
 }
 
 export function GuestNearbyExplorer({
@@ -282,11 +249,11 @@ export function GuestNearbyExplorer({
                 </p>
               ) : (
                 filteredPlaces.map((place) => (
-                  <NearestRow
+                  <GuestNearbyPlaceRow
                     key={place.id ?? place.name}
                     place={place}
                     active={previewPlace?.id === place.id}
-                    onSelect={openPlace}
+                    onOpen={openPlace}
                   />
                 ))
               )}
@@ -295,29 +262,19 @@ export function GuestNearbyExplorer({
         </div>
       </article>
 
-      <NearbyDialogShell
+      <GuestPremiumSheet
         open={modalPlace != null}
-        onClose={closeModal}
-        onEscape={closeModal}
+        onOpenChange={(next) => {
+          if (!next) closeModal();
+        }}
+        placement="center"
         ariaLabel={modalPlace?.name ?? s.nearbySection}
-        closeLabel={t.cancel}
+        className="max-h-[min(88dvh,640px)]"
       >
         {modalPlace && (
-          <div className="relative flex min-h-0 flex-1 flex-col">
-            <div className="absolute end-3 top-3 z-10">
-              <button
-                type="button"
-                onClick={closeModal}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white/95 text-zinc-500 shadow-sm backdrop-blur transition-colors hover:bg-zinc-100"
-                aria-label={t.cancel}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <NearbyPlaceDetail place={modalPlace} s={s} guestOrigin={hotelCenter} />
-          </div>
+          <NearbyPlaceDetail place={modalPlace} s={s} guestOrigin={hotelCenter} />
         )}
-      </NearbyDialogShell>
+      </GuestPremiumSheet>
     </>
   );
 }

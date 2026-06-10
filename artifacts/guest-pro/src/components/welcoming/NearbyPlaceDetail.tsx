@@ -85,7 +85,7 @@ export function NearbyPlaceDetail({ place, s, guestOrigin, className }: NearbyPl
 
   return (
     <div className={cn("flex min-h-0 flex-1 flex-col", className)}>
-      <div className="shrink-0 border-b border-zinc-100 px-4 pb-3 pt-4">
+      <div className="shrink-0 border-b border-zinc-100 px-4 pb-3 pt-4 pe-12">
         <div className="flex items-start gap-3">
           <NearbyPlaceTypeIcon type={place.type} size="md" />
           <div className="min-w-0 flex-1">

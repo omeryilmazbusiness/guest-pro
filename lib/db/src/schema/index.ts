@@ -18,6 +18,6 @@ export * from "./guest-folio";
 export * from "./staff-tasks";
 export * from "./routine-tasks";
 export * from "./hotel-ai";
-export * from "./hotel-floor-wifi";
+export * from "./hotel-wifi-networks";
 export * from "./hotel-nearby-places";
 export * from "./hotel-nearby-settings";

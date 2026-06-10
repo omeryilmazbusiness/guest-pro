@@ -12,7 +12,7 @@
  *   originalCheckOutDate). The UI shows a live extension-days preview.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -57,29 +57,37 @@ import { Button } from "@/components/ui/button";
 import { COUNTRIES, countryFlag } from "@/lib/locale";
 import type { Guest } from "@workspace/api-client-react";
 import { formatStayDate, minCheckOutDate, extensionDays } from "@/lib/stays";
+import { useStaffLocale } from "@/hooks/use-staff-locale";
+import { useHotelWifiNetworks } from "@/hooks/use-hotel-wifi-networks";
+import { WifiNetworkSelectField } from "@/components/manager/WifiNetworkSelectField";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
-const editSchema = z
-  .object({
-    firstName: z.string().min(1, "First name is required"),
-    lastName: z.string().min(1, "Last name is required"),
-    roomNumber: z.string().min(1, "Room number is required"),
-    countryCode: z.string().min(2, "Country is required"),
-    checkInDate: z.string().optional(),
-    checkOutDate: z.string().optional(),
-  })
-  .refine(
-    (d) => {
-      if (d.checkInDate && d.checkOutDate) {
-        return d.checkOutDate > d.checkInDate;
-      }
-      return true;
-    },
-    { message: "Check-out must be after check-in", path: ["checkOutDate"] }
-  );
+function buildEditSchema(wifiRequired: boolean, wifiRequiredMessage: string) {
+  return z
+    .object({
+      firstName: z.string().min(1, "First name is required"),
+      lastName: z.string().min(1, "Last name is required"),
+      roomNumber: z.string().min(1, "Room number is required"),
+      countryCode: z.string().min(2, "Country is required"),
+      checkInDate: z.string().optional(),
+      checkOutDate: z.string().optional(),
+      wifiNetworkId: wifiRequired
+        ? z.number({ message: wifiRequiredMessage })
+        : z.number().optional(),
+    })
+    .refine(
+      (d) => {
+        if (d.checkInDate && d.checkOutDate) {
+          return d.checkOutDate > d.checkInDate;
+        }
+        return true;
+      },
+      { message: "Check-out must be after check-in", path: ["checkOutDate"] },
+    );
+}
 
-export type EditForm = z.infer<typeof editSchema>;
+export type EditForm = z.infer<ReturnType<typeof buildEditSchema>>;
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -100,14 +108,28 @@ export function GuestEditModal({
   onSave,
   isSaving,
 }: GuestEditModalProps) {
+  const { t } = useStaffLocale();
   const [countryOpen, setCountryOpen] = useState(false);
+  const { data: wifiNetworks = [], isLoading: wifiNetworksLoading } = useHotelWifiNetworks(open);
+  const wifiRequired = wifiNetworks.length > 0;
+  const editSchema = useMemo(
+    () => buildEditSchema(wifiRequired, t.guestWifiNetworkRequired),
+    [wifiRequired, t.guestWifiNetworkRequired],
+  );
 
   // Safely read new date/extension fields (may not be in generated client types)
-  const raw = guest as any;
+  const raw = guest as Guest & {
+    checkInDate?: string | null;
+    checkOutDate?: string | null;
+    isExtended?: boolean;
+    extensionCount?: number;
+    wifiNetworkId?: number | null;
+  };
   const storedCheckIn: string | null = raw?.checkInDate ?? null;
   const storedCheckOut: string | null = raw?.checkOutDate ?? null;
   const isAlreadyExtended: boolean = raw?.isExtended ?? false;
   const extensionCount: number = raw?.extensionCount ?? 0;
+  const storedWifiNetworkId: number | undefined = raw?.wifiNetworkId ?? undefined;
 
   const form = useForm<EditForm>({
     resolver: zodResolver(editSchema),
@@ -118,6 +140,7 @@ export function GuestEditModal({
       countryCode: "",
       checkInDate: "",
       checkOutDate: "",
+      wifiNetworkId: undefined,
     },
   });
 
@@ -130,9 +153,10 @@ export function GuestEditModal({
         countryCode: guest.countryCode,
         checkInDate: storedCheckIn ?? "",
         checkOutDate: storedCheckOut ?? "",
+        wifiNetworkId: storedWifiNetworkId,
       });
     }
-  }, [guest, storedCheckIn, storedCheckOut, form]);
+  }, [guest, storedCheckIn, storedCheckOut, storedWifiNetworkId, form]);
 
   const selectedCountry = form.watch("countryCode");
   const watchedCheckOut = form.watch("checkOutDate");
@@ -145,6 +169,10 @@ export function GuestEditModal({
 
   const handleSubmit = async (data: EditForm) => {
     if (!guest) return;
+    if (wifiRequired && !data.wifiNetworkId) {
+      form.setError("wifiNetworkId", { message: t.guestWifiNetworkRequired });
+      return;
+    }
     await onSave(guest.id, data);
   };
 
@@ -204,6 +232,26 @@ export function GuestEditModal({
                   )}
                 />
               </div>
+
+              {wifiRequired && (
+                <FormField
+                  control={form.control}
+                  name="wifiNetworkId"
+                  render={({ field }) => (
+                    <WifiNetworkSelectField
+                      label={t.guestWifiNetwork}
+                      placeholder={t.guestWifiNetworkPlaceholder}
+                      emptyLabel={t.guestWifiNetworkEmpty}
+                      value={field.value}
+                      onChange={field.onChange}
+                      networks={wifiNetworks}
+                      loading={wifiNetworksLoading}
+                      labelClassName="text-zinc-700 font-medium ml-1"
+                      triggerClassName="h-12 rounded-2xl border-zinc-200 bg-zinc-50"
+                    />
+                  )}
+                />
+              )}
 
               <FormField
                 control={form.control}
@@ -383,7 +431,7 @@ export function GuestEditModal({
           <Button
             type="submit"
             form="edit-guest-form"
-            disabled={isSaving}
+            disabled={isSaving || wifiNetworksLoading}
             className="flex-1 h-12 rounded-2xl shadow-sm"
           >
             {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
