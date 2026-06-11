@@ -5,7 +5,7 @@ import {
   elevenLabsTtsService,
   TtsQuotaExceededError,
 } from "../lib/elevenlabs/elevenlabs-tts-service";
-import { ElevenLabsApiError } from "../lib/elevenlabs/elevenlabs-client";
+import { ElevenLabsApiError, parseElevenLabsDetail } from "../lib/elevenlabs/elevenlabs-client";
 import { elevenLabsConfig } from "../lib/elevenlabs/config";
 import { logger } from "../lib/logger";
 
@@ -120,14 +120,25 @@ router.post("/tts/synthesize", requireGuest, async (req, res): Promise<void> => 
     }
 
     if (err instanceof ElevenLabsApiError) {
+      const providerStatus =
+        err.providerStatus ?? parseElevenLabsDetail(err.message).status ?? "unknown";
+
+      if (providerStatus === "detected_unusual_activity") {
+        logger.warn(
+          { status: err.status, providerStatus, keyLength: elevenLabsConfig.apiKeyLength },
+          "tts:account-restricted — ElevenLabs free tier blocked from cloud IP; upgrade plan",
+        );
+        res.status(503).json({
+          code: "PROVIDER_ACCOUNT_RESTRICTED",
+          message:
+            "ElevenLabs blocked this account from server-side TTS (common on free tier + cloud hosting)",
+          providerStatus,
+          fallback: true,
+        });
+        return;
+      }
+
       if (err.status === 401 || err.status === 403) {
-        let providerStatus = "unknown";
-        try {
-          const json = JSON.parse(err.message) as { detail?: { status?: string } };
-          providerStatus = json.detail?.status ?? providerStatus;
-        } catch {
-          /* plain text */
-        }
         logger.warn(
           {
             status: err.status,
@@ -135,7 +146,7 @@ router.post("/tts/synthesize", requireGuest, async (req, res): Promise<void> => 
             keyLength: elevenLabsConfig.apiKeyLength,
             detail: err.message.slice(0, 240),
           },
-          "tts:invalid-api-key — compare elevenlabsKeyLength on /api/healthz with local .env",
+          "tts:invalid-api-key",
         );
         res.status(503).json({
           code: "INVALID_API_KEY",

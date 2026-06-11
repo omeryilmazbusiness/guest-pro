@@ -4,9 +4,28 @@ export class ElevenLabsApiError extends Error {
   constructor(
     message: string,
     readonly status: number,
+    readonly providerStatus?: string,
   ) {
     super(message);
     this.name = "ElevenLabsApiError";
+  }
+}
+
+export function parseElevenLabsDetail(raw: string): {
+  status?: string;
+  message?: string;
+} {
+  if (!raw) return {};
+  try {
+    const json = JSON.parse(raw) as { detail?: { status?: string; message?: string } };
+    return {
+      status: json.detail?.status,
+      message: json.detail?.message,
+    };
+  } catch {
+    const status = raw.match(/"status"\s*:\s*"([^"]+)"/)?.[1];
+    const message = raw.match(/"message"\s*:\s*"([^"]+)/)?.[1];
+    return { status, message };
   }
 }
 
@@ -72,9 +91,11 @@ async function requestSpeech(
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
+    const parsed = parseElevenLabsDetail(detail);
     throw new ElevenLabsApiError(
       detail.slice(0, 240) || `ElevenLabs TTS failed (${response.status})`,
       response.status,
+      parsed.status,
     );
   }
 

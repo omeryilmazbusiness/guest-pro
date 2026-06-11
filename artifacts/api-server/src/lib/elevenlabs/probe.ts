@@ -1,5 +1,5 @@
 import { elevenLabsConfig, DEFAULT_ELEVENLABS_VOICE_ID } from "./config";
-import { synthesizeSpeech, ElevenLabsApiError } from "./elevenlabs-client";
+import { synthesizeSpeech, ElevenLabsApiError, parseElevenLabsDetail } from "./elevenlabs-client";
 import { logger } from "../logger";
 
 export type ElevenLabsTtsProbeResult = {
@@ -13,13 +13,10 @@ export type ElevenLabsTtsProbeResult = {
 let cachedProbe: ElevenLabsTtsProbeResult | null = null;
 let probeInFlight: Promise<ElevenLabsTtsProbeResult> | null = null;
 
-function parseProviderStatus(message: string): string {
-  try {
-    const json = JSON.parse(message) as { detail?: { status?: string; message?: string } };
-    return json.detail?.status ?? json.detail?.message ?? message;
-  } catch {
-    return message.slice(0, 120);
-  }
+function parseProviderStatus(err: ElevenLabsApiError): string {
+  if (err.providerStatus) return err.providerStatus;
+  const parsed = parseElevenLabsDetail(err.message);
+  return parsed.status ?? parsed.message ?? "unknown";
 }
 
 /** Minimal paid TTS call — verifies the key works for text-to-speech (not /v1/user). */
@@ -43,7 +40,7 @@ export async function probeElevenLabsTts(): Promise<ElevenLabsTtsProbeResult> {
     return { ok: true, status: "ok", keyLength: key.length, checkedAt };
   } catch (err) {
     if (err instanceof ElevenLabsApiError) {
-      const status = parseProviderStatus(err.message);
+      const status = parseProviderStatus(err);
       logger.warn(
         { httpStatus: err.status, providerStatus: status, keyLength: key.length },
         "elevenlabs:tts-probe-failed",
