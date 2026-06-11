@@ -15,9 +15,8 @@ export interface TtsProviderStatus {
 
 let cachedStatus: TtsProviderStatus | null = null;
 let statusFetchedAt = 0;
-/** Skip ElevenLabs after repeated hard failures (not transient 502). */
+/** Disabled only after synthesize failures in this session. */
 let premiumTtsDisabled = false;
-let synthesizeFailureStreak = 0;
 const STATUS_TTL_MS = 60_000;
 
 export function getCachedTtsStatus(): TtsProviderStatus | null {
@@ -28,14 +27,13 @@ export function invalidateTtsStatusCache(): void {
   cachedStatus = null;
   statusFetchedAt = 0;
   premiumTtsDisabled = false;
-  synthesizeFailureStreak = 0;
 }
 
 function applyStatus(status: TtsProviderStatus): TtsProviderStatus {
   cachedStatus = status;
   statusFetchedAt = Date.now();
-  if (!status.available || status.fallback || status.remaining <= 0) {
-    premiumTtsDisabled = true;
+  if (status.available && status.remaining > 0) {
+    premiumTtsDisabled = false;
   }
   return status;
 }
@@ -46,41 +44,26 @@ export async function refreshTtsStatus(force = false): Promise<TtsProviderStatus
     return cachedStatus;
   }
 
-  if (premiumTtsDisabled && cachedStatus && !force) {
-    return cachedStatus;
-  }
-
   try {
     const status = await customFetch<TtsProviderStatus>("/api/tts/status");
     return applyStatus(status);
   } catch {
-    premiumTtsDisabled = true;
-    cachedStatus = {
-      provider: "elevenlabs",
-      available: false,
-      fallback: true,
-      voiceId: null,
-      voiceName: "Sarah",
-      monthlyLimit: 0,
-      used: 0,
-      remaining: 0,
-      monthKey: "",
-    };
-    statusFetchedAt = now;
     return cachedStatus;
   }
 }
 
-export function isElevenLabsTtsAvailable(): boolean {
-  if (premiumTtsDisabled) return false;
-  return Boolean(cachedStatus?.available && cachedStatus.remaining > 0);
+/** True when we should attempt server-side ElevenLabs (not permanently disabled). */
+export function shouldTryPremiumTts(): boolean {
+  return !premiumTtsDisabled;
 }
 
-export function markPremiumTtsUnavailable(force = false): void {
-  if (!force) {
-    synthesizeFailureStreak += 1;
-    if (synthesizeFailureStreak < 2) return;
-  }
+export function isElevenLabsTtsAvailable(): boolean {
+  if (premiumTtsDisabled) return false;
+  if (!cachedStatus) return true;
+  return cachedStatus.available && cachedStatus.remaining > 0;
+}
+
+export function markPremiumTtsUnavailable(): void {
   premiumTtsDisabled = true;
   if (cachedStatus) {
     cachedStatus = { ...cachedStatus, available: false, fallback: true, remaining: 0 };
@@ -88,7 +71,7 @@ export function markPremiumTtsUnavailable(force = false): void {
 }
 
 export function markPremiumTtsSuccess(): void {
-  synthesizeFailureStreak = 0;
+  premiumTtsDisabled = false;
 }
 
 type TtsErrorPayload = { code?: string; fallback?: boolean };
@@ -126,11 +109,8 @@ export async function fetchElevenLabsAudio(text: string, lang: string): Promise<
       }
     } catch (err) {
       const status = errorStatus(err);
-      const retryable = status === 502 && attempt === 0;
-      if (retryable) continue;
+      if (status === 502 && attempt === 0) continue;
       if (isFallbackTtsError(err)) {
-        markPremiumTtsUnavailable(true);
-      } else {
         markPremiumTtsUnavailable();
       }
       return null;

@@ -35,8 +35,9 @@ import { pickBestVoice, stripMarkdown } from "./language-resolver";
 import { cancelElevenLabsPlayback, playElevenLabsAudio } from "./elevenlabs-playback";
 import {
   fetchElevenLabsAudio,
-  isElevenLabsTtsAvailable,
+  getCachedTtsStatus,
   refreshTtsStatus,
+  shouldTryPremiumTts,
 } from "./tts-api";
 import { VoiceDiagnosticsLogger } from "./diagnostics";
 
@@ -122,7 +123,8 @@ async function synthesizeWithFallback(
 
   cancelSpeech();
 
-  if (isElevenLabsTtsAvailable()) {
+  if (shouldTryPremiumTts()) {
+    await refreshTtsStatus(!getCachedTtsStatus());
     try {
       VoiceDiagnosticsLogger.log("tts:elevenlabs-request");
       const blob = await fetchElevenLabsAudio(clean, lang);
@@ -143,11 +145,6 @@ async function synthesizeWithFallback(
       }
     } catch {
       VoiceDiagnosticsLogger.log("tts:elevenlabs-fallback", "error");
-    }
-  } else {
-    await refreshTtsStatus(false);
-    if (isElevenLabsTtsAvailable()) {
-      return synthesizeWithFallback(text, lang, options);
     }
   }
 

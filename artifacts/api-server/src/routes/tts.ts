@@ -91,10 +91,6 @@ router.post("/tts/synthesize", requireGuest, async (req, res): Promise<void> => 
     }
 
     const message = err instanceof Error ? err.message : String(err);
-    if (message.includes("invalid") && message.includes("API key")) {
-      res.status(503).json({ code: "NOT_CONFIGURED", fallback: true });
-      return;
-    }
     if (message.includes("Empty text after sanitization")) {
       res.status(400).json({ code: "EMPTY_TEXT", fallback: true });
       return;

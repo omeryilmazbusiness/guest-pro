@@ -6,7 +6,7 @@
  * so we detect what we can and degrade gracefully on first failure.
  */
 
-import { isElevenLabsTtsAvailable } from "./tts-api";
+import { getCachedTtsStatus } from "./tts-api";
 
 export interface VoiceCapabilityModel {
   /** Web Speech API (STT) is present in this browser */
@@ -48,6 +48,6 @@ export function detectVoiceCapability(): VoiceCapabilityModel {
     ttsSupported,
     canConverse: sttSupported && ttsSupported,
     isPwa,
-    premiumTtsAvailable: isElevenLabsTtsAvailable(),
+    premiumTtsAvailable: Boolean(getCachedTtsStatus()?.available),
   };
 }

@@ -1,5 +1,4 @@
 import { elevenLabsConfig } from "./config";
-import { isElevenLabsApiKeyValid } from "./api-key-verify";
 import { synthesizeSpeech } from "./elevenlabs-client";
 import { ElevenLabsQuotaStore } from "./quota-store";
 import { sanitizeTextForTts } from "./text-sanitize";
@@ -37,9 +36,7 @@ export class ElevenLabsTtsService {
 
   async getStatus(): Promise<TtsProviderStatus> {
     const snap = await this.quota.getSnapshot();
-    const configured = elevenLabsConfig.isConfigured;
-    const keyValid = configured ? await isElevenLabsApiKeyValid() : false;
-    const enabled = configured && keyValid;
+    const enabled = elevenLabsConfig.isConfigured;
     return {
       enabled,
       voiceId: enabled ? elevenLabsConfig.voiceId : null,
@@ -57,10 +54,6 @@ export class ElevenLabsTtsService {
   ): Promise<{ audio: Buffer; charsUsed: number }> {
     if (!elevenLabsConfig.isConfigured) {
       throw new Error("ElevenLabs is not configured");
-    }
-
-    if (!(await isElevenLabsApiKeyValid())) {
-      throw new Error("ElevenLabs API key is invalid or unreachable");
     }
 
     const text = sanitizeTextForTts(rawText, elevenLabsConfig.maxCharsPerRequest);

@@ -20,7 +20,6 @@ import {
   initializeOptionalServices,
 } from "./lib/startup-services";
 import { elevenLabsConfig } from "./lib/elevenlabs/config";
-import { isElevenLabsApiKeyValid } from "./lib/elevenlabs/api-key-verify";
 
 const port = Number(process.env["PORT"] ?? "3000");
 
@@ -134,22 +133,14 @@ async function bootstrap(): Promise<void> {
     }
 
     if (elevenLabsConfig.isConfigured) {
-      void isElevenLabsApiKeyValid().then((valid) => {
-        if (valid) {
-          logger.info(
-            {
-              voiceId: elevenLabsConfig.voiceId,
-              modelId: elevenLabsConfig.modelId,
-              monthlyCharLimit: elevenLabsConfig.monthlyCharLimit,
-            },
-            "ElevenLabs TTS enabled",
-          );
-        } else {
-          logger.warn(
-            "ElevenLabs TTS misconfigured — check ELEVENLABS_API_KEY on Railway (invalid or rejected)",
-          );
-        }
-      });
+      logger.info(
+        {
+          voiceId: elevenLabsConfig.voiceId,
+          modelId: elevenLabsConfig.modelId,
+          monthlyCharLimit: elevenLabsConfig.monthlyCharLimit,
+        },
+        "ElevenLabs TTS configured",
+      );
     } else {
       logger.info("ElevenLabs TTS disabled (ELEVENLABS_API_KEY not set)");
     }
