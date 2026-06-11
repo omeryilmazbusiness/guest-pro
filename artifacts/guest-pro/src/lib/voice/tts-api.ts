@@ -15,8 +15,9 @@ export interface TtsProviderStatus {
 
 let cachedStatus: TtsProviderStatus | null = null;
 let statusFetchedAt = 0;
-/** Skip ElevenLabs for the rest of the session once quota is exhausted or provider fails. */
+/** Skip ElevenLabs after repeated hard failures (not transient 502). */
 let premiumTtsDisabled = false;
+let synthesizeFailureStreak = 0;
 const STATUS_TTL_MS = 60_000;
 
 export function getCachedTtsStatus(): TtsProviderStatus | null {
@@ -27,6 +28,7 @@ export function invalidateTtsStatusCache(): void {
   cachedStatus = null;
   statusFetchedAt = 0;
   premiumTtsDisabled = false;
+  synthesizeFailureStreak = 0;
 }
 
 function applyStatus(status: TtsProviderStatus): TtsProviderStatus {
@@ -74,11 +76,19 @@ export function isElevenLabsTtsAvailable(): boolean {
   return Boolean(cachedStatus?.available && cachedStatus.remaining > 0);
 }
 
-export function markPremiumTtsUnavailable(): void {
+export function markPremiumTtsUnavailable(force = false): void {
+  if (!force) {
+    synthesizeFailureStreak += 1;
+    if (synthesizeFailureStreak < 2) return;
+  }
   premiumTtsDisabled = true;
   if (cachedStatus) {
     cachedStatus = { ...cachedStatus, available: false, fallback: true, remaining: 0 };
   }
+}
+
+export function markPremiumTtsSuccess(): void {
+  synthesizeFailureStreak = 0;
 }
 
 type TtsErrorPayload = { code?: string; fallback?: boolean };
@@ -96,20 +106,37 @@ function isFallbackTtsError(err: unknown): boolean {
   );
 }
 
+function errorStatus(err: unknown): number {
+  if (!err || typeof err !== "object" || !("status" in err)) return 0;
+  return (err as { status: number }).status;
+}
+
 export async function fetchElevenLabsAudio(text: string, lang: string): Promise<Blob | null> {
-  try {
-    return await customFetch<Blob>("/api/tts/synthesize", {
-      method: "POST",
-      body: JSON.stringify({ text, lang }),
-      responseType: "blob",
-      headers: { Accept: "audio/mpeg" },
-    });
-  } catch (err) {
-    if (isFallbackTtsError(err)) {
-      markPremiumTtsUnavailable();
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const blob = await customFetch<Blob>("/api/tts/synthesize", {
+        method: "POST",
+        body: JSON.stringify({ text, lang }),
+        responseType: "blob",
+        headers: { Accept: "audio/mpeg" },
+      });
+      if (blob && blob.size > 0) {
+        markPremiumTtsSuccess();
+        return blob;
+      }
+    } catch (err) {
+      const status = errorStatus(err);
+      const retryable = status === 502 && attempt === 0;
+      if (retryable) continue;
+      if (isFallbackTtsError(err)) {
+        markPremiumTtsUnavailable(true);
+      } else {
+        markPremiumTtsUnavailable();
+      }
       return null;
     }
-    markPremiumTtsUnavailable();
-    return null;
   }
+
+  markPremiumTtsUnavailable();
+  return null;
 }

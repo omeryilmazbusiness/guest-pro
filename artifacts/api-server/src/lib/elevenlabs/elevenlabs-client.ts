@@ -14,15 +14,51 @@ export interface ElevenLabsSynthesisParams {
   text: string;
   voiceId: string;
   modelId: string;
+  languageCode?: string;
 }
 
-export async function synthesizeSpeech(params: ElevenLabsSynthesisParams): Promise<Buffer> {
+const MODEL_FALLBACKS = [
+  "eleven_multilingual_v2",
+  "eleven_flash_v2_5",
+  "eleven_turbo_v2_5",
+] as const;
+
+/** Free-tier friendly MP3; avoids Creator-tier bitrate requirements. */
+const OUTPUT_FORMAT = "mp3_22050_32";
+
+function modelCandidates(preferred: string): string[] {
+  const ordered = [preferred, ...MODEL_FALLBACKS];
+  return [...new Set(ordered.filter(Boolean))];
+}
+
+async function requestSpeech(
+  params: ElevenLabsSynthesisParams,
+  modelId: string,
+): Promise<Buffer> {
   const apiKey = elevenLabsConfig.apiKey;
   if (!apiKey) {
     throw new ElevenLabsApiError("ElevenLabs is not configured", 503);
   }
 
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(params.voiceId)}`;
+  const url = new URL(
+    `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(params.voiceId)}`,
+  );
+  url.searchParams.set("output_format", OUTPUT_FORMAT);
+
+  const body: Record<string, unknown> = {
+    text: params.text,
+    model_id: modelId,
+    voice_settings: {
+      stability: 0.55,
+      similarity_boost: 0.78,
+      use_speaker_boost: true,
+    },
+  };
+
+  if (params.languageCode) {
+    body.language_code = params.languageCode;
+  }
+
   const response = await fetch(url, {
     method: "POST",
     headers: {
@@ -30,16 +66,8 @@ export async function synthesizeSpeech(params: ElevenLabsSynthesisParams): Promi
       "Content-Type": "application/json",
       Accept: "audio/mpeg",
     },
-    body: JSON.stringify({
-      text: params.text,
-      model_id: params.modelId,
-      voice_settings: {
-        stability: 0.55,
-        similarity_boost: 0.78,
-        style: 0.12,
-        use_speaker_boost: true,
-      },
-    }),
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(25_000),
   });
 
   if (!response.ok) {
@@ -51,5 +79,29 @@ export async function synthesizeSpeech(params: ElevenLabsSynthesisParams): Promi
   }
 
   const arrayBuffer = await response.arrayBuffer();
+  if (arrayBuffer.byteLength === 0) {
+    throw new ElevenLabsApiError("ElevenLabs returned empty audio", 502);
+  }
+
   return Buffer.from(arrayBuffer);
+}
+
+export async function synthesizeSpeech(params: ElevenLabsSynthesisParams): Promise<Buffer> {
+  const models = modelCandidates(params.modelId);
+  let lastError: ElevenLabsApiError | null = null;
+
+  for (const modelId of models) {
+    try {
+      return await requestSpeech(params, modelId);
+    } catch (err) {
+      if (!(err instanceof ElevenLabsApiError)) throw err;
+      lastError = err;
+      // Auth / quota errors won't improve with another model.
+      if (err.status === 401 || err.status === 403 || err.status === 402 || err.status === 429) {
+        throw err;
+      }
+    }
+  }
+
+  throw lastError ?? new ElevenLabsApiError("ElevenLabs TTS failed", 502);
 }

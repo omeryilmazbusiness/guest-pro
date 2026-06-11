@@ -3,9 +3,15 @@ import { optionalEnv, optionalInt } from "../env-helpers";
 /** Sarah — warm multilingual voice (verified on free-tier key). */
 export const DEFAULT_ELEVENLABS_VOICE_ID = "EXAVITQu4vr4xnSDxMaL";
 
+function normalizeApiKey(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const trimmed = raw.trim().replace(/^["']|["']$/g, "");
+  return trimmed || undefined;
+}
+
 export const elevenLabsConfig = {
   get apiKey(): string | undefined {
-    return optionalEnv("ELEVENLABS_API_KEY")?.trim() || undefined;
+    return normalizeApiKey(optionalEnv("ELEVENLABS_API_KEY"));
   },
 
   get voiceId(): string {

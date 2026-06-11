@@ -36,7 +36,6 @@ import { cancelElevenLabsPlayback, playElevenLabsAudio } from "./elevenlabs-play
 import {
   fetchElevenLabsAudio,
   isElevenLabsTtsAvailable,
-  markPremiumTtsUnavailable,
   refreshTtsStatus,
 } from "./tts-api";
 import { VoiceDiagnosticsLogger } from "./diagnostics";
@@ -129,13 +128,20 @@ async function synthesizeWithFallback(
       const blob = await fetchElevenLabsAudio(clean, lang);
       if (blob && blob.size > 0) {
         VoiceDiagnosticsLogger.log("tts:elevenlabs-play", `${blob.size}b`);
-        await playElevenLabsAudio(blob, options);
-        return;
+        let playbackFailed = false;
+        await playElevenLabsAudio(blob, {
+          ...options,
+          onError: () => {
+            playbackFailed = true;
+            options.onError?.();
+          },
+        });
+        if (!playbackFailed) return;
+        VoiceDiagnosticsLogger.log("tts:elevenlabs-fallback", "playback-error");
+      } else {
+        VoiceDiagnosticsLogger.log("tts:elevenlabs-fallback", "empty-or-quota");
       }
-      markPremiumTtsUnavailable();
-      VoiceDiagnosticsLogger.log("tts:elevenlabs-fallback", "empty-or-quota");
     } catch {
-      markPremiumTtsUnavailable();
       VoiceDiagnosticsLogger.log("tts:elevenlabs-fallback", "error");
     }
   } else {

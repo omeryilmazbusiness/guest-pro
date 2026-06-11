@@ -76,7 +76,10 @@ router.post("/tts/synthesize", requireGuest, async (req, res): Promise<void> => 
   }
 
   try {
-    const { audio, charsUsed } = await elevenLabsTtsService.synthesize(parsed.data.text);
+    const { audio, charsUsed } = await elevenLabsTtsService.synthesize(
+      parsed.data.text,
+      parsed.data.lang,
+    );
     res.setHeader("Content-Type", "audio/mpeg");
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("X-TTS-Chars-Used", String(charsUsed));
@@ -86,13 +89,32 @@ router.post("/tts/synthesize", requireGuest, async (req, res): Promise<void> => 
       res.status(429).json({ code: "QUOTA_EXCEEDED", fallback: true });
       return;
     }
-    if (
-      err instanceof ElevenLabsApiError &&
-      (err.status === 402 || err.status === 429)
-    ) {
-      res.status(429).json({ code: "QUOTA_EXCEEDED", fallback: true });
+
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes("invalid") && message.includes("API key")) {
+      res.status(503).json({ code: "NOT_CONFIGURED", fallback: true });
       return;
     }
+    if (message.includes("Empty text after sanitization")) {
+      res.status(400).json({ code: "EMPTY_TEXT", fallback: true });
+      return;
+    }
+
+    if (err instanceof ElevenLabsApiError) {
+      if (err.status === 401 || err.status === 403) {
+        logger.warn({ status: err.status, detail: err.message }, "tts:invalid-api-key");
+        res.status(503).json({ code: "NOT_CONFIGURED", fallback: true });
+        return;
+      }
+      if (err.status === 402 || err.status === 429) {
+        res.status(429).json({ code: "QUOTA_EXCEEDED", fallback: true });
+        return;
+      }
+      logger.warn({ status: err.status, detail: err.message }, "tts:synthesize-provider-error");
+      res.status(502).json({ code: "PROVIDER_ERROR", fallback: true });
+      return;
+    }
+
     logger.warn({ err }, "tts:synthesize-failed");
     res.status(502).json({ code: "PROVIDER_ERROR", fallback: true });
   }

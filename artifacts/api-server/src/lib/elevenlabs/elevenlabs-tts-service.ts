@@ -1,7 +1,14 @@
 import { elevenLabsConfig } from "./config";
+import { isElevenLabsApiKeyValid } from "./api-key-verify";
 import { synthesizeSpeech } from "./elevenlabs-client";
 import { ElevenLabsQuotaStore } from "./quota-store";
 import { sanitizeTextForTts } from "./text-sanitize";
+
+function toLanguageCode(lang?: string): string | undefined {
+  if (!lang?.trim()) return undefined;
+  const base = lang.trim().split("-")[0]?.toLowerCase();
+  return base && base.length === 2 ? base : undefined;
+}
 
 export type TtsProviderStatus = {
   enabled: boolean;
@@ -30,20 +37,30 @@ export class ElevenLabsTtsService {
 
   async getStatus(): Promise<TtsProviderStatus> {
     const snap = await this.quota.getSnapshot();
+    const configured = elevenLabsConfig.isConfigured;
+    const keyValid = configured ? await isElevenLabsApiKeyValid() : false;
+    const enabled = configured && keyValid;
     return {
-      enabled: elevenLabsConfig.isConfigured,
-      voiceId: elevenLabsConfig.isConfigured ? elevenLabsConfig.voiceId : null,
+      enabled,
+      voiceId: enabled ? elevenLabsConfig.voiceId : null,
       voiceName: "Sarah",
       monthlyLimit: snap.limit,
       used: snap.used,
-      remaining: snap.remaining,
+      remaining: enabled ? snap.remaining : 0,
       monthKey: snap.monthKey,
     };
   }
 
-  async synthesize(rawText: string): Promise<{ audio: Buffer; charsUsed: number }> {
+  async synthesize(
+    rawText: string,
+    lang?: string,
+  ): Promise<{ audio: Buffer; charsUsed: number }> {
     if (!elevenLabsConfig.isConfigured) {
       throw new Error("ElevenLabs is not configured");
+    }
+
+    if (!(await isElevenLabsApiKeyValid())) {
+      throw new Error("ElevenLabs API key is invalid or unreachable");
     }
 
     const text = sanitizeTextForTts(rawText, elevenLabsConfig.maxCharsPerRequest);
@@ -62,6 +79,7 @@ export class ElevenLabsTtsService {
         text,
         voiceId: elevenLabsConfig.voiceId,
         modelId: elevenLabsConfig.modelId,
+        languageCode: toLanguageCode(lang),
       });
       return { audio, charsUsed: chars };
     } catch (err) {
