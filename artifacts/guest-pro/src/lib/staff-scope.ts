@@ -81,6 +81,7 @@ export type ManagerDashboardTab =
   | "guests"
   | "rooms"
   | "requests"
+  | "feedback"
   | "summary"
   | "team"
   | "tasks";
@@ -88,11 +89,11 @@ export type ManagerDashboardTab =
 export function getVisibleManagerTabs(scope: StaffScopeKind): ManagerDashboardTab[] {
   switch (scope) {
     case "general_manager":
-      return ["team", "guests", "summary"];
+      return ["team", "guests", "feedback", "summary"];
     case "department_manager":
       return ["team", "tasks"];
     case "reception":
-      return ["guests"];
+      return ["guests", "feedback"];
     case "staff_personnel":
       return [];
     case "restaurant_personnel":

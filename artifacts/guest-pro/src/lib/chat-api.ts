@@ -2,7 +2,12 @@ import { customFetch } from "@workspace/api-client-react";
 
 export interface SuggestedChatAction {
   intent: string;
-  requestType: "FOOD_ORDER" | "SUPPORT_REQUEST" | "CARE_PROFILE_UPDATE" | null;
+  requestType:
+    | "FOOD_ORDER"
+    | "SUPPORT_REQUEST"
+    | "CARE_PROFILE_UPDATE"
+    | "GENERAL_SERVICE_REQUEST"
+    | null;
   summary: string;
   structuredData?: Record<string, unknown>;
   phase: "propose" | "confirmed";
@@ -16,9 +21,22 @@ export interface QuickActionRoute {
   chatMessage?: string;
 }
 
+export interface ChatRoadmapStop {
+  title: string;
+  subtitle?: string;
+  duration?: string;
+}
+
+export interface ChatRoadmap {
+  title: string;
+  city?: string;
+  stops: ChatRoadmapStop[];
+}
+
 export interface SendMessageExtras {
   suggestedAction?: SuggestedChatAction | null;
   replyOptions?: string[];
+  roadmap?: ChatRoadmap | null;
   aiCapacityExceeded?: boolean;
   quickActionRoutes?: QuickActionRoute[];
   requestCreated?: { requestId: number } | null;

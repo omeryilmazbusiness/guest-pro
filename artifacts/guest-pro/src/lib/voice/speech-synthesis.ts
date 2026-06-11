@@ -32,6 +32,14 @@
  */
 
 import { pickBestVoice, stripMarkdown } from "./language-resolver";
+import { cancelElevenLabsPlayback, playElevenLabsAudio } from "./elevenlabs-playback";
+import {
+  fetchElevenLabsAudio,
+  isElevenLabsTtsAvailable,
+  markPremiumTtsUnavailable,
+  refreshTtsStatus,
+} from "./tts-api";
+import { VoiceDiagnosticsLogger } from "./diagnostics";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -89,25 +97,72 @@ export function primeTts(): void {
   }
 }
 
+/** Preload ElevenLabs quota/status (call from mic tap / conversation start). */
+export function preloadPremiumTts(): void {
+  void refreshTtsStatus(true);
+}
+
 /**
- * Speak text aloud using browser TTS.
- * Cancels any currently playing utterance first (without triggering its onEnd).
- * Fires onEnd when speech completes naturally.
- * Fires onError on genuine synthesis failures (not on intentional cancels).
+ * Speak text aloud — ElevenLabs when available, otherwise browser TTS.
+ * Cancels any in-progress speech first.
  */
 export function synthesize(text: string, lang: string, options: SynthesisOptions = {}): void {
-  if (!("speechSynthesis" in window)) {
-    options.onEnd?.();
-    return;
-  }
+  void synthesizeWithFallback(text, lang, options);
+}
 
+async function synthesizeWithFallback(
+  text: string,
+  lang: string,
+  options: SynthesisOptions,
+): Promise<void> {
   const clean = stripMarkdown(text);
   if (!clean.trim()) {
     options.onEnd?.();
     return;
   }
 
-  // Cancel the previous utterance cleanly (sets its cancelled flag, removes listeners)
+  cancelSpeech();
+
+  if (isElevenLabsTtsAvailable()) {
+    try {
+      VoiceDiagnosticsLogger.log("tts:elevenlabs-request");
+      const blob = await fetchElevenLabsAudio(clean, lang);
+      if (blob && blob.size > 0) {
+        VoiceDiagnosticsLogger.log("tts:elevenlabs-play", `${blob.size}b`);
+        await playElevenLabsAudio(blob, options);
+        return;
+      }
+      markPremiumTtsUnavailable();
+      VoiceDiagnosticsLogger.log("tts:elevenlabs-fallback", "empty-or-quota");
+    } catch {
+      markPremiumTtsUnavailable();
+      VoiceDiagnosticsLogger.log("tts:elevenlabs-fallback", "error");
+    }
+  } else {
+    await refreshTtsStatus(false);
+    if (isElevenLabsTtsAvailable()) {
+      return synthesizeWithFallback(text, lang, options);
+    }
+  }
+
+  synthesizeBrowser(clean, lang, options);
+}
+
+/**
+ * Browser Web Speech API TTS (fallback).
+ */
+function synthesizeBrowser(text: string, lang: string, options: SynthesisOptions = {}): void {
+  if (!("speechSynthesis" in window)) {
+    options.onEnd?.();
+    return;
+  }
+
+  const clean = text.trim();
+  if (!clean) {
+    options.onEnd?.();
+    return;
+  }
+
   cancelSpeech();
 
   // Per-utterance cancel flag — never shared across calls
@@ -188,6 +243,7 @@ export function synthesize(text: string, lang: string, options: SynthesisOptions
  * Use when stopping the conversation or the user interrupts the AI.
  */
 export function cancelSpeech(): void {
+  cancelElevenLabsPlayback();
   if (!("speechSynthesis" in window)) return;
   // Remove any pending voiceschanged listener first
   if (pendingVoicesListener) {

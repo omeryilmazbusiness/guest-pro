@@ -4,7 +4,7 @@
  */
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { parseAiResponse, stripActionMarkup } from "./chat-action-parse";
+import { isRoadmapRequest, parseAiResponse, stripActionMarkup } from "./chat-action-parse";
 
 describe("stripActionMarkup", () => {
   it("removes complete ACTION blocks", () => {
@@ -17,6 +17,19 @@ describe("stripActionMarkup", () => {
     const raw =
       '<ACTION>{"intent":"activity","phase":"propose","requestType":null,"structuredData":';
     assert.equal(stripActionMarkup(raw), "");
+  });
+});
+
+describe("isRoadmapRequest", () => {
+  it("detects explore and trip starters", () => {
+    assert.equal(
+      isRoadmapRequest(
+        "Create a city roadmap: famous sights, must-try local flavors. Output the full structured ROADMAP.",
+      ),
+      true,
+    );
+    assert.equal(isRoadmapRequest("Şehrin ünlü yerlerini içeren gezi yol haritası oluştur."), true);
+    assert.equal(isRoadmapRequest("I need extra towels please"), false);
   });
 });
 
@@ -61,5 +74,18 @@ describe("parseAiResponse", () => {
     const raw = `Pick one:\n1. Spa\n2. Restaurant\n3. Walk`;
     const { replyOptions } = parseAiResponse(raw);
     assert.deepEqual(replyOptions, ["Spa", "Restaurant", "Walk"]);
+  });
+
+  it("parses detailed roadmap with categories and tips", () => {
+    const raw = `Here is your plan.
+<ROADMAP>{"title":"Istanbul Icons","city":"Istanbul, Turkey","summary":"Fast half-day tour","stops":[{"title":"Hagia Sophia","subtitle":"Exterior walk","duration":"45 min","category":"landmark","tip":"Go early"},{"title":"Balık ekmek","subtitle":"Eminönü","duration":"30 min","category":"street_food"}]}</ROADMAP>
+<OPTIONS>["Start here","Shorter route"]</OPTIONS>`;
+    const { guestText, roadmap } = parseAiResponse(raw);
+    assert.match(guestText, /Here is your plan/);
+    assert.equal(roadmap?.city, "Istanbul, Turkey");
+    assert.equal(roadmap?.summary, "Fast half-day tour");
+    assert.equal(roadmap?.stops.length, 2);
+    assert.equal(roadmap?.stops[0]?.category, "landmark");
+    assert.equal(roadmap?.stops[1]?.category, "street_food");
   });
 });

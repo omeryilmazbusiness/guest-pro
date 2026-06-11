@@ -57,7 +57,8 @@ export const COUNTRY_LOCALE_MAP: Record<string, LocaleInfo> = {
   IN: { uiLocale: "en", voiceLocale: "en-IN", dir: "ltr" },
   SG: { uiLocale: "en", voiceLocale: "en-SG", dir: "ltr" },
   PH: { uiLocale: "en", voiceLocale: "en-PH", dir: "ltr" },
-  PK: { uiLocale: "en", voiceLocale: "en-PK", dir: "ltr" },
+  PK: { uiLocale: "ur", voiceLocale: "ur-PK", dir: "rtl" },
+  KU: { uiLocale: "ku", voiceLocale: "ku-TR", dir: "ltr" },
   NG: { uiLocale: "en", voiceLocale: "en-NG", dir: "ltr" },
 
   // ── German ────────────────────────────────────────────────────────────────

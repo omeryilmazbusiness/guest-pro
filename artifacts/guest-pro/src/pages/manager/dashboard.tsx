@@ -77,11 +77,13 @@ import { computeTrackingSummary } from "@/lib/tracking-summary";
 import { GuestsOverviewCard } from "@/components/manager/GuestsOverviewCard";
 import { ManagerOverviewCards } from "@/components/manager/ManagerOverviewCards";
 import { ManagerDashboardHeader } from "@/components/manager/ManagerDashboardHeader";
+import { GmSetupWizard } from "@/components/manager/GmSetupWizard";
 import { ManagerAnimatedTabs } from "@/components/manager/ManagerAnimatedTabs";
 import { ManagerTabPanel } from "@/components/manager/ManagerTabPanel";
 import { GuestDetailSheet } from "@/components/manager/GuestDetailSheet";
 import type { ManagerDashboardTab } from "@/lib/manager-dashboard-nav";
 import { StaffRequestsBoard } from "@/components/manager/StaffRequestsBoard";
+import { StaffFeedbackBoard } from "@/components/manager/StaffFeedbackBoard";
 import { NewRequestAlert } from "@/components/manager/NewRequestAlert";
 import { WelcomeAreaAlertBanner } from "@/components/manager/WelcomeAreaAlertBanner";
 import { DailySummaryTab } from "@/components/manager/DailySummaryTab";
@@ -250,6 +252,7 @@ export default function ManagerDashboard() {
       param === "guests" ||
       param === "rooms" ||
       param === "requests" ||
+      param === "feedback" ||
       param === "summary" ||
       param === "team" ||
       param === "tasks"
@@ -318,6 +321,7 @@ export default function ManagerDashboard() {
 
   // ── Open request count (updated by StaffRequestsBoard)
   const [openRequestCount, setOpenRequestCount] = useState(0);
+  const [openFeedbackCount, setOpenFeedbackCount] = useState(0);
 
   const handleNavigateToRequests = useCallback(() => {
     setActiveTab("requests");
@@ -513,6 +517,7 @@ export default function ManagerDashboard() {
         guestCount={guests?.length ?? 0}
         roomCount={allRooms.length}
         requestCount={openRequestCount}
+        feedbackCount={openFeedbackCount}
         teamCount={staffInfo.active}
         canCreateGuest={canCreate}
         onTabChange={setActiveTab}
@@ -555,6 +560,8 @@ export default function ManagerDashboard() {
           </>
         }
       />
+
+      {staffScope.isGeneralManager && <GmSetupWizard />}
 
       {/* ── Sticky filter bars — below header, tab-conditional ── */}
       {activeTab === "rooms" && (
@@ -612,6 +619,7 @@ export default function ManagerDashboard() {
           guestCount={guests?.length ?? 0}
           roomCount={allRooms.length}
           requestCount={openRequestCount}
+          feedbackCount={openFeedbackCount}
           teamCount={staffInfo.active}
           t={t}
         />
@@ -772,6 +780,15 @@ export default function ManagerDashboard() {
             <StaffRequestsBoard
               presenceMap={presenceMap}
               onOpenCountChange={setOpenRequestCount}
+            />
+          </div>
+        )}
+
+        {activeTab === "feedback" && staffScope.canAccessTab("feedback") && (
+          <div className="animate-in fade-in duration-200">
+            <StaffFeedbackBoard
+              presenceMap={presenceMap}
+              onOpenCountChange={setOpenFeedbackCount}
             />
           </div>
         )}

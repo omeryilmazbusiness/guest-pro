@@ -1,11 +1,8 @@
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { PremiumMicIcon } from "@/components/guest/icons/PremiumMicIcon";
-import { cn } from "@/lib/utils";
+import { SonicWaveform } from "@/components/ui/sonic-waveform";
 import { GUEST_OVERLAY_FADE } from "@/lib/guest-motion";
-
-const SPECTRUM_RING =
-  "conic-gradient(from 210deg, #34d399 0deg, #22d3ee 52deg, #6366f1 118deg, #d946ef 188deg, #fb7185 248deg, #fbbf24 308deg, #34d399 360deg)";
 
 interface GuestVoiceListeningOverlayProps {
   open: boolean;
@@ -29,7 +26,6 @@ export function GuestVoiceListeningOverlay({
   onCancel,
 }: GuestVoiceListeningOverlayProps) {
   const reduceMotion = useReducedMotion();
-  const bloomScale = listening ? 1 + Math.min(amplitude * 0.4, 0.4) : 1;
   const displayText = transcript.trim();
 
   if (typeof document === "undefined") return null;
@@ -49,7 +45,7 @@ export function GuestVoiceListeningOverlay({
         >
           <motion.button
             type="button"
-            className="absolute inset-0 bg-black/72 backdrop-blur-md"
+            className="absolute inset-0 bg-white/72 backdrop-blur-xl"
             aria-label={cancelLabel}
             onClick={onCancel}
             initial={{ opacity: 0 }}
@@ -65,53 +61,32 @@ export function GuestVoiceListeningOverlay({
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="overflow-hidden rounded-[1.75rem] border border-white/[0.08] bg-zinc-950 shadow-[0_32px_80px_-24px_rgba(0,0,0,0.85)]">
-              <div
-                className="pointer-events-none absolute inset-x-0 top-0 h-24 opacity-40"
-                style={{
-                  background:
-                    "linear-gradient(180deg, rgba(99,102,241,0.22) 0%, rgba(34,211,238,0.08) 45%, transparent 100%)",
-                }}
-                aria-hidden
-              />
-
+            <div className="overflow-hidden rounded-[1.75rem] border border-zinc-200/90 bg-white/95 shadow-[0_24px_64px_-20px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
               <div className="relative flex flex-col items-center px-6 pb-6 pt-8">
-                <div className="relative mb-6 flex h-[5.5rem] w-[5.5rem] items-center justify-center">
-                  <div
-                    className="absolute inset-0 rounded-full blur-2xl opacity-60"
-                    style={{
-                      background: SPECTRUM_RING,
-                      transform: `scale(${bloomScale})`,
-                    }}
-                    aria-hidden
+                <div className="relative mb-6 flex h-28 w-full items-center justify-center">
+                  <SonicWaveform
+                    amplitude={amplitude}
+                    active={listening}
+                    theme="light"
+                    className="rounded-2xl"
                   />
-                  <div
-                    className="relative rounded-full p-[2px] shadow-[0_0_40px_rgba(99,102,241,0.35)]"
-                    style={{ background: SPECTRUM_RING }}
-                  >
-                    <div
-                      className={cn(
-                        "flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full bg-black",
-                        listening && "guest-voice-pulse",
-                      )}
-                    >
-                      <PremiumMicIcon variant="light" className="h-7 w-7" />
-                    </div>
+                  <div className="relative z-10 flex h-[4.85rem] w-[4.85rem] items-center justify-center rounded-full bg-white shadow-[0_8px_28px_-8px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,0.95)]">
+                    <PremiumMicIcon variant="dark" className="h-8 w-8" />
                   </div>
                 </div>
 
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-400">
                   {listening ? listeningLabel : subtitle}
                 </p>
 
-                <div className="mt-5 min-h-[4.5rem] w-full rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-4 text-center">
+                <div className="mt-5 min-h-[4.5rem] w-full rounded-2xl border border-zinc-100 bg-zinc-50/80 px-4 py-4 text-center">
                   {displayText ? (
-                    <p className="text-[17px] font-medium leading-relaxed text-white">
-                      <span className="text-zinc-500">&ldquo;</span>
+                    <p className="text-[17px] font-medium leading-relaxed text-zinc-900">
+                      <span className="text-zinc-400">&ldquo;</span>
                       {displayText}
-                      <span className="text-zinc-500">&rdquo;</span>
+                      <span className="text-zinc-400">&rdquo;</span>
                       {listening && (
-                        <span className="ms-0.5 inline-block h-[1.1em] w-[2px] animate-pulse bg-teal-400 align-[-2px]" />
+                        <span className="ms-0.5 inline-block h-[1.1em] w-[2px] animate-pulse bg-indigo-400 align-[-2px]" />
                       )}
                     </p>
                   ) : (
@@ -122,7 +97,7 @@ export function GuestVoiceListeningOverlay({
                 <button
                   type="button"
                   onClick={onCancel}
-                  className="mt-6 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-[13px] font-semibold text-zinc-300 transition-colors hover:bg-white/[0.08] hover:text-white"
+                  className="mt-6 w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-[13px] font-semibold text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900"
                 >
                   {cancelLabel}
                 </button>

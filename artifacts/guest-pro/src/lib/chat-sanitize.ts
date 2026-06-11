@@ -4,6 +4,8 @@ const ACTION_OPEN_RE = /<ACTION>\s*[\s\S]*$/i;
 const ACTION_CLOSE_RE = /<\/ACTION>/gi;
 const OPTIONS_BLOCK_RE = /<OPTIONS>\s*[\s\S]*?\s*<\/OPTIONS>/gi;
 const OPTIONS_OPEN_RE = /<OPTIONS>\s*[\s\S]*$/i;
+const ROADMAP_BLOCK_RE = /<ROADMAP>\s*[\s\S]*?\s*<\/ROADMAP>/gi;
+const ROADMAP_OPEN_RE = /<ROADMAP>\s*[\s\S]*$/i;
 
 export function stripActionMarkup(raw: string): string {
   return raw
@@ -21,5 +23,8 @@ export function stripAiMarkup(raw: string): string {
     .replace(OPTIONS_BLOCK_RE, "")
     .replace(OPTIONS_OPEN_RE, "")
     .replace(/<\/OPTIONS>/gi, "")
+    .replace(ROADMAP_BLOCK_RE, "")
+    .replace(ROADMAP_OPEN_RE, "")
+    .replace(/<\/ROADMAP>/gi, "")
     .trim();
 }

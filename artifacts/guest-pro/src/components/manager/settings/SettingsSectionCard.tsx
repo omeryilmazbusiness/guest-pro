@@ -19,13 +19,15 @@ export function SettingsField({
   label,
   hint,
   children,
+  className,
 }: {
   label: string;
   hint?: string;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className={className ? `space-y-1.5 ${className}` : "space-y-1.5"}>
       <label className="block text-xs font-semibold text-zinc-700">{label}</label>
       {children}
       {hint && <p className="text-[11px] text-zinc-400 leading-snug">{hint}</p>}
@@ -34,30 +36,37 @@ export function SettingsField({
 }
 
 export function SettingsSectionCard({
+  id,
   icon,
   title,
   subtitle,
   children,
 }: {
-  icon: React.ReactNode;
+  id?: string;
+  icon?: React.ReactNode;
   title: string;
   subtitle?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white border border-zinc-100 rounded-3xl shadow-sm shadow-zinc-100/60 overflow-hidden">
-      <div className="px-5 pt-5 pb-4 border-b border-zinc-50 flex items-start gap-3">
-        <div className="w-9 h-9 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center shrink-0 mt-0.5">
-          {icon}
-        </div>
+    <div
+      id={id}
+      className="scroll-mt-24 overflow-hidden rounded-2xl border border-zinc-200 bg-white"
+    >
+      <div className="flex items-start gap-2.5 border-b border-zinc-100 px-4 py-3">
+        {icon ? (
+          <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center text-zinc-500">
+            {icon}
+          </div>
+        ) : null}
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-zinc-900">{title}</h3>
+          <h3 className="text-[13px] font-semibold text-zinc-900">{title}</h3>
           {subtitle && (
-            <p className="text-xs text-zinc-400 mt-0.5 leading-snug">{subtitle}</p>
+            <p className="mt-0.5 text-[11px] leading-snug text-zinc-500">{subtitle}</p>
           )}
         </div>
       </div>
-      <div className="p-5">{children}</div>
+      <div className="px-4 py-3">{children}</div>
     </div>
   );
 }

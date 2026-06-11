@@ -2,11 +2,15 @@ import { useCallback, useEffect, useState } from "react";
 import { Loader2, Plus, Trash2, Wifi } from "lucide-react";
 import { toast } from "sonner";
 import { listWifiNetworks, saveWifiNetworks } from "@/lib/hotel-wifi";
+import { notifyHotelSetupChanged } from "@/lib/hotel-setup-events";
 import { useStaffLocale } from "@/hooks/use-staff-locale";
 import { tStaff } from "@/lib/staff-i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SettingsSectionCard, SettingsField } from "@/components/manager/settings/SettingsSectionCard";
+import { CollapsibleSettingsPanel } from "@/components/manager/settings/CollapsibleSettingsPanel";
+import { SectionSaveBar } from "@/components/manager/settings/SectionSaveBar";
+import { SettingsField } from "@/components/manager/settings/SettingsSectionCard";
+import { validateWifiRow } from "@/lib/setup-section-validation";
 
 interface NetworkDraft {
   localId: string;
@@ -28,7 +32,6 @@ export function WifiNetworksSettingsSection() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [networks, setNetworks] = useState<NetworkDraft[]>([emptyNetwork()]);
-
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -64,26 +67,56 @@ export function WifiNetworksSettingsSection() {
     );
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const payload = networks
-      .filter((n) => n.name.trim() && n.password.trim())
-      .map((n, i) => ({
+  const handleSave = async (): Promise<boolean> => {
+    const payload: Array<{
+      id?: number;
+      name: string;
+      password: string;
+      sortOrder: number;
+    }> = [];
+    let hasAnyInput = false;
+
+    for (const [i, n] of networks.entries()) {
+      const state = validateWifiRow(n.name, n.password);
+      if (state === "empty") continue;
+
+      hasAnyInput = true;
+      const row = String(i + 1);
+
+      if (state === "partial") {
+        toast.error(
+          n.name.trim()
+            ? tStaff(t.settingsWifiPasswordRequired, { n: row })
+            : tStaff(t.settingsWifiNameRequired, { n: row }),
+        );
+        return false;
+      }
+
+      payload.push({
         ...(n.id ? { id: n.id } : {}),
         name: n.name.trim(),
-        password: n.password,
+        password: n.password.trim(),
         sortOrder: i,
-      }));
+      });
+    }
+
+    if (!hasAnyInput || payload.length === 0) {
+      toast.error(t.settingsWifiNetworkRequired);
+      return false;
+    }
 
     setSaving(true);
     try {
       await saveWifiNetworks(payload);
+      notifyHotelSetupChanged();
       toast.success(t.settingsWifiNetworksSaved);
       await load();
+      return true;
     } catch (err: unknown) {
       const msg =
         (err as { data?: { error?: string } })?.data?.error ?? t.settingsWifiNetworksSaveFailed;
       toast.error(msg);
+      return false;
     } finally {
       setSaving(false);
     }
@@ -91,87 +124,76 @@ export function WifiNetworksSettingsSection() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
-        <Loader2 className="h-7 w-7 animate-spin text-zinc-300" />
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-zinc-300" />
       </div>
     );
   }
 
   return (
-    <SettingsSectionCard
-      icon={<Wifi className="w-4 h-4 text-amber-600" />}
+    <CollapsibleSettingsPanel
+      id="setup-wifi"
+      icon={<Wifi className="h-4 w-4" />}
       title={t.settingsWifiNetworksTitle}
       subtitle={t.settingsWifiNetworksSubtitle}
+      footer={
+        <SectionSaveBar
+          label={t.assistantSectionSave}
+          homeLabel={t.assistantSectionHome}
+          saving={saving}
+          onSave={() => void handleSave()}
+          onHome={() => handleSave()}
+        />
+      }
     >
-      <form onSubmit={handleSave} className="space-y-4">
-        <p className="text-[11px] text-zinc-500 leading-relaxed rounded-xl bg-zinc-50 border border-zinc-100 px-3 py-2.5">
-          {t.settingsWifiNetworksHint}
-        </p>
+      <p className="text-[11px] leading-relaxed text-zinc-500">{t.settingsWifiNetworksHint}</p>
 
-        <div className="space-y-3">
-          {networks.map((network, index) => (
-            <div
-              key={network.localId}
-              className="rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 space-y-3"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-zinc-700">
-                  <Wifi className="h-4 w-4 text-zinc-400" />
-                  <span className="text-xs font-semibold">
-                    {tStaff(t.settingsWifiNetworkRow, { n: String(index + 1) })}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeNetwork(network.localId)}
-                  className="h-8 w-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
-                  aria-label={t.settingsRemoveWifiNetwork}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-
-              <SettingsField label={t.settingsWifiName}>
-                <Input
-                  value={network.name}
-                  onChange={(e) => updateNetwork(network.localId, { name: e.target.value })}
-                  placeholder="Hotel-Guest"
-                  className="h-10 rounded-xl text-sm font-mono"
-                />
-              </SettingsField>
-
-              <SettingsField label={t.settingsWifiPassword}>
-                <Input
-                  type="text"
-                  value={network.password}
-                  onChange={(e) => updateNetwork(network.localId, { password: e.target.value })}
-                  placeholder="••••••••"
-                  className="h-10 rounded-xl text-sm font-mono"
-                  autoComplete="off"
-                />
-              </SettingsField>
+      <div className="mt-3 space-y-2">
+        {networks.map((network, index) => (
+          <div key={network.localId} className="rounded-lg border border-zinc-100 bg-zinc-50/40 p-3 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-zinc-700">
+                {tStaff(t.settingsWifiNetworkRow, { n: String(index + 1) })}
+              </span>
+              <button
+                type="button"
+                onClick={() => removeNetwork(network.localId)}
+                className="text-zinc-400 hover:text-rose-500"
+                aria-label={t.settingsRemoveWifiNetwork}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
             </div>
-          ))}
-        </div>
+            <SettingsField label={t.settingsWifiName}>
+              <Input
+                value={network.name}
+                onChange={(e) => updateNetwork(network.localId, { name: e.target.value })}
+                placeholder="Hotel-Guest"
+                className="h-8 rounded-lg text-sm font-mono"
+              />
+            </SettingsField>
+            <SettingsField label={t.settingsWifiPassword}>
+              <Input
+                type="text"
+                value={network.password}
+                onChange={(e) => updateNetwork(network.localId, { password: e.target.value })}
+                className="h-8 rounded-lg text-sm font-mono"
+                autoComplete="off"
+              />
+            </SettingsField>
+          </div>
+        ))}
+      </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setNetworks((prev) => [...prev, emptyNetwork()])}
-          className="w-full h-10 rounded-2xl border-dashed border-zinc-200 text-zinc-600 hover:bg-zinc-50"
-        >
-          <Plus className="h-4 w-4 mr-1.5" />
-          {t.settingsAddWifiNetwork}
-        </Button>
-
-        <Button
-          type="submit"
-          disabled={saving}
-          className="w-full h-11 rounded-2xl bg-zinc-900 text-white hover:bg-zinc-800"
-        >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t.settingsSaveWifiNetworks}
-        </Button>
-      </form>
-    </SettingsSectionCard>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setNetworks((prev) => [...prev, emptyNetwork()])}
+        className="mt-3 h-8 w-full rounded-lg border-dashed border-zinc-200 text-[12px] text-zinc-600"
+      >
+        <Plus className="mr-1 h-3.5 w-3.5" />
+        {t.settingsAddWifiNetwork}
+      </Button>
+    </CollapsibleSettingsPanel>
   );
 }

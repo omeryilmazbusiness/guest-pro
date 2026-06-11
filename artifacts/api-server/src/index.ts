@@ -19,6 +19,7 @@ import {
   initializeDatabase,
   initializeOptionalServices,
 } from "./lib/startup-services";
+import { elevenLabsConfig } from "./lib/elevenlabs/config";
 
 const port = Number(process.env["PORT"] ?? "3000");
 
@@ -129,6 +130,19 @@ async function bootstrap(): Promise<void> {
       startScheduler();
     } else {
       logger.warn("Background scheduler skipped (database unavailable)");
+    }
+
+    if (elevenLabsConfig.isConfigured) {
+      logger.info(
+        {
+          voiceId: elevenLabsConfig.voiceId,
+          modelId: elevenLabsConfig.modelId,
+          monthlyCharLimit: elevenLabsConfig.monthlyCharLimit,
+        },
+        "ElevenLabs TTS enabled",
+      );
+    } else {
+      logger.info("ElevenLabs TTS disabled (ELEVENLABS_API_KEY not set)");
     }
   });
 

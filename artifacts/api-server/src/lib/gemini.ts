@@ -8,6 +8,7 @@ import {
 import {
   actionToCategory,
   parseAiResponse,
+  type ChatRoadmap,
   type SuggestedChatAction,
 } from "./chat-actions";
 import {
@@ -32,6 +33,7 @@ export interface ConciergeResponse {
   category: string;
   action: SuggestedChatAction | null;
   replyOptions: string[];
+  roadmap: ChatRoadmap | null;
   model?: string;
 }
 
@@ -40,8 +42,9 @@ function temperatureForMode(mode: ChatMode): number {
   return 0.55;
 }
 
-/** Lower caps = faster time-to-first-token and total latency. */
-function maxTokensForChannel(channel: ChatChannel): number {
+/** Lower caps = faster time-to-first-token; roadmaps need room for JSON stops. */
+function maxTokensForChannel(channel: ChatChannel, roadmapRequested?: boolean): number {
+  if (roadmapRequested) return channel === "voice" ? 520 : 1400;
   return channel === "voice" ? 220 : 420;
 }
 
@@ -149,7 +152,7 @@ export async function generateConciergeResponse(
     config: {
       systemInstruction: systemNote,
       temperature: temperatureForMode(promptInput.mode),
-      maxOutputTokens: maxTokensForChannel(promptInput.channel),
+      maxOutputTokens: maxTokensForChannel(promptInput.channel, promptInput.roadmapRequested),
     },
   };
 
@@ -165,13 +168,14 @@ export async function generateConciergeResponse(
     }
   }
 
-  const { guestText, action, replyOptions } = parseAiResponse(raw);
+  const { guestText, action, replyOptions, roadmap } = parseAiResponse(raw);
 
   return {
     response: guestText,
     category: actionToCategory(action),
     action,
     replyOptions,
+    roadmap,
     model,
   };
 }

@@ -134,6 +134,20 @@
       "when": 1777497500000,
       "tag": "0018_hotel_wifi_networks",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1777497600000,
+      "tag": "0019_hotel_assistant_config",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1777497700000,
+      "tag": "0020_hotel_assistant_country_code",
+      "breakpoints": true
     }
   ]
 }

@@ -22,6 +22,7 @@ import CreateGuest from "@/pages/manager/create-guest";
 import ManagerSettings from "@/pages/manager/settings";
 import NotFound from "@/pages/not-found";
 import { HotelTenantPathFix } from "@/routes/HotelTenantPathFix";
+import { GuestLogoutProvider } from "@/contexts/guest-logout-context";
 
 export default function HotelTenantRoutes() {
   const params = useParams<{ hotelSlug: string }>();
@@ -60,6 +61,7 @@ function HotelTenantGate() {
   }
 
   return (
+    <GuestLogoutProvider>
     <Switch>
       <Route path={ROUTES.login} component={Login} />
       <Route path={ROUTES.guestLogin} component={GuestLoginPage} />
@@ -81,5 +83,6 @@ function HotelTenantGate() {
       <Route path={ROUTES.restaurant} component={RestaurantDashboard} />
       <Route component={NotFound} />
     </Switch>
+    </GuestLogoutProvider>
   );
 }

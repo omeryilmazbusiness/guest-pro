@@ -1,8 +1,20 @@
 /**
- * Guest-facing language picker options (subset of full i18n support).
+ * Guest-facing language picker options — keep in sync with guest-pro guest-locale.ts.
  */
 
-export const GUEST_SELECTABLE_UI_LOCALES = ["en", "tr", "ar", "ru"] as const;
+export const GUEST_SELECTABLE_UI_LOCALES = [
+  "en",
+  "tr",
+  "ar",
+  "ru",
+  "fr",
+  "it",
+  "ur",
+  "fa",
+  "he",
+  "ku",
+] as const;
+
 export type GuestSelectableUiLocale = (typeof GUEST_SELECTABLE_UI_LOCALES)[number];
 
 const UI_TO_VOICE: Record<GuestSelectableUiLocale, string> = {
@@ -10,6 +22,12 @@ const UI_TO_VOICE: Record<GuestSelectableUiLocale, string> = {
   tr: "tr-TR",
   ar: "ar-SA",
   ru: "ru-RU",
+  fr: "fr-FR",
+  it: "it-IT",
+  ur: "ur-PK",
+  fa: "fa-IR",
+  he: "he-IL",
+  ku: "ku-TR",
 };
 
 export function isGuestSelectableUiLocale(value: string): value is GuestSelectableUiLocale {

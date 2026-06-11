@@ -10,6 +10,7 @@ import {
   Users,
   DoorOpen,
   Bell,
+  MessageSquare,
   TrendingUp,
   type LucideIcon,
 } from "lucide-react";
@@ -36,6 +37,7 @@ interface ManagerAnimatedTabsProps {
   guestCount: number;
   roomCount: number;
   requestCount: number;
+  feedbackCount: number;
   teamCount: number;
   t: StaffTranslations;
 }
@@ -46,6 +48,7 @@ const ALL_TABS: Omit<TabDef, "label">[] = [
   { key: "guests", icon: Users, count: 0 },
   { key: "rooms", icon: DoorOpen, count: 0 },
   { key: "requests", icon: Bell, count: 0 },
+  { key: "feedback", icon: MessageSquare, count: 0 },
   { key: "summary", icon: TrendingUp, count: 0 },
 ];
 
@@ -56,6 +59,7 @@ export function ManagerAnimatedTabs({
   guestCount,
   roomCount,
   requestCount,
+  feedbackCount,
   teamCount,
   t,
 }: ManagerAnimatedTabsProps) {
@@ -65,6 +69,7 @@ export function ManagerAnimatedTabs({
     guests: guestCount,
     rooms: roomCount,
     requests: requestCount,
+    feedback: feedbackCount,
     summary: 0,
   };
 
@@ -74,6 +79,7 @@ export function ManagerAnimatedTabs({
     guests: t.tabGuests,
     rooms: t.tabRooms,
     requests: t.tabRequests,
+    feedback: t.tabFeedback,
     summary: t.tabSummary,
   };
 
@@ -84,7 +90,7 @@ export function ManagerAnimatedTabs({
         label: labels[tab.key],
         count: counts[tab.key],
       })),
-    [scope, t, guestCount, roomCount, requestCount, teamCount],
+    [scope, t, guestCount, roomCount, requestCount, feedbackCount, teamCount],
   );
 
   const activeIndex = visibleTabs.findIndex((tab) => tab.key === active);

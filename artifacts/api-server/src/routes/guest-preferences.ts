@@ -8,7 +8,11 @@ import { Router, type IRouter } from "express";
 import { db, guestsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireGuest } from "../middlewares/requireAuth";
-import { voiceLocaleFromGuestUi, isGuestSelectableUiLocale } from "../lib/guest-ui-locale";
+import {
+  GUEST_SELECTABLE_UI_LOCALES,
+  voiceLocaleFromGuestUi,
+  isGuestSelectableUiLocale,
+} from "../lib/guest-ui-locale";
 
 const router: IRouter = Router();
 
@@ -17,7 +21,9 @@ router.patch("/guest/language", requireGuest, async (req, res): Promise<void> =>
   const uiLocale = typeof req.body?.uiLocale === "string" ? req.body.uiLocale.trim().toLowerCase() : "";
 
   if (!isGuestSelectableUiLocale(uiLocale)) {
-    res.status(400).json({ error: "uiLocale must be one of: en, tr, ar, ru" });
+    res.status(400).json({
+      error: `uiLocale must be one of: ${GUEST_SELECTABLE_UI_LOCALES.join(", ")}`,
+    });
     return;
   }
 

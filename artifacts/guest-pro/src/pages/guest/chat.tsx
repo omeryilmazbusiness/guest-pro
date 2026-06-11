@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocale } from "@/hooks/use-locale";
@@ -7,8 +7,6 @@ import {
   useGetChatMessages,
   useSendMessage,
   useGetHotelBranding,
-  useListQuickActions,
-  useLogout,
   customFetch,
 } from "@workspace/api-client-react";
 import { ROUTES } from "@/lib/app-routes";
@@ -19,9 +17,6 @@ import {
   LogOut,
   Send,
   Loader2,
-  MapPin,
-  Calendar,
-  Phone,
   ArrowLeft,
   MessageSquare,
   AlertCircle,
@@ -36,7 +31,7 @@ import { syncMyRequestToCache } from "@/lib/guest-my-requests-cache";
 import { markGuestDashboardScrollRestore } from "@/lib/guest-dashboard-scroll";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Message, QuickAction } from "@workspace/api-client-react";
+import type { Message } from "@workspace/api-client-react";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { ShimmerBubble } from "@/components/chat/ShimmerBubble";
 import { OptimisticUserBubble } from "@/components/chat/OptimisticUserBubble";
@@ -44,6 +39,7 @@ import { MicrophoneButton } from "@/components/chat/MicrophoneButton";
 import { VoiceConversationPanel } from "@/components/chat/VoiceConversationPanel";
 import { ChatActionBar } from "@/components/chat/ChatActionBar";
 import { useVoiceConversation } from "@/hooks/use-voice-conversation";
+import { preloadPremiumTts } from "@/lib/voice/speech-synthesis";
 import { VoiceDiagnosticsLogger } from "@/lib/voice/diagnostics";
 import { stripAiMarkup } from "@/lib/chat-sanitize";
 import {
@@ -60,28 +56,22 @@ import {
 } from "@/lib/chat-api";
 import { AiCapacityPanel } from "@/components/chat/AiCapacityPanel";
 import { tFmt } from "@/lib/i18n";
-import { getGuestQuickActionLabel } from "@/lib/guest-quick-action-label";
-
-const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
-  "map-pin": MapPin,
-  calendar: Calendar,
-  phone: Phone,
-  activity: Calendar,
-};
+import { resolveGuestChatStarters, type ResolvedGuestChatStarter } from "@/lib/guest-chat-starters";
+import { GuestChatEmptyState } from "@/components/chat/GuestChatEmptyState";
+import { useGuestLogout } from "@/contexts/guest-logout-context";
 
 export default function GuestChat() {
-  const { user, isAuthenticated, logoutAuth } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const goTo = useTenantNav();
   const queryClient = useQueryClient();
   const { appName } = useHotelDisplay();
-  const logoutMutation = useLogout();
   const { t, voiceLocale } = useLocale();
+  const chatStarters = useMemo(() => resolveGuestChatStarters(t), [t]);
 
   const createSessionMutation = useCreateChatSession();
   const sendMessageMutation = useSendMessage();
 
   const { data: branding } = useGetHotelBranding();
-  const { data: quickActions } = useListQuickActions();
 
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [inputValue, setInputValue] = useState("");
@@ -142,6 +132,8 @@ export default function GuestChat() {
   });
   convRef.current = conv;
 
+  const { openLogoutConfirm } = useGuestLogout();
+
   useEffect(() => {
     return () => {
       convRef.current?.stopConversation();
@@ -158,6 +150,12 @@ export default function GuestChat() {
       goTo(ROUTES.manager);
     }
   }, [isAuthenticated, user, goTo]);
+
+  useEffect(() => {
+    if (isAuthenticated && user?.role === "guest") {
+      preloadPremiumTts();
+    }
+  }, [isAuthenticated, user?.role]);
 
   // ── Parse URL params on mount ─────────────────────────────────────────────
   useEffect(() => {
@@ -298,6 +296,11 @@ export default function GuestChat() {
     [conv, goTo],
   );
 
+  const handleStarterSelect = (starter: ResolvedGuestChatStarter) => {
+    setActiveChatMode(starter.mode);
+    handleSend(starter.prompt);
+  };
+
   const handleSend = (content: string, lang?: string) => {
     if (!content.trim() || !sessionId || quotaExceeded || aiCapacityExceeded) return;
     const trimmed = content.trim();
@@ -420,13 +423,6 @@ export default function GuestChat() {
       setIsClearing(false);
       setShowClearConfirm(false);
     }
-  };
-
-  const handleLogout = () => {
-    if (conv.isActive) conv.stopConversation();
-    logoutAuth();
-    logoutMutation.mutate(undefined);
-    toast.success(t.logoutSuccess);
   };
 
   const handleReplyChip = (label: string) => {
@@ -560,11 +556,17 @@ export default function GuestChat() {
 
           <button
             data-testid="button-checkout"
-            onClick={handleLogout}
-            className="text-zinc-400 hover:text-zinc-700 transition-colors p-1"
+            onClick={() =>
+              openLogoutConfirm({
+                onBeforeLogout: () => {
+                  if (conv.isActive) conv.stopConversation();
+                },
+              })
+            }
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-zinc-50 hover:text-zinc-700"
             aria-label={t.logout}
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="h-4 w-4" />
           </button>
         </div>
       </header>
@@ -579,51 +581,24 @@ export default function GuestChat() {
             </div>
             <Skeleton className="h-24 w-5/6 max-w-md rounded-3xl rounded-tl-sm bg-zinc-100" />
           </div>
-        ) : !hasMessages ? (
-          /* Empty state — show hero mic */
-          <div className="h-full flex flex-col items-center justify-center text-center gap-5 animate-in fade-in duration-500">
-            <div className="w-16 h-16 rounded-full bg-white border border-zinc-100 shadow-sm flex items-center justify-center">
-              <MessageSquare className="w-7 h-7 text-zinc-300" />
-            </div>
-            <div className="space-y-1.5">
-              <h2 className="text-[18px] font-serif text-zinc-800">{t.emptyTitle}</h2>
-              <p className="text-zinc-400 text-[14px] leading-relaxed max-w-xs">
-                {t.emptySubtitle}
-              </p>
-            </div>
-            <div className="flex flex-wrap justify-center gap-2 max-w-sm px-2">
-              {[
-                { label: t.chatQuickFood, text: t.chatQuickFood, mode: "food" as const },
-                { label: t.chatQuickSupport, text: t.chatQuickSupport, mode: "support" as const },
-                { label: t.chatQuickInfo, text: t.chatQuickInfo, mode: "general" as const },
-                { label: t.chatQuickActivity, text: t.chatQuickActivity, mode: "general" as const },
-              ].map((chip) => (
-                <button
-                  key={chip.label}
-                  type="button"
-                  onClick={() => {
-                    setActiveChatMode(chip.mode);
-                    handleSend(chip.text);
-                  }}
-                  className="px-4 py-2 rounded-full bg-white border border-zinc-200 text-[13px] font-medium text-zinc-700 shadow-sm hover:border-zinc-300 active:scale-[0.98]"
-                >
-                  {chip.label}
-                </button>
-              ))}
-            </div>
-            {conv.capability.sttSupported && (
-              <MicrophoneButton
-                isConversationActive={voiceActive}
-                isListening={conv.state === "listening"}
-                amplitude={conv.amplitude}
-                isSupported={conv.capability.sttSupported}
-                onToggle={toggleVoiceConversation}
-                variant="hero"
-                size="lg"
-              />
-            )}
+        ) : !hasMessages && !voiceActive ? (
+          <div className="flex min-h-full flex-col items-center justify-center px-1 py-6">
+            <GuestChatEmptyState
+              welcomeText={tFmt(t.welcome, { name: user.firstName ?? "" })}
+              sectionLabel={t.chatStarterSectionLabel}
+              starters={chatStarters}
+              onSelectStarter={handleStarterSelect}
+              hint={t.voiceHint}
+              listeningState={t.listeningState}
+              transcript={conv.transcript}
+              isListening={conv.state === "listening"}
+              amplitude={conv.amplitude}
+              onMicClick={toggleVoiceConversation}
+              micAriaLabel={conv.state === "listening" ? t.cancel : t.voiceLabel}
+              sttSupported={conv.capability.sttSupported}
+            />
           </div>
-        ) : (
+        ) : !hasMessages ? null : (
           <div className="space-y-3 pb-2">
             {visibleMessages.map((msg: Message) => (
               <div key={msg.id} className="space-y-0">
@@ -732,6 +707,10 @@ export default function GuestChat() {
                 tapInterrupt: t.voiceTapInterrupt,
                 tapRetry: t.voiceTapRetry,
                 notSupported: t.voiceNotSupported,
+                modeLabel: t.voiceModeLabel,
+                speakingFooter: t.voiceSpeakingFooter,
+                processingFooter: t.voiceProcessingFooter,
+                endLabel: t.voiceEndLabel,
               }}
               onStop={conv.stopConversation}
               onInterrupt={conv.interruptAndListen}
@@ -740,25 +719,6 @@ export default function GuestChat() {
           ) : (
             /* ── Text input area ──────────────────────────────────────── */
             <>
-              {/* Quick actions (empty state only) */}
-              {!messagesLoading && !hasMessages && quickActions && quickActions.length > 0 && (
-                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none snap-x">
-                  {quickActions.map((action: QuickAction) => {
-                    const IconComponent = ICON_MAP[action.icon ?? ""] ?? MapPin;
-                    return (
-                      <button
-                        key={action.id}
-                        onClick={() => handleSend(getGuestQuickActionLabel(action, t))}
-                        className="shrink-0 snap-start bg-white border border-zinc-200 shadow-sm px-4 py-2.5 rounded-full text-[13px] font-medium text-zinc-600 hover:bg-zinc-50 hover:border-zinc-300 active:scale-95 transition-all whitespace-nowrap flex items-center gap-1.5"
-                      >
-                        <IconComponent className="w-3.5 h-3.5 text-zinc-400" />
-                        {getGuestQuickActionLabel(action, t)}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
               {/* Chat input bar */}
               <div
                 className={`flex items-end gap-2 bg-white rounded-3xl border shadow-sm transition-all duration-200 px-4 py-2.5 ${
@@ -787,7 +747,7 @@ export default function GuestChat() {
 
                 {/* Mic toggle — starts conversation mode */}
                 {conv.capability.sttSupported && !quotaExceeded && !aiCapacityExceeded && (
-                  <div className="shrink-0 pb-1">
+                  <div className="shrink-0 self-end pb-0.5">
                     <MicrophoneButton
                       isConversationActive={false}
                       isSupported={conv.capability.sttSupported}
@@ -798,21 +758,21 @@ export default function GuestChat() {
                   </div>
                 )}
 
-                <div className="shrink-0 pb-1">
+                <div className="shrink-0 self-end pb-0.5">
                   <button
                     data-testid="button-send"
                     disabled={!inputValue.trim() || isWaiting || !sessionId || quotaExceeded}
                     onClick={() => handleSend(inputValue)}
-                    className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 ${
+                    className={`flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-200 active:scale-[0.94] ${
                       inputValue.trim() && !isWaiting && !quotaExceeded
-                        ? "bg-zinc-900 text-white shadow-sm hover:bg-zinc-800"
-                        : "bg-zinc-100 text-zinc-400"
+                        ? "bg-black text-white shadow-[0_4px_16px_-4px_rgba(0,0,0,0.5),0_2px_4px_rgba(0,0,0,0.15)] hover:bg-zinc-900 hover:shadow-[0_6px_22px_-4px_rgba(0,0,0,0.55)]"
+                        : "bg-zinc-200/80 text-zinc-400"
                     }`}
                   >
                     {isWaiting ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Send className="w-4 h-4" />
+                      <Send className="h-[18px] w-[18px]" strokeWidth={2.25} />
                     )}
                   </button>
                 </div>

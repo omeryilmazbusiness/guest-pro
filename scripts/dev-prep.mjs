@@ -5,6 +5,10 @@
  */
 
 import { execSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const repoRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
 const ports = process.argv.slice(2).length > 0 ? process.argv.slice(2) : ["3000", "5173"];
 
@@ -54,5 +58,12 @@ async function freePort(port) {
 for (const port of ports) {
   await freePort(port);
 }
+
+// Ensure API bundle includes latest routes before dev-loop starts.
+execSync("node ./build.mjs", {
+  cwd: path.join(repoRoot, "artifacts/api-server"),
+  stdio: "inherit",
+});
+console.log("[dev-prep] API bundle built");
 
 console.log("[dev-prep] ports ready:", ports.join(", "));

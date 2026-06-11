@@ -2,7 +2,17 @@
  * Guest-selectable UI locales — single source of truth for the language picker.
  */
 
-export type GuestUiLocale = "en" | "tr" | "ar" | "ru";
+export type GuestUiLocale =
+  | "en"
+  | "tr"
+  | "ar"
+  | "ru"
+  | "fr"
+  | "it"
+  | "ur"
+  | "fa"
+  | "he"
+  | "ku";
 
 export interface GuestLanguageOption {
   code: GuestUiLocale;
@@ -18,9 +28,17 @@ export const GUEST_LANGUAGE_OPTIONS: GuestLanguageOption[] = [
   { code: "en", label: "English", flag: "🇬🇧", voiceLocale: "en-US", dir: "ltr" },
   { code: "ar", label: "العربية", flag: "🇸🇦", voiceLocale: "ar-SA", dir: "rtl" },
   { code: "ru", label: "Русский", flag: "🇷🇺", voiceLocale: "ru-RU", dir: "ltr" },
+  { code: "fr", label: "Français", flag: "🇫🇷", voiceLocale: "fr-FR", dir: "ltr" },
+  { code: "it", label: "Italiano", flag: "🇮🇹", voiceLocale: "it-IT", dir: "ltr" },
+  { code: "ur", label: "اردو", flag: "🇵🇰", voiceLocale: "ur-PK", dir: "rtl" },
+  { code: "fa", label: "فارسی", flag: "🇮🇷", voiceLocale: "fa-IR", dir: "rtl" },
+  { code: "he", label: "עברית", flag: "🇮🇱", voiceLocale: "he-IL", dir: "rtl" },
+  { code: "ku", label: "Kurdî", flag: "☀️", voiceLocale: "ku-TR", dir: "ltr" },
 ];
 
 export const GUEST_UI_LOCALES = GUEST_LANGUAGE_OPTIONS.map((o) => o.code);
+
+const RTL_UI_LOCALES = new Set<GuestUiLocale>(["ar", "ur", "fa", "he"]);
 
 const LS_PREFIX = "guestpro_guest_locale";
 export const GUEST_LOCALE_CHANGE_EVENT = "guest-locale-change";
@@ -39,7 +57,7 @@ export function guestVoiceLocaleFromUi(uiLocale: GuestUiLocale): string {
 }
 
 export function guestDirFromUi(uiLocale: GuestUiLocale): "ltr" | "rtl" {
-  return uiLocale === "ar" ? "rtl" : "ltr";
+  return RTL_UI_LOCALES.has(uiLocale) ? "rtl" : "ltr";
 }
 
 function storageKey(guestId?: number | null): string {

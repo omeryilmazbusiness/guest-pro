@@ -2,10 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 import { Building2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchHotelNearbyAnchor, saveHotelNearbyAnchor } from "@/lib/nearby-settings";
+import { notifyHotelSetupChanged } from "@/lib/hotel-setup-events";
 import { useStaffLocale } from "@/hooks/use-staff-locale";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SettingsSectionCard, SettingsField } from "@/components/manager/settings/SettingsSectionCard";
+import { CollapsibleSettingsPanel } from "@/components/manager/settings/CollapsibleSettingsPanel";
+import { SectionSaveBar } from "@/components/manager/settings/SectionSaveBar";
+import { SettingsField } from "@/components/manager/settings/SettingsSectionCard";
 
 export function NearbyHotelLocationSection() {
   const { t } = useStaffLocale();
@@ -14,7 +16,6 @@ export function NearbyHotelLocationSection() {
   const [hotelLabel, setHotelLabel] = useState("");
   const [hotelLat, setHotelLat] = useState("");
   const [hotelLng, setHotelLng] = useState("");
-
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -35,13 +36,12 @@ export function NearbyHotelLocationSection() {
     void load();
   }, [load]);
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async (): Promise<boolean> => {
     const lat = parseFloat(hotelLat);
     const lng = parseFloat(hotelLng);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
       toast.error(t.settingsNearbyInvalidCoords);
-      return;
+      return false;
     }
 
     setSaving(true);
@@ -51,11 +51,14 @@ export function NearbyHotelLocationSection() {
         hotelLng: lng,
         hotelLabel: hotelLabel.trim() || null,
       });
+      notifyHotelSetupChanged();
       toast.success(t.settingsHotelLocationSaved);
+      return true;
     } catch (err: unknown) {
       const msg =
         (err as { data?: { error?: string } })?.data?.error ?? t.settingsHotelLocationSaveFailed;
       toast.error(msg);
+      return false;
     } finally {
       setSaving(false);
     }
@@ -63,29 +66,37 @@ export function NearbyHotelLocationSection() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
-        <Loader2 className="h-7 w-7 animate-spin text-zinc-300" />
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-zinc-300" />
       </div>
     );
   }
 
   return (
-    <SettingsSectionCard
-      icon={<Building2 className="h-4 w-4 text-violet-600" />}
+    <CollapsibleSettingsPanel
+      id="setup-map"
+      icon={<Building2 className="h-4 w-4" />}
       title={t.settingsHotelLocationTitle}
       subtitle={t.settingsHotelLocationSubtitle}
+      footer={
+        <SectionSaveBar
+          label={t.assistantSectionSave}
+          homeLabel={t.assistantSectionHome}
+          saving={saving}
+          onSave={() => void handleSave()}
+          onHome={() => handleSave()}
+        />
+      }
     >
-      <form onSubmit={handleSave} className="space-y-4">
-        <p className="rounded-xl border border-violet-100 bg-violet-50/50 px-3 py-2.5 text-[11px] leading-relaxed text-zinc-600">
-          {t.settingsHotelLocationHint}
-        </p>
+      <p className="text-[11px] leading-relaxed text-zinc-500">{t.settingsHotelLocationHint}</p>
 
+      <div className="mt-3 space-y-3">
         <SettingsField label={t.settingsHotelLocationLabel} hint={t.optionalLabel}>
           <Input
             value={hotelLabel}
             onChange={(e) => setHotelLabel(e.target.value)}
             placeholder={t.settingsHotelLocationLabelPlaceholder}
-            className="h-10 rounded-xl text-sm"
+            className="h-8 rounded-lg text-sm"
           />
         </SettingsField>
 
@@ -95,7 +106,7 @@ export function NearbyHotelLocationSection() {
               value={hotelLat}
               onChange={(e) => setHotelLat(e.target.value)}
               placeholder="41.0082"
-              className="h-10 rounded-xl font-mono text-sm"
+              className="h-8 rounded-lg font-mono text-sm"
               inputMode="decimal"
             />
           </SettingsField>
@@ -104,20 +115,12 @@ export function NearbyHotelLocationSection() {
               value={hotelLng}
               onChange={(e) => setHotelLng(e.target.value)}
               placeholder="28.9784"
-              className="h-10 rounded-xl font-mono text-sm"
+              className="h-8 rounded-lg font-mono text-sm"
               inputMode="decimal"
             />
           </SettingsField>
         </div>
-
-        <Button
-          type="submit"
-          disabled={saving}
-          className="h-11 w-full rounded-2xl bg-zinc-900 text-white hover:bg-zinc-800"
-        >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t.settingsHotelLocationSave}
-        </Button>
-      </form>
-    </SettingsSectionCard>
+      </div>
+    </CollapsibleSettingsPanel>
   );
 }

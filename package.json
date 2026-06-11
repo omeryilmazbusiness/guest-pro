@@ -13,7 +13,8 @@
     "dev:web": "pnpm --filter @workspace/guest-pro dev",
     "start": "pnpm --filter @workspace/api-server start",
     "db:push": "pnpm --filter @workspace/db push",
-    "db:push-force": "pnpm --filter @workspace/db push-force"
+    "db:push-force": "pnpm --filter @workspace/db push-force",
+    "db:migrate": "pnpm --filter @workspace/db migrate"
   },
   "private": true,
   "devDependencies": {

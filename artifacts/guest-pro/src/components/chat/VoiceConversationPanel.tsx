@@ -1,17 +1,12 @@
 /**
  * VoiceConversationPanel
  * Premium bottom panel shown when voice conversation mode is active.
- *
- * Shows the current conversation state with calm, minimal visuals:
- *   - Amplitude rings during listening
- *   - Status label for each state
- *   - Live transcript preview
- *   - Tap-to-interrupt during speaking
- *   - Stop button always visible
- *   - Unsupported / fallback notice
  */
 
-import { Mic, Square, Volume2, Loader2, WifiOff, X } from "lucide-react";
+import { Square, Volume2, Loader2, WifiOff, X } from "lucide-react";
+import { PremiumMicIcon } from "@/components/guest/icons/PremiumMicIcon";
+import { SonicWaveform } from "@/components/ui/sonic-waveform";
+import { cn } from "@/lib/utils";
 import type { ConversationState } from "@/hooks/use-voice-conversation";
 import type { VoiceCapabilityModel } from "@/lib/voice/capability";
 
@@ -23,7 +18,16 @@ export interface VoicePanelLabels {
   tapInterrupt: string;
   tapRetry: string;
   notSupported: string;
+  modeLabel: string;
+  speakingFooter: string;
+  processingFooter: string;
+  endLabel: string;
 }
+
+const statusClass =
+  "font-serif text-[11px] italic font-medium tracking-[0.03em] text-zinc-500";
+const footerClass =
+  "font-serif text-[10px] italic font-medium tracking-[0.04em] text-zinc-400";
 
 interface VoiceConversationPanelProps {
   state: ConversationState;
@@ -41,76 +45,55 @@ function stateConfig(
   state: ConversationState,
   labels: VoicePanelLabels,
 ): { label: string; sublabel?: string; icon: React.ReactNode; color: string } {
-  const map: Record<ConversationState, { label: string; sublabel?: string; icon: React.ReactNode; color: string }> = {
+  const map: Record<
+    ConversationState,
+    { label: string; sublabel?: string; icon: React.ReactNode; color: string }
+  > = {
     starting: {
       label: labels.starting,
-      icon: <Loader2 className="w-6 h-6 animate-spin" />,
+      icon: <Loader2 className="h-6 w-6 animate-spin" />,
       color: "text-zinc-400",
     },
     listening: {
       label: labels.listening,
-      icon: <Mic className="w-6 h-6" />,
+      icon: <PremiumMicIcon variant="dark" className="h-6 w-6" />,
       color: "text-zinc-900",
     },
     processing: {
       label: labels.thinking,
-      icon: <Loader2 className="w-6 h-6 animate-spin" />,
+      icon: <Loader2 className="h-6 w-6 animate-spin" />,
       color: "text-zinc-500",
     },
     speaking: {
       label: labels.speaking,
       sublabel: labels.tapInterrupt,
-      icon: <Volume2 className="w-6 h-6" />,
+      icon: <Volume2 className="h-6 w-6" />,
       color: "text-zinc-700",
     },
     idle: {
       label: labels.listening,
-      icon: <Mic className="w-6 h-6" />,
+      icon: <PremiumMicIcon variant="dark" className="h-6 w-6" />,
       color: "text-zinc-400",
     },
     stopped: {
       label: labels.speaking,
-      icon: <Square className="w-6 h-6" />,
+      icon: <Square className="h-6 w-6" />,
       color: "text-zinc-300",
     },
     error: {
       label: labels.thinking,
       sublabel: labels.tapRetry,
-      icon: <WifiOff className="w-6 h-6" />,
+      icon: <WifiOff className="h-6 w-6" />,
       color: "text-red-500",
     },
     unsupported: {
       label: labels.notSupported,
-      icon: <WifiOff className="w-6 h-6" />,
+      icon: <WifiOff className="h-6 w-6" />,
       color: "text-zinc-400",
     },
   };
   return map[state] ?? map.idle;
 }
-
-// ─── Amplitude rings ──────────────────────────────────────────────────────────
-
-function AmplitudeRings({ amplitude, listening }: { amplitude: number; listening: boolean }) {
-  if (!listening) return null;
-
-  const outerScale = 1 + Math.min(amplitude * 0.65, 0.65);
-  const midScale = 1 + Math.min(amplitude * 0.35, 0.35);
-
-  return (
-    <>
-      <div
-        className="absolute rounded-full bg-zinc-200/50 transition-transform duration-100 pointer-events-none"
-        style={{ width: 96, height: 96, transform: `scale(${outerScale})` }}
-      />
-      <div
-        className="absolute rounded-full bg-zinc-300/40 transition-transform duration-150 pointer-events-none"
-        style={{ width: 76, height: 76, transform: `scale(${midScale})` }}
-      />
-    </>
-  );
-}
-
-// ─── Main component ───────────────────────────────────────────────────────────
 
 export function VoiceConversationPanel({
   state,
@@ -130,29 +113,27 @@ export function VoiceConversationPanel({
   const isError = state === "error";
   const isUnsupported = state === "unsupported";
 
-  // Unsupported notice — static, no interactive elements
   if (isUnsupported) {
     return (
-      <div className="bg-white border border-zinc-100 rounded-3xl px-5 py-4 shadow-sm">
+      <div className="rounded-3xl border border-zinc-100 bg-white px-5 py-4 shadow-sm">
         <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-full bg-zinc-100 flex items-center justify-center shrink-0 mt-0.5">
-            <WifiOff className="w-4 h-4 text-zinc-400" />
+          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-100">
+            <WifiOff className="h-4 w-4 text-zinc-400" />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[14px] font-medium text-zinc-700">
-              Voice not available
-            </p>
-            <p className="text-[12px] text-zinc-400 mt-0.5 leading-relaxed">
+          <div className="min-w-0 flex-1">
+            <p className="text-[14px] font-medium text-zinc-700">Voice not available</p>
+            <p className="mt-0.5 text-[12px] leading-relaxed text-zinc-400">
               {capability.isPwa
                 ? "Voice recognition may be limited in home-screen mode. Try opening in Safari or Chrome."
                 : "Your browser doesn't support voice input. Please type your message."}
             </p>
           </div>
           <button
+            type="button"
             onClick={onStop}
-            className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-zinc-300 hover:text-zinc-500 transition-colors"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-zinc-300 transition-colors hover:text-zinc-500"
           >
-            <X className="w-4 h-4" />
+            <X className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -165,71 +146,90 @@ export function VoiceConversationPanel({
   };
 
   return (
-    <div className="bg-white border border-zinc-100 rounded-3xl shadow-sm overflow-hidden">
-      {/* Main voice area */}
-      <div className="px-5 py-5 flex flex-col items-center gap-4">
-        {/* Central indicator */}
-        <div className="relative flex items-center justify-center h-24 w-24">
-          <AmplitudeRings amplitude={amplitude} listening={isListening} />
+    <div className="overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-sm">
+      <div className="flex flex-col items-center gap-4 px-5 py-5">
+        <div className="relative flex h-28 w-full max-w-[17rem] items-center justify-center">
+          {(isListening || isSpeaking) && (
+            <SonicWaveform
+              amplitude={amplitude}
+              active
+              simulate={isSpeaking}
+              className="rounded-2xl"
+            />
+          )}
 
-          <button
-            onClick={handleCenterTap}
-            disabled={isProcessing || isListening}
-            className={`
-              relative z-10 w-14 h-14 rounded-full flex items-center justify-center
-              transition-all duration-200 active:scale-95
-              ${isListening
-                ? "bg-zinc-900 text-white shadow-lg shadow-zinc-900/20 cursor-default"
-                : isSpeaking
-                ? "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 cursor-pointer"
-                : isError
-                ? "bg-red-50 text-red-500 hover:bg-red-100 cursor-pointer"
-                : isProcessing
-                ? "bg-zinc-50 text-zinc-400 cursor-default"
-                : "bg-zinc-100 text-zinc-400 cursor-default"
-              }
-            `}
-            aria-label={isSpeaking ? "Tap to interrupt" : config.label}
-          >
-            <span className={config.color}>{config.icon}</span>
-          </button>
+          {isListening || isSpeaking ? (
+            <button
+              type="button"
+              onClick={isSpeaking ? handleCenterTap : undefined}
+              disabled={isListening}
+              className={cn(
+                "relative z-10 flex h-14 w-14 items-center justify-center rounded-full bg-white/90 shadow-[0_4px_20px_-4px_rgba(99,102,241,0.25),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur-sm transition-all duration-200",
+                isSpeaking && "cursor-pointer active:scale-95 hover:shadow-[0_6px_24px_-4px_rgba(99,102,241,0.3)]",
+                isListening && "cursor-default",
+              )}
+              aria-label={isSpeaking ? "Tap to interrupt" : config.label}
+            >
+              <span className={config.color}>{config.icon}</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleCenterTap}
+              disabled={isProcessing}
+              className={cn(
+                "relative z-10 flex h-14 w-14 items-center justify-center rounded-full transition-all duration-200 active:scale-95",
+                isError
+                  ? "cursor-pointer bg-red-50 text-red-500 hover:bg-red-100"
+                  : isProcessing
+                    ? "cursor-default bg-zinc-50 text-zinc-400"
+                    : "cursor-default bg-zinc-100 text-zinc-400",
+              )}
+              aria-label={config.label}
+            >
+              <span className={config.color}>{config.icon}</span>
+            </button>
+          )}
         </div>
 
-        {/* Status text */}
-        <div className="text-center space-y-0.5">
-          <p className={`text-[15px] font-semibold ${config.color}`}>
-            {config.label}
-          </p>
+        <div className="space-y-1 text-center">
+          <p className={cn(statusClass, isError && "text-red-400")}>{config.label}</p>
           {isError && errorMessage ? (
-            <p className="text-[12px] text-red-400 leading-snug max-w-[220px] text-center">
+            <p className="max-w-[220px] text-center font-serif text-[10px] italic leading-snug text-red-400/90">
               {errorMessage}
             </p>
           ) : config.sublabel ? (
-            <p className="text-[12px] text-zinc-400">{config.sublabel}</p>
+            <p className={footerClass}>{config.sublabel}</p>
           ) : null}
         </div>
 
-        {/* Live transcript */}
         {isListening && transcript && (
-          <div className="w-full bg-zinc-50 rounded-2xl px-4 py-2.5 min-h-[40px] flex items-center justify-center">
-            <p className="text-[13px] text-zinc-500 italic text-center line-clamp-2 leading-snug">
-              "{transcript}"
+          <div className="flex min-h-[40px] w-full items-center justify-center rounded-2xl bg-zinc-50 px-4 py-2.5">
+            <p className="line-clamp-2 text-center text-[13px] italic leading-snug text-zinc-500">
+              &ldquo;{transcript}&rdquo;
             </p>
           </div>
         )}
       </div>
 
-      {/* Footer: Stop button */}
-      <div className="border-t border-zinc-50 px-5 py-3 flex items-center justify-between">
-        <p className="text-[11px] text-zinc-400 font-medium uppercase tracking-wide">
-          {isListening ? "Voice Conversation" : isSpeaking ? "AI is speaking — tap circle to interrupt" : isProcessing ? "Sending to AI…" : "Voice Conversation"}
+      <div className="flex items-center justify-between border-t border-zinc-50 px-5 py-2.5">
+        <p className={footerClass}>
+          {isSpeaking
+            ? labels.speakingFooter
+            : isProcessing
+              ? labels.processingFooter
+              : labels.modeLabel}
         </p>
         <button
+          type="button"
           onClick={onStop}
-          className="flex items-center gap-1.5 text-[12px] font-medium text-zinc-500 hover:text-zinc-900 transition-colors px-3 py-1.5 rounded-xl hover:bg-zinc-50 active:scale-95"
+          className={cn(
+            footerClass,
+            "flex items-center gap-1 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 hover:text-zinc-600 active:scale-95",
+          )}
         >
-          <Square className="w-3 h-3 fill-current" />
-          End
+          <Square className="h-2.5 w-2.5 fill-current opacity-70" />
+          {labels.endLabel}
         </button>
       </div>
     </div>

@@ -32,7 +32,14 @@ export function PremiumMicIcon({ className, variant = "light" }: PremiumMicIconP
   );
 }
 
-function MicSparkle({ className }: { className?: string }) {
+function MicSparkle({
+  className,
+  variant = "light",
+}: {
+  className?: string;
+  variant?: "light" | "dark";
+}) {
+  const fill = variant === "light" ? "#ffffff" : "#6366f1";
   return (
     <svg
       viewBox="0 0 24 24"
@@ -42,17 +49,20 @@ function MicSparkle({ className }: { className?: string }) {
     >
       <path
         d="M12 2.5 13.1 6.9 17.5 8 13.1 9.1 12 13.5 10.9 9.1 6.5 8 10.9 6.9Z"
-        fill="white"
+        fill={fill}
       />
     </svg>
   );
 }
 
-export function PremiumMicWithSparkle({ className }: { className?: string }) {
+export function PremiumMicWithSparkle({
+  className,
+  variant = "light",
+}: PremiumMicIconProps) {
   return (
     <span className={cn("relative inline-flex items-center justify-center", className)}>
-      <PremiumMicIcon className="h-[1.85rem] w-[1.85rem]" />
-      <MicSparkle className="-right-1 -top-1 h-3.5 w-3.5 opacity-95" />
+      <PremiumMicIcon variant={variant} className="h-[1.85rem] w-[1.85rem]" />
+      <MicSparkle variant={variant} className="-right-1 -top-1 h-3.5 w-3.5 opacity-95" />
     </span>
   );
 }

@@ -1,12 +1,22 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
+import { motion, useReducedMotion } from "framer-motion";
 import type { Message } from "@workspace/api-client-react";
 import { stripAiMarkup } from "@/lib/chat-sanitize";
+import { getRoadmapFromMessage } from "@/lib/chat-roadmap";
+import { ChatRoadmapCard } from "@/components/guest/ChatRoadmapCard";
 
 interface MessageBubbleProps {
   message: Message;
   animate?: boolean;
 }
+
+const bubbleSpring = {
+  type: "spring" as const,
+  stiffness: 380,
+  damping: 32,
+  mass: 0.9,
+};
 
 function useTypingEffect(text: string, active: boolean) {
   const [displayedLength, setDisplayedLength] = useState(active ? 0 : text.length);
@@ -25,10 +35,7 @@ function useTypingEffect(text: string, active: boolean) {
     const charsPerTick = Math.max(1, Math.ceil(text.length / TICKS));
 
     const timer = setInterval(() => {
-      setDisplayedLength((prev) => {
-        const next = Math.min(prev + charsPerTick, text.length);
-        return next;
-      });
+      setDisplayedLength((prev) => Math.min(prev + charsPerTick, text.length));
     }, TICK_INTERVAL_MS);
 
     return () => clearInterval(timer);
@@ -48,10 +55,10 @@ function AIMessageContent({ content, animate }: { content: string; animate: bool
           <ReactMarkdown>{content}</ReactMarkdown>
         </div>
       ) : (
-        <p className="text-[15px] leading-relaxed text-zinc-800 whitespace-pre-wrap">
+        <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-zinc-800">
           {displayed}
           {cursorVisible && (
-            <span className="inline-block w-0.5 h-4 ml-0.5 bg-zinc-400 align-middle animate-pulse" />
+            <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-zinc-400 align-middle" />
           )}
         </p>
       )}
@@ -63,31 +70,41 @@ export function MessageBubble({ message, animate = false }: MessageBubbleProps) 
   const isUser = message.role === "user";
   const isAssistant = message.role === "assistant";
   const displayContent = isAssistant ? stripAiMarkup(message.content) : message.content;
-
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => setIsVisible(true));
-    return () => cancelAnimationFrame(frame);
-  }, []);
+  const roadmap = isAssistant ? getRoadmapFromMessage(message) : null;
+  const reduceMotion = useReducedMotion();
 
   return (
-    <div
-      className={`flex transition-all duration-300 ease-out ${
-        isUser ? "justify-end" : "justify-start"
-      } ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}
+    <motion.div
+      className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+      initial={
+        reduceMotion
+          ? false
+          : {
+              opacity: 0,
+              y: 14,
+              x: isUser ? 10 : -10,
+              scale: 0.97,
+            }
+      }
+      animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
+      transition={bubbleSpring}
     >
       {isUser && (
-        <div className="max-w-[82%] px-5 py-3.5 text-[15px] leading-relaxed bg-zinc-900 text-white rounded-3xl rounded-tr-sm shadow-sm">
+        <div
+          className="max-w-[82%] rounded-[22px] rounded-br-[6px] bg-zinc-900 px-4 py-3 text-[15px] leading-relaxed text-white shadow-[0_2px_8px_-2px_rgba(0,0,0,0.2),0_8px_20px_-8px_rgba(0,0,0,0.25)]"
+        >
           {message.content}
         </div>
       )}
 
       {isAssistant && (
-        <div className="max-w-[88%] px-5 py-4 text-[15px] leading-relaxed bg-white text-zinc-800 rounded-3xl rounded-tl-sm border border-zinc-100 shadow-sm">
-          <AIMessageContent content={displayContent || message.content} animate={animate} />
+        <div className="max-w-[92%] space-y-0">
+          <div className="rounded-[22px] rounded-bl-[6px] border border-zinc-100/90 bg-white px-4 py-3.5 text-[15px] leading-relaxed text-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_6px_18px_-8px_rgba(0,0,0,0.1)]">
+            <AIMessageContent content={displayContent || message.content} animate={animate} />
+          </div>
+          {roadmap && <ChatRoadmapCard roadmap={roadmap} />}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

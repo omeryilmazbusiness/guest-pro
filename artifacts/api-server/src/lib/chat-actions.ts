@@ -16,14 +16,20 @@ export type {
 export {
   stripActionMarkup,
   stripAiMarkup,
+  stripRoadmapMarkup,
+  isRoadmapRequest,
   parseAiResponse,
   normalizeSuggestedAction,
   actionToCategory,
   serializePendingAction,
   parsePendingFromCategory,
   serializeReplyOptionsMeta,
+  serializeAssistantExtrasMeta,
   parseReplyOptionsFromMeta,
+  parseAssistantExtrasFromMeta,
   normalizeReplyOptions,
+  type ChatRoadmap,
+  type ChatRoadmapStop,
 } from "./chat-action-parse";
 
 import { normalizeSuggestedAction, type SuggestedChatAction } from "./chat-action-parse";

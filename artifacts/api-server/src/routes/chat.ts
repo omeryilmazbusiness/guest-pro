@@ -9,13 +9,15 @@ import {
   createRequestFromAction,
   confirmationMessage,
   isConfirmationUtterance,
+  isRoadmapRequest,
   parsePendingFromCategory,
   serializePendingAction,
-  serializeReplyOptionsMeta,
+  serializeAssistantExtrasMeta,
   type SuggestedChatAction,
 } from "../lib/chat-actions";
 import {
   formatGuestContextBlock,
+  loadAssistantPromptBlock,
   loadGuestChatContext,
   loadMenuPromptBlock,
 } from "../lib/chat-context";
@@ -303,13 +305,14 @@ router.post("/chat/sessions/:sessionId/messages", requireGuest, async (req, res)
 
   const needsMenu = chatMode === "food" || chatMode === "general";
 
-  const [allMessages, menuBlock] = await Promise.all([
+  const [allMessages, menuBlock, assistantBlock] = await Promise.all([
     db
       .select()
       .from(messagesTable)
       .where(eq(messagesTable.sessionId, sessionId))
       .orderBy(asc(messagesTable.createdAt)),
     needsMenu ? loadMenuPromptBlock(guestContext.hotelId) : Promise.resolve(undefined),
+    loadAssistantPromptBlock(guestContext.hotelId, guestContext.hotelName),
   ]);
 
   const contextSummary = getContextSummaryForTurn(session, allMessages);
@@ -329,6 +332,7 @@ router.post("/chat/sessions/:sessionId/messages", requireGuest, async (req, res)
   let suggestedAction: SuggestedChatAction | null = null;
   let requestCreated: { requestId: number } | null = null;
   let replyOptions: string[] = [];
+  let roadmap: import("../lib/chat-action-parse").ChatRoadmap | null = null;
   let aiCapacityExceeded = false;
   let quickActionRoutes: ReturnType<typeof buildAiCapacityFallback>["quickActionRoutes"] = [];
 
@@ -355,18 +359,23 @@ router.post("/chat/sessions/:sessionId/messages", requireGuest, async (req, res)
 
   if (!requestCreated) {
     try {
+      const roadmapRequested =
+        chatMode === "general" && isRoadmapRequest(content.trim());
       const aiResult = await generateConciergeResponse(content.trim(), recentMessages, {
         mode: chatMode,
         channel,
         guestContextBlock: formatGuestContextBlock(guestContext),
         menuBlock,
+        assistantBlock,
         guestFirstName: guestContext.firstName,
         contextSummary: contextSummary ?? undefined,
         detectedLanguage: language ?? guestContext.language,
+        roadmapRequested,
       });
       aiResponseText = aiResult.response;
       category = aiResult.category;
       replyOptions = aiResult.replyOptions;
+      roadmap = aiResult.roadmap;
       aiModel = aiResult.model;
 
       if (aiResult.action?.phase === "confirmed" && aiResult.action.requestType) {
@@ -459,7 +468,9 @@ router.post("/chat/sessions/:sessionId/messages", requireGuest, async (req, res)
       category,
       originalContent:
         assistantOriginalContent ??
-        (replyOptions.length > 0 ? serializeReplyOptionsMeta(replyOptions) : null),
+        (replyOptions.length > 0 || roadmap
+          ? serializeAssistantExtrasMeta({ replyOptions, roadmap })
+          : null),
     })
     .returning();
 
@@ -482,6 +493,7 @@ router.post("/chat/sessions/:sessionId/messages", requireGuest, async (req, res)
     assistantMessage,
     suggestedAction,
     replyOptions,
+    roadmap,
     aiCapacityExceeded,
     quickActionRoutes: aiCapacityExceeded ? quickActionRoutes : undefined,
     requestCreated,

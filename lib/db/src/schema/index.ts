@@ -21,3 +21,4 @@ export * from "./hotel-ai";
 export * from "./hotel-wifi-networks";
 export * from "./hotel-nearby-places";
 export * from "./hotel-nearby-settings";
+export * from "./hotel-assistant-config";

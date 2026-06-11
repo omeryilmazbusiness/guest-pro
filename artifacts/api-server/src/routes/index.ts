@@ -17,6 +17,9 @@ import folioRouter from "./folio";
 import wifiNetworksRouter from "./wifi-networks";
 import nearbyPlacesRouter from "./nearby-places";
 import guestPreferencesRouter from "./guest-preferences";
+import ttsRouter from "./tts";
+import assistantConfigRouter from "./assistant-config";
+import hotelSetupRouter from "./hotel-setup";
 import platformRouter from "./platform";
 import platformAuthRouter from "./platform-auth";
 import publicHotelsRouter from "./public-hotels";
@@ -48,5 +51,8 @@ router.use(folioRouter);
 router.use(wifiNetworksRouter);
 router.use(nearbyPlacesRouter);
 router.use(guestPreferencesRouter);
+router.use(ttsRouter);
+router.use(assistantConfigRouter);
+router.use(hotelSetupRouter);
 
 export default router;

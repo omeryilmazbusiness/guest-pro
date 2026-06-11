@@ -7,6 +7,7 @@ import { LogOut, Menu } from "lucide-react";
 import { HotelBrandMark } from "@/components/HotelBrandMark";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLocale } from "@/hooks/use-locale";
+import { useGuestLogout } from "@/contexts/guest-logout-context";
 import {
   buildGuestDashboardNavItems,
   scrollToGuestSection,
@@ -19,19 +20,18 @@ interface GuestDashboardHeaderProps {
   appName: string;
   nearbyLabel: string;
   showRequestsSection: boolean;
-  onLogout: () => void;
 }
 
 export function GuestDashboardHeader({
   appName,
   nearbyLabel,
   showRequestsSection,
-  onLogout,
 }: GuestDashboardHeaderProps) {
   const isMobile = useIsMobile();
   const { t, uiLocale, setLocale } = useLocale();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
+  const { openLogoutConfirm } = useGuestLogout();
 
   const navItems: GuestDashboardNavItem[] = useMemo(
     () =>
@@ -79,8 +79,8 @@ export function GuestDashboardHeader({
           </div>
           <button
             type="button"
-            onClick={onLogout}
-            className="-me-1 shrink-0 p-2 text-zinc-400 transition-colors hover:text-zinc-700"
+            onClick={() => openLogoutConfirm()}
+            className="-me-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-zinc-50 hover:text-zinc-700"
             aria-label={t.logout}
           >
             <LogOut className="h-4 w-4" />

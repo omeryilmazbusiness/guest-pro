@@ -6,6 +6,8 @@
  * so we detect what we can and degrade gracefully on first failure.
  */
 
+import { isElevenLabsTtsAvailable } from "./tts-api";
+
 export interface VoiceCapabilityModel {
   /** Web Speech API (STT) is present in this browser */
   sttSupported: boolean;
@@ -15,11 +17,19 @@ export interface VoiceCapabilityModel {
   canConverse: boolean;
   /** Running as installed PWA / home-screen app — STT may be unreliable on some iOS versions */
   isPwa: boolean;
+  /** Server-side ElevenLabs TTS is configured and within monthly quota */
+  premiumTtsAvailable: boolean;
 }
 
 export function detectVoiceCapability(): VoiceCapabilityModel {
   if (typeof window === "undefined") {
-    return { sttSupported: false, ttsSupported: false, canConverse: false, isPwa: false };
+    return {
+      sttSupported: false,
+      ttsSupported: false,
+      canConverse: false,
+      isPwa: false,
+      premiumTtsAvailable: false,
+    };
   }
 
   const sttSupported =
@@ -38,5 +48,6 @@ export function detectVoiceCapability(): VoiceCapabilityModel {
     ttsSupported,
     canConverse: sttSupported && ttsSupported,
     isPwa,
+    premiumTtsAvailable: isElevenLabsTtsAvailable(),
   };
 }

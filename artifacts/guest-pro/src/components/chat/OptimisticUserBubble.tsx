@@ -1,7 +1,15 @@
 import { useState, useEffect } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 
 const USER_TICKS = 25;
 const USER_TICK_MS = 22;
+
+const bubbleSpring = {
+  type: "spring" as const,
+  stiffness: 400,
+  damping: 32,
+  mass: 0.88,
+};
 
 function useUserTypingEffect(text: string) {
   const total = text.length;
@@ -11,10 +19,7 @@ function useUserTypingEffect(text: string) {
   useEffect(() => {
     setLength(0);
     const timer = setInterval(() => {
-      setLength((prev) => {
-        const next = Math.min(prev + charsPerTick, total);
-        return next;
-      });
+      setLength((prev) => Math.min(prev + charsPerTick, total));
     }, USER_TICK_MS);
     return () => clearInterval(timer);
   }, [text, total, charsPerTick]);
@@ -24,23 +29,19 @@ function useUserTypingEffect(text: string) {
 
 export function OptimisticUserBubble({ content }: { content: string }) {
   const displayed = useUserTypingEffect(content);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => setVisible(true));
-    return () => cancelAnimationFrame(frame);
-  }, []);
+  const reduceMotion = useReducedMotion();
 
   return (
-    <div
-      className={`flex justify-end transition-all duration-200 ease-out ${
-        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
-      }`}
+    <motion.div
+      className="flex justify-end"
+      initial={reduceMotion ? false : { opacity: 0, y: 12, x: 10, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
+      transition={bubbleSpring}
     >
-      <div className="max-w-[82%] px-5 py-3.5 text-[15px] leading-relaxed bg-zinc-900 text-white rounded-3xl rounded-tr-sm shadow-sm min-h-[48px]">
+      <div className="min-h-[48px] max-w-[82%] rounded-[22px] rounded-br-[6px] bg-zinc-900 px-4 py-3 text-[15px] leading-relaxed text-white shadow-[0_2px_8px_-2px_rgba(0,0,0,0.2),0_8px_20px_-8px_rgba(0,0,0,0.25)]">
         {displayed}
-        <span className="inline-block w-0.5 h-4 ml-0.5 bg-white/40 align-middle animate-pulse" />
+        <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-white/40 align-middle" />
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Loader2, MapPin, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { listNearbyPlaces, saveNearbyPlaces, type NearbyPlaceType } from "@/lib/nearby-places";
+import { notifyHotelSetupChanged } from "@/lib/hotel-setup-events";
 import { fetchHotelNearbyAnchor } from "@/lib/nearby-settings";
 import {
   parseCoordinateInput,
@@ -9,11 +10,14 @@ import {
   isWithinHotelRadius,
 } from "@/lib/nearby/coords";
 import { NEARBY_TYPE_ORDER } from "@/lib/welcoming/nearby-place-meta";
+import { validateNearbyRow } from "@/lib/setup-section-validation";
 import { useStaffLocale } from "@/hooks/use-staff-locale";
 import { tStaff } from "@/lib/staff-i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SettingsSectionCard, SettingsField } from "@/components/manager/settings/SettingsSectionCard";
+import { CollapsibleSettingsPanel } from "@/components/manager/settings/CollapsibleSettingsPanel";
+import { SectionSaveBar } from "@/components/manager/settings/SectionSaveBar";
+import { SettingsField } from "@/components/manager/settings/SettingsSectionCard";
 
 interface PlaceDraft {
   localId: string;
@@ -51,7 +55,6 @@ export function NearbyPlacesSettingsSection() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [places, setPlaces] = useState<PlaceDraft[]>([emptyPlace()]);
-
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -88,8 +91,7 @@ export function NearbyPlacesSettingsSection() {
     setPlaces((prev) => (prev.length <= 1 ? [emptyPlace()] : prev.filter((p) => p.localId !== localId)));
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async (): Promise<boolean> => {
     const payload: Array<{
       name: string;
       address?: string | null;
@@ -108,13 +110,28 @@ export function NearbyPlacesSettingsSection() {
     }
 
     let swappedAny = false;
+    let hasAnyInput = false;
 
     for (const [i, p] of places.entries()) {
-      if (!p.name.trim()) continue;
+      const state = validateNearbyRow(p.name, p.lat, p.lng, p.address, p.description);
+      if (state === "empty") continue;
+
+      hasAnyInput = true;
+      const row = String(i + 1);
+
+      if (state === "partial-name") {
+        toast.error(tStaff(t.settingsNearbyNameRequired, { n: row }));
+        return false;
+      }
+      if (state === "partial-coords" || state === "invalid-coords") {
+        toast.error(tStaff(t.settingsNearbyCoordsRequired, { n: row }));
+        return false;
+      }
+
       const parsed = parseCoordinateInput(p.lat, p.lng);
       if (!parsed) {
-        toast.error(t.settingsNearbyInvalidCoords);
-        return;
+        toast.error(tStaff(t.settingsNearbyCoordsRequired, { n: row }));
+        return false;
       }
 
       const { coords, swapped } = normalizePlaceCoords(parsed.lat, parsed.lng, hotelAnchor);
@@ -122,7 +139,7 @@ export function NearbyPlacesSettingsSection() {
 
       if (hotelAnchor && !isWithinHotelRadius(coords, hotelAnchor)) {
         toast.error(t.settingsNearbyTooFarFromHotel);
-        return;
+        return false;
       }
 
       payload.push({
@@ -136,18 +153,26 @@ export function NearbyPlacesSettingsSection() {
       });
     }
 
+    if (!hasAnyInput || payload.length === 0) {
+      toast.error(t.settingsNearbyPlaceRequired);
+      return false;
+    }
+
     setSaving(true);
     try {
       await saveNearbyPlaces(payload);
       if (swappedAny) {
         toast.info(t.settingsNearbyCoordsSwapped);
       }
+      notifyHotelSetupChanged();
       toast.success(t.settingsNearbySaved);
       await load();
+      return true;
     } catch (err: unknown) {
       const msg =
         (err as { data?: { error?: string } })?.data?.error ?? t.settingsNearbySaveFailed;
       toast.error(msg);
+      return false;
     } finally {
       setSaving(false);
     }
@@ -162,17 +187,24 @@ export function NearbyPlacesSettingsSection() {
   }
 
   return (
-    <SettingsSectionCard
-      icon={<MapPin className="w-4 h-4 text-teal-600" />}
+    <CollapsibleSettingsPanel
+      id="setup-nearby"
+      icon={<MapPin className="h-4 w-4" />}
       title={t.settingsNearbyTitle}
       subtitle={t.settingsNearbySubtitle}
+      footer={
+        <SectionSaveBar
+          label={t.assistantSectionSave}
+          homeLabel={t.assistantSectionHome}
+          saving={saving}
+          onSave={() => void handleSave()}
+          onHome={() => handleSave()}
+        />
+      }
     >
-      <form onSubmit={handleSave} className="space-y-4">
-        <p className="text-[11px] text-zinc-500 leading-relaxed rounded-xl bg-zinc-50 border border-zinc-100 px-3 py-2.5">
-          {t.settingsNearbyHint}
-        </p>
+      <p className="text-[11px] leading-relaxed text-zinc-500">{t.settingsNearbyHint}</p>
+      <div className="mt-3 space-y-3">
 
-        <div className="space-y-3">
           {places.map((place, index) => (
             <div
               key={place.localId}
@@ -278,26 +310,17 @@ export function NearbyPlacesSettingsSection() {
               </div>
             </div>
           ))}
-        </div>
+      </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setPlaces((prev) => [...prev, emptyPlace()])}
-          className="w-full h-10 rounded-2xl border-dashed border-zinc-200 text-zinc-600 hover:bg-zinc-50"
-        >
-          <Plus className="h-4 w-4 mr-1.5" />
-          {t.settingsNearbyAdd}
-        </Button>
-
-        <Button
-          type="submit"
-          disabled={saving}
-          className="w-full h-11 rounded-2xl bg-zinc-900 text-white hover:bg-zinc-800"
-        >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t.settingsNearbySave}
-        </Button>
-      </form>
-    </SettingsSectionCard>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setPlaces((prev) => [...prev, emptyPlace()])}
+        className="mt-3 h-8 w-full rounded-lg border-dashed border-zinc-200 text-[12px] text-zinc-600"
+      >
+        <Plus className="mr-1 h-3.5 w-3.5" />
+        {t.settingsNearbyAdd}
+      </Button>
+    </CollapsibleSettingsPanel>
   );
 }

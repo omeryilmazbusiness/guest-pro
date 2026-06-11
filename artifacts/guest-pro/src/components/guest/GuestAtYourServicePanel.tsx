@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Star, Wifi, Phone, Sparkles, Building2 } from "lucide-react";
+import { Star, Wifi, Phone, Building2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useLocale } from "@/hooks/use-locale";
@@ -75,66 +75,63 @@ export function GuestAtYourServicePanel({ appName = "Guest Pro" }: GuestAtYourSe
 
   return (
     <section className={dash.section} aria-label={t.infoSection}>
-      <h3 className={dash.sectionTitle}>
-        {t.infoSection}
-      </h3>
+      <h3 className={dash.sectionTitle}>{t.infoSection}</h3>
 
-      <article className="relative overflow-hidden rounded-2xl bg-zinc-950 border border-zinc-800 shadow-xl shadow-zinc-950/25">
-        <span
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_55%_at_50%_-10%,rgba(255,255,255,0.09),transparent)]"
-          aria-hidden
-        />
-
-        <header className="relative px-3.5 pt-4 pb-3 border-b border-white/[0.06]">
-          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest mb-2.5">
+      <article className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
+        <header className="border-b border-white/[0.06] px-3 py-2.5">
+          <p className="mb-1.5 text-[9px] font-medium uppercase tracking-wide text-zinc-600">
             {t.atYourServiceHotelAbout}
           </p>
-          <div className="flex items-center gap-3 mb-2.5">
-            <span className="w-9 h-9 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center shrink-0">
-              <Building2 className="w-5 h-5 text-white/90" strokeWidth={1.75} />
+          <div className="flex items-center gap-2">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/[0.06] text-zinc-300">
+              <Building2 className="h-3 w-3" strokeWidth={1.5} />
             </span>
-            <div>
-              <p className="font-serif text-[17px] text-white tracking-tight leading-snug">
+            <div className="min-w-0">
+              <p className="truncate text-[13px] font-medium tracking-tight text-white">
                 {HOTEL_CONFIG.name}
               </p>
-              <p className="text-[12px] text-zinc-400 mt-0.5">{appName}</p>
+              <p className="text-[10px] text-zinc-500">{appName}</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] px-2.5 py-2">
-              <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wide flex items-center gap-1">
-                <Wifi className="w-3 h-3" />
+
+          <div className="mt-2 grid grid-cols-2 gap-1.5">
+            <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-2 py-1.5">
+              <p className="flex items-center gap-1 text-[9px] font-medium uppercase tracking-wide text-zinc-600">
+                <Wifi className="h-2.5 w-2.5" strokeWidth={1.5} />
                 {t.atYourServiceWifi}
               </p>
-              <p className="text-[13px] text-zinc-200 mt-1 font-mono truncate">{HOTEL_CONFIG.wifi.ssid}</p>
+              <p className="mt-0.5 truncate font-mono text-[11px] text-zinc-300">
+                {HOTEL_CONFIG.wifi.ssid}
+              </p>
             </div>
-            <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] px-2.5 py-2">
-              <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wide flex items-center gap-1">
-                <Phone className="w-3 h-3" />
+            <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-2 py-1.5">
+              <p className="flex items-center gap-1 text-[9px] font-medium uppercase tracking-wide text-zinc-600">
+                <Phone className="h-2.5 w-2.5" strokeWidth={1.5} />
                 {t.atYourServiceEmergency}
               </p>
-              <p className="text-[13px] text-zinc-200 mt-1 truncate">{HOTEL_CONFIG.emergency.number}</p>
+              <p className="mt-0.5 truncate text-[11px] text-zinc-300">
+                {HOTEL_CONFIG.emergency.number}
+              </p>
             </div>
           </div>
         </header>
 
-        <div className="relative px-3.5 py-3 border-b border-white/[0.06]">
-          <div className="flex items-start gap-3">
-            <span className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-              <Sparkles className="w-4 h-4 text-white/80" />
-            </span>
-            <div>
-              <p className="text-[13px] font-semibold text-white">{t.atYourServiceGuestProAbout}</p>
-              <p className="text-[13px] text-zinc-400 mt-1 leading-relaxed">{t.atYourServiceGuestProDesc}</p>
-            </div>
-          </div>
+        <div className="border-b border-white/[0.06] px-3 py-2">
+          <p className="text-[11px] font-medium text-zinc-300">{t.atYourServiceGuestProAbout}</p>
+          <p className="mt-0.5 text-[10px] leading-snug text-zinc-500">
+            {t.atYourServiceGuestProDesc}
+          </p>
         </div>
 
-        <div className="relative px-3.5 py-3 border-b border-white/[0.06] space-y-4">
+        <div className="space-y-2.5 border-b border-white/[0.06] px-3 py-2.5">
           <div>
-            <p className="text-[13px] font-semibold text-white mb-1">{t.feedbackSectionTitle}</p>
-            <p className="text-[12px] text-zinc-500 mb-3">{t.feedbackRatingLabel}</p>
-            <div className="flex items-center gap-1" role="group" aria-label={t.feedbackRatingLabel}>
+            <p className="text-[11px] font-medium text-zinc-300">{t.feedbackSectionTitle}</p>
+            <p className="mt-0.5 text-[10px] text-zinc-600">{t.feedbackRatingLabel}</p>
+            <div
+              className="mt-1.5 flex items-center gap-0.5"
+              role="group"
+              aria-label={t.feedbackRatingLabel}
+            >
               {[1, 2, 3, 4, 5].map((value) => (
                 <button
                   key={value}
@@ -142,15 +139,13 @@ export function GuestAtYourServicePanel({ appName = "Guest Pro" }: GuestAtYourSe
                   onClick={() => setRating(value)}
                   onMouseEnter={() => setHoverRating(value)}
                   onMouseLeave={() => setHoverRating(0)}
-                  className="p-1 rounded-lg hover:bg-white/5 transition-colors"
+                  className="rounded-md p-0.5 transition-colors hover:bg-white/5"
                   aria-label={`${value}`}
                 >
                   <Star
                     className={cn(
-                      "w-7 h-7 transition-colors",
-                      value <= displayRating
-                        ? "fill-amber-400 text-amber-400"
-                        : "text-zinc-600",
+                      "h-5 w-5 transition-colors",
+                      value <= displayRating ? "fill-amber-400 text-amber-400" : "text-zinc-700",
                     )}
                     strokeWidth={1.5}
                   />
@@ -163,32 +158,32 @@ export function GuestAtYourServicePanel({ appName = "Guest Pro" }: GuestAtYourSe
             onChange={(e) => setComment(e.target.value)}
             placeholder={t.feedbackCommentPlaceholder}
             rows={2}
-            className="w-full rounded-xl bg-white/[0.05] border border-white/10 px-4 py-3 text-[13px] text-white placeholder:text-zinc-500 resize-none focus:outline-none focus:ring-2 focus:ring-white/20"
+            className="w-full resize-none rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-[12px] text-white placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-white/15"
           />
           <button
             type="button"
             onClick={submitFeedback}
             disabled={submittingFeedback || rating < 1}
-            className="w-full py-2.5 rounded-lg bg-white text-zinc-950 text-[13px] font-semibold hover:bg-zinc-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-full rounded-lg bg-white py-2 text-[12px] font-semibold text-zinc-950 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {submittingFeedback ? t.feedbackSubmitting : t.feedbackSubmit}
           </button>
         </div>
 
-        <div className="relative px-3.5 py-3 space-y-3">
-          <p className="text-[13px] font-semibold text-white">{t.complaintSectionTitle}</p>
+        <div className="space-y-2 px-3 py-2.5">
+          <p className="text-[11px] font-medium text-zinc-300">{t.complaintSectionTitle}</p>
           <textarea
             value={complaint}
             onChange={(e) => setComplaint(e.target.value)}
             placeholder={t.complaintPlaceholder}
             rows={2}
-            className="w-full rounded-xl bg-white/[0.05] border border-white/10 px-4 py-3 text-[13px] text-white placeholder:text-zinc-500 resize-none focus:outline-none focus:ring-2 focus:ring-white/20"
+            className="w-full resize-none rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-[12px] text-white placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-white/15"
           />
           <button
             type="button"
             onClick={submitComplaint}
             disabled={submittingComplaint || !complaint.trim()}
-            className="w-full py-2.5 rounded-lg border border-white/20 text-white text-[13px] font-semibold hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-full rounded-lg border border-white/15 py-2 text-[12px] font-semibold text-zinc-200 transition-colors hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {submittingComplaint ? t.feedbackSubmitting : t.complaintSubmit}
           </button>

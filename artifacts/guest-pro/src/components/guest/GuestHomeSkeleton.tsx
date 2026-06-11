@@ -39,7 +39,7 @@ export function GuestHomeSkeleton() {
 
         {/* Voice hero */}
         <div className="mb-4 mt-2">
-          <GuestSkeleton className="h-[220px] w-full" rounded="rounded-2xl" />
+          <GuestSkeleton className="h-[268px] w-full" rounded="rounded-[28px]" />
         </div>
 
         {/* Ask something */}

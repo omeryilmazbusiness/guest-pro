@@ -3,11 +3,12 @@
  */
 import { spawn, execSync } from "node:child_process";
 import path from "node:path";
-import { watch } from "node:fs";
+import { statSync, watch } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const apiRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const distEntry = path.join(apiRoot, "dist", "index.mjs");
+const buildStamp = path.join(apiRoot, "dist", ".build-stamp");
 const apiPort = Number(process.env["PORT"] ?? "3000");
 
 function freeListenPort(port) {
@@ -16,11 +17,22 @@ function freeListenPort(port) {
     if (!out) return;
     for (const pid of out.split("\n")) {
       if (!pid) continue;
+      const n = Number(pid);
+      if (n === process.pid) continue;
       console.log(`[dev-loop] Port ${port} in use — stopping PID ${pid}`);
-      process.kill(Number(pid), "SIGTERM");
+      process.kill(n, "SIGTERM");
     }
   } catch {
     // Port is free.
+  }
+}
+
+function isPortListening(port) {
+  try {
+    const out = execSync(`lsof -ti :${port}`, { encoding: "utf8" }).trim();
+    return Boolean(out);
+  } catch {
+    return false;
   }
 }
 
@@ -32,11 +44,18 @@ function run(cmd, args, opts = {}) {
 }
 
 function startWatchBuild() {
-  return spawn("node", ["./build.mjs", "--watch"], {
+  const child = spawn("node", ["./build.mjs", "--watch"], {
     cwd: apiRoot,
-    stdio: "inherit",
+    stdio: ["inherit", "pipe", "inherit"],
     env: process.env,
   });
+  child.stdout.on("data", (chunk) => {
+    process.stdout.write(chunk);
+    if (chunk.toString().includes("build finished")) {
+      scheduleApiRestart("esbuild: build finished");
+    }
+  });
+  return child;
 }
 
 function startApiProcess() {
@@ -63,6 +82,8 @@ let watchBuild = null;
 let apiProcess = null;
 let restartTimer = null;
 let manualRestart = false;
+let lastRestartAt = 0;
+let launching = false;
 
 function stopApi() {
   if (!apiProcess) return;
@@ -73,9 +94,13 @@ function stopApi() {
 let ignoreWatchUntil = 0;
 
 function launchApi() {
+  if (launching) return;
+  launching = true;
   freeListenPort(apiPort);
   apiProcess = startApiProcess();
-  ignoreWatchUntil = Date.now() + 800;
+  ignoreWatchUntil = Date.now() + 2000;
+  launching = false;
+
   apiProcess.on("exit", (code, signal) => {
     const wasManual = manualRestart;
     manualRestart = false;
@@ -108,13 +133,48 @@ function launchApi() {
 }
 
 function scheduleApiRestart(reason) {
+  if (Date.now() < ignoreWatchUntil) {
+    console.log(`[dev-loop] restart deferred (${reason}): API just launched`);
+    return;
+  }
+  if (Date.now() - lastRestartAt < 2500) {
+    console.log(`[dev-loop] restart deferred (${reason}): debounce`);
+    return;
+  }
+
   if (restartTimer) clearTimeout(restartTimer);
   restartTimer = setTimeout(() => {
     restartTimer = null;
+    lastRestartAt = Date.now();
     console.log(`[dev-loop] ${reason} — restarting API…`);
     stopApi();
-    setTimeout(launchApi, 900);
-  }, 500);
+    setTimeout(launchApi, 400);
+  }, 400);
+}
+
+function readDiskBuildStamp() {
+  try {
+    return statSync(buildStamp).mtimeMs;
+  } catch {
+    return 0;
+  }
+}
+
+function ensureApiRunning() {
+  const diskStampMtime = readDiskBuildStamp();
+  if (diskStampMtime > lastBundleMtime) {
+    lastBundleMtime = diskStampMtime;
+    scheduleApiRestart("bundle stamp newer than tracked mtime");
+    return;
+  }
+
+  if (apiProcess && isPortListening(apiPort)) return;
+  if (launching) return;
+  if (Date.now() - lastRestartAt < 2500) return;
+  console.log("[dev-loop] API not listening — starting…");
+  lastRestartAt = Date.now();
+  stopApi();
+  launchApi();
 }
 
 async function main() {
@@ -133,12 +193,43 @@ async function main() {
 
   launchApi();
 
-  // Restart API whenever esbuild rebuilds the bundle. Skip fs.watch noise right
-  // after each API boot (macOS often emits a spurious change event on watch()).
-  watch(distEntry, () => {
-    if (Date.now() < ignoreWatchUntil) return;
+  let lastBundleMtime = 0;
+  for (const file of [distEntry, buildStamp]) {
+    try {
+      lastBundleMtime = Math.max(lastBundleMtime, statSync(file).mtimeMs);
+    } catch {
+      /* not created yet */
+    }
+  }
+
+  const onBundleChange = () => {
     scheduleApiRestart("Bundle rebuilt");
-  });
+  };
+
+  for (const watched of [distEntry, buildStamp]) {
+    try {
+      watch(watched, onBundleChange);
+    } catch {
+      /* file may not exist yet */
+    }
+  }
+
+  setInterval(() => {
+    let mtime = 0;
+    for (const file of [distEntry, buildStamp]) {
+      try {
+        mtime = Math.max(mtime, statSync(file).mtimeMs);
+      } catch {
+        /* file may not exist yet */
+      }
+    }
+    if (mtime > lastBundleMtime) {
+      lastBundleMtime = mtime;
+      onBundleChange();
+    }
+  }, 1500);
+
+  setInterval(ensureApiRunning, 5000);
 }
 
 function shutdown() {

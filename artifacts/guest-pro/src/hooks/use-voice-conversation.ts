@@ -36,7 +36,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { detectVoiceCapability, type VoiceCapabilityModel } from "@/lib/voice/capability";
 import { detectLanguageFromText } from "@/lib/voice/language-resolver";
-import { synthesize, cancelSpeech, primeTts } from "@/lib/voice/speech-synthesis";
+import { synthesize, cancelSpeech, primeTts, preloadPremiumTts } from "@/lib/voice/speech-synthesis";
 import {
   abortAllSpeechSessions,
   createSpeechSession,
@@ -501,6 +501,7 @@ export function useVoiceConversation(opts: VoiceConversationOptions): VoiceConve
     // Speaks a silent near-instant utterance so all future synthesize() calls
     // are allowed even though they happen after async AI responses.
     primeTts();
+    preloadPremiumTts();
 
     activeRef.current = true;
     setErrorMessage(null);

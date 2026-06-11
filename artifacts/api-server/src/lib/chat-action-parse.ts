@@ -13,7 +13,41 @@ export type ChatIntent =
 export type ChatActionRequestType =
   | "FOOD_ORDER"
   | "SUPPORT_REQUEST"
-  | "CARE_PROFILE_UPDATE";
+  | "CARE_PROFILE_UPDATE"
+  | "GENERAL_SERVICE_REQUEST";
+
+export type ChatRoadmapStopCategory =
+  | "landmark"
+  | "street_food"
+  | "culture"
+  | "view"
+  | "shopping"
+  | "hotel_pick";
+
+export interface ChatRoadmapStop {
+  title: string;
+  subtitle?: string;
+  duration?: string;
+  category?: ChatRoadmapStopCategory;
+  tip?: string;
+}
+
+export interface ChatRoadmap {
+  title: string;
+  city?: string;
+  summary?: string;
+  postcardNote?: string;
+  stops: ChatRoadmapStop[];
+}
+
+const VALID_ROADMAP_CATEGORIES = new Set<ChatRoadmapStopCategory>([
+  "landmark",
+  "street_food",
+  "culture",
+  "view",
+  "shopping",
+  "hotel_pick",
+]);
 
 export interface SuggestedChatAction {
   intent: ChatIntent;
@@ -29,6 +63,16 @@ const ACTION_OPEN_RE = /<ACTION>\s*([\s\S]*)$/i;
 const ACTION_CLOSE_RE = /<\/ACTION>/gi;
 const OPTIONS_BLOCK_RE = /<OPTIONS>\s*([\s\S]*?)\s*<\/OPTIONS>/i;
 const OPTIONS_OPEN_RE = /<OPTIONS>\s*([\s\S]*)$/i;
+const ROADMAP_BLOCK_RE = /<ROADMAP>\s*([\s\S]*?)\s*<\/ROADMAP>/i;
+const ROADMAP_OPEN_RE = /<ROADMAP>\s*([\s\S]*)$/i;
+
+const ROADMAP_INTENT_RE =
+  /\b(roadmap|itinerary|sightseeing|landmarks?|explore|walking tour|half[- ]day|full[- ]day|plan my day|plan a day|things to do|places to visit|what to see|must[- ]see|must[- ]try|local food|street food|cultural activit|gezi|ke[sş]fet|tur|yol haritas|gezilecek|görülmesi|lezzet|aktivite|aktiviteler|şehir turu|çevre|gezinti|planla)\b/i;
+
+/** Guest message likely expects a structured city roadmap card. */
+export function isRoadmapRequest(text: string): boolean {
+  return ROADMAP_INTENT_RE.test(text.trim());
+}
 
 const VALID_INTENTS = new Set<ChatIntent>([
   "food",
@@ -43,6 +87,7 @@ const VALID_REQUEST_TYPES = new Set<ChatActionRequestType>([
   "FOOD_ORDER",
   "SUPPORT_REQUEST",
   "CARE_PROFILE_UPDATE",
+  "GENERAL_SERVICE_REQUEST",
 ]);
 
 /** Remove ACTION markup from text shown to guests (complete or truncated tags). */
@@ -63,8 +108,17 @@ export function stripOptionsMarkup(raw: string): string {
     .trim();
 }
 
+/** Remove ROADMAP markup from guest-visible text. */
+export function stripRoadmapMarkup(raw: string): string {
+  return raw
+    .replace(ROADMAP_BLOCK_RE, "")
+    .replace(ROADMAP_OPEN_RE, "")
+    .replace(/<\/ROADMAP>/gi, "")
+    .trim();
+}
+
 export function stripAiMarkup(raw: string): string {
-  return stripOptionsMarkup(stripActionMarkup(raw));
+  return stripRoadmapMarkup(stripOptionsMarkup(stripActionMarkup(raw)));
 }
 
 const MAX_REPLY_OPTIONS = 4;
@@ -265,18 +319,90 @@ function guestTextFallback(action: SuggestedChatAction | null): string {
   if (action?.requestType === "CARE_PROFILE_UPDATE") {
     return "I can save these preferences to your profile — shall I confirm?";
   }
+  if (action?.requestType === "GENERAL_SERVICE_REQUEST") {
+    return "I can send this to reception for you — shall I confirm?";
+  }
   return "How else can I help with your stay?";
+}
+
+function extractRoadmapFromRaw(raw: string): ChatRoadmap | null {
+  const complete = raw.match(ROADMAP_BLOCK_RE);
+  const payload = complete?.[1] ?? raw.match(ROADMAP_OPEN_RE)?.[1];
+  if (!payload) return null;
+  const jsonSlice = extractJsonObject(payload.trim());
+  if (!jsonSlice) return null;
+  try {
+    const parsed = JSON.parse(jsonSlice) as ChatRoadmap;
+    if (!parsed?.title || !Array.isArray(parsed.stops) || parsed.stops.length === 0) return null;
+    const stops = parsed.stops
+      .filter((s) => s && typeof s.title === "string" && s.title.trim())
+      .slice(0, 10)
+      .map((s) => {
+        const cat = s.category?.trim() as ChatRoadmapStopCategory | undefined;
+        return {
+          title: s.title.trim().slice(0, 120),
+          subtitle: s.subtitle?.trim().slice(0, 160),
+          duration: s.duration?.trim().slice(0, 40),
+          ...(cat && VALID_ROADMAP_CATEGORIES.has(cat) ? { category: cat } : {}),
+          ...(s.tip?.trim() ? { tip: s.tip.trim().slice(0, 160) } : {}),
+        };
+      });
+    if (stops.length === 0) return null;
+    return {
+      title: parsed.title.trim().slice(0, 120),
+      city: parsed.city?.trim().slice(0, 80),
+      ...(parsed.summary?.trim() ? { summary: parsed.summary.trim().slice(0, 200) } : {}),
+      ...(parsed.postcardNote?.trim()
+        ? { postcardNote: parsed.postcardNote.trim().slice(0, 220) }
+        : {}),
+      stops,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function serializeAssistantExtrasMeta(extras: {
+  replyOptions?: string[];
+  roadmap?: ChatRoadmap | null;
+}): string {
+  return JSON.stringify({
+    ...(extras.replyOptions?.length ? { replyOptions: extras.replyOptions } : {}),
+    ...(extras.roadmap ? { roadmap: extras.roadmap } : {}),
+  });
+}
+
+export function parseAssistantExtrasFromMeta(
+  originalContent: string | null | undefined,
+): { replyOptions: string[]; roadmap: ChatRoadmap | null } {
+  if (!originalContent) return { replyOptions: [], roadmap: null };
+  try {
+    const parsed = JSON.parse(originalContent) as {
+      replyOptions?: unknown;
+      roadmap?: ChatRoadmap;
+    };
+    const replyOptions = Array.isArray(parsed.replyOptions)
+      ? normalizeReplyOptions(parsed.replyOptions.filter((x): x is string => typeof x === "string"))
+      : [];
+    const roadmap =
+      parsed.roadmap?.title && Array.isArray(parsed.roadmap.stops) ? parsed.roadmap : null;
+    return { replyOptions, roadmap };
+  } catch {
+    return { replyOptions: parseReplyOptionsFromMeta(originalContent), roadmap: null };
+  }
 }
 
 export function parseAiResponse(raw: string): {
   guestText: string;
   action: SuggestedChatAction | null;
   replyOptions: string[];
+  roadmap: ChatRoadmap | null;
 } {
   const parsed = extractActionFromRaw(raw);
   const action = normalizeSuggestedAction(parsed);
 
   let replyOptions = extractOptionsFromRaw(raw);
+  const roadmap = extractRoadmapFromRaw(raw);
   let guestText = stripAiMarkup(raw);
 
   if (replyOptions.length === 0 && guestText) {
@@ -287,7 +413,7 @@ export function parseAiResponse(raw: string): {
     guestText = guestTextFallback(action);
   }
 
-  return { guestText, action, replyOptions };
+  return { guestText, action, replyOptions, roadmap };
 }
 
 export function actionToCategory(action: SuggestedChatAction | null): string {
@@ -295,6 +421,7 @@ export function actionToCategory(action: SuggestedChatAction | null): string {
   if (action.requestType === "FOOD_ORDER") return "room_service";
   if (action.requestType === "SUPPORT_REQUEST") return "support";
   if (action.requestType === "CARE_PROFILE_UPDATE") return "care";
+  if (action.requestType === "GENERAL_SERVICE_REQUEST") return "concierge";
   return action.intent;
 }
 

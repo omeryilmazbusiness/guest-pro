@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { getTranslations, type GuestTranslations } from "@/lib/i18n";
-import { uiLocaleFromVoiceLocale } from "@/lib/locale";
+import { deriveLocaleFromCountry, uiLocaleFromVoiceLocale } from "@/lib/locale";
 import { useOptionalHotelTenant } from "@/hooks/use-hotel-tenant";
 import { getRawPersistedWelcomingLocale, getWelcomingHotelSlug } from "@/lib/welcoming/welcoming-locale";
 import { getWelcomingLanguage } from "@/lib/welcoming/languages";
@@ -11,6 +11,7 @@ import {
   GUEST_LOCALE_CHANGE_EVENT,
   guestDirFromUi,
   guestVoiceLocaleFromUi,
+  isGuestUiLocale,
   normalizeGuestUiLocale,
   readGuestLocalePreference,
   writeGuestLocalePreference,
@@ -35,6 +36,7 @@ interface ResolvedLocale {
 
 function resolveGuestLocale(
   userLanguage: string | null | undefined,
+  countryCode: string | null | undefined,
   guestId: number | null | undefined,
   welcomingSlug: string,
 ): ResolvedLocale {
@@ -44,8 +46,28 @@ function resolveGuestLocale(
   }
 
   if (userLanguage) {
-    const uiLocale = normalizeGuestUiLocale(uiLocaleFromVoiceLocale(userLanguage));
-    return { uiLocale, voiceLocale: userLanguage };
+    const rawUi = uiLocaleFromVoiceLocale(userLanguage);
+    let uiLocale = normalizeGuestUiLocale(rawUi);
+    let voiceLocale = userLanguage;
+
+    if (!isGuestUiLocale(rawUi) && countryCode) {
+      const fromCountry = deriveLocaleFromCountry(countryCode);
+      const countryUi = normalizeGuestUiLocale(fromCountry.uiLocale);
+      if (isGuestUiLocale(fromCountry.uiLocale)) {
+        uiLocale = countryUi;
+        voiceLocale = fromCountry.voiceLocale;
+      }
+    }
+
+    return { uiLocale, voiceLocale };
+  }
+
+  if (countryCode) {
+    const fromCountry = deriveLocaleFromCountry(countryCode);
+    const uiLocale = normalizeGuestUiLocale(fromCountry.uiLocale);
+    if (isGuestUiLocale(fromCountry.uiLocale)) {
+      return { uiLocale, voiceLocale: fromCountry.voiceLocale };
+    }
   }
 
   const welcomingLocale = getRawPersistedWelcomingLocale(welcomingSlug);
@@ -74,8 +96,8 @@ export function useLocale(): LocaleContext {
   const welcomingSlug = tenant?.slug ?? getWelcomingHotelSlug();
 
   const baseline = useMemo(
-    () => resolveGuestLocale(user?.language, user?.guestId, welcomingSlug),
-    [user?.language, user?.guestId, welcomingSlug],
+    () => resolveGuestLocale(user?.language, user?.countryCode, user?.guestId, welcomingSlug),
+    [user?.language, user?.countryCode, user?.guestId, welcomingSlug],
   );
 
   const [active, setActive] = useState<ResolvedLocale>(baseline);
@@ -94,7 +116,7 @@ export function useLocale(): LocaleContext {
     };
     const onStorage = (event: StorageEvent) => {
       if (!event.key?.startsWith("guestpro_guest_locale")) return;
-      setActive(resolveGuestLocale(user?.language, user?.guestId, welcomingSlug));
+      setActive(resolveGuestLocale(user?.language, user?.countryCode, user?.guestId, welcomingSlug));
     };
 
     window.addEventListener(GUEST_LOCALE_CHANGE_EVENT, onCustom);
@@ -103,7 +125,7 @@ export function useLocale(): LocaleContext {
       window.removeEventListener(GUEST_LOCALE_CHANGE_EVENT, onCustom);
       window.removeEventListener("storage", onStorage);
     };
-  }, [user?.language, user?.guestId, welcomingSlug]);
+  }, [user?.language, user?.countryCode, user?.guestId, welcomingSlug]);
 
   const { uiLocale, voiceLocale } = active;
   const dir = guestDirFromUi(uiLocale);

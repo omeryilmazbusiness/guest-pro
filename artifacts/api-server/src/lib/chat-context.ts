@@ -2,8 +2,19 @@
  * Guest + hotel context and live menu for AI concierge prompts.
  */
 
-import { db, guestsTable, hotelsTable, hotelBrandingTable, restaurantMenuItemsTable } from "@workspace/db";
+import {
+  db,
+  guestsTable,
+  hotelsTable,
+  hotelBrandingTable,
+  hotelNearbyPlacesTable,
+  restaurantMenuItemsTable,
+} from "@workspace/db";
 import { eq, and, asc } from "drizzle-orm";
+import { defaultAmenities } from "./assistant-config/defaults";
+import { hotelAssistantConfigRepository } from "./assistant-config/repository";
+import { formatAssistantPromptBlock } from "./assistant-config/prompt-block";
+import type { HotelAssistantConfigDto } from "./assistant-config/types";
 
 export interface GuestChatContext {
   guestId: number;
@@ -119,6 +130,83 @@ export async function loadMenuPromptBlock(hotelId: number): Promise<string> {
   }
 
   menuPromptCache.set(cacheKey, { block, expiresAt: Date.now() + MENU_CACHE_TTL_MS });
+  return block;
+}
+
+const ASSISTANT_CACHE_TTL_MS = 5 * 60 * 1000;
+const assistantPromptCache = new Map<string, { block: string; expiresAt: number }>();
+
+function defaultAssistantConfig(hotelId: number): HotelAssistantConfigDto {
+  return {
+    hotelId,
+    aboutHotel: "",
+    cityName: null,
+    countryCode: null,
+    amenities: defaultAmenities(),
+    taxiLobbyPhone: null,
+    taxiNotes: null,
+    spaPhone: null,
+    spaInfo: null,
+    spaOpenTime: null,
+    spaCloseTime: null,
+    salonInfo: null,
+    salonPhone: null,
+    salonOpenTime: null,
+    salonCloseTime: null,
+    laundryInfo: null,
+    laundryPhone: null,
+    onboardingCompletedAt: null,
+  };
+}
+
+export async function loadAssistantPromptBlock(hotelId: number, hotelName: string): Promise<string> {
+  const cacheKey = String(hotelId);
+  const cached = assistantPromptCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.block;
+
+  let config: HotelAssistantConfigDto;
+  let nearbyRows: {
+    name: string | null;
+    type: string | null;
+    description: string | null;
+    address: string | null;
+  }[] = [];
+
+  try {
+    [config, nearbyRows] = await Promise.all([
+      hotelAssistantConfigRepository.getOrCreate(hotelId),
+      db
+        .select({
+          name: hotelNearbyPlacesTable.name,
+          type: hotelNearbyPlacesTable.type,
+          description: hotelNearbyPlacesTable.description,
+          address: hotelNearbyPlacesTable.address,
+        })
+        .from(hotelNearbyPlacesTable)
+        .where(
+          and(
+            eq(hotelNearbyPlacesTable.hotelId, hotelId),
+            eq(hotelNearbyPlacesTable.isActive, true),
+          ),
+        )
+        .orderBy(asc(hotelNearbyPlacesTable.sortOrder), asc(hotelNearbyPlacesTable.id)),
+    ]);
+  } catch (err) {
+    console.warn("[chat-context] assistant config unavailable, using defaults:", err);
+    config = defaultAssistantConfig(hotelId);
+  }
+
+  const block = formatAssistantPromptBlock(config, hotelName, {
+    nearbyPlaces: nearbyRows
+      .filter((p) => p.name?.trim())
+      .map((p) => ({
+        name: p.name!.trim(),
+        type: p.type?.trim() || "place",
+        description: p.description,
+        address: p.address,
+      })),
+  });
+  assistantPromptCache.set(cacheKey, { block, expiresAt: Date.now() + ASSISTANT_CACHE_TTL_MS });
   return block;
 }
 

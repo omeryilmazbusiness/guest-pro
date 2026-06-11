@@ -8,6 +8,7 @@ import {
   ClipboardList,
   DoorOpen,
   Bell,
+  MessageSquare,
   TrendingUp,
   Plus,
   Settings,
@@ -41,6 +42,7 @@ export interface ManagerDashboardNavContext {
   guestCount: number;
   roomCount: number;
   requestCount: number;
+  feedbackCount: number;
   teamCount: number;
   canCreateGuest: boolean;
   isGeneralManager: boolean;
@@ -94,6 +96,14 @@ const NAV_DEFS: NavDef[] = [
     action: { type: "tab", tab: "requests" },
     badge: (c) => (c.requestCount > 0 ? c.requestCount : undefined),
     isVisible: (c) => canAccessManagerTab(c.scope, "requests"),
+  },
+  {
+    id: "feedback",
+    icon: MessageSquare,
+    resolveLabel: ({ t }) => t.tabFeedback,
+    action: { type: "tab", tab: "feedback" },
+    badge: (c) => (c.feedbackCount > 0 ? c.feedbackCount : undefined),
+    isVisible: (c) => canAccessManagerTab(c.scope, "feedback"),
   },
   {
     id: "summary",

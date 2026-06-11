@@ -119,9 +119,25 @@ export interface StaffTranslations {
   tabGuests: string;
   tabRooms: string;
   tabRequests: string;
+  tabFeedback: string;
   tabSummary: string;
   tabTeam: string;
   tabTasks: string;
+
+  // ── Feedback board (reception) ──────────────────────────────────────────────
+  feedbackBoardTitle: string;
+  feedbackEmpty: string;
+  feedbackRefresh: string;
+  feedbackTypeComplaint: string;
+  feedbackStatusOpen: string;
+  feedbackStatusInProgress: string;
+  feedbackStatusResolved: string;
+  feedbackStatusUpdateFailed: string;
+  feedbackDelete: string;
+  feedbackDeleteConfirm: string;
+  feedbackDeleteCancel: string;
+  feedbackDeleted: string;
+  feedbackDeleteFailed: string;
 
   // ── Staff scope labels (role line) ────────────────────────────────────────
   scopeGeneralManager: string;
@@ -405,6 +421,73 @@ export interface StaffTranslations {
   settingsCategoryTracking: string;
   settingsCategoryTrackingDesc: string;
   settingsHubIntro: string;
+  assistantConfigTitle: string;
+  assistantConfigSubtitle: string;
+  assistantConfigLoadFailed: string;
+  assistantConfigSaveFailed: string;
+  assistantConfigSaved: string;
+  assistantConfigSavedComplete: string;
+  assistantConfigSave: string;
+  assistantConfigProgress: string;
+  assistantConfigCompleteBanner: string;
+  assistantAboutTitle: string;
+  assistantAboutSubtitle: string;
+  assistantAboutLabel: string;
+  assistantAboutPlaceholder: string;
+  assistantAboutMinChars: string;
+  assistantAboutTooShort: string;
+  assistantCityLabel: string;
+  assistantCityPlaceholder: string;
+  assistantFacilitiesTitle: string;
+  assistantFacilitiesSubtitle: string;
+  assistantAddDetail: string;
+  assistantHideDetail: string;
+  assistantSectionSave: string;
+  assistantSectionSaved: string;
+  assistantFacilitiesRequired: string;
+  assistantServiceRequired: string;
+  assistantSectionHome: string;
+  assistantCountryLabel: string;
+  assistantCityFieldLabel: string;
+  assistantCountrySearch: string;
+  assistantCitySearch: string;
+  assistantPickerEmpty: string;
+  assistantUseCustomCity: string;
+  assistantTaxiTitle: string;
+  assistantTaxiSubtitle: string;
+  assistantTaxiPhone: string;
+  assistantTaxiPhonePlaceholder: string;
+  assistantSpaTitle: string;
+  assistantSpaSubtitle: string;
+  assistantSalonTitle: string;
+  assistantSalonSubtitle: string;
+  assistantLaundryTitle: string;
+  assistantLaundrySubtitle: string;
+  assistantOpenTime: string;
+  assistantCloseTime: string;
+  assistantReservationPhone: string;
+  assistantNotes: string;
+  assistantOnboardingTitle: string;
+  assistantOnboardingBody: string;
+  assistantOnboardingCta: string;
+  assistantOnboardingCompleteTitle: string;
+  assistantOnboardingCompleteBody: string;
+  setupWizardEyebrow: string;
+  setupWizardTitle: string;
+  setupWizardSubtitle: string;
+  setupWizardProgress: string;
+  setupWizardContinue: string;
+  setupStepAbout: string;
+  setupStepAboutDesc: string;
+  setupStepServices: string;
+  setupStepServicesDesc: string;
+  setupStepWifi: string;
+  setupStepWifiDesc: string;
+  setupStepNearby: string;
+  setupStepNearbyDesc: string;
+  setupCompleteTitle: string;
+  setupCompleteBody: string;
+  setupCompleteCta: string;
   settingsHotelLocationTitle: string;
   settingsHotelLocationSubtitle: string;
   settingsHotelLocationHint: string;
@@ -456,6 +539,14 @@ export interface StaffTranslations {
   settingsNearbyAdd: string;
   settingsNearbySave: string;
   settingsNearbyRemove: string;
+  settingsNearbyPlaceRequired: string;
+  settingsNearbyNameRequired: string;
+  settingsNearbyCoordsRequired: string;
+  settingsNearbyRowIncomplete: string;
+  settingsWifiNetworkRequired: string;
+  settingsWifiNameRequired: string;
+  settingsWifiPasswordRequired: string;
+  settingsWifiRowIncomplete: string;
 
   // ── Care tab ─────────────────────────────────────────────────────────────
   careTitle: string;
@@ -575,9 +666,24 @@ const en: StaffTranslations = {
   tabGuests: "Guests",
   tabRooms: "Rooms",
   tabRequests: "Requests",
+  tabFeedback: "Feedback",
   tabSummary: "Summary",
   tabTeam: "Employees",
   tabTasks: "Tasks",
+
+  feedbackBoardTitle: "Feedbacks & complaints",
+  feedbackEmpty: "No guest feedback yet",
+  feedbackRefresh: "Refresh",
+  feedbackTypeComplaint: "Complaint / suggestion",
+  feedbackStatusOpen: "Open",
+  feedbackStatusInProgress: "In progress",
+  feedbackStatusResolved: "Resolved",
+  feedbackStatusUpdateFailed: "Could not update status",
+  feedbackDelete: "Delete",
+  feedbackDeleteConfirm: "Yes",
+  feedbackDeleteCancel: "No",
+  feedbackDeleted: "Feedback removed",
+  feedbackDeleteFailed: "Could not delete",
 
   scopeGeneralManager: "General Manager",
   scopeDepartmentManager: "{dept} Manager",
@@ -846,6 +952,74 @@ const en: StaffTranslations = {
   settingsCategoryTracking: "Presence & tracking",
   settingsCategoryTrackingDesc: "Geofence, network rules, and guest location.",
   settingsHubIntro: "Choose a category to configure guest-facing features or hotel presence tracking.",
+  assistantConfigTitle: "Guest AI assistant",
+  assistantConfigSubtitle: "Hotel knowledge, facilities, and concierge services for AI chat.",
+  assistantConfigLoadFailed: "Failed to load AI assistant settings.",
+  assistantConfigSaveFailed: "Failed to save AI assistant settings.",
+  assistantConfigSaved: "AI assistant settings saved.",
+  assistantConfigSavedComplete: "AI assistant is fully configured.",
+  assistantConfigSave: "Save AI assistant settings",
+  assistantConfigProgress: "Complete setup to activate your hotel AI assistant",
+  assistantConfigCompleteBanner: "AI assistant setup complete",
+  assistantAboutTitle: "About the hotel",
+  assistantAboutSubtitle: "Tell guests what makes your hotel special — location, amenities, and advantages.",
+  assistantAboutLabel: "Hotel description",
+  assistantAboutPlaceholder:
+    "e.g. Our beachfront resort offers a spa, outdoor pool, aquapark, and all-day dining. Located 10 min from the old town with sea views from every room. Ideal for families and couples seeking a quiet escape…",
+  assistantAboutMinChars: "Minimum {min} characters for setup progress",
+  assistantAboutTooShort: "Write at least {min} characters, then save to update the dashboard.",
+  assistantCityLabel: "City for local tips",
+  assistantCityPlaceholder: "Istanbul",
+  assistantFacilitiesTitle: "Hotel facilities",
+  assistantFacilitiesSubtitle: "Select the features and services your hotel offers. Optional details can be added per item.",
+  assistantAddDetail: "Add details",
+  assistantHideDetail: "Hide details",
+  assistantSectionSave: "Save",
+  assistantSectionSaved: "Saved",
+  assistantFacilitiesRequired: "Select at least one facility before saving.",
+  assistantServiceRequired: "Add at least one detail (phone, hours, or notes) before saving.",
+  assistantSectionHome: "Home",
+  assistantCountryLabel: "Country",
+  assistantCityFieldLabel: "City",
+  assistantCountrySearch: "Search country…",
+  assistantCitySearch: "Search city…",
+  assistantPickerEmpty: "No results",
+  assistantUseCustomCity: 'Use "{city}"',
+  assistantTaxiTitle: "Taxi service",
+  assistantTaxiSubtitle: "Lobby desk number for taxi arrangements.",
+  assistantTaxiPhone: "Taxi lobby desk phone",
+  assistantTaxiPhonePlaceholder: "Ext. 120 or +90 …",
+  assistantSpaTitle: "Spa & wellness",
+  assistantSpaSubtitle: "Contact and hours for spa bookings via AI.",
+  assistantSalonTitle: "Salon",
+  assistantSalonSubtitle: "Hair & beauty salon information.",
+  assistantLaundryTitle: "Laundry",
+  assistantLaundrySubtitle: "Laundry and dry-cleaning service details.",
+  assistantOpenTime: "Opens",
+  assistantCloseTime: "Closes",
+  assistantReservationPhone: "Reservation phone",
+  assistantNotes: "Notes",
+  assistantOnboardingTitle: "Complete your Guest AI assistant setup",
+  assistantOnboardingBody: "Add hotel knowledge so guests get accurate answers and reception bookings.",
+  assistantOnboardingCta: "Continue: {step}",
+  assistantOnboardingCompleteTitle: "AI assistant 100% — {hotel} guest assistant is active",
+  assistantOnboardingCompleteBody: "Guests can explore, book services, and get hotel-specific recommendations in chat.",
+  setupWizardEyebrow: "Getting started",
+  setupWizardTitle: "Complete setup",
+  setupWizardSubtitle: "Four quick steps to launch Guest Pro for your team and guests.",
+  setupWizardProgress: "Complete",
+  setupWizardContinue: "Continue: {step}",
+  setupStepAbout: "About hotel",
+  setupStepAboutDesc: "Describe your property, location, and what makes it special.",
+  setupStepServices: "Guest services",
+  setupStepServicesDesc: "Select the amenities and services your AI assistant can mention.",
+  setupStepWifi: "Wi-Fi",
+  setupStepWifiDesc: "Add Wi-Fi networks for guest room assignment.",
+  setupStepNearby: "Nearby places",
+  setupStepNearbyDesc: "Add markets, restaurants, and attractions near your hotel.",
+  setupCompleteTitle: "You're all set",
+  setupCompleteBody: "Guest Pro is 100% ready to assist you and your dear guests at {hotel}.",
+  setupCompleteCta: "Continue to dashboard",
   settingsHotelLocationTitle: "Hotel map pin",
   settingsHotelLocationSubtitle: "Fixed location shown on the guest nearby map as your hotel.",
   settingsHotelLocationHint: "Enter GPS coordinates from Google Maps (right-click → coordinates). This pin is the starting point for directions and distance sorting.",
@@ -896,6 +1070,14 @@ const en: StaffTranslations = {
   settingsNearbyAdd: "Add place",
   settingsNearbySave: "Save nearby places",
   settingsNearbyRemove: "Remove place",
+  settingsNearbyPlaceRequired: "Add at least one nearby place with a name and coordinates.",
+  settingsNearbyNameRequired: "Place {n}: name is required.",
+  settingsNearbyCoordsRequired: "Place {n}: enter valid latitude and longitude.",
+  settingsNearbyRowIncomplete: "Place {n}: complete the name and coordinates, or clear the row.",
+  settingsWifiNetworkRequired: "Add at least one Wi-Fi network with a name and password.",
+  settingsWifiNameRequired: "Network {n}: name is required.",
+  settingsWifiPasswordRequired: "Network {n}: password is required.",
+  settingsWifiRowIncomplete: "Network {n}: complete the name and password, or clear the row.",
 
   careTitle: "Care Recommendations",
   careRefreshBtn: "Refresh with AI",
@@ -1012,9 +1194,24 @@ const tr: StaffTranslations = {
   tabGuests: "Misafirler",
   tabRooms: "Odalar",
   tabRequests: "Talepler",
+  tabFeedback: "Geri Bildirim",
   tabSummary: "Özet",
   tabTeam: "Çalışanlar",
   tabTasks: "Görevler",
+
+  feedbackBoardTitle: "Geri bildirimler ve şikayetler",
+  feedbackEmpty: "Henüz misafir geri bildirimi yok",
+  feedbackRefresh: "Yenile",
+  feedbackTypeComplaint: "Şikayet / öneri",
+  feedbackStatusOpen: "Açık",
+  feedbackStatusInProgress: "İşlemde",
+  feedbackStatusResolved: "Tamamlandı",
+  feedbackStatusUpdateFailed: "Durum güncellenemedi",
+  feedbackDelete: "Sil",
+  feedbackDeleteConfirm: "Evet",
+  feedbackDeleteCancel: "Hayır",
+  feedbackDeleted: "Geri bildirim silindi",
+  feedbackDeleteFailed: "Silinemedi",
 
   scopeGeneralManager: "Genel Müdür",
   scopeDepartmentManager: "{dept} Müdürü",
@@ -1283,6 +1480,74 @@ const tr: StaffTranslations = {
   settingsCategoryTracking: "Konum ve takip",
   settingsCategoryTrackingDesc: "Geofence, ağ kuralları ve misafir konumu.",
   settingsHubIntro: "Misafir deneyimi veya otel takibi için bir kategori seçin.",
+  assistantConfigTitle: "Misafir AI asistanı",
+  assistantConfigSubtitle: "AI sohbet için otel bilgisi, tesisler ve concierge hizmetleri.",
+  assistantConfigLoadFailed: "AI asistan ayarları yüklenemedi.",
+  assistantConfigSaveFailed: "AI asistan ayarları kaydedilemedi.",
+  assistantConfigSaved: "AI asistan ayarları kaydedildi.",
+  assistantConfigSavedComplete: "AI asistan tamamen yapılandırıldı.",
+  assistantConfigSave: "AI asistan ayarlarını kaydet",
+  assistantConfigProgress: "Otel AI asistanını etkinleştirmek için kurulumu tamamlayın",
+  assistantConfigCompleteBanner: "AI asistan kurulumu tamamlandı",
+  assistantAboutTitle: "Otel hakkında",
+  assistantAboutSubtitle: "Otelinizi öne çıkaranları yazın — konum, tesisler ve avantajlar.",
+  assistantAboutLabel: "Otel açıklaması",
+  assistantAboutPlaceholder:
+    "Örn: Sahil kenarındaki otelimizde spa, açık havuz, aquapark ve gün boyu restoran bulunur. Tarihi merkeze 10 dk mesafede, odalarımızdan deniz manzarası. Aileler ve çiftler için sakin bir kaçamak…",
+  assistantAboutMinChars: "Kurulum ilerlemesi için en az {min} karakter",
+  assistantAboutTooShort: "Ana ekranın güncellenmesi için en az {min} karakter yazıp kaydedin.",
+  assistantCityLabel: "Şehir (yerel öneriler)",
+  assistantCityPlaceholder: "İstanbul",
+  assistantFacilitiesTitle: "Otel tesisleri",
+  assistantFacilitiesSubtitle: "Otelinizde bulunan özellik ve hizmetleri seçin. İsterseniz her biri için detay ekleyebilirsiniz.",
+  assistantAddDetail: "Detay ekle",
+  assistantHideDetail: "Detayı gizle",
+  assistantSectionSave: "Kaydet",
+  assistantSectionSaved: "Kaydedildi",
+  assistantFacilitiesRequired: "Kaydetmeden önce en az bir tesis seçin.",
+  assistantServiceRequired: "Kaydetmeden önce en az bir detay ekleyin (telefon, saat veya not).",
+  assistantSectionHome: "Ana sayfa",
+  assistantCountryLabel: "Ülke",
+  assistantCityFieldLabel: "Şehir",
+  assistantCountrySearch: "Ülke ara…",
+  assistantCitySearch: "Şehir ara…",
+  assistantPickerEmpty: "Sonuç yok",
+  assistantUseCustomCity: '"{city}" kullan',
+  assistantTaxiTitle: "Taksi servisi",
+  assistantTaxiSubtitle: "Taksi düzenlemesi için lobi desk numarası.",
+  assistantTaxiPhone: "Taksi lobi telefonu",
+  assistantTaxiPhonePlaceholder: "Dahili 120 veya +90 …",
+  assistantSpaTitle: "Spa & wellness",
+  assistantSpaSubtitle: "AI üzerinden spa rezervasyonu için iletişim ve saatler.",
+  assistantSalonTitle: "Salon",
+  assistantSalonSubtitle: "Kuaför ve güzellik salonu bilgileri.",
+  assistantLaundryTitle: "Çamaşırhane",
+  assistantLaundrySubtitle: "Çamaşırhane ve kuru temizleme detayları.",
+  assistantOpenTime: "Açılış",
+  assistantCloseTime: "Kapanış",
+  assistantReservationPhone: "Rezervasyon telefonu",
+  assistantNotes: "Notlar",
+  assistantOnboardingTitle: "Guest AI asistan kurulumunu tamamlayın",
+  assistantOnboardingBody: "Misafirlerin doğru yanıt ve resepsiyon talepleri alması için otel bilgilerini ekleyin.",
+  assistantOnboardingCta: "Devam: {step}",
+  assistantOnboardingCompleteTitle: "AI asistan %100 — {hotel} misafir asistanı aktif",
+  assistantOnboardingCompleteBody: "Misafirler sohbette keşfedebilir, hizmet rezerve edebilir ve otel önerileri alabilir.",
+  setupWizardEyebrow: "Başlangıç",
+  setupWizardTitle: "Kurulumu tamamla",
+  setupWizardSubtitle: "Guest Pro'yu ekibiniz ve misafirleriniz için hazırlamak üzere 4 kısa adım.",
+  setupWizardProgress: "Tamamlandı",
+  setupWizardContinue: "Devam: {step}",
+  setupStepAbout: "Otel hakkında",
+  setupStepAboutDesc: "Tesisinizi, konumunuzu ve öne çıkan avantajlarınızı yazın.",
+  setupStepServices: "Misafir hizmetleri",
+  setupStepServicesDesc: "AI asistanın bahsedebileceği tesis ve hizmetleri seçin.",
+  setupStepWifi: "Wi-Fi",
+  setupStepWifiDesc: "Misafir oda ataması için Wi-Fi ağlarını ekleyin.",
+  setupStepNearby: "Yakın yerler",
+  setupStepNearbyDesc: "Otel çevresindeki market, restoran ve gezilecek yerleri ekleyin.",
+  setupCompleteTitle: "Kurulum tamamlandı",
+  setupCompleteBody: "Guest Pro, {hotel} için %100 hazır — sizin ve misafirlerinizin hizmetinde.",
+  setupCompleteCta: "Panele dön",
   settingsHotelLocationTitle: "Otel harita pini",
   settingsHotelLocationSubtitle: "Misafir yakın yerler haritasında otelinizin sabit konumu.",
   settingsHotelLocationHint: "Google Maps'ten koordinatları girin (sağ tık → koordinatlar). Yol tarifi ve mesafe sıralaması bu noktadan başlar.",
@@ -1333,6 +1598,14 @@ const tr: StaffTranslations = {
   settingsNearbyAdd: "Yer ekle",
   settingsNearbySave: "Yakın yerleri kaydet",
   settingsNearbyRemove: "Yeri kaldır",
+  settingsNearbyPlaceRequired: "En az bir yakın yer ekleyin; isim ve koordinat zorunludur.",
+  settingsNearbyNameRequired: "Yer {n}: isim zorunludur.",
+  settingsNearbyCoordsRequired: "Yer {n}: geçerli enlem ve boylam girin.",
+  settingsNearbyRowIncomplete: "Yer {n}: isim ve koordinatları tamamlayın veya satırı temizleyin.",
+  settingsWifiNetworkRequired: "En az bir Wi-Fi ağı ekleyin; ağ adı ve şifre zorunludur.",
+  settingsWifiNameRequired: "Ağ {n}: ağ adı zorunludur.",
+  settingsWifiPasswordRequired: "Ağ {n}: şifre zorunludur.",
+  settingsWifiRowIncomplete: "Ağ {n}: ağ adı ve şifreyi tamamlayın veya satırı temizleyin.",
 
   careTitle: "Care Önerileri",
   careRefreshBtn: "AI ile Yenile",
@@ -1449,9 +1722,24 @@ const ar: StaffTranslations = {
   tabGuests: "الضيوف",
   tabRooms: "الغرف",
   tabRequests: "الطلبات",
+  tabFeedback: "التعليقات",
   tabSummary: "الملخص",
   tabTeam: "الموظفون",
   tabTasks: "المهام",
+
+  feedbackBoardTitle: "التعليقات والشكاوى",
+  feedbackEmpty: "لا توجد تعليقات من الضيوف بعد",
+  feedbackRefresh: "تحديث",
+  feedbackTypeComplaint: "شكوى / اقتراح",
+  feedbackStatusOpen: "مفتوح",
+  feedbackStatusInProgress: "قيد المعالجة",
+  feedbackStatusResolved: "مكتمل",
+  feedbackStatusUpdateFailed: "تعذر تحديث الحالة",
+  feedbackDelete: "حذف",
+  feedbackDeleteConfirm: "نعم",
+  feedbackDeleteCancel: "لا",
+  feedbackDeleted: "تم حذف التعليق",
+  feedbackDeleteFailed: "تعذر الحذف",
 
   scopeGeneralManager: "المدير العام",
   scopeDepartmentManager: "مدير {dept}",
@@ -1720,6 +2008,74 @@ const ar: StaffTranslations = {
   settingsCategoryTracking: "التواجد والتتبع",
   settingsCategoryTrackingDesc: "السياج الجغرافي وقواعد الشبكة وموقع الضيف.",
   settingsHubIntro: "اختر فئة لإعداد تجربة الضيف أو تتبع تواجد الفندق.",
+  assistantConfigTitle: "مساعد الذكاء الاصطناعي للضيف",
+  assistantConfigSubtitle: "معلومات الفندق والمرافق وخدمات الكونسيرج للدردشة الذكية.",
+  assistantConfigLoadFailed: "تعذر تحميل إعدادات المساعد.",
+  assistantConfigSaveFailed: "تعذر حفظ إعدادات المساعد.",
+  assistantConfigSaved: "تم حفظ إعدادات المساعد.",
+  assistantConfigSavedComplete: "اكتمل إعداد المساعد بالكامل.",
+  assistantConfigSave: "حفظ إعدادات المساعد",
+  assistantConfigProgress: "أكمل الإعداد لتفعيل مساعد الفندق الذكي",
+  assistantConfigCompleteBanner: "اكتمل إعداد المساعد",
+  assistantAboutTitle: "عن الفندق",
+  assistantAboutSubtitle: "اذكر ما يميز فندقك — الموقع والمرافق والمزايا.",
+  assistantAboutLabel: "وصف الفندق",
+  assistantAboutPlaceholder:
+    "مثال: منتجعنا على الشاطئ يضم سبا ومسبحاً مفتوحاً وحديقة مائية ومطعماً طوال اليوم. على بعد 10 دقائق من المدينة القديمة مع إطلالة بحرية من كل غرفة…",
+  assistantAboutMinChars: "الحد الأدنى {min} حرفاً لإكمال الإعداد",
+  assistantAboutTooShort: "اكتب {min} حرفاً على الأقل ثم احفظ لتحديث لوحة التحكم.",
+  assistantCityLabel: "المدينة (توصيات محلية)",
+  assistantCityPlaceholder: "دبي",
+  assistantFacilitiesTitle: "مرافق الفندق",
+  assistantFacilitiesSubtitle: "اختر الميزات والخدمات المتوفرة. يمكنك إضافة تفاصيل اختيارية لكل عنصر.",
+  assistantAddDetail: "إضافة تفاصيل",
+  assistantHideDetail: "إخفاء التفاصيل",
+  assistantSectionSave: "حفظ",
+  assistantSectionSaved: "تم الحفظ",
+  assistantFacilitiesRequired: "اختر مرفقاً واحداً على الأقل قبل الحفظ.",
+  assistantServiceRequired: "أضف تفصيلاً واحداً على الأقل (هاتف أو ساعات أو ملاحظات) قبل الحفظ.",
+  assistantSectionHome: "الرئيسية",
+  assistantCountryLabel: "الدولة",
+  assistantCityFieldLabel: "المدينة",
+  assistantCountrySearch: "ابحث عن دولة…",
+  assistantCitySearch: "ابحث عن مدينة…",
+  assistantPickerEmpty: "لا نتائج",
+  assistantUseCustomCity: 'استخدم "{city}"',
+  assistantTaxiTitle: "خدمة التاكسي",
+  assistantTaxiSubtitle: "رقم مكتب اللوبي لترتيب التاكسي.",
+  assistantTaxiPhone: "هاتف لوبي التاكسي",
+  assistantTaxiPhonePlaceholder: "تحويلة 120 أو +971 …",
+  assistantSpaTitle: "السبا والعافية",
+  assistantSpaSubtitle: "معلومات الاتصال والأوقات لحجز السبا عبر الذكاء الاصطناعي.",
+  assistantSalonTitle: "صالون",
+  assistantSalonSubtitle: "معلومات صالون الحلاقة والتجميل.",
+  assistantLaundryTitle: "المغسلة",
+  assistantLaundrySubtitle: "تفاصيل الغسيل والتنظيف الجاف.",
+  assistantOpenTime: "الافتتاح",
+  assistantCloseTime: "الإغلاق",
+  assistantReservationPhone: "هاتف الحجز",
+  assistantNotes: "ملاحظات",
+  assistantOnboardingTitle: "أكمل إعداد مساعد الذكاء الاصطناعي للضيف",
+  assistantOnboardingBody: "أضف معلومات الفندق ليحصل الضيوف على إجابات دقيقة وطلبات استقبال.",
+  assistantOnboardingCta: "متابعة: {step}",
+  assistantOnboardingCompleteTitle: "المساعد 100% — مساعد ضيوف {hotel} نشط",
+  assistantOnboardingCompleteBody: "يمكن للضيوف الاستكشاف وحجز الخدمات والحصول على توصيات الفندق في الدردشة.",
+  setupWizardEyebrow: "البداية",
+  setupWizardTitle: "أكمل الإعداد",
+  setupWizardSubtitle: "أربع خطوات سريعة لتشغيل Guest Pro لفريقك وضيوفك.",
+  setupWizardProgress: "مكتمل",
+  setupWizardContinue: "متابعة: {step}",
+  setupStepAbout: "عن الفندق",
+  setupStepAboutDesc: "صف منشأتك وموقعك وما يميزها.",
+  setupStepServices: "خدمات الضيوف",
+  setupStepServicesDesc: "اختر المرافق والخدمات التي يمكن للمساعد الذكي ذكرها.",
+  setupStepWifi: "واي فاي",
+  setupStepWifiDesc: "أضف شبكات الواي فاي لتعيينها لغرف الضيوف.",
+  setupStepNearby: "أماكن قريبة",
+  setupStepNearbyDesc: "أضف الأسواق والمطاعم والمعالم قرب الفندق.",
+  setupCompleteTitle: "كل شيء جاهز",
+  setupCompleteBody: "Guest Pro جاهز بنسبة 100% لخدمتك وخدمة ضيوفك في {hotel}.",
+  setupCompleteCta: "العودة إلى لوحة التحكم",
   settingsHotelLocationTitle: "موقع الفندق على الخريطة",
   settingsHotelLocationSubtitle: "الموقع الثابت الذي يظهر للضيف على خريطة الأماكن القريبة.",
   settingsHotelLocationHint: "أدخل إحداثيات GPS من Google Maps. هذه النقطة هي بداية الاتجاهات وترتيب المسافات.",
@@ -1770,6 +2126,14 @@ const ar: StaffTranslations = {
   settingsNearbyAdd: "إضافة مكان",
   settingsNearbySave: "حفظ الأماكن القريبة",
   settingsNearbyRemove: "إزالة المكان",
+  settingsNearbyPlaceRequired: "أضف مكاناً قريباً واحداً على الأقل مع الاسم والإحداثيات.",
+  settingsNearbyNameRequired: "المكان {n}: الاسم مطلوب.",
+  settingsNearbyCoordsRequired: "المكان {n}: أدخل خط عرض وطول صالحين.",
+  settingsNearbyRowIncomplete: "المكان {n}: أكمل الاسم والإحداثيات أو امسح الصف.",
+  settingsWifiNetworkRequired: "أضف شبكة Wi-Fi واحدة على الأقل مع الاسم وكلمة المرور.",
+  settingsWifiNameRequired: "الشبكة {n}: الاسم مطلوب.",
+  settingsWifiPasswordRequired: "الشبكة {n}: كلمة المرور مطلوبة.",
+  settingsWifiRowIncomplete: "الشبكة {n}: أكمل الاسم وكلمة المرور أو امسح الصف.",
 
   careTitle: "توصيات الرعاية",
   careRefreshBtn: "تحديث بالذكاء الاصطناعي",

@@ -20,6 +20,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import type { TrackingStatus } from "@/lib/tracking";
+import { isGuestFeedbackRequest } from "@/lib/guest-feedback";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -269,7 +270,8 @@ export function StaffRequestsBoard({ presenceMap, onOpenCountChange }: StaffRequ
     refetchInterval: 30_000,
     staleTime: 15_000,
     select: (data) => {
-      const openCount = data.filter((r) => r.status === "open").length;
+      const operational = data.filter((r) => !isGuestFeedbackRequest(r));
+      const openCount = operational.filter((r) => r.status === "open").length;
       onOpenCountChange?.(openCount);
       return data;
     },
@@ -297,7 +299,7 @@ export function StaffRequestsBoard({ presenceMap, onOpenCountChange }: StaffRequ
     setExpandedGroup((prev) => (prev === type ? null : type));
   };
 
-  const allRequests = requests ?? [];
+  const allRequests = (requests ?? []).filter((r) => !isGuestFeedbackRequest(r));
   const totalOpen = allRequests.filter((r) => r.status === "open").length;
 
   return (

@@ -12,6 +12,7 @@
  */
 
 import { Mic, Square } from "lucide-react";
+import { MicAiWaveRing } from "@/components/chat/MicAiWaveRing";
 
 interface MicrophoneButtonProps {
   /** True while the conversation loop is running (any inner state) */
@@ -93,20 +94,14 @@ export function MicrophoneButton({
   const iconSize = size === "sm" ? "w-4 h-4" : size === "lg" ? "w-6 h-6" : "w-5 h-5";
 
   return (
-    <div className="relative flex items-center justify-center">
-      {isListening && (
-        <div
-          className="absolute rounded-full bg-zinc-200/50 transition-transform duration-100 pointer-events-none"
-          style={{ width: 48, height: 48, transform: `scale(${ringScale})` }}
-        />
-      )}
+    <MicAiWaveRing idle={!isConversationActive} listening={isListening}>
       <button
         onClick={onToggle}
         className={`
-          relative z-10 ${sizeClass} rounded-2xl flex items-center justify-center
+          ${sizeClass} rounded-2xl flex items-center justify-center
           transition-all duration-200 active:scale-95
           ${isConversationActive
-            ? "bg-zinc-900 text-white"
+            ? "bg-zinc-900 text-white shadow-md"
             : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
           }
         `}
@@ -118,6 +113,6 @@ export function MicrophoneButton({
           <Mic className={iconSize} />
         )}
       </button>
-    </div>
+    </MicAiWaveRing>
   );
 }

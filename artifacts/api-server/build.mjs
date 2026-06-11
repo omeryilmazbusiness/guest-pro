@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as esbuild from "esbuild";
 import esbuildPluginPino from "esbuild-plugin-pino";
+import { writeFileSync } from "node:fs";
 import { rm } from "node:fs/promises";
 
 // Plugins (e.g. 'esbuild-plugin-pino') may use `require` to resolve dependencies
@@ -11,6 +12,10 @@ globalThis.require = createRequire(import.meta.url);
 const artifactDir = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.resolve(artifactDir, "dist");
 const watch = process.argv.includes("--watch");
+
+function touchBuildStamp() {
+  writeFileSync(path.join(distDir, ".build-stamp"), String(Date.now()));
+}
 
 const buildOptions = {
     entryPoints: [path.resolve(artifactDir, "src/index.ts")],
@@ -101,7 +106,17 @@ const buildOptions = {
     sourcemap: "linked",
     plugins: [
       // pino relies on workers to handle logging, instead of externalizing it we use a plugin to handle it
-      esbuildPluginPino({ transports: ["pino-pretty"] })
+      esbuildPluginPino({ transports: ["pino-pretty"] }),
+      {
+        name: "dev-restart-stamp",
+        setup(build) {
+          build.onEnd((result) => {
+            if (result.errors.length === 0) {
+              writeFileSync(path.join(distDir, ".build-stamp"), String(Date.now()));
+            }
+          });
+        },
+      },
     ],
     // Make sure packages that are cjs only (e.g. express) but are bundled continue to work in our esm output file
     banner: {
@@ -128,7 +143,8 @@ async function buildAll() {
     return;
   }
 
-  await esbuild.build(buildOptions);
+  const result = await esbuild.build(buildOptions);
+  if (result.errors.length === 0) touchBuildStamp();
 }
 
 buildAll().catch((err) => {
