@@ -121,13 +121,27 @@ router.post("/tts/synthesize", requireGuest, async (req, res): Promise<void> => 
 
     if (err instanceof ElevenLabsApiError) {
       if (err.status === 401 || err.status === 403) {
+        let providerStatus = "unknown";
+        try {
+          const json = JSON.parse(err.message) as { detail?: { status?: string } };
+          providerStatus = json.detail?.status ?? providerStatus;
+        } catch {
+          /* plain text */
+        }
         logger.warn(
-          { status: err.status, detail: err.message },
-          "tts:invalid-api-key — ElevenLabs rejected the API key for text-to-speech",
+          {
+            status: err.status,
+            providerStatus,
+            keyLength: elevenLabsConfig.apiKeyLength,
+            detail: err.message.slice(0, 240),
+          },
+          "tts:invalid-api-key — compare elevenlabsKeyLength on /api/healthz with local .env",
         );
         res.status(503).json({
           code: "INVALID_API_KEY",
           message: "ElevenLabs rejected the API key",
+          providerStatus,
+          keyLength: elevenLabsConfig.apiKeyLength,
           fallback: true,
         });
         return;

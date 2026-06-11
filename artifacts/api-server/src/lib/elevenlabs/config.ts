@@ -5,8 +5,12 @@ export const DEFAULT_ELEVENLABS_VOICE_ID = "EXAVITQu4vr4xnSDxMaL";
 
 function normalizeApiKey(raw: string | undefined): string | undefined {
   if (!raw) return undefined;
-  const trimmed = raw.trim().replace(/^["']|["']$/g, "");
-  return trimmed || undefined;
+  const cleaned = raw
+    .replace(/^\uFEFF/, "")
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/[\r\n\t]/g, "");
+  return cleaned || undefined;
 }
 
 export const elevenLabsConfig = {
@@ -34,5 +38,9 @@ export const elevenLabsConfig = {
 
   get isConfigured(): boolean {
     return Boolean(this.apiKey);
+  },
+
+  get apiKeyLength(): number {
+    return this.apiKey?.length ?? 0;
   },
 };

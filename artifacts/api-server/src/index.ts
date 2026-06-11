@@ -20,6 +20,7 @@ import {
   initializeOptionalServices,
 } from "./lib/startup-services";
 import { elevenLabsConfig } from "./lib/elevenlabs/config";
+import { getElevenLabsTtsProbe } from "./lib/elevenlabs/probe";
 
 const port = Number(process.env["PORT"] ?? "3000");
 
@@ -138,9 +139,17 @@ async function bootstrap(): Promise<void> {
           voiceId: elevenLabsConfig.voiceId,
           modelId: elevenLabsConfig.modelId,
           monthlyCharLimit: elevenLabsConfig.monthlyCharLimit,
+          keyLength: elevenLabsConfig.apiKeyLength,
         },
-        "ElevenLabs TTS configured",
+        "ElevenLabs TTS configured — running startup probe",
       );
+      void getElevenLabsTtsProbe(true).then((probe) => {
+        if (probe.ok) {
+          logger.info({ keyLength: probe.keyLength }, "ElevenLabs TTS probe OK");
+        } else {
+          logger.warn(probe, "ElevenLabs TTS probe FAILED — check Railway ELEVENLABS_API_KEY");
+        }
+      });
     } else {
       logger.info("ElevenLabs TTS disabled (ELEVENLABS_API_KEY not set)");
     }
