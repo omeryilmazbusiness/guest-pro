@@ -14,12 +14,20 @@ function monthKeyUtc(): string {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
-function degradedTtsStatus() {
+type TtsUnavailableReason =
+  | "MISSING_ENV"
+  | "APP_QUOTA_EXCEEDED"
+  | null;
+
+function degradedTtsStatus(reason: TtsUnavailableReason = null) {
+  const configured = elevenLabsConfig.isConfigured;
   return {
     provider: "elevenlabs" as const,
+    configured,
     available: false,
     fallback: true,
-    voiceId: elevenLabsConfig.isConfigured ? elevenLabsConfig.voiceId : null,
+    unavailableReason: reason ?? (configured ? null : "MISSING_ENV"),
+    voiceId: configured ? elevenLabsConfig.voiceId : null,
     voiceName: "Sarah",
     monthlyLimit: elevenLabsConfig.monthlyCharLimit,
     used: 0,
@@ -38,7 +46,7 @@ const synthesizeBodySchema = z.object({
 /** GET /api/tts/status — ElevenLabs availability + app monthly quota */
 router.get("/tts/status", requireGuest, async (_req, res): Promise<void> => {
   if (!elevenLabsConfig.isConfigured) {
-    res.json(degradedTtsStatus());
+    res.json(degradedTtsStatus("MISSING_ENV"));
     return;
   }
 
@@ -47,8 +55,10 @@ router.get("/tts/status", requireGuest, async (_req, res): Promise<void> => {
     const available = status.enabled && status.remaining > 0;
     res.json({
       provider: "elevenlabs",
+      configured: true,
       available,
       fallback: !available,
+      unavailableReason: !available && status.remaining <= 0 ? "APP_QUOTA_EXCEEDED" : null,
       voiceId: status.voiceId,
       voiceName: status.voiceName,
       monthlyLimit: status.monthlyLimit,
@@ -65,7 +75,12 @@ router.get("/tts/status", requireGuest, async (_req, res): Promise<void> => {
 /** POST /api/tts/synthesize — returns MPEG audio for guest voice chat */
 router.post("/tts/synthesize", requireGuest, async (req, res): Promise<void> => {
   if (!elevenLabsConfig.isConfigured) {
-    res.status(503).json({ code: "NOT_CONFIGURED", fallback: true });
+    logger.warn("tts:synthesize-missing-env — set ELEVENLABS_API_KEY on the server");
+    res.status(503).json({
+      code: "MISSING_ENV",
+      message: "ELEVENLABS_API_KEY is not set on the server",
+      fallback: true,
+    });
     return;
   }
 
@@ -80,13 +95,21 @@ router.post("/tts/synthesize", requireGuest, async (req, res): Promise<void> => 
       parsed.data.text,
       parsed.data.lang,
     );
+    logger.info({ charsUsed }, "tts:synthesize-ok");
     res.setHeader("Content-Type", "audio/mpeg");
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("X-TTS-Chars-Used", String(charsUsed));
     res.send(audio);
   } catch (err) {
     if (err instanceof TtsQuotaExceededError) {
-      res.status(429).json({ code: "QUOTA_EXCEEDED", fallback: true });
+      res.status(429).json({
+        code: "APP_QUOTA_EXCEEDED",
+        message: err.message,
+        fallback: true,
+        monthlyLimit: err.limit,
+        used: err.used,
+        monthKey: err.monthKey,
+      });
       return;
     }
 
@@ -98,16 +121,31 @@ router.post("/tts/synthesize", requireGuest, async (req, res): Promise<void> => 
 
     if (err instanceof ElevenLabsApiError) {
       if (err.status === 401 || err.status === 403) {
-        logger.warn({ status: err.status, detail: err.message }, "tts:invalid-api-key");
-        res.status(503).json({ code: "NOT_CONFIGURED", fallback: true });
+        logger.warn(
+          { status: err.status, detail: err.message },
+          "tts:invalid-api-key — ElevenLabs rejected the API key for text-to-speech",
+        );
+        res.status(503).json({
+          code: "INVALID_API_KEY",
+          message: "ElevenLabs rejected the API key",
+          fallback: true,
+        });
         return;
       }
       if (err.status === 402 || err.status === 429) {
-        res.status(429).json({ code: "QUOTA_EXCEEDED", fallback: true });
+        logger.warn(
+          { status: err.status, detail: err.message },
+          "tts:provider-quota-exceeded",
+        );
+        res.status(429).json({
+          code: "PROVIDER_QUOTA_EXCEEDED",
+          message: "ElevenLabs account quota exceeded",
+          fallback: true,
+        });
         return;
       }
       logger.warn({ status: err.status, detail: err.message }, "tts:synthesize-provider-error");
-      res.status(502).json({ code: "PROVIDER_ERROR", fallback: true });
+      res.status(502).json({ code: "PROVIDER_ERROR", fallback: true, detail: err.message });
       return;
     }
 

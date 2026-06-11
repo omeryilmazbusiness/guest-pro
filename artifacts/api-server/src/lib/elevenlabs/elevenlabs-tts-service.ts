@@ -2,6 +2,7 @@ import { elevenLabsConfig } from "./config";
 import { synthesizeSpeech } from "./elevenlabs-client";
 import { ElevenLabsQuotaStore } from "./quota-store";
 import { sanitizeTextForTts } from "./text-sanitize";
+import { logger } from "../logger";
 
 function toLanguageCode(lang?: string): string | undefined {
   if (!lang?.trim()) return undefined;
@@ -20,9 +21,13 @@ export type TtsProviderStatus = {
 };
 
 export class TtsQuotaExceededError extends Error {
-  readonly code = "QUOTA_EXCEEDED" as const;
-  constructor() {
-    super("Monthly ElevenLabs character quota exceeded");
+  readonly code = "APP_QUOTA_EXCEEDED" as const;
+  constructor(
+    readonly used: number,
+    readonly limit: number,
+    readonly monthKey: string,
+  ) {
+    super(`App monthly TTS quota exceeded (${used}/${limit} chars, ${monthKey})`);
     this.name = "TtsQuotaExceededError";
   }
 }
@@ -64,7 +69,12 @@ export class ElevenLabsTtsService {
     const chars = text.length;
     const allowed = await this.quota.tryConsume(chars);
     if (!allowed) {
-      throw new TtsQuotaExceededError();
+      const snap = await this.quota.getSnapshot();
+      logger.warn(
+        { used: snap.used, limit: snap.limit, remaining: snap.remaining, monthKey: snap.monthKey, chars },
+        "tts:app-monthly-quota-exceeded",
+      );
+      throw new TtsQuotaExceededError(snap.used, snap.limit, snap.monthKey);
     }
 
     try {

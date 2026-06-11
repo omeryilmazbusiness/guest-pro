@@ -2,9 +2,11 @@ import { customFetch } from "@workspace/api-client-react";
 
 export interface TtsProviderStatus {
   provider: "elevenlabs";
+  configured?: boolean;
   available: boolean;
   /** When true, client should use browser speech synthesis. */
   fallback?: boolean;
+  unavailableReason?: "MISSING_ENV" | "APP_QUOTA_EXCEEDED" | null;
   voiceId: string | null;
   voiceName: string;
   monthlyLimit: number;
@@ -74,7 +76,14 @@ export function markPremiumTtsSuccess(): void {
   premiumTtsDisabled = false;
 }
 
-type TtsErrorPayload = { code?: string; fallback?: boolean };
+type TtsErrorPayload = {
+  code?: string;
+  message?: string;
+  fallback?: boolean;
+  used?: number;
+  monthlyLimit?: number;
+  monthKey?: string;
+};
 
 function isFallbackTtsError(err: unknown): boolean {
   if (!err || typeof err !== "object") return false;
@@ -111,6 +120,13 @@ export async function fetchElevenLabsAudio(text: string, lang: string): Promise<
       const status = errorStatus(err);
       if (status === 502 && attempt === 0) continue;
       if (isFallbackTtsError(err)) {
+        const payload =
+          err && typeof err === "object" && "data" in err
+            ? ((err as { data: unknown }).data as TtsErrorPayload | null)
+            : null;
+        if (import.meta.env.DEV && payload?.code) {
+          console.warn("[TTS]", payload.code, payload.message ?? "");
+        }
         markPremiumTtsUnavailable();
       }
       return null;
