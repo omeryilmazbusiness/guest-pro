@@ -14,6 +14,9 @@ interface GuestPremiumSheetProps {
   showClose?: boolean;
   /** bottom = slide-up sheet; center = centered modal */
   placement?: "bottom" | "center";
+  /** Frosted liquid-glass style backdrop */
+  overlayStyle?: "default" | "liquidGlass";
+  panelClassName?: string;
 }
 
 export function GuestPremiumSheet({
@@ -24,6 +27,8 @@ export function GuestPremiumSheet({
   ariaLabel,
   showClose = false,
   placement = "bottom",
+  overlayStyle = "default",
+  panelClassName,
 }: GuestPremiumSheetProps) {
   const reduceMotion = useReducedMotion();
   const isCenter = placement === "center";
@@ -80,12 +85,25 @@ export function GuestPremiumSheet({
             exit={{ opacity: 0 }}
             transition={reduceMotion ? { duration: 0.01 } : GUEST_OVERLAY_FADE}
             className={cn(
-              "absolute inset-0 bg-black/40 backdrop-blur-[4px]",
-              isCenter && "bg-black/50 backdrop-blur-md",
+              "absolute inset-0",
+              overlayStyle === "liquidGlass"
+                ? "bg-zinc-950/25 backdrop-blur-xl backdrop-saturate-150"
+                : cn(
+                    "bg-black/40 backdrop-blur-[4px]",
+                    isCenter && "bg-black/50 backdrop-blur-md",
+                  ),
             )}
             aria-label="Close"
             onClick={() => onOpenChange(false)}
-          />
+          >
+            {overlayStyle === "liquidGlass" && (
+              <span
+                className="pointer-events-none absolute inset-0 opacity-40"
+                style={{ filter: "url(#glass-distortion)" }}
+                aria-hidden
+              />
+            )}
+          </motion.button>
           <motion.div
             role="dialog"
             aria-modal="true"
@@ -95,10 +113,11 @@ export function GuestPremiumSheet({
             exit={panelExit}
             transition={panelTransition}
             className={cn(
-              "relative z-10 mx-auto w-full max-w-lg outline-none overflow-hidden bg-white shadow-2xl",
+              "relative z-10 mx-auto w-full max-w-lg outline-none overflow-hidden shadow-2xl",
               isCenter
-                ? "max-h-[min(85dvh,520px)] rounded-[1.35rem] border border-zinc-100/90 shadow-zinc-900/20"
-                : "absolute inset-x-0 bottom-0 max-h-[min(92dvh,720px)] rounded-t-[1.5rem] border border-zinc-100/80 shadow-zinc-900/15",
+                ? "max-h-[min(85dvh,520px)] rounded-[1.35rem] border border-zinc-100/90 shadow-zinc-900/20 bg-white"
+                : "absolute inset-x-0 bottom-0 max-h-[min(92dvh,720px)] rounded-t-[1.5rem] border border-zinc-100/80 shadow-zinc-900/15 bg-white",
+              panelClassName,
               className,
             )}
             onClick={(e) => e.stopPropagation()}

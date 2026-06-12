@@ -1,12 +1,13 @@
 import { useState, useCallback } from "react";
 import {
-  Copy,
-  Check,
-  Key,
   BedDouble,
   CalendarDays,
+  Check,
+  Copy,
+  Key,
   User,
   Wifi,
+  type LucideIcon,
 } from "lucide-react";
 import { useLocale } from "@/hooks/use-locale";
 import { useGuestWifi } from "@/hooks/use-guest-wifi";
@@ -44,6 +45,73 @@ function useCopyText() {
   return { copied, copy };
 }
 
+const stayTile = cn(
+  "flex flex-col items-center justify-start gap-2.5 py-2 px-2 text-center min-w-0 w-full",
+);
+
+const stayTileInteractive = cn(
+  stayTile,
+  "transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 rounded-2xl",
+);
+
+function StayIcon({ icon: Icon }: { icon: LucideIcon }) {
+  return (
+    <span className="relative inline-flex h-14 w-14 items-center justify-center" aria-hidden>
+      <Icon className="guest-chat-entry-icon h-10 w-10 text-white" strokeWidth={1.5} />
+    </span>
+  );
+}
+
+function CopyAction({ copied, label }: { copied: boolean; label: string }) {
+  return (
+    <span
+      className={cn(
+        "mt-2.5 inline-flex items-center justify-center gap-1.5 rounded-xl px-3.5 py-2 text-[11px] font-semibold tracking-wide transition-colors",
+        copied
+          ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/35"
+          : "bg-white text-zinc-950 shadow-sm ring-1 ring-white/10 hover:bg-zinc-100",
+      )}
+    >
+      {copied ? <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} /> : <Copy className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />}
+      {label}
+    </span>
+  );
+}
+
+function StayTile({
+  icon,
+  label,
+  value,
+  onClick,
+  muted = false,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  onClick?: () => void;
+  muted?: boolean;
+}) {
+  const Wrapper = onClick ? "button" : "div";
+  return (
+    <Wrapper
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      className={cn(onClick ? stayTileInteractive : stayTile, muted && "opacity-55")}
+    >
+      <StayIcon icon={icon} />
+      <span className="block w-full">
+        <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+          {label}
+        </span>
+        <span className="mt-1 block text-[14px] font-semibold leading-snug tracking-tight text-white break-words">
+          {value}
+        </span>
+      </span>
+    </Wrapper>
+  );
+}
+
 export function StayKeyCard({
   guestKeyDisplay,
   roomNumber,
@@ -70,165 +138,109 @@ export function StayKeyCard({
 
   const guestName = [firstName, lastName].filter(Boolean).join(" ") || "—";
   const showWifi = guestWifi?.configured && guestWifi.wifiPassword;
+  const dateRange =
+    checkInDate || checkOutDate
+      ? [formatDate(checkInDate), formatDate(checkOutDate)].filter(Boolean).join(" — ")
+      : null;
+
+  const wifiNetwork = guestWifi?.name?.trim() || null;
+  const wifiPassword = guestWifi?.wifiPassword || null;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
-      <div className="border-b border-white/[0.06] px-3 py-2">
-        <p className="text-[11px] font-medium tracking-tight text-zinc-300">{t.stayAboutTitle}</p>
+    <div className="overflow-hidden rounded-2xl bg-zinc-950 shadow-[0_16px_48px_-16px_rgba(0,0,0,0.55)] ring-1 ring-white/[0.08]">
+      <div className="border-b border-white/[0.06] px-4 py-3 text-center">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+          {t.stayAboutTitle}
+        </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-1.5 px-2.5 py-2">
-        <InfoTile
-          icon={User}
-          label={t.guest}
-          value={guestName}
-          valueClassName="text-[12px] font-medium truncate"
-        />
-        {roomNumber ? (
-          <InfoTile
-            icon={BedDouble}
-            label={t.room}
-            value={roomNumber}
-            valueClassName="text-[15px] font-medium text-white leading-none"
-          />
-        ) : (
-          <div className="flex min-h-[52px] items-center justify-center rounded-lg border border-dashed border-white/10 px-2 py-2">
-            <p className="text-[10px] text-zinc-600">—</p>
-          </div>
-        )}
-      </div>
+      <div className="p-3 pt-2">
+        <div className="grid grid-cols-2 gap-x-1 gap-y-2">
+          {roomNumber ? (
+            <StayTile icon={BedDouble} label={t.room} value={roomNumber} />
+          ) : null}
 
-      {(checkInDate || checkOutDate) && (
-        <div className="flex items-center gap-1.5 px-3 pb-2 text-zinc-500">
-          <CalendarDays className="h-3 w-3 shrink-0" strokeWidth={1.5} />
-          <p className="text-[10px] font-medium">
-            {formatDate(checkInDate)} — {formatDate(checkOutDate)}
-          </p>
-        </div>
-      )}
+          <StayTile icon={User} label={t.guest} value={guestName} />
 
-      {showWifi && (
-        <div className="mx-2.5 mb-2 space-y-2 rounded-lg border border-white/[0.08] bg-white/[0.03] p-2.5">
-          <div className="flex items-center gap-1.5">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/[0.06] text-zinc-400">
-              <Wifi className="h-3 w-3" strokeWidth={1.5} />
-            </span>
-            <p className="text-[9px] font-medium uppercase tracking-wide text-zinc-500">
-              {t.stayWifiTitle}
-            </p>
-          </div>
+          {showWifi ? (
+            <button
+              type="button"
+              onClick={() => wifiCopy.copy(wifiPassword!)}
+              className={stayTileInteractive}
+            >
+              <StayIcon icon={Wifi} />
+              <span className="block w-full">
+                <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                  {t.stayWifiTitle}
+                </span>
+                {wifiNetwork ? (
+                  <span className="mt-1.5 block w-full">
+                    <span className="block text-[9px] font-medium uppercase tracking-wide text-zinc-600">
+                      {t.stayWifiNetwork}
+                    </span>
+                    <span className="mt-0.5 block font-mono text-[12px] font-medium leading-relaxed text-zinc-200 break-all">
+                      {wifiNetwork}
+                    </span>
+                  </span>
+                ) : null}
+                {wifiPassword ? (
+                  <span className="mt-1.5 block w-full">
+                    <span className="block text-[9px] font-medium uppercase tracking-wide text-zinc-600">
+                      {t.stayWifiPasswordLabel}
+                    </span>
+                    <span className="mt-0.5 block font-mono text-[13px] font-semibold leading-relaxed text-white break-all">
+                      {wifiPassword}
+                    </span>
+                  </span>
+                ) : null}
+                <CopyAction
+                  copied={wifiCopy.copied}
+                  label={wifiCopy.copied ? t.stayWifiCopied : t.stayWifiCopy}
+                />
+              </span>
+            </button>
+          ) : null}
 
-          {guestWifi!.name && (
-            <div className="min-w-0">
-              <p className="mb-0.5 text-[9px] font-medium text-zinc-600">{t.stayWifiNetwork}</p>
-              <p className="truncate font-mono text-[11px] font-medium text-zinc-200">
-                {guestWifi!.name}
-              </p>
-            </div>
-          )}
-
-          <div className="min-w-0">
-            <p className="mb-0.5 text-[9px] font-medium text-zinc-600">{t.stayWifiPasswordLabel}</p>
-            <div className="flex items-center gap-1.5">
-              <p className="min-w-0 flex-1 truncate font-mono text-[12px] font-medium text-zinc-200">
-                {guestWifi!.wifiPassword}
-              </p>
-              <button
-                type="button"
-                onClick={() => wifiCopy.copy(guestWifi!.wifiPassword!)}
-                className={cn(
-                  "flex shrink-0 items-center gap-0.5 rounded-md px-2 py-1 text-[9px] font-medium transition-colors active:scale-95",
-                  wifiCopy.copied
-                    ? "bg-emerald-500/15 text-emerald-400"
-                    : "bg-white/[0.08] text-zinc-300 hover:bg-white/[0.12]",
-                )}
-              >
-                {wifiCopy.copied ? (
-                  <>
-                    <Check className="h-3 w-3" />
-                    {t.stayWifiCopied}
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3 w-3" />
-                    {t.stayWifiCopy}
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="mx-2.5 mb-2.5 overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.03]">
-        {guestKeyDisplay ? (
-          <div className="flex items-center gap-2 px-2.5 py-2">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/[0.06] text-zinc-400">
-              <Key className="h-3 w-3" strokeWidth={1.5} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="mb-0.5 text-[9px] font-medium uppercase tracking-wide text-zinc-600">
-                {t.guestKeyLabel}
-              </p>
-              <p className="truncate font-mono text-[11px] font-medium text-zinc-300">
-                {guestKeyDisplay}
-              </p>
-            </div>
+          {guestKeyDisplay ? (
             <button
               type="button"
               onClick={() => keyCopy.copy(guestKeyDisplay)}
-              aria-label={t.copyKey}
-              className={cn(
-                "flex shrink-0 items-center gap-0.5 rounded-md px-2 py-1 text-[9px] font-medium transition-colors active:scale-95",
-                keyCopy.copied
-                  ? "bg-emerald-500/15 text-emerald-400"
-                  : "bg-white text-zinc-900 hover:bg-zinc-100",
-              )}
+              className={stayTileInteractive}
             >
-              {keyCopy.copied ? (
-                <>
-                  <Check className="h-3 w-3" />
-                  {t.keyCopied}
-                </>
-              ) : (
-                <>
-                  <Copy className="h-3 w-3" />
-                  {t.copyKey}
-                </>
-              )}
+              <StayIcon icon={Key} />
+              <span className="block w-full">
+                <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                  {t.guestKeyLabel}
+                </span>
+                <span className="mt-1 block w-full font-mono text-[13px] font-semibold leading-relaxed text-white break-all">
+                  {guestKeyDisplay}
+                </span>
+                <CopyAction
+                  copied={keyCopy.copied}
+                  label={keyCopy.copied ? t.keyCopied : t.copyKey}
+                />
+              </span>
             </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 px-2.5 py-2">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-zinc-600">
-              <Key className="h-3 w-3" strokeWidth={1.5} />
-            </span>
-            <p className="text-[10px] text-zinc-500">{t.noActiveKey}</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+          ) : (
+            <StayTile icon={Key} label={t.guestKeyLabel} value={t.noActiveKey} muted />
+          )}
+        </div>
 
-function InfoTile({
-  icon: Icon,
-  label,
-  value,
-  valueClassName,
-}: {
-  icon: React.FC<{ className?: string; strokeWidth?: number }>;
-  label: string;
-  value: string;
-  valueClassName?: string;
-}) {
-  return (
-    <div className="min-w-0 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2 py-2">
-      <div className="mb-1 flex items-center gap-1">
-        <Icon className="h-3 w-3 shrink-0 text-zinc-600" strokeWidth={1.5} />
-        <p className="text-[9px] font-medium uppercase tracking-wide text-zinc-600">{label}</p>
+        {dateRange ? (
+          <div className="mt-3 flex flex-col items-center gap-2 border-t border-white/[0.06] pt-4 text-center">
+            <span className="relative inline-flex h-12 w-12 items-center justify-center" aria-hidden>
+              <CalendarDays
+                className="guest-chat-entry-icon h-9 w-9 text-white"
+                strokeWidth={1.5}
+              />
+            </span>
+            <span className="text-[13px] font-semibold tracking-tight text-white">{dateRange}</span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+              {t.stayActive}
+            </span>
+          </div>
+        ) : null}
       </div>
-      <p className={cn("leading-snug text-zinc-200", valueClassName)}>{value}</p>
     </div>
   );
 }

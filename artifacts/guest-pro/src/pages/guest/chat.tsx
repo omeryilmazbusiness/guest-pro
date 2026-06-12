@@ -59,6 +59,7 @@ import { tFmt } from "@/lib/i18n";
 import { resolveGuestChatStarters, type ResolvedGuestChatStarter } from "@/lib/guest-chat-starters";
 import { GuestChatEmptyState } from "@/components/chat/GuestChatEmptyState";
 import { useGuestLogout } from "@/contexts/guest-logout-context";
+import { GuestLanguageControl } from "@/components/guest/GuestLanguageControl";
 
 export default function GuestChat() {
   const { user, isAuthenticated } = useAuth();
@@ -554,20 +555,23 @@ export default function GuestChat() {
             </button>
           )}
 
-          <button
-            data-testid="button-checkout"
-            onClick={() =>
-              openLogoutConfirm({
-                onBeforeLogout: () => {
-                  if (conv.isActive) conv.stopConversation();
-                },
-              })
-            }
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-zinc-50 hover:text-zinc-700"
-            aria-label={t.logout}
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
+          <div className="flex shrink-0 items-center gap-0.5">
+            <GuestLanguageControl />
+            <button
+              data-testid="button-checkout"
+              onClick={() =>
+                openLogoutConfirm({
+                  onBeforeLogout: () => {
+                    if (conv.isActive) conv.stopConversation();
+                  },
+                })
+              }
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-zinc-50 hover:text-zinc-700"
+              aria-label={t.logout}
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </header>
 

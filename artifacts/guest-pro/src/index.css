@@ -385,9 +385,61 @@
   .guest-voice-liquid-aura,
   .guest-voice-shimmer,
   .guest-voice-liquid-mesh,
-  .guest-voice-liquid-sheen {
+  .guest-voice-liquid-sheen,
+  .guest-chat-entry-icon,
+  .guest-chat-typing-dot,
+  .guest-reception-live-ring {
     animation: none !important;
   }
+}
+
+@keyframes guest-chat-icon-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes guest-chat-typing-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes guest-reception-live-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.08);
+  }
+}
+
+.guest-chat-entry-icon {
+  animation: guest-chat-icon-float 2.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.guest-chat-typing-dot {
+  animation: guest-chat-typing-dot 1.2s ease-in-out infinite;
+}
+
+.guest-reception-live-ring {
+  animation: guest-reception-live-pulse 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  border: 2px solid rgb(52 211 153 / 0.45);
+  border-radius: 9999px;
 }
 
 @keyframes greeting-slide {

@@ -14,7 +14,7 @@ import {
   type GuestDashboardNavItem,
 } from "@/lib/guest-dashboard-nav";
 import { GuestMobileNavDrawer } from "@/components/guest/GuestMobileNavDrawer";
-import { GuestLanguageSheet } from "@/components/guest/GuestLanguageSheet";
+import { GuestLanguageControl } from "@/components/guest/GuestLanguageControl";
 
 interface GuestDashboardHeaderProps {
   appName: string;
@@ -28,7 +28,7 @@ export function GuestDashboardHeader({
   showRequestsSection,
 }: GuestDashboardHeaderProps) {
   const isMobile = useIsMobile();
-  const { t, uiLocale, setLocale } = useLocale();
+  const { t } = useLocale();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   const { openLogoutConfirm } = useGuestLogout();
@@ -77,14 +77,17 @@ export function GuestDashboardHeader({
               {appName}
             </span>
           </div>
-          <button
-            type="button"
-            onClick={() => openLogoutConfirm()}
-            className="-me-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-zinc-50 hover:text-zinc-700"
-            aria-label={t.logout}
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
+          <div className="-me-1 flex shrink-0 items-center gap-0.5">
+            <GuestLanguageControl open={languageOpen} onOpenChange={setLanguageOpen} />
+            <button
+              type="button"
+              onClick={() => openLogoutConfirm()}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-zinc-50 hover:text-zinc-700"
+              aria-label={t.logout}
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -102,14 +105,6 @@ export function GuestDashboardHeader({
         />
       )}
 
-      <GuestLanguageSheet
-        open={languageOpen}
-        onClose={() => setLanguageOpen(false)}
-        currentLocale={uiLocale}
-        onSelect={setLocale}
-        title={t.languageSheetTitle}
-        cancelLabel={t.cancel}
-      />
     </>
   );
 }

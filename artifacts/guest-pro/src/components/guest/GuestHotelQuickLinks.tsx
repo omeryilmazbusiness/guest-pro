@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Plus, ChevronRight, Sparkles } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import type { QuickAction } from "@workspace/api-client-react";
 import { useLocale } from "@/hooks/use-locale";
-import { cn } from "@/lib/utils";
 import { dash } from "@/lib/guest-dashboard-ui";
+import { GuestIconActionTile } from "@/components/guest/GuestIconActionTile";
 import {
   Dialog,
   DialogContent,
@@ -24,25 +24,14 @@ export function GuestHotelQuickLinks({ quickActions: _quickActions }: GuestHotel
     <>
       <section className={dash.section} aria-label={t.hotelConnectSection}>
         <h3 className={dash.sectionTitle}>{t.hotelConnectSection}</h3>
-        <button
-          type="button"
-          onClick={() => setMoreOpen(true)}
-          className={cn(
-            "flex w-full items-center gap-2.5 rounded-xl border border-zinc-200/70 bg-zinc-50/50 px-2.5 py-2.5 text-start",
-            "transition-colors duration-200 hover:border-zinc-300/80 hover:bg-white active:scale-[0.99]",
-          )}
-        >
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-zinc-700 ring-1 ring-zinc-200/60">
-            <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <p className="text-[11px] font-medium leading-tight tracking-tight text-zinc-800">
-              {t.morePlusTitle}
-            </p>
-            <p className="mt-0.5 text-[9px] leading-tight text-zinc-400">{t.morePlusSubtitle}</p>
-          </span>
-          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-zinc-400" strokeWidth={1.5} />
-        </button>
+        <div className="flex justify-center">
+          <GuestIconActionTile
+            icon={Plus}
+            iconClassName="text-zinc-700"
+            label={t.morePlusTitle}
+            onClick={() => setMoreOpen(true)}
+          />
+        </div>
       </section>
 
       <Dialog open={moreOpen} onOpenChange={setMoreOpen}>

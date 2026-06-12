@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { Receipt, ChevronRight } from "lucide-react";
+import { Receipt } from "lucide-react";
 import { useLocale } from "@/hooks/use-locale";
 import { useTodayBill, billHasCharges } from "@/hooks/use-daily-bill";
 import { formatMoney } from "@/lib/format-money";
 import { tFmt } from "@/lib/i18n";
-import { dash } from "@/lib/guest-dashboard-ui";
 import { cn } from "@/lib/utils";
 import { DailyBillSheet } from "./DailyBillSheet";
 import { triggerHaptic } from "@/lib/haptic";
+
+const guestFramedLight =
+  "overflow-hidden rounded-2xl bg-white shadow-[0_8px_28px_-12px_rgba(0,0,0,0.12)] ring-1 ring-zinc-200/80";
 
 export function DailyBillCard() {
   const { t, uiLocale } = useLocale();
@@ -20,36 +22,49 @@ export function DailyBillCard() {
       ? formatMoney(todayBill.subtotal, todayBill.currency, uiLocale)
       : null;
 
+  const subtitle = isLoading
+    ? "…"
+    : totalLabel
+      ? tFmt(t.billCardSubtitleAmount, { amount: totalLabel })
+      : t.billCardSubtitleToday;
+
   return (
     <>
       <section aria-label={t.billSection}>
-        <h3 className={dash.sectionTitle}>{t.billSection}</h3>
-        <button
-          type="button"
-          onClick={() => {
-            triggerHaptic("open");
-            setOpen(true);
-          }}
-          className={cn(
-            dash.card,
-            "guest-tactile-pill w-full text-start border border-zinc-100 bg-gradient-to-br from-white to-zinc-50/90 shadow-sm px-3.5 py-2.5 flex items-center gap-3 hover:border-zinc-200 transition-all active:scale-[0.98]",
-          )}
-        >
-          <span className={cn(dash.icon, "bg-zinc-900/[0.04] border border-zinc-100 flex items-center justify-center shrink-0")}>
-            <Receipt className="w-4 h-4 text-zinc-700" strokeWidth={1.75} />
-          </span>
-          <span className="flex-1 min-w-0 block">
-            <p className={dash.title}>{t.billCardTitle}</p>
-            <p className={cn(dash.subtitle, "mt-0.5")}>
-              {isLoading
-                ? "…"
-                : totalLabel
-                  ? tFmt(t.billCardSubtitleAmount, { amount: totalLabel })
-                  : t.billCardSubtitleToday}
+        <div className={guestFramedLight}>
+          <div className="border-b border-zinc-100 px-4 py-2.5 text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400">
+              {t.billSection}
             </p>
-          </span>
-          <ChevronRight className="w-4 h-4 text-zinc-300 shrink-0" />
-        </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic("open");
+              setOpen(true);
+            }}
+            className={cn(
+              "flex w-full flex-col items-center gap-2.5 px-4 py-4 text-center",
+              "transition-transform duration-200 hover:scale-[1.01] active:scale-[0.98]",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900/10",
+            )}
+            aria-label={t.billCardTitle}
+          >
+            <span className="relative inline-flex h-14 w-14 items-center justify-center" aria-hidden>
+              <Receipt
+                className="guest-chat-entry-icon h-11 w-11 text-zinc-700"
+                strokeWidth={1.5}
+              />
+            </span>
+            <span className="block max-w-[14rem]">
+              <span className="block text-[14px] font-semibold leading-snug tracking-tight text-zinc-900">
+                {t.billCardTitle}
+              </span>
+              <span className="mt-1 block text-[11px] leading-snug text-zinc-500">{subtitle}</span>
+            </span>
+          </button>
+        </div>
       </section>
 
       <DailyBillSheet open={open} onClose={() => setOpen(false)} />

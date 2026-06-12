@@ -15,11 +15,7 @@ export type ConciergeWhen = "asap" | "morning" | "afternoon" | "evening" | "tomo
 export interface ConciergeServiceConfig {
   id: ConciergeService;
   icon: LucideIcon;
-  tile: string;
-  iconWrap: string;
   iconColor: string;
-  labelColor: string;
-  shadow: string;
   titleKey: keyof GuestTranslations;
 }
 
@@ -27,41 +23,25 @@ export const CONCIERGE_SERVICES: ConciergeServiceConfig[] = [
   {
     id: "laundry",
     icon: Shirt,
-    tile: "bg-gradient-to-b from-violet-400 to-indigo-500",
-    iconWrap: "bg-white/25 ring-1 ring-white/30",
-    iconColor: "text-white",
-    labelColor: "text-white/95",
-    shadow: "shadow-violet-500/20",
+    iconColor: "text-violet-500",
     titleKey: "conciergeLaundry",
   },
   {
     id: "spa_wellness",
     icon: Sparkles,
-    tile: "bg-gradient-to-b from-emerald-400 to-teal-500",
-    iconWrap: "bg-white/25 ring-1 ring-white/30",
-    iconColor: "text-white",
-    labelColor: "text-white/95",
-    shadow: "shadow-emerald-500/20",
+    iconColor: "text-emerald-500",
     titleKey: "conciergeSpa",
   },
   {
     id: "taxi",
     icon: Car,
-    tile: "bg-gradient-to-b from-amber-400 to-orange-500",
-    iconWrap: "bg-white/25 ring-1 ring-white/30",
-    iconColor: "text-white",
-    labelColor: "text-white/95",
-    shadow: "shadow-amber-500/20",
+    iconColor: "text-amber-500",
     titleKey: "conciergeTaxi",
   },
   {
     id: "salon",
     icon: Scissors,
-    tile: "bg-gradient-to-b from-fuchsia-400 to-pink-500",
-    iconWrap: "bg-white/25 ring-1 ring-white/30",
-    iconColor: "text-white",
-    labelColor: "text-white/95",
-    shadow: "shadow-fuchsia-500/20",
+    iconColor: "text-fuchsia-500",
     titleKey: "conciergeSalon",
   },
 ];

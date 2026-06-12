@@ -18,22 +18,23 @@ export interface GuestLanguageOption {
   code: GuestUiLocale;
   /** Native name shown in the picker */
   label: string;
-  flag: string;
+  /** ISO 3166-1 alpha-2 for SVG flag icon (see CountryFlag) */
+  flagCode: string;
   voiceLocale: string;
   dir: "ltr" | "rtl";
 }
 
 export const GUEST_LANGUAGE_OPTIONS: GuestLanguageOption[] = [
-  { code: "tr", label: "Türkçe", flag: "🇹🇷", voiceLocale: "tr-TR", dir: "ltr" },
-  { code: "en", label: "English", flag: "🇬🇧", voiceLocale: "en-US", dir: "ltr" },
-  { code: "ar", label: "العربية", flag: "🇸🇦", voiceLocale: "ar-SA", dir: "rtl" },
-  { code: "ru", label: "Русский", flag: "🇷🇺", voiceLocale: "ru-RU", dir: "ltr" },
-  { code: "fr", label: "Français", flag: "🇫🇷", voiceLocale: "fr-FR", dir: "ltr" },
-  { code: "it", label: "Italiano", flag: "🇮🇹", voiceLocale: "it-IT", dir: "ltr" },
-  { code: "ur", label: "اردو", flag: "🇵🇰", voiceLocale: "ur-PK", dir: "rtl" },
-  { code: "fa", label: "فارسی", flag: "🇮🇷", voiceLocale: "fa-IR", dir: "rtl" },
-  { code: "he", label: "עברית", flag: "🇮🇱", voiceLocale: "he-IL", dir: "rtl" },
-  { code: "ku", label: "Kurdî", flag: "☀️", voiceLocale: "ku-TR", dir: "ltr" },
+  { code: "tr", label: "Türkçe", flagCode: "tr", voiceLocale: "tr-TR", dir: "ltr" },
+  { code: "en", label: "English", flagCode: "gb", voiceLocale: "en-US", dir: "ltr" },
+  { code: "ar", label: "العربية", flagCode: "sa", voiceLocale: "ar-SA", dir: "rtl" },
+  { code: "ru", label: "Русский", flagCode: "ru", voiceLocale: "ru-RU", dir: "ltr" },
+  { code: "fr", label: "Français", flagCode: "fr", voiceLocale: "fr-FR", dir: "ltr" },
+  { code: "it", label: "Italiano", flagCode: "it", voiceLocale: "it-IT", dir: "ltr" },
+  { code: "ur", label: "اردو", flagCode: "pk", voiceLocale: "ur-PK", dir: "rtl" },
+  { code: "fa", label: "فارسی", flagCode: "ir", voiceLocale: "fa-IR", dir: "rtl" },
+  { code: "he", label: "עברית", flagCode: "il", voiceLocale: "he-IL", dir: "rtl" },
+  { code: "ku", label: "Kurdî", flagCode: "tr", voiceLocale: "ku-TR", dir: "ltr" },
 ];
 
 export const GUEST_UI_LOCALES = GUEST_LANGUAGE_OPTIONS.map((o) => o.code);

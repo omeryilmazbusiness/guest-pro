@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { Star, Wifi, Phone, Building2 } from "lucide-react";
+import {
+  Star,
+  Wifi,
+  Phone,
+  Building2,
+  MessageSquare,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useLocale } from "@/hooks/use-locale";
@@ -7,10 +15,59 @@ import { HOTEL_CONFIG } from "@/lib/welcoming/hotel-content";
 import { createServiceRequest } from "@/lib/service-requests";
 import { syncMyRequestToCache } from "@/lib/guest-my-requests-cache";
 import { cn } from "@/lib/utils";
-import { dash } from "@/lib/guest-dashboard-ui";
 
 interface GuestAtYourServicePanelProps {
   appName?: string;
+}
+
+const guestFramedDark =
+  "overflow-hidden rounded-2xl bg-zinc-950 shadow-[0_16px_48px_-16px_rgba(0,0,0,0.55)] ring-1 ring-white/[0.08]";
+
+function ServiceIconTile({
+  icon: Icon,
+  label,
+  value,
+  iconClassName = "text-white",
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  iconClassName?: string;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-2 px-1 py-2 text-center">
+      <span className="relative inline-flex h-12 w-12 items-center justify-center" aria-hidden>
+        <Icon className={cn("guest-chat-entry-icon h-9 w-9", iconClassName)} strokeWidth={1.5} />
+      </span>
+      <span className="block w-full">
+        <span className="block text-[9px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+          {label}
+        </span>
+        <span className="mt-1 block break-words text-[12px] font-semibold leading-snug text-white">
+          {value}
+        </span>
+      </span>
+    </div>
+  );
+}
+
+function SectionIconHeader({
+  icon: Icon,
+  title,
+  iconClassName,
+}: {
+  icon: LucideIcon;
+  title: string;
+  iconClassName: string;
+}) {
+  return (
+    <div className="mb-2.5 flex flex-col items-center gap-1.5 text-center">
+      <span className="relative inline-flex h-11 w-11 items-center justify-center" aria-hidden>
+        <Icon className={cn("h-9 w-9", iconClassName)} strokeWidth={1.5} />
+      </span>
+      <p className="text-[12px] font-semibold text-zinc-200">{title}</p>
+    </div>
+  );
 }
 
 export function GuestAtYourServicePanel({ appName = "Guest Pro" }: GuestAtYourServicePanelProps) {
@@ -74,84 +131,74 @@ export function GuestAtYourServicePanel({ appName = "Guest Pro" }: GuestAtYourSe
   };
 
   return (
-    <section className={dash.section} aria-label={t.infoSection}>
-      <h3 className={dash.sectionTitle}>{t.infoSection}</h3>
-
-      <article className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
-        <header className="border-b border-white/[0.06] px-3 py-2.5">
-          <p className="mb-1.5 text-[9px] font-medium uppercase tracking-wide text-zinc-600">
-            {t.atYourServiceHotelAbout}
+    <section aria-label={t.infoSection}>
+      <article className={guestFramedDark}>
+        <div className="border-b border-white/[0.06] px-4 py-2.5 text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+            {t.infoSection}
           </p>
-          <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/[0.06] text-zinc-300">
-              <Building2 className="h-3 w-3" strokeWidth={1.5} />
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-[13px] font-medium tracking-tight text-white">
-                {HOTEL_CONFIG.name}
-              </p>
-              <p className="text-[10px] text-zinc-500">{appName}</p>
-            </div>
-          </div>
+        </div>
 
-          <div className="mt-2 grid grid-cols-2 gap-1.5">
-            <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-2 py-1.5">
-              <p className="flex items-center gap-1 text-[9px] font-medium uppercase tracking-wide text-zinc-600">
-                <Wifi className="h-2.5 w-2.5" strokeWidth={1.5} />
-                {t.atYourServiceWifi}
-              </p>
-              <p className="mt-0.5 truncate font-mono text-[11px] text-zinc-300">
-                {HOTEL_CONFIG.wifi.ssid}
-              </p>
-            </div>
-            <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-2 py-1.5">
-              <p className="flex items-center gap-1 text-[9px] font-medium uppercase tracking-wide text-zinc-600">
-                <Phone className="h-2.5 w-2.5" strokeWidth={1.5} />
-                {t.atYourServiceEmergency}
-              </p>
-              <p className="mt-0.5 truncate text-[11px] text-zinc-300">
-                {HOTEL_CONFIG.emergency.number}
-              </p>
-            </div>
-          </div>
-        </header>
+        <div className="grid grid-cols-3 gap-x-0 gap-y-1 border-b border-white/[0.06] px-2 py-1">
+          <ServiceIconTile
+            icon={Building2}
+            label={t.atYourServiceHotelAbout}
+            value={HOTEL_CONFIG.name}
+          />
+          <ServiceIconTile
+            icon={Wifi}
+            label={t.atYourServiceWifi}
+            value={HOTEL_CONFIG.wifi.ssid}
+            iconClassName="text-sky-400"
+          />
+          <ServiceIconTile
+            icon={Phone}
+            label={t.atYourServiceEmergency}
+            value={HOTEL_CONFIG.emergency.number}
+            iconClassName="text-rose-400"
+          />
+        </div>
 
-        <div className="border-b border-white/[0.06] px-3 py-2">
-          <p className="text-[11px] font-medium text-zinc-300">{t.atYourServiceGuestProAbout}</p>
-          <p className="mt-0.5 text-[10px] leading-snug text-zinc-500">
+        <div className="flex items-center justify-center gap-2 border-b border-white/[0.06] px-4 py-2.5 text-center">
+          <Sparkles className="h-3.5 w-3.5 shrink-0 text-zinc-500" strokeWidth={1.75} />
+          <p className="text-[10px] leading-snug text-zinc-500">
+            <span className="font-medium text-zinc-400">{t.atYourServiceGuestProAbout}</span>
+            {" · "}
             {t.atYourServiceGuestProDesc}
           </p>
         </div>
 
-        <div className="space-y-2.5 border-b border-white/[0.06] px-3 py-2.5">
-          <div>
-            <p className="text-[11px] font-medium text-zinc-300">{t.feedbackSectionTitle}</p>
-            <p className="mt-0.5 text-[10px] text-zinc-600">{t.feedbackRatingLabel}</p>
-            <div
-              className="mt-1.5 flex items-center gap-0.5"
-              role="group"
-              aria-label={t.feedbackRatingLabel}
-            >
-              {[1, 2, 3, 4, 5].map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setRating(value)}
-                  onMouseEnter={() => setHoverRating(value)}
-                  onMouseLeave={() => setHoverRating(0)}
-                  className="rounded-md p-0.5 transition-colors hover:bg-white/5"
-                  aria-label={`${value}`}
-                >
-                  <Star
-                    className={cn(
-                      "h-5 w-5 transition-colors",
-                      value <= displayRating ? "fill-amber-400 text-amber-400" : "text-zinc-700",
-                    )}
-                    strokeWidth={1.5}
-                  />
-                </button>
-              ))}
-            </div>
+        <div className="space-y-2.5 border-b border-white/[0.06] px-3 py-3">
+          <SectionIconHeader
+            icon={Star}
+            title={t.feedbackSectionTitle}
+            iconClassName="guest-chat-entry-icon fill-amber-400/20 text-amber-400"
+          />
+          <p className="-mt-1 text-center text-[10px] text-zinc-600">{t.feedbackRatingLabel}</p>
+          <div
+            className="flex items-center justify-center gap-0.5"
+            role="group"
+            aria-label={t.feedbackRatingLabel}
+          >
+            {[1, 2, 3, 4, 5].map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setRating(value)}
+                onMouseEnter={() => setHoverRating(value)}
+                onMouseLeave={() => setHoverRating(0)}
+                className="rounded-md p-0.5 transition-colors hover:bg-white/5"
+                aria-label={`${value}`}
+              >
+                <Star
+                  className={cn(
+                    "h-5 w-5 transition-colors",
+                    value <= displayRating ? "fill-amber-400 text-amber-400" : "text-zinc-700",
+                  )}
+                  strokeWidth={1.5}
+                />
+              </button>
+            ))}
           </div>
           <textarea
             value={comment}
@@ -170,8 +217,12 @@ export function GuestAtYourServicePanel({ appName = "Guest Pro" }: GuestAtYourSe
           </button>
         </div>
 
-        <div className="space-y-2 px-3 py-2.5">
-          <p className="text-[11px] font-medium text-zinc-300">{t.complaintSectionTitle}</p>
+        <div className="space-y-2 px-3 py-3">
+          <SectionIconHeader
+            icon={MessageSquare}
+            title={t.complaintSectionTitle}
+            iconClassName="guest-chat-entry-icon text-zinc-300"
+          />
           <textarea
             value={complaint}
             onChange={(e) => setComplaint(e.target.value)}

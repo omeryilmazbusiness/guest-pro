@@ -11,6 +11,8 @@ interface GuestNearbyMapEmbedProps {
   mapUnavailableLabel: string;
   hotelPinLabel?: string;
   className?: string;
+  /** iframe height in px — guest dashboard uses a compact map */
+  height?: number;
 }
 
 export function GuestNearbyMapEmbed({
@@ -20,6 +22,7 @@ export function GuestNearbyMapEmbed({
   mapUnavailableLabel,
   hotelPinLabel = "Hotel",
   className,
+  height = 260,
 }: GuestNearbyMapEmbedProps) {
   const embedSrc = hotelCenter
     ? buildGuestNearbyMapEmbedUrl(hotelCenter, {
@@ -34,9 +37,10 @@ export function GuestNearbyMapEmbed({
     return (
       <div
         className={cn(
-          "relative flex min-h-[260px] items-center justify-center overflow-hidden rounded-3xl border border-dashed border-zinc-200 bg-gradient-to-br from-zinc-50 to-teal-50/30 px-4 text-center",
+          "relative flex items-center justify-center overflow-hidden rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-4 text-center",
           className,
         )}
+        style={{ minHeight: height }}
       >
         <p className="max-w-[220px] text-[12px] leading-relaxed text-zinc-500">{mapUnavailableLabel}</p>
       </div>
@@ -46,7 +50,7 @@ export function GuestNearbyMapEmbed({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-3xl border border-zinc-100/90 bg-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]",
+        "relative overflow-hidden rounded-2xl border border-zinc-100/90 bg-zinc-100",
         className,
       )}
     >
@@ -55,7 +59,7 @@ export function GuestNearbyMapEmbed({
         src={embedSrc}
         title="Nearby map"
         width="100%"
-        height="260"
+        height={height}
         style={{ border: 0, display: "block" }}
         loading="lazy"
         referrerPolicy="no-referrer-when-downgrade"
