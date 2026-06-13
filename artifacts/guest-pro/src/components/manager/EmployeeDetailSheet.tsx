@@ -70,6 +70,7 @@ export interface EmployeeDetailSheetProps {
   onReactivate: (m: StaffMember) => void;
   onPermanentDelete: (m: StaffMember) => void;
   onResetPassword?: (m: StaffMember) => void;
+  isDeletePending?: boolean;
   t: StaffTranslations;
 }
 
@@ -82,6 +83,7 @@ export function EmployeeDetailSheet({
   onReactivate,
   onPermanentDelete,
   onResetPassword,
+  isDeletePending = false,
   t,
 }: EmployeeDetailSheetProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -250,7 +252,10 @@ export function EmployeeDetailSheet({
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-xl">{t.cancel}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
+              disabled={isDeletePending}
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={(e) => {
+                e.stopPropagation();
                 setDeleteOpen(false);
                 onClose();
                 onPermanentDelete(member);

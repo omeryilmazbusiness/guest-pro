@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   listServiceRequests,
@@ -31,7 +31,6 @@ import { cn } from "@/lib/utils";
 
 export interface StaffFeedbackBoardProps {
   presenceMap: Map<number, TrackingStatus>;
-  onOpenCountChange?: (count: number) => void;
 }
 
 const STATUS_NEXT: Record<ServiceRequestStatus, ServiceRequestStatus | null> = {
@@ -221,24 +220,24 @@ function FeedbackCard({
   );
 }
 
-export function StaffFeedbackBoard({ presenceMap: _presenceMap, onOpenCountChange }: StaffFeedbackBoardProps) {
+export function StaffFeedbackBoard({ presenceMap: _presenceMap }: StaffFeedbackBoardProps) {
   const { t, locale } = useStaffLocale();
   const queryClient = useQueryClient();
 
-  const { data: requests, isLoading, isFetching, refetch } = useQuery({
+  const { data: allRequests, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["service-requests"],
     queryFn: () => listServiceRequests(),
     refetchInterval: 30_000,
     staleTime: 15_000,
-    select: (data) => {
-      const feedback = data.filter(isGuestFeedbackRequest);
-      const openCount = feedback.filter((r) => r.status === "open").length;
-      onOpenCountChange?.(openCount);
-      return feedback.sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      );
-    },
   });
+
+  const requests = useMemo(
+    () =>
+      (allRequests ?? [])
+        .filter(isGuestFeedbackRequest)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    [allRequests],
+  );
 
   const handleStatusChange = useCallback(
     (updated: ServiceRequest) => {

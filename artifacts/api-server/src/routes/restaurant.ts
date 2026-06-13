@@ -32,6 +32,7 @@ import {
 import { eq, and, desc, asc, sql } from "drizzle-orm";
 import { requireAuth, requireStaff } from "../middlewares/requireAuth";
 import { analyzeGuestCareForRestaurant } from "../lib/gemini";
+import { dedupeCareProfilesByRoom } from "../lib/restaurant-care-analysis";
 import { logger } from "../lib/logger";
 import {
   saveMenuItemImage,
@@ -549,11 +550,13 @@ router.post("/restaurant/care-insights/refresh", requireRestaurantAccess, async 
     guestName:     `${r.guestFirstName} ${r.guestLastName}`,
     summary:       r.summary,
     structuredData: r.structuredData as Record<string, unknown> | null,
+    createdAt:     r.createdAt,
   }));
 
   logger.info({ hotelId, count: summaries.length }, "Generating restaurant care insights");
 
   const insights = await analyzeGuestCareForRestaurant(summaries);
+  const analyzedProfileCount = dedupeCareProfilesByRoom(summaries).length;
 
   // Upsert today's insight record
   const [existing] = await db
@@ -568,13 +571,13 @@ router.post("/restaurant/care-insights/refresh", requireRestaurantAccess, async 
   if (existing) {
     [result] = await db
       .update(restaurantCareInsightsTable)
-      .set({ insights, sourceRequestCount: careRequests.length, updatedAt: new Date() })
+      .set({ insights, sourceRequestCount: analyzedProfileCount, updatedAt: new Date() })
       .where(eq(restaurantCareInsightsTable.id, existing.id))
       .returning();
   } else {
     [result] = await db
       .insert(restaurantCareInsightsTable)
-      .values({ hotelId, date: today, insights, sourceRequestCount: careRequests.length })
+      .values({ hotelId, date: today, insights, sourceRequestCount: analyzedProfileCount })
       .returning();
   }
 

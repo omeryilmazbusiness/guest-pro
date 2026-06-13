@@ -10,6 +10,7 @@ import {
   Building2,
   DoorOpen,
   HelpCircle,
+  Bell,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,7 +32,7 @@ const OVERVIEW_CARD =
   "relative flex w-full min-w-0 flex-col rounded-xl border border-zinc-200/90 bg-white px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-150 hover:border-zinc-300 hover:shadow-[0_2px_8px_rgba(0,0,0,0.05)]";
 
 interface ManagerOverviewCardsProps {
-  variant: "both" | "guests" | "employees";
+  variant: "both" | "guests" | "employees" | "guests_requests";
   guestSummary: GuestTrackingSummary;
   isRefreshing: boolean;
   onRefresh: () => void;
@@ -39,6 +40,8 @@ interface ManagerOverviewCardsProps {
   onAddEmployee: () => void;
   onGuestsPress?: () => void;
   onEmployeesPress?: () => void;
+  onRequestsPress?: () => void;
+  openRequestCount?: number;
   dailyTaskInsight?: DailyTaskInsightRecord | null;
   insightPending?: boolean;
   onAiInsightPress?: () => void;
@@ -147,16 +150,22 @@ export function ManagerOverviewCards({
   onAddEmployee,
   onGuestsPress,
   onEmployeesPress,
+  onRequestsPress,
+  openRequestCount = 0,
   dailyTaskInsight,
   insightPending = true,
   onAiInsightPress,
   t,
 }: ManagerOverviewCardsProps) {
   const deptEntries = ORDERED_DEPTS.filter((d) => (staffInfo.byDept[d] ?? 0) > 0);
-  const showGuests = variant === "both" || variant === "guests";
+  const showGuests = variant === "both" || variant === "guests" || variant === "guests_requests";
   const showEmployees = variant === "both" || variant === "employees";
+  const showRequests = variant === "guests_requests";
   const showAiSquare = variant === "employees" && onAiInsightPress;
-  const gridClass = variant === "both" ? "grid grid-cols-2 gap-2.5" : "grid grid-cols-1 gap-2.5";
+  const gridClass =
+    variant === "both" || variant === "guests_requests"
+      ? "grid grid-cols-2 gap-2.5"
+      : "grid grid-cols-1 gap-2.5";
 
   const guestsFooter =
     guestSummary.total === 0 ? (
@@ -277,6 +286,16 @@ export function ManagerOverviewCards({
             </button>
           }
           footer={guestsFooter}
+        />
+      )}
+      {showRequests && (
+        <OverviewIconCard
+          icon={Bell}
+          iconClassName="text-rose-500"
+          label={t.tabRequests}
+          value={openRequestCount}
+          hint={openRequestCount === 1 ? "1 open" : `${openRequestCount} open`}
+          onPress={onRequestsPress}
         />
       )}
 

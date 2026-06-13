@@ -1,97 +1,39 @@
 import { useState, useCallback } from "react";
 import {
-  UtensilsCrossed,
-  Hammer,
-  Heart,
-  Layers,
   Clock,
   CheckCircle2,
   Loader2,
   ChevronDown,
-  ChevronUp,
   Trash2,
-  AlertCircle,
+  DoorOpen,
+  Circle,
+  type LucideIcon,
 } from "lucide-react";
-import type {
-  ServiceRequest,
-  ServiceRequestType,
-  ServiceRequestStatus,
-} from "@/lib/service-requests";
+import type { ServiceRequest, ServiceRequestStatus } from "@/lib/service-requests";
 import {
-  REQUEST_STATUS_LABELS,
   updateServiceRequestStatus,
   deleteServiceRequest,
 } from "@/lib/service-requests";
 import { buildDisplaySummary, buildDetailLines } from "@/lib/request-display";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
-// ─── Type config — soft minimal palette ───────────────────────────────────────
+const ITEM_CARD =
+  "rounded-lg border border-zinc-200/80 bg-white px-3 py-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]";
 
-interface TypeConfig {
-  icon: React.FC<{ className?: string }>;
-  label: string;
-  iconBg: string;
-  iconColor: string;
-  borderColor: string;
-}
-
-const TYPE_CONFIG: Record<ServiceRequestType, TypeConfig> = {
-  FOOD_ORDER: {
-    icon: UtensilsCrossed,
-    label: "Yemek Siparişi",
-    iconBg: "bg-amber-50",
-    iconColor: "text-amber-600",
-    borderColor: "border-zinc-100",
-  },
-  SUPPORT_REQUEST: {
-    icon: Hammer,
-    label: "Destek Talebi",
-    iconBg: "bg-zinc-100",
-    iconColor: "text-zinc-500",
-    borderColor: "border-zinc-100",
-  },
-  CARE_PROFILE_UPDATE: {
-    icon: Heart,
-    label: "Care About Me",
-    iconBg: "bg-rose-50",
-    iconColor: "text-rose-500",
-    borderColor: "border-zinc-100",
-  },
-  GENERAL_SERVICE_REQUEST: {
-    icon: Layers,
-    label: "Genel Talep",
-    iconBg: "bg-zinc-100",
-    iconColor: "text-zinc-400",
-    borderColor: "border-zinc-100",
-  },
-};
-
-// ─── Status cycle: open → in_progress → resolved (one-way; resolved is terminal) ──
-
-
-const FALLBACK_CONFIG: TypeConfig = {
-  icon: Layers,
-  label: 'Talep',
-  iconBg: 'bg-zinc-100',
-  iconColor: 'text-zinc-400',
-  borderColor: 'border-zinc-100',
-};
 const STATUS_NEXT: Record<ServiceRequestStatus, ServiceRequestStatus | null> = {
   open: "in_progress",
   in_progress: "resolved",
   resolved: null,
 };
 
-const STATUS_ICONS: Record<ServiceRequestStatus, React.FC<{ className?: string }>> = {
-  open: Clock,
-  in_progress: Loader2,
-  resolved: CheckCircle2,
-};
-
-const STATUS_COLORS: Record<ServiceRequestStatus, string> = {
-  open: "text-zinc-500 bg-zinc-50 border-zinc-200",
-  in_progress: "text-blue-600 bg-blue-50 border-blue-200",
-  resolved: "text-emerald-600 bg-emerald-50 border-emerald-200",
+const STATUS_META: Record<
+  ServiceRequestStatus,
+  { dot: string; label: string; action: string | null; icon: LucideIcon }
+> = {
+  open: { dot: "bg-rose-400", label: "Bekliyor", action: "Üstlen", icon: Clock },
+  in_progress: { dot: "bg-amber-400", label: "İşlemde", action: "Tamamla", icon: Loader2 },
+  resolved: { dot: "bg-emerald-400", label: "Tamam", action: null, icon: CheckCircle2 },
 };
 
 function formatRelativeTime(dateStr: string): string {
@@ -99,14 +41,32 @@ function formatRelativeTime(dateStr: string): string {
   const then = new Date(dateStr).getTime();
   const diff = Math.floor((now - then) / 1000);
   if (diff < 60) return "Az önce";
-  if (diff < 3600) return `${Math.floor(diff / 60)} dk önce`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} sa önce`;
+  if (diff < 3600) return `${Math.floor(diff / 60)} dk`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} sa`;
   return new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "short" }).format(
-    new Date(dateStr)
+    new Date(dateStr),
   );
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+function GuestInitials({
+  firstName,
+  lastName,
+}: {
+  firstName: string;
+  lastName: string;
+}) {
+  const initials =
+    `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase() || "?";
+
+  return (
+    <div
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-900 text-[11px] font-semibold tracking-wide text-white"
+      aria-hidden
+    >
+      <span className="font-serif leading-none">{initials}</span>
+    </div>
+  );
+}
 
 interface ServiceRequestCardProps {
   request: ServiceRequest;
@@ -123,16 +83,17 @@ export function ServiceRequestCard({
 }: ServiceRequestCardProps) {
   const [status, setStatus] = useState<ServiceRequestStatus>(request.status);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [deleteState, setDeleteState] = useState<"idle" | "confirming" | "deleting">("idle");
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const config = TYPE_CONFIG[request.requestType] ?? FALLBACK_CONFIG;
-  const Icon = config.icon;
-  const StatusIcon = STATUS_ICONS[status];
+  const meta = STATUS_META[status];
+  const StatusIcon = meta.icon;
   const nextStatus = STATUS_NEXT[status];
 
   const displayText = buildDisplaySummary(request);
   const detailLines = buildDetailLines(request);
+  const hasDetails = detailLines.length > 0;
 
   const handleStatusAdvance = useCallback(async () => {
     if (!nextStatus) return;
@@ -148,141 +109,146 @@ export function ServiceRequestCard({
     }
   }, [nextStatus, request.id, onStatusChange]);
 
-  const handleDeleteConfirm = useCallback(async () => {
-    setDeleteState("deleting");
+  const handleDelete = useCallback(async () => {
+    setIsDeleting(true);
     try {
       await deleteServiceRequest(request.id);
       onDelete?.(request.id);
       toast.success("Talep silindi");
     } catch {
       toast.error("Talep silinemedi");
-      setDeleteState("idle");
+      setIsDeleting(false);
+      setDeleteConfirm(false);
     }
   }, [request.id, onDelete]);
 
   return (
-    <div className={`bg-white rounded-2xl border ${config.borderColor} shadow-sm overflow-hidden`}>
-      {/* ── Main row ─────────────────────────────────────────── */}
-      <div className="px-4 pt-4 pb-3 flex items-start gap-3">
-        {/* Icon */}
-        <div
-          className={`w-8 h-8 rounded-xl ${config.iconBg} flex items-center justify-center shrink-0 mt-0.5`}
-        >
-          <Icon className={`w-4 h-4 ${config.iconColor}`} />
-        </div>
+    <article className={ITEM_CARD}>
+      <div className="flex items-start gap-2.5">
+        <GuestInitials
+          firstName={request.guestFirstName}
+          lastName={request.guestLastName}
+        />
 
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          {/* Guest + room */}
-          <div className="flex items-center justify-between gap-2 mb-0.5">
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-[13px] font-semibold text-zinc-800 leading-tight">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <p className="truncate text-[13px] font-semibold text-zinc-900">
                 {request.guestFirstName} {request.guestLastName}
               </p>
               {presenceStatus === "in_hotel" && (
-                <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-100">
-                  Otelde
-                </span>
+                <Circle
+                  className="h-2 w-2 shrink-0 fill-emerald-400 text-emerald-400"
+                  aria-label="Otelde"
+                />
               )}
             </div>
-            <span className="text-[16px] font-serif text-zinc-500 shrink-0">
+
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-zinc-100 px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums text-zinc-600">
+              <DoorOpen className="h-3 w-3 text-zinc-400" strokeWidth={1.75} />
               {request.roomNumber}
             </span>
           </div>
 
-          {/* Summary */}
-          <p className="text-[13px] text-zinc-600 leading-snug">{displayText}</p>
-        </div>
-      </div>
+          <button
+            type="button"
+            onClick={() => hasDetails && setDetailsOpen((v) => !v)}
+            disabled={!hasDetails}
+            className={cn(
+              "mt-1 flex w-full items-start gap-1 text-left",
+              hasDetails && "cursor-pointer touch-manipulation",
+            )}
+          >
+            <p className="flex-1 text-[12px] leading-snug text-zinc-600">{displayText}</p>
+            {hasDetails && (
+              <ChevronDown
+                className={cn(
+                  "mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-300 transition-transform duration-200",
+                  detailsOpen && "rotate-180",
+                )}
+                strokeWidth={1.75}
+              />
+            )}
+          </button>
 
-      {/* ── Expandable detail lines ───────────────────────────── */}
-      {detailLines.length > 0 && (
-        <>
-          {isExpanded && (
-            <div className="px-4 pb-2 pt-0 border-t border-zinc-50 animate-in fade-in slide-in-from-top-1 duration-150">
-              <div className="pt-2.5 space-y-2">
-                {detailLines.map(({ label, value }) => (
-                  <div key={label} className="flex items-start gap-3">
-                    <p className="text-[10px] font-semibold text-zinc-300 uppercase tracking-wider w-16 shrink-0 pt-[3px]">
-                      {label}
-                    </p>
-                    <p className="text-[12px] text-zinc-600 leading-snug flex-1">{value}</p>
-                  </div>
-                ))}
-              </div>
+          {detailsOpen && hasDetails && (
+            <div className="mt-2 space-y-1 border-t border-zinc-100 pt-2 animate-in fade-in slide-in-from-top-1 duration-150">
+              {detailLines.map(({ label, value }) => (
+                <div key={label} className="flex items-start gap-2 text-[11px]">
+                  <span className="w-14 shrink-0 font-medium uppercase tracking-wide text-zinc-400">
+                    {label}
+                  </span>
+                  <span className="flex-1 text-zinc-600">{value}</span>
+                </div>
+              ))}
             </div>
           )}
-          <button
-            onClick={() => setIsExpanded((e) => !e)}
-            className="w-full flex items-center justify-center gap-1 py-1.5 text-[10px] text-zinc-300 hover:text-zinc-400 transition-colors"
-          >
-            {isExpanded ? (
-              <ChevronUp className="w-3 h-3" />
-            ) : (
-              <ChevronDown className="w-3 h-3" />
-            )}
-            <span>{isExpanded ? "Gizle" : "Detay"}</span>
-          </button>
-        </>
-      )}
 
-      {/* ── Footer ───────────────────────────────────────────── */}
-      <div className="px-4 pb-3.5 flex items-center justify-between gap-3 border-t border-zinc-50 pt-2.5">
-        <p className="text-[11px] text-zinc-300">{formatRelativeTime(request.createdAt)}</p>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-[10px] text-zinc-400">
+              <StatusIcon
+                className={cn(
+                  "h-3 w-3",
+                  status === "in_progress" && "animate-spin text-amber-500",
+                  status === "open" && "text-rose-400",
+                  status === "resolved" && "text-emerald-500",
+                )}
+                strokeWidth={1.75}
+              />
+              <span className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} aria-hidden />
+              <span>{meta.label}</span>
+              <span className="text-zinc-300">·</span>
+              <span>{formatRelativeTime(request.createdAt)}</span>
+            </div>
 
-        <div className="flex items-center gap-2">
-          {/* Delete — only for resolved */}
-          {status === "resolved" && (
-            <>
-              {deleteState === "idle" && (
+            <div className="flex shrink-0 items-center gap-1">
+              {status === "resolved" && (
+                <>
+                  {deleteConfirm ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteConfirm(false)}
+                        className="rounded-md px-2 py-1 text-[10px] font-medium text-zinc-400 hover:text-zinc-600"
+                      >
+                        İptal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDelete}
+                        disabled={isDeleting}
+                        className="rounded-md bg-rose-600 px-2 py-1 text-[10px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60"
+                      >
+                        {isDeleting ? "…" : "Sil"}
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setDeleteConfirm(true)}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                      aria-label="Talebi sil"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+                    </button>
+                  )}
+                </>
+              )}
+
+              {meta.action && (
                 <button
-                  onClick={() => setDeleteState("confirming")}
-                  className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-[11px] font-medium text-zinc-300 hover:text-red-500 hover:bg-red-50 transition-all border border-transparent hover:border-red-100"
-                  title="Sil"
+                  type="button"
+                  onClick={handleStatusAdvance}
+                  disabled={isUpdating}
+                  className="rounded-lg bg-zinc-900 px-2.5 py-1 text-[10px] font-semibold text-white transition-all hover:bg-zinc-800 active:scale-95 disabled:opacity-60"
                 >
-                  <Trash2 className="w-3 h-3" />
+                  {isUpdating ? "…" : meta.action}
                 </button>
               )}
-              {deleteState === "confirming" && (
-                <div className="flex items-center gap-1.5">
-                  <AlertCircle className="w-3 h-3 text-red-400" />
-                  <span className="text-[11px] text-zinc-500">Sil?</span>
-                  <button
-                    onClick={handleDeleteConfirm}
-                    className="px-2 py-1 rounded-lg text-[11px] font-semibold text-red-600 bg-red-50 border border-red-100 hover:bg-red-100 transition-all"
-                  >
-                    Evet
-                  </button>
-                  <button
-                    onClick={() => setDeleteState("idle")}
-                    className="px-2 py-1 rounded-lg text-[11px] font-medium text-zinc-400 hover:bg-zinc-50 transition-all"
-                  >
-                    Hayır
-                  </button>
-                </div>
-              )}
-              {deleteState === "deleting" && (
-                <Loader2 className="w-3.5 h-3.5 text-zinc-300 animate-spin" />
-              )}
-            </>
-          )}
-
-          {/* Status advance button */}
-          <button
-            onClick={handleStatusAdvance}
-            disabled={isUpdating || !nextStatus}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold border transition-all active:scale-95 disabled:opacity-60 disabled:cursor-default ${STATUS_COLORS[status]}`}
-          >
-            {isUpdating ? (
-              <Loader2 className="w-3 h-3 animate-spin" />
-            ) : (
-              <StatusIcon className={`w-3 h-3 ${status === "in_progress" ? "animate-spin" : ""}`} />
-            )}
-            {REQUEST_STATUS_LABELS[status]}
-            {nextStatus && <ChevronDown className="w-3 h-3 opacity-40" />}
-          </button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </article>
   );
 }

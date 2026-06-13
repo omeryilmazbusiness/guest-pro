@@ -556,6 +556,7 @@ export interface StaffTranslations {
 
   // ── Care tab ─────────────────────────────────────────────────────────────
   careTitle: string;
+  careKitchenRulesSubtitle: string;
   careRefreshBtn: string;
   careRefreshing: string;
   careRefreshed: string;
@@ -1092,14 +1093,17 @@ const en: StaffTranslations = {
   settingsWifiRowIncomplete: "Network {n}: complete the name and password, or clear the row.",
 
   careTitle: "Care Recommendations",
+  careKitchenRulesSubtitle: "3 kitchen preparation rules from guest profiles",
   careRefreshBtn: "Refresh with AI",
   careRefreshing: "Analyzing…",
-  careRefreshed: "Recommendations updated",
+  careRefreshed: "Kitchen rules updated",
   careRefreshFailed: "Analysis failed",
-  careBannerDescription: "This list is analyzed by AI from Care About Me profiles submitted by guests. Only food and nutrition related recommendations are shown.",
-  careLastAnalysis: "Last analysis: {n} care profiles reviewed · {date}",
-  careNoInsights: "No recommendations yet",
-  careNoInsightsHint: "When guests start filling in Care About Me, the AI will analyze them. Click Refresh to analyze existing profiles.",
+  careBannerDescription:
+    "AI reads all Care About Me notes and preferences, then generates exactly 3 short rules for safe food preparation and service.",
+  careLastAnalysis: "Last analysis: {n} guest profiles reviewed · {date}",
+  careNoInsights: "No kitchen rules yet",
+  careNoInsightsHint:
+    "When guests fill in Care About Me, tap Refresh to analyze their notes and get 3 preparation rules for the kitchen.",
   careRoomLabel: "Room",
 };
 
@@ -1626,14 +1630,17 @@ const tr: StaffTranslations = {
   settingsWifiRowIncomplete: "Ağ {n}: ağ adı ve şifreyi tamamlayın veya satırı temizleyin.",
 
   careTitle: "Care Önerileri",
-  careRefreshBtn: "AI ile Yenile",
+  careKitchenRulesSubtitle: "Misafir profillerinden 3 mutfak hazırlık kuralı",
+  careRefreshBtn: "AI ile Analiz Et",
   careRefreshing: "Analiz ediliyor…",
-  careRefreshed: "Öneriler güncellendi",
+  careRefreshed: "Mutfak kuralları güncellendi",
   careRefreshFailed: "Analiz yapılamadı",
-  careBannerDescription: "Bu liste misafirlerin gönderdiği Care About Me profillerinden yapay zeka tarafından analiz edilmektedir. Yalnızca yiyecek ve beslenmeyle ilgili öneriler listelenir.",
-  careLastAnalysis: "Son analiz: {n} care profili incelendi · {date}",
-  careNoInsights: "Henüz öneri yok",
-  careNoInsightsHint: "Misafirler Care About Me doldurmaya başladığında AI analiz edecek. Yenile butonuna basarak mevcut profilleri analiz edebilirsiniz.",
+  careBannerDescription:
+    "Yapay zeka Care About Me'ye girilen tüm not ve tercihleri okur; yemek hazırlarken uyulması gereken sağlık kurallarını 3 kısa madde halinde sunar.",
+  careLastAnalysis: "Son analiz: {n} misafir profili incelendi · {date}",
+  careNoInsights: "Henüz mutfak kuralı yok",
+  careNoInsightsHint:
+    "Misafirler Care About Me doldurduğunda Analiz Et'e basarak notları inceletip mutfak için 3 hazırlık kuralı alabilirsiniz.",
   careRoomLabel: "Oda",
 };
 
@@ -2160,7 +2167,8 @@ const ar: StaffTranslations = {
   settingsWifiRowIncomplete: "الشبكة {n}: أكمل الاسم وكلمة المرور أو امسح الصف.",
 
   careTitle: "توصيات الرعاية",
-  careRefreshBtn: "تحديث بالذكاء الاصطناعي",
+  careKitchenRulesSubtitle: "3 قواعد تحضير من ملفات الضيوف",
+  careRefreshBtn: "تحليل بالذكاء الاصطناعي",
   careRefreshing: "جارٍ التحليل…",
   careRefreshed: "تم تحديث التوصيات",
   careRefreshFailed: "فشل التحليل",

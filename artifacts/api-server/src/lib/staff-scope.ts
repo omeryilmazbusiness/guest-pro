@@ -121,7 +121,7 @@ export function getVisibleManagerTabs(scope: StaffScopeKind): ManagerDashboardTa
     case "department_manager":
       return ["team", "tasks"];
     case "reception":
-      return ["guests", "feedback"];
+      return ["guests", "requests"];
     case "staff_personnel":
       return [];
     case "restaurant_personnel":

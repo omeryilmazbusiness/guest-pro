@@ -22,6 +22,13 @@ import {
   parseApiErrorPayload,
 } from "./gemini-models";
 import { logger } from "./logger";
+import {
+  buildFallbackCareInsights,
+  buildRestaurantCarePrompt,
+  dedupeCareProfilesByRoom,
+  parseRestaurantCareInsights,
+  type CareRequestSummary,
+} from "./restaurant-care-analysis";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -183,59 +190,35 @@ export async function generateConciergeResponse(
 export { GeminiAllModelsExhaustedError, GeminiChatError } from "./gemini-models";
 
 // ---------------------------------------------------------------------------
-// Restaurant care analysis (unchanged)
+// Restaurant care analysis
 // ---------------------------------------------------------------------------
 
-export interface CareRequestSummary {
-  roomNumber: string;
-  guestName: string;
-  summary: string;
-  structuredData?: Record<string, unknown> | null;
-}
+export { type CareRequestSummary } from "./restaurant-care-analysis";
 
 export async function analyzeGuestCareForRestaurant(
   careRequests: CareRequestSummary[],
 ): Promise<string[]> {
   if (careRequests.length === 0) return [];
 
-  const requestsText = careRequests
-    .map(
-      (r) =>
-        `Oda ${r.roomNumber} (${r.guestName}): ${r.summary}${
-          r.structuredData ? " | Detay: " + JSON.stringify(r.structuredData) : ""
-        }`,
-    )
-    .join("\n");
-
-  const prompt = `Sen 5 yıldızlı bir otel restoranının baş aşçısına yardım eden uzman bir beslenme danışmanısın.
-
-Aşağıda otel misafirlerinin "Care About Me" profillerinden elde edilen veriler verilmiştir.
-Bu profilleri derinlemesine analiz et ve restoran ekibine SOMUT, UYGULANABİLİR yemek hazırlama önerileri sun.
-
-MİSAFİR PROFİLLERİ:
-${requestsText}
-
-SADECE JSON dizisi döndür, başka hiçbir metin ekleme:`;
+  const profiles = dedupeCareProfilesByRoom(careRequests);
+  const prompt = buildRestaurantCarePrompt(profiles);
 
   try {
     const { text } = await generateContentWithModelFallback({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
-      config: { temperature: 0.15, maxOutputTokens: 2048 },
+      config: { temperature: 0.1, maxOutputTokens: 512 },
     });
 
-    const raw = text.trim() || "[]";
-    const cleaned = raw
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/i, "")
-      .replace(/```\s*$/i, "")
-      .trim();
-    const parsed = JSON.parse(cleaned);
-    if (Array.isArray(parsed)) {
-      return parsed.filter((item): item is string => typeof item === "string");
-    }
-    return [];
+    const parsed = parseRestaurantCareInsights(text.trim());
+    if (parsed) return parsed;
+
+    logger.warn(
+      { careRequestCount: careRequests.length, profileCount: profiles.length },
+      "analyzeGuestCareForRestaurant: invalid AI response, using fallback",
+    );
+    return buildFallbackCareInsights(profiles);
   } catch (err) {
     logger.error({ err, careRequestCount: careRequests.length }, "analyzeGuestCareForRestaurant failed");
-    return [];
+    return buildFallbackCareInsights(profiles);
   }
 }

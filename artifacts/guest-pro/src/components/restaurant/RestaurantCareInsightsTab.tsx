@@ -1,16 +1,23 @@
 /**
- * RestaurantCareInsightsTab
- * AI-powered analysis of guest care profiles → actionable food/nutrition tips.
+ * RestaurantCareInsightsTab — AI kitchen rules from guest Care About Me profiles.
  */
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Heart, RefreshCw, Sparkles, Info } from "lucide-react";
+import { ChefHat, RefreshCw, Sparkles, Info, ShieldCheck } from "lucide-react";
 import { getCareInsights, refreshCareInsights, type RestaurantCareInsight } from "@/lib/restaurant";
+import { useStaffLocale } from "@/hooks/use-staff-locale";
+import { cn } from "@/lib/utils";
 
-function today() { return new Date().toISOString().split("T")[0]; }
+const RULE_CARD =
+  "rounded-xl border border-zinc-200/90 bg-white px-4 py-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]";
+
+function today() {
+  return new Date().toISOString().split("T")[0];
+}
 
 export function RestaurantCareInsightsTab() {
+  const { t } = useStaffLocale();
   const queryClient = useQueryClient();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -26,115 +33,87 @@ export function RestaurantCareInsightsTab() {
       const updated = await refreshCareInsights();
       queryClient.setQueryData<RestaurantCareInsight>(
         ["restaurant-care-insights", today()],
-        updated
+        updated,
       );
-      toast.success("Öneriler güncellendi");
+      toast.success(t.careRefreshed);
     } catch {
-      toast.error("Analiz yapılamadı");
+      toast.error(t.careRefreshFailed);
     } finally {
       setIsRefreshing(false);
     }
   };
 
-  const insights = data?.insights ?? [];
+  const insights = (data?.insights ?? []).slice(0, 3);
   const sourceCount = data?.sourceRequestCount ?? 0;
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Heart className="w-4 h-4 text-rose-400" />
-          <h2 className="text-[14px] font-semibold text-zinc-700">Care Önerileri</h2>
-          {insights.length > 0 && (
-            <span className="text-[11px] font-mono text-zinc-400">({insights.length})</span>
-          )}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="guest-chat-entry-icon shrink-0">
+            <ChefHat className="w-4 h-4 text-zinc-600" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-[14px] font-semibold text-zinc-800 truncate">{t.careTitle}</h2>
+            <p className="text-[11px] text-zinc-400">{t.careKitchenRulesSubtitle}</p>
+          </div>
         </div>
         <button
+          type="button"
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className="flex items-center gap-1.5 h-8 px-3 rounded-xl bg-zinc-900 text-white text-[12px] font-medium hover:bg-zinc-800 transition-all disabled:opacity-60"
+          className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-zinc-900 text-white text-[12px] font-medium hover:bg-zinc-800 transition-all disabled:opacity-60 shrink-0"
         >
           {isRefreshing ? (
             <RefreshCw className="w-3.5 h-3.5 animate-spin" />
           ) : (
             <Sparkles className="w-3.5 h-3.5" />
           )}
-          {isRefreshing ? "Analiz ediliyor…" : "AI ile Yenile"}
+          {isRefreshing ? t.careRefreshing : t.careRefreshBtn}
         </button>
       </div>
 
-      {/* Info banner */}
-      <div className="bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 flex items-start gap-2">
-        <Info className="w-4 h-4 text-rose-400 mt-0.5 shrink-0" />
-        <p className="text-[12px] text-rose-700 leading-relaxed">
-          Bu liste misafirlerin gönderdiği <strong>Care About Me</strong> profillerinden
-          yapay zeka tarafından analiz edilmektedir. Yalnızca yiyecek ve beslenmeyle
-          ilgili öneriler listelenir.
-          {sourceCount > 0 && (
-            <span className="block mt-1 text-rose-500">
-              Son analiz: {sourceCount} care profili incelendi · {data?.date}
-            </span>
+      <div className="rounded-xl border border-zinc-200/80 bg-zinc-50/80 px-4 py-3 flex items-start gap-2.5">
+        <Info className="w-4 h-4 text-zinc-400 mt-0.5 shrink-0" />
+        <div className="min-w-0">
+          <p className="text-[12px] text-zinc-600 leading-relaxed">{t.careBannerDescription}</p>
+          {sourceCount > 0 && data?.date && (
+            <p className="mt-1.5 text-[11px] text-zinc-400">
+              {t.careLastAnalysis
+                .replace("{n}", String(sourceCount))
+                .replace("{date}", data.date)}
+            </p>
           )}
-        </p>
+        </div>
       </div>
 
       {isLoading ? (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-zinc-100 rounded-2xl h-14 animate-pulse" />
+            <div key={i} className="bg-zinc-100 rounded-xl h-[52px] animate-pulse" />
           ))}
         </div>
       ) : insights.length === 0 ? (
-        <div className="flex flex-col items-center py-12 bg-white rounded-2xl border border-zinc-100 gap-3">
-          <Heart className="w-8 h-8 text-zinc-200" />
-          <p className="text-[13px] font-medium text-zinc-600">Henüz öneri yok</p>
-          <p className="text-[11px] text-zinc-400 text-center max-w-55">
-            Misafirler Care About Me doldurmaya başladığında AI analiz edecek.
-            Yenile butonuna basarak mevcut profilleri analiz edebilirsiniz.
+        <div className="flex flex-col items-center py-12 rounded-xl border border-zinc-200/80 bg-white gap-3">
+          <div className="guest-chat-entry-icon">
+            <ShieldCheck className="w-5 h-5 text-zinc-300" />
+          </div>
+          <p className="text-[13px] font-medium text-zinc-600">{t.careNoInsights}</p>
+          <p className="text-[11px] text-zinc-400 text-center max-w-[240px] leading-relaxed">
+            {t.careNoInsightsHint}
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {insights.map((insight, idx) => {
-            // Parse "Oda XXX (Name): Situation → Suggestion" rich format
-            const richMatch = insight.match(/^Oda\s+(\S+)\s*\(([^)]+)\):\s*([^→]+)→\s*(.+)$/);
-            // Fallback: "Oda XXX: …" without arrow
-            const simpleMatch = !richMatch ? insight.match(/^Oda\s+(\S+):\s*(.+)$/) : null;
-
-            return (
-              <div
-                key={idx}
-                className="bg-white rounded-2xl border border-rose-100 shadow-sm px-4 py-3 flex items-start gap-3"
-              >
-                <div className="w-6 h-6 rounded-full bg-rose-50 flex items-center justify-center shrink-0 mt-0.5">
-                  <Heart className="w-3 h-3 text-rose-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  {richMatch ? (
-                    <>
-                      <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                        <span className="text-[11px] font-semibold text-rose-500">Oda {richMatch[1]}</span>
-                        <span className="text-[11px] text-zinc-400">· {richMatch[2].trim()}</span>
-                      </div>
-                      <p className="text-[11px] font-medium text-amber-700 bg-amber-50 rounded-lg px-2 py-0.5 inline-block mb-1.5">
-                        {richMatch[3].trim()}
-                      </p>
-                      <p className="text-[13px] text-zinc-700 leading-relaxed">{richMatch[4].trim()}</p>
-                    </>
-                  ) : simpleMatch ? (
-                    <>
-                      <p className="text-[11px] font-semibold text-rose-500 mb-0.5">Oda {simpleMatch[1]}</p>
-                      <p className="text-[13px] text-zinc-700 leading-relaxed">{simpleMatch[2]}</p>
-                    </>
-                  ) : (
-                    <p className="text-[13px] text-zinc-700 leading-relaxed">{insight}</p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <ol className="space-y-2.5">
+          {insights.map((insight, idx) => (
+            <li key={idx} className={cn(RULE_CARD, "flex items-start gap-3")}>
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-[11px] font-semibold text-zinc-600">
+                {idx + 1}
+              </span>
+              <p className="flex-1 text-[13px] text-zinc-700 leading-relaxed pt-0.5">{insight}</p>
+            </li>
+          ))}
+        </ol>
       )}
     </div>
   );

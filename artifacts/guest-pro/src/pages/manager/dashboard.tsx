@@ -74,6 +74,8 @@ import { GuestDeleteDialog } from "@/components/manager/GuestDeleteDialog";
 import { GuestHandoffModal, type HandoffData } from "@/components/GuestHandoffModal";
 import { getGuestPresences, type TrackingStatus } from "@/lib/tracking";
 import { computeTrackingSummary } from "@/lib/tracking-summary";
+import { listServiceRequests, type ServiceRequest } from "@/lib/service-requests";
+import { isGuestFeedbackRequest } from "@/lib/guest-feedback";
 import { GuestsOverviewCard } from "@/components/manager/GuestsOverviewCard";
 import { ManagerOverviewCards } from "@/components/manager/ManagerOverviewCards";
 import { ManagerDashboardHeader } from "@/components/manager/ManagerDashboardHeader";
@@ -206,6 +208,10 @@ export default function ManagerDashboard() {
       (staffScope.canViewGuests || staffScope.scope === "staff_personnel"),
   );
 
+  const canSeeRequests = Boolean(staffScope?.canAccessTab("requests"));
+  const canSeeFeedback = Boolean(staffScope?.canAccessTab("feedback"));
+  const needsServiceRequests = canSeeRequests || canSeeFeedback;
+
   // ── Data
   const { data: guests, isLoading } = useListGuests({
     query: {
@@ -221,6 +227,14 @@ export default function ManagerDashboard() {
     enabled: isAuthenticated && isStaffRole(user?.role) && needsTracking,
     refetchInterval: 60_000,
     staleTime: 30_000,
+  });
+
+  const { data: serviceRequests } = useQuery<ServiceRequest[]>({
+    queryKey: ["service-requests"],
+    queryFn: () => listServiceRequests(),
+    enabled: isAuthenticated && isStaffRole(user?.role) && needsServiceRequests,
+    refetchInterval: 30_000,
+    staleTime: 15_000,
   });
 
   // Build guestId → TrackingStatus lookup for O(1) card renders.
@@ -318,9 +332,17 @@ export default function ManagerDashboard() {
     setTaskInsightSheetOpen(true);
   }, [dailyTaskInsight]);
 
-  // ── Open request count (updated by StaffRequestsBoard)
+  // ── Open request / feedback counts (synced from shared service-requests query)
   const [openRequestCount, setOpenRequestCount] = useState(0);
   const [openFeedbackCount, setOpenFeedbackCount] = useState(0);
+
+  useEffect(() => {
+    if (!serviceRequests) return;
+    const operational = serviceRequests.filter((r) => !isGuestFeedbackRequest(r));
+    setOpenRequestCount(operational.filter((r) => r.status === "open").length);
+    const feedback = serviceRequests.filter(isGuestFeedbackRequest);
+    setOpenFeedbackCount(feedback.filter((r) => r.status === "open").length);
+  }, [serviceRequests]);
 
   const handleNavigateToRequests = useCallback(() => {
     setActiveTab("requests");
@@ -356,7 +378,7 @@ export default function ManagerDashboard() {
   const canRenew = can(actor, Permission.RENEW_GUEST_KEY);
   const canCreate = can(actor, Permission.CREATE_GUEST);
 
-  const overviewVariant = useMemo((): "both" | "guests" | "employees" | null => {
+  const overviewVariant = useMemo((): "both" | "guests" | "employees" | "guests_requests" | null => {
     if (!staffScope) return null;
     switch (staffScope.scope) {
       case "general_manager":
@@ -364,7 +386,7 @@ export default function ManagerDashboard() {
       case "department_manager":
         return "employees";
       case "reception":
-        return "guests";
+        return "guests_requests";
       default:
         return null;
     }
@@ -595,6 +617,12 @@ export default function ManagerDashboard() {
                   ? () => setActiveTab("team")
                   : undefined
               }
+              onRequestsPress={
+                staffScope.canAccessTab("requests")
+                  ? () => setActiveTab("requests")
+                  : undefined
+              }
+              openRequestCount={openRequestCount}
               dailyTaskInsight={dailyTaskInsight}
               insightPending={!dailyTaskInsight}
               onAiInsightPress={
@@ -780,19 +808,13 @@ export default function ManagerDashboard() {
         ══════════════════════════════════ */}
         {activeTab === "requests" && staffScope.canAccessTab("requests") && (
           <div className="animate-in fade-in duration-200">
-            <StaffRequestsBoard
-              presenceMap={presenceMap}
-              onOpenCountChange={setOpenRequestCount}
-            />
+            <StaffRequestsBoard presenceMap={presenceMap} />
           </div>
         )}
 
         {activeTab === "feedback" && staffScope.canAccessTab("feedback") && (
           <div className="animate-in fade-in duration-200">
-            <StaffFeedbackBoard
-              presenceMap={presenceMap}
-              onOpenCountChange={setOpenFeedbackCount}
-            />
+            <StaffFeedbackBoard presenceMap={presenceMap} />
           </div>
         )}
 

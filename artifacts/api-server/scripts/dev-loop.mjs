@@ -81,8 +81,11 @@ let fatalRestarts = 0;
 let watchBuild = null;
 let apiProcess = null;
 let restartTimer = null;
+let pendingRestartTimer = null;
+let pendingRestartReason = null;
 let manualRestart = false;
 let lastRestartAt = 0;
+let lastBundleMtime = 0;
 let launching = false;
 
 function stopApi() {
@@ -126,19 +129,39 @@ function launchApi() {
 
     const delaySec = Math.min(2 + fatalRestarts, 15);
     console.log(
-      `[dev-loop] API crashed (exit ${code ?? signal}). Restarting in ${delaySec}s… (${fatalRestarts}/${MAX_FATAL_RESTARTS})`,
+      `[dev-loop] API exited (${code ?? signal}). Restarting in ${delaySec}s… (${fatalRestarts}/${MAX_FATAL_RESTARTS})`,
     );
     setTimeout(launchApi, delaySec * 1000);
   });
 }
 
+function queuePendingRestart(reason, waitMs, detail) {
+  pendingRestartReason = reason;
+  if (pendingRestartTimer) return;
+  pendingRestartTimer = setTimeout(() => {
+    pendingRestartTimer = null;
+    const queued = pendingRestartReason;
+    pendingRestartReason = null;
+    if (queued) scheduleApiRestart(queued);
+  }, waitMs);
+  console.log(`[dev-loop] restart deferred (${reason}): ${detail}`);
+}
+
 function scheduleApiRestart(reason) {
   if (Date.now() < ignoreWatchUntil) {
-    console.log(`[dev-loop] restart deferred (${reason}): API just launched`);
+    queuePendingRestart(
+      reason,
+      ignoreWatchUntil - Date.now() + 100,
+      "API just launched",
+    );
     return;
   }
   if (Date.now() - lastRestartAt < 2500) {
-    console.log(`[dev-loop] restart deferred (${reason}): debounce`);
+    queuePendingRestart(
+      reason,
+      2500 - (Date.now() - lastRestartAt) + 100,
+      "debounce",
+    );
     return;
   }
 
@@ -169,6 +192,10 @@ function ensureApiRunning() {
   }
 
   if (apiProcess && isPortListening(apiPort)) return;
+  if (!apiProcess && isPortListening(apiPort)) {
+    console.log("[dev-loop] Port busy but no managed API — reclaiming port…");
+    freeListenPort(apiPort);
+  }
   if (launching) return;
   if (Date.now() - lastRestartAt < 2500) return;
   console.log("[dev-loop] API not listening — starting…");
@@ -193,7 +220,6 @@ async function main() {
 
   launchApi();
 
-  let lastBundleMtime = 0;
   for (const file of [distEntry, buildStamp]) {
     try {
       lastBundleMtime = Math.max(lastBundleMtime, statSync(file).mtimeMs);
@@ -234,6 +260,7 @@ async function main() {
 
 function shutdown() {
   if (restartTimer) clearTimeout(restartTimer);
+  if (pendingRestartTimer) clearTimeout(pendingRestartTimer);
   if (watchBuild) watchBuild.kill("SIGTERM");
   if (apiProcess) apiProcess.kill("SIGTERM");
   process.exit(0);

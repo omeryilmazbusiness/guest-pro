@@ -165,7 +165,10 @@ function ManagerCard({
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-xl">{t.cancel}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
+              disabled={isPending}
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={(e) => {
+                e.stopPropagation();
                 setDeleteOpen(false);
                 onPermanentDelete(manager);
               }}
@@ -227,7 +230,14 @@ export function DepartmentManagersSection() {
       toast.success(t.deptManagerUpdated);
       invalidate();
     },
-    onError: (err: Error) => toast.error(err.message ?? "Failed to delete"),
+    onError: (err: Error) => {
+      if (/not found/i.test(err.message)) {
+        toast.success(t.deptManagerUpdated);
+        invalidate();
+        return;
+      }
+      toast.error(err.message ?? "Failed to delete");
+    },
   });
 
   const isPending =

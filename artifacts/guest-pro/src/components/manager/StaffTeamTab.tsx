@@ -338,6 +338,7 @@ function EmployeeCard({
   onResetPassword,
   showResetPassword = false,
   resetPasswordLabel,
+  isDeletePending = false,
 }: {
   member:            StaffMember;
   onSelect?:         (m: StaffMember) => void;
@@ -348,8 +349,14 @@ function EmployeeCard({
   onResetPassword?:  (m: StaffMember) => void;
   showResetPassword?: boolean;
   resetPasswordLabel?: string;
+  isDeletePending?: boolean;
 }) {
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const handleConfirmDelete = () => {
+    setDeleteOpen(false);
+    onPermanentDelete(member);
+  };
 
   return (
     <>
@@ -462,7 +469,12 @@ function EmployeeCard({
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => { setDeleteOpen(false); onPermanentDelete(member); }}
+              disabled={isDeletePending}
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleConfirmDelete();
+              }}
               className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white"
             >
               Delete permanently
@@ -655,8 +667,23 @@ export function StaffTeamTab({
 
   const permanentDeleteMutation = useMutation({
     mutationFn: permanentDeleteStaff,
-    onSuccess: () => { toast.success("Staff member permanently deleted"); queryClient.invalidateQueries({ queryKey: STAFF_QUERY_KEY }); },
-    onError:   (err: Error) => toast.error(err.message ?? "Failed to delete"),
+    onMutate: (id) => {
+      setDetailMemberId((prev) => (prev === id ? null : prev));
+      setEditTarget((prev) => (prev?.id === id ? null : prev));
+      setPasswordTarget((prev) => (prev?.id === id ? null : prev));
+    },
+    onSuccess: () => {
+      toast.success("Staff member permanently deleted");
+      queryClient.invalidateQueries({ queryKey: STAFF_QUERY_KEY });
+    },
+    onError: (err: Error) => {
+      if (/not found/i.test(err.message)) {
+        toast.success("Staff member permanently deleted");
+        queryClient.invalidateQueries({ queryKey: STAFF_QUERY_KEY });
+        return;
+      }
+      toast.error(err.message ?? "Failed to delete");
+    },
   });
 
   const passwordMutation = useMutation({
@@ -685,7 +712,7 @@ export function StaffTeamTab({
 
   // ── Other local UI state
   const [editTarget, setEditTarget]  = useState<StaffMember | null>(null);
-  const [detailMember, setDetailMember] = useState<StaffMember | null>(null);
+  const [detailMemberId, setDetailMemberId] = useState<number | null>(null);
   const [passwordTarget, setPasswordTarget] = useState<StaffMember | null>(null);
   const [deptFilter, setDeptFilter]  = useState<DeptFilter>(
     lockedDepartment ?? "ALL",
@@ -700,6 +727,11 @@ export function StaffTeamTab({
 
   const activeVisible   = visibleStaff.filter((m) => m.isActive);
   const inactiveVisible = visibleStaff.filter((m) => !m.isActive);
+
+  const detailMember = useMemo(
+    () => (staff ?? []).find((m) => m.id === detailMemberId) ?? null,
+    [staff, detailMemberId],
+  );
 
   const hasFilter = deptFilter !== "ALL" || search.trim().length > 0;
 
@@ -792,11 +824,12 @@ export function StaffTeamTab({
               <EmployeeCard
                 key={member.id}
                 member={member}
-                onSelect={setDetailMember}
+                onSelect={(m) => setDetailMemberId(m.id)}
                 onEdit={setEditTarget}
                 onDeactivate={(m) => deactivateMutation.mutate(m.id)}
                 onReactivate={(m) => reactivateMutation.mutate(m.id)}
                 onPermanentDelete={(m) => permanentDeleteMutation.mutate(m.id)}
+                isDeletePending={permanentDeleteMutation.isPending}
                 showResetPassword={isGeneralManager}
                 onResetPassword={isGeneralManager ? setPasswordTarget : undefined}
                 resetPasswordLabel={t.resetPassword}
@@ -817,11 +850,12 @@ export function StaffTeamTab({
               <EmployeeCard
                 key={member.id}
                 member={member}
-                onSelect={setDetailMember}
+                onSelect={(m) => setDetailMemberId(m.id)}
                 onEdit={setEditTarget}
                 onDeactivate={(m) => deactivateMutation.mutate(m.id)}
                 onReactivate={(m) => reactivateMutation.mutate(m.id)}
                 onPermanentDelete={(m) => permanentDeleteMutation.mutate(m.id)}
+                isDeletePending={permanentDeleteMutation.isPending}
                 showResetPassword={isGeneralManager}
                 onResetPassword={isGeneralManager ? setPasswordTarget : undefined}
                 resetPasswordLabel={t.resetPassword}
@@ -846,16 +880,17 @@ export function StaffTeamTab({
 
       <EmployeeDetailSheet
         member={detailMember}
-        open={!!detailMember}
-        onClose={() => setDetailMember(null)}
+        open={detailMember != null}
+        onClose={() => setDetailMemberId(null)}
         onEdit={setEditTarget}
         onDeactivate={(m) => deactivateMutation.mutate(m.id)}
         onReactivate={(m) => reactivateMutation.mutate(m.id)}
         onPermanentDelete={(m) => permanentDeleteMutation.mutate(m.id)}
+        isDeletePending={permanentDeleteMutation.isPending}
         onResetPassword={
           isGeneralManager
             ? (m) => {
-                setDetailMember(null);
+                setDetailMemberId(null);
                 setPasswordTarget(m);
               }
             : undefined

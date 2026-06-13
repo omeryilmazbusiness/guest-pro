@@ -3,11 +3,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   listServiceRequests,
   deleteServiceRequest,
-  REQUEST_TYPE_LABELS,
   type ServiceRequest,
   type ServiceRequestType,
 } from "@/lib/service-requests";
-import { buildDisplaySummary } from "@/lib/request-display";
 import { ServiceRequestCard } from "./ServiceRequestCard";
 import {
   RefreshCw,
@@ -17,81 +15,63 @@ import {
   Heart,
   LayoutGrid,
   ChevronDown,
-  ChevronUp,
+  type LucideIcon,
 } from "lucide-react";
 import type { TrackingStatus } from "@/lib/tracking";
 import { isGuestFeedbackRequest } from "@/lib/guest-feedback";
+import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface StaffRequestsBoardProps {
   presenceMap: Map<number, TrackingStatus>;
-  onOpenCountChange?: (count: number) => void;
 }
-
-// ─── Group config — soft neutral palette ─────────────────────────────────────
 
 interface GroupConfig {
   type: ServiceRequestType;
   label: string;
-  icon: React.FC<{ className?: string }>;
-  iconBg: string;
-  iconColor: string;
-  dotColor: string;
+  shortLabel: string;
+  icon: LucideIcon;
+  iconClassName: string;
 }
 
 const GROUPS: GroupConfig[] = [
   {
     type: "FOOD_ORDER",
-    label: "Yemek Siparişleri",
+    label: "Yemek siparişleri",
+    shortLabel: "Yemek",
     icon: UtensilsCrossed,
-    iconBg: "bg-amber-50",
-    iconColor: "text-amber-600",
-    dotColor: "bg-amber-400",
+    iconClassName: "text-amber-600",
   },
   {
     type: "SUPPORT_REQUEST",
-    label: "Destek Talepleri",
+    label: "Destek talepleri",
+    shortLabel: "Destek",
     icon: Hammer,
-    iconBg: "bg-zinc-100",
-    iconColor: "text-zinc-500",
-    dotColor: "bg-zinc-400",
+    iconClassName: "text-zinc-600",
   },
   {
     type: "CARE_PROFILE_UPDATE",
     label: "Care About Me",
+    shortLabel: "Care",
     icon: Heart,
-    iconBg: "bg-rose-50",
-    iconColor: "text-rose-500",
-    dotColor: "bg-rose-400",
+    iconClassName: "text-rose-500",
   },
   {
     type: "GENERAL_SERVICE_REQUEST",
-    label: "Genel Talepler",
+    label: "Genel talepler",
+    shortLabel: "Genel",
     icon: LayoutGrid,
-    iconBg: "bg-zinc-100",
-    iconColor: "text-zinc-400",
-    dotColor: "bg-zinc-300",
+    iconClassName: "text-sky-600",
   },
 ];
 
-const STATUS_LABELS: Record<string, string> = {
-  open: "Açık",
-  in_progress: "İşlemde",
-  resolved: "Tamamlandı",
-};
-
-const STATUS_DOT: Record<string, string> = {
-  open: "bg-red-400",
-  in_progress: "bg-amber-400",
-  resolved: "bg-emerald-400",
-};
-
-// ─── Presence helper ──────────────────────────────────────────────────────────
+const ACCORDION_CARD =
+  "overflow-hidden rounded-xl border border-zinc-200/90 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-150";
 
 function presenceStatus(
   guestId: number,
-  presenceMap: Map<number, TrackingStatus>
+  presenceMap: Map<number, TrackingStatus>,
 ): "in_hotel" | "out_of_hotel" | "unknown" | undefined {
   const p = presenceMap.get(guestId);
   if (p === "IN_HOTEL_AND_ON_WIFI" || p === "IN_HOTEL_NOT_ON_WIFI") return "in_hotel";
@@ -100,9 +80,16 @@ function presenceStatus(
   return undefined;
 }
 
-// ─── Group Stack Card ─────────────────────────────────────────────────────────
+function CategoryIcon({ group }: { group: GroupConfig }) {
+  const Icon = group.icon;
+  return (
+    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center" aria-hidden>
+      <Icon className={cn("guest-chat-entry-icon h-8 w-8", group.iconClassName)} strokeWidth={1.5} />
+    </span>
+  );
+}
 
-function GroupStackCard({
+function RequestCategoryAccordion({
   group,
   requests,
   isExpanded,
@@ -119,145 +106,71 @@ function GroupStackCard({
   onStatusChange: (updated: ServiceRequest) => void;
   onDelete: (id: number) => void;
 }) {
-  const IconComp = group.icon;
   const openCount = requests.filter((r) => r.status === "open").length;
-  const inProgressCount = requests.filter((r) => r.status === "in_progress").length;
   const total = requests.length;
-  const newest = requests[0];
-  const stackLayers = Math.min(total, 3);
-
-  const newestDisplay = newest ? buildDisplaySummary(newest) : "";
 
   return (
-    <div className="space-y-2">
-      {/* Card stack wrapper */}
-      <div className="relative" style={{ paddingBottom: stackLayers >= 2 ? 8 : 0 }}>
-        {/* Depth layer 3 — furthest back */}
-        {stackLayers >= 3 && (
-          <div
-            className="absolute inset-x-5 bottom-0 rounded-2xl border border-zinc-100 bg-zinc-50/60"
-            style={{ height: "calc(100% - 4px)", zIndex: 0 }}
-          />
-        )}
-        {/* Depth layer 2 */}
-        {stackLayers >= 2 && (
-          <div
-            className="absolute inset-x-2.5 bottom-2 rounded-2xl border border-zinc-100 bg-zinc-50/80"
-            style={{ height: "calc(100% - 2px)", zIndex: 1 }}
-          />
-        )}
+    <div className={cn(ACCORDION_CARD, isExpanded && "border-zinc-300 shadow-[0_2px_8px_rgba(0,0,0,0.05)]")}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isExpanded}
+        className="flex w-full items-center gap-3 px-3.5 py-3 text-left touch-manipulation transition-colors hover:bg-zinc-50/80 active:scale-[0.995]"
+      >
+        <CategoryIcon group={group} />
 
-        {/* Main card */}
-        <button
-          onClick={onToggle}
-          className={`relative w-full text-left rounded-2xl border transition-all active:scale-[0.99] touch-manipulation shadow-sm ${
-            isExpanded
-              ? "bg-white border-zinc-200 shadow-md"
-              : "bg-white border-zinc-100 hover:border-zinc-200"
-          }`}
-          style={{ zIndex: 2 }}
-        >
-          <div className="p-4">
-            <div className="flex items-center gap-3">
-              {/* Icon */}
-              <div
-                className={`w-9 h-9 rounded-xl ${group.iconBg} flex items-center justify-center shrink-0`}
-              >
-                <IconComp className={`w-4.5 h-4.5 ${group.iconColor}`} />
-              </div>
-
-              {/* Label + preview */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="text-[14px] font-semibold text-zinc-800">{group.label}</p>
-                  {openCount > 0 && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-50 text-red-500 border border-red-100">
-                      {openCount} açık
-                    </span>
-                  )}
-                  {inProgressCount > 0 && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500 border border-blue-100">
-                      {inProgressCount} işlemde
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-zinc-400 truncate leading-tight">
-                  {total === 0
-                    ? "Talep yok"
-                    : newestDisplay
-                    ? newestDisplay.length > 52
-                      ? newestDisplay.slice(0, 52) + "…"
-                      : newestDisplay
-                    : `${total} talep`}
-                </p>
-              </div>
-
-              {/* Count + chevron */}
-              <div className="flex items-center gap-2 shrink-0">
-                {total > 0 && (
-                  <span className="text-[13px] font-semibold text-zinc-300">{total}</span>
-                )}
-                {isExpanded ? (
-                  <ChevronUp className="w-4 h-4 text-zinc-400" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-zinc-300" />
-                )}
-              </div>
-            </div>
-
-            {/* Status dots mini-bar */}
-            {total > 0 && (
-              <div className="flex items-center gap-3 mt-3">
-                {(["open", "in_progress", "resolved"] as const).map((s) => {
-                  const count = requests.filter((r) => r.status === s).length;
-                  if (count === 0) return null;
-                  return (
-                    <div key={s} className="flex items-center gap-1">
-                      <div className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[s]}`} />
-                      <span className="text-[10px] text-zinc-400">
-                        {count} {STATUS_LABELS[s]}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </button>
-      </div>
-
-      {/* Expanded request cards */}
-      {isExpanded && total > 0 && (
-        <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
-          {requests.map((request) => (
-            <ServiceRequestCard
-              key={request.id}
-              request={request}
-              onStatusChange={onStatusChange}
-              onDelete={onDelete}
-              presenceStatus={presenceStatus(request.guestId, presenceMap)}
-            />
-          ))}
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-zinc-900">{group.shortLabel}</p>
+          <p className="mt-0.5 text-[11px] text-zinc-400">
+            {total === 0 ? "Talep yok" : `${total} talep`}
+          </p>
         </div>
-      )}
 
-      {isExpanded && total === 0 && (
-        <div className="flex flex-col items-center justify-center py-8 gap-2 bg-white rounded-2xl border border-zinc-100">
-          <Inbox className="w-5 h-5 text-zinc-200" />
-          <p className="text-[12px] text-zinc-400">Bu kategoride talep yok</p>
+        <div className="flex shrink-0 items-center gap-2">
+          {openCount > 0 && (
+            <span className="min-w-[1.25rem] rounded-md bg-zinc-900 px-1.5 py-0.5 text-center font-mono text-[10px] font-bold tabular-nums text-white">
+              {openCount}
+            </span>
+          )}
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 text-zinc-400 transition-transform duration-200",
+              isExpanded && "rotate-180",
+            )}
+            strokeWidth={1.75}
+          />
+        </div>
+      </button>
+
+      {isExpanded && (
+        <div className="border-t border-zinc-100 px-3.5 pb-3.5 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+          {total === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-1.5 py-8 text-center">
+              <Inbox className="h-5 w-5 text-zinc-200" strokeWidth={1.5} />
+              <p className="text-[11px] text-zinc-400">Bu kategoride talep yok</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {requests.map((request) => (
+                <ServiceRequestCard
+                  key={request.id}
+                  request={request}
+                  onStatusChange={onStatusChange}
+                  onDelete={onDelete}
+                  presenceStatus={presenceStatus(request.guestId, presenceMap)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-// ─── Main Board ───────────────────────────────────────────────────────────────
-
-export function StaffRequestsBoard({ presenceMap, onOpenCountChange }: StaffRequestsBoardProps) {
+export function StaffRequestsBoard({ presenceMap }: StaffRequestsBoardProps) {
   const queryClient = useQueryClient();
-  const [expandedGroup, setExpandedGroup] = useState<ServiceRequestType | null>(
-    "SUPPORT_REQUEST"
-  );
+  const [expandedGroup, setExpandedGroup] = useState<ServiceRequestType | null>(null);
 
   const {
     data: requests,
@@ -269,30 +182,24 @@ export function StaffRequestsBoard({ presenceMap, onOpenCountChange }: StaffRequ
     queryFn: () => listServiceRequests(),
     refetchInterval: 30_000,
     staleTime: 15_000,
-    select: (data) => {
-      const operational = data.filter((r) => !isGuestFeedbackRequest(r));
-      const openCount = operational.filter((r) => r.status === "open").length;
-      onOpenCountChange?.(openCount);
-      return data;
-    },
   });
 
   const handleStatusChange = useCallback(
     (updated: ServiceRequest) => {
       queryClient.setQueryData<ServiceRequest[]>(["service-requests"], (prev) =>
-        prev?.map((r) => (r.id === updated.id ? updated : r))
+        prev?.map((r) => (r.id === updated.id ? updated : r)),
       );
     },
-    [queryClient]
+    [queryClient],
   );
 
   const handleDelete = useCallback(
     (id: number) => {
       queryClient.setQueryData<ServiceRequest[]>(["service-requests"], (prev) =>
-        prev?.filter((r) => r.id !== id)
+        prev?.filter((r) => r.id !== id),
       );
     },
-    [queryClient]
+    [queryClient],
   );
 
   const toggleGroup = (type: ServiceRequestType) => {
@@ -303,46 +210,46 @@ export function StaffRequestsBoard({ presenceMap, onOpenCountChange }: StaffRequ
   const totalOpen = allRequests.filter((r) => r.status === "open").length;
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between px-0.5">
         <div className="flex items-center gap-2">
-          <h2 className="text-[14px] font-semibold text-zinc-700">Hizmet Talepleri</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            Talepler
+          </h2>
           {totalOpen > 0 && (
-            <span className="text-[11px] font-bold text-white bg-red-400 rounded-full min-w-[18px] h-[18px] px-1.5 flex items-center justify-center leading-none">
+            <span className="min-w-[1.125rem] rounded-md bg-zinc-900 px-1.5 py-0.5 text-center font-mono text-[10px] font-bold tabular-nums text-white">
               {totalOpen}
             </span>
           )}
         </div>
         <button
+          type="button"
           onClick={() => refetch()}
           disabled={isFetching}
-          className="p-1.5 rounded-xl text-zinc-300 hover:text-zinc-600 hover:bg-zinc-50 transition-all active:scale-95"
-          title="Yenile"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 active:scale-95 disabled:opacity-40"
+          aria-label="Yenile"
         >
-          <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`} />
+          <RefreshCw className={cn("h-3.5 w-3.5", isFetching && "animate-spin")} strokeWidth={1.75} />
         </button>
       </div>
 
-      {/* Groups */}
       {isLoading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-zinc-100 rounded-2xl h-20 animate-pulse" />
+        <div className="space-y-2">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-[4.25rem] animate-pulse rounded-xl bg-zinc-100" />
           ))}
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {GROUPS.map((group) => {
             const groupRequests = allRequests
               .filter((r) => r.requestType === group.type)
               .sort(
-                (a, b) =>
-                  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
               );
 
             return (
-              <GroupStackCard
+              <RequestCategoryAccordion
                 key={group.type}
                 group={group}
                 requests={groupRequests}
