@@ -1,5 +1,5 @@
 /**
- * ManagerAnimatedTabs — iOS-style segmented control with spring pill indicator.
+ * ManagerAnimatedTabs — icon-only tabs with animated black rectangular selection.
  */
 
 import { useMemo } from "react";
@@ -27,6 +27,7 @@ interface TabDef {
   key: ManagerDashboardTab;
   label: string;
   icon: LucideIcon;
+  iconClassName: string;
   count: number;
 }
 
@@ -42,14 +43,24 @@ interface ManagerAnimatedTabsProps {
   t: StaffTranslations;
 }
 
-const ALL_TABS: Omit<TabDef, "label">[] = [
-  { key: "team", icon: Briefcase, count: 0 },
-  { key: "tasks", icon: ClipboardList, count: 0 },
-  { key: "guests", icon: Users, count: 0 },
-  { key: "rooms", icon: DoorOpen, count: 0 },
-  { key: "requests", icon: Bell, count: 0 },
-  { key: "feedback", icon: MessageSquare, count: 0 },
-  { key: "summary", icon: TrendingUp, count: 0 },
+const TAB_ICON_CLASS: Record<ManagerDashboardTab, string> = {
+  team: "text-violet-600",
+  tasks: "text-blue-600",
+  guests: "text-sky-600",
+  rooms: "text-amber-600",
+  requests: "text-rose-500",
+  feedback: "text-teal-600",
+  summary: "text-emerald-600",
+};
+
+const ALL_TABS: Omit<TabDef, "label" | "count">[] = [
+  { key: "team", icon: Briefcase, iconClassName: TAB_ICON_CLASS.team },
+  { key: "tasks", icon: ClipboardList, iconClassName: TAB_ICON_CLASS.tasks },
+  { key: "guests", icon: Users, iconClassName: TAB_ICON_CLASS.guests },
+  { key: "rooms", icon: DoorOpen, iconClassName: TAB_ICON_CLASS.rooms },
+  { key: "requests", icon: Bell, iconClassName: TAB_ICON_CLASS.requests },
+  { key: "feedback", icon: MessageSquare, iconClassName: TAB_ICON_CLASS.feedback },
+  { key: "summary", icon: TrendingUp, iconClassName: TAB_ICON_CLASS.summary },
 ];
 
 export function ManagerAnimatedTabs({
@@ -97,7 +108,7 @@ export function ManagerAnimatedTabs({
 
   return (
     <div
-      className="relative flex gap-0.5 overflow-x-auto rounded-2xl bg-zinc-100/90 p-1"
+      className="flex gap-1.5 overflow-x-auto px-0.5"
       style={{ scrollbarWidth: "none" }}
       role="tablist"
     >
@@ -110,35 +121,48 @@ export function ManagerAnimatedTabs({
             type="button"
             role="tab"
             aria-selected={isActive}
+            aria-label={tab.label}
+            title={tab.label}
             onClick={() => onChange(tab.key)}
             className={cn(
-              "relative z-10 flex min-w-[4.5rem] flex-1 items-center justify-center gap-1.5 rounded-xl px-2.5 py-2 text-[12px] font-semibold transition-colors touch-manipulation shrink-0",
-              isActive ? "text-zinc-900" : "text-zinc-500 hover:text-zinc-700",
+              "relative flex min-w-[3.5rem] flex-1 items-center justify-center px-4 py-2",
+              "transition-opacity duration-150 hover:opacity-90 active:opacity-80 touch-manipulation shrink-0",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900/15 rounded-md",
             )}
           >
             {isActive && (
               <motion.span
-                layoutId="manager-tab-pill"
-                className="absolute inset-0 rounded-xl bg-white shadow-sm shadow-zinc-900/5"
+                layoutId="manager-tab-frame"
+                className="absolute inset-0 rounded-md bg-zinc-900 shadow-sm shadow-zinc-900/20"
                 transition={PILL_SPRING}
               />
             )}
-            <Icon className="relative z-10 h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-            <span className="relative z-10 truncate">{tab.label}</span>
-            {tab.count > 0 && (
-              <span
+            <span className="relative z-10 inline-flex items-center justify-center" aria-hidden>
+              <Icon
                 className={cn(
-                  "relative z-10 rounded-md px-1 py-px font-mono text-[10px] tabular-nums",
-                  isActive ? "bg-zinc-100 text-zinc-600" : "bg-zinc-200/80 text-zinc-500",
+                  "guest-chat-entry-icon h-5 w-5",
+                  isActive ? "text-white" : tab.iconClassName,
+                  !isActive && "opacity-45",
                 )}
-              >
-                {tab.count}
-              </span>
-            )}
+                strokeWidth={1.5}
+              />
+              {tab.count > 0 && (
+                <span
+                  className={cn(
+                    "absolute -top-1.5 -end-2.5 min-w-[13px] rounded-sm px-1 py-px text-center font-mono text-[7px] font-bold leading-none",
+                    isActive ? "bg-white text-zinc-900" : "bg-zinc-900 text-white",
+                  )}
+                >
+                  {tab.count > 99 ? "99+" : tab.count}
+                </span>
+              )}
+            </span>
           </button>
         );
       })}
-      <span className="sr-only">Tab {activeIndex + 1} of {visibleTabs.length}</span>
+      <span className="sr-only">
+        {labels[active]} — tab {activeIndex + 1} of {visibleTabs.length}
+      </span>
     </div>
   );
 }

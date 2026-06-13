@@ -1,17 +1,5 @@
 /**
- * GuestCard
- *
- * Premium mobile-first guest list item.
- * 3-line horizontal card — highly scannable on 375px phones.
- *
- * Layout:
- *   [Avatar] | [Name] [Monochrome flag]          [Copy] [⋯]
- *            | [Room badge] · [CheckIn → CheckOut] [Status badge?] [Extended?]
- *            | [Masked key snippet]
- *
- * Flag: monochrome for ops context (never emoji, no color).
- * Dates: shown if present; stay status badge for non-active states; extension badge if isExtended.
- * Actions: role-aware via permission booleans from caller.
+ * GuestCard — framed premium guest list row.
  */
 
 import { useState, useCallback } from "react";
@@ -27,8 +15,6 @@ import {
   CalendarX,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,8 +27,10 @@ import type { Guest } from "@workspace/api-client-react";
 import { formatStayDate, resolveStayStatus } from "@/lib/stays";
 import { GuestTrackingBadge } from "@/components/manager/GuestTrackingBadge";
 import type { TrackingStatus } from "@/lib/tracking";
+import { cn } from "@/lib/utils";
 
-// ─── Props ────────────────────────────────────────────────────────────────────
+const LIST_CARD =
+  "rounded-xl border border-zinc-200/90 bg-white px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-150 hover:border-zinc-300 hover:shadow-[0_2px_8px_rgba(0,0,0,0.05)]";
 
 export interface GuestCardProps {
   guest: Guest;
@@ -52,26 +40,29 @@ export interface GuestCardProps {
   onEdit: (g: Guest) => void;
   onDelete: (g: Guest) => void;
   onRenew: (g: Guest) => void;
-  /** Opens centered detail sheet when the card body is tapped. */
   onSelect?: (g: Guest) => void;
-  /** Optional tracking status — only shown when tracking is active. */
   trackingStatus?: TrackingStatus;
 }
 
-// ─── Avatar ───────────────────────────────────────────────────────────────────
+function GuestInitialsAvatar({
+  firstName,
+  lastName,
+}: {
+  firstName: string;
+  lastName: string;
+}) {
+  const initials =
+    `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase() || "?";
 
-function GuestAvatar({ firstName, lastName }: { firstName: string; lastName: string }) {
-  const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase();
   return (
-    <div className="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center shrink-0 self-start mt-0.5">
-      <span className="text-[13px] font-semibold text-white font-serif tracking-wide">
-        {initials}
-      </span>
+    <div
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-zinc-900 text-[13px] font-semibold tracking-wide text-white shadow-sm shadow-zinc-900/15 ring-1 ring-zinc-900/10"
+      aria-hidden
+    >
+      <span className="font-serif leading-none">{initials}</span>
     </div>
   );
 }
-
-// ─── Inline copy button ───────────────────────────────────────────────────────
 
 function CopyKeyButton({ guestKey }: { guestKey: string }) {
   const [copied, setCopied] = useState(false);
@@ -88,49 +79,43 @@ function CopyKeyButton({ guestKey }: { guestKey: string }) {
         toast.error("Copy failed");
       }
     },
-    [guestKey]
+    [guestKey],
   );
 
   return (
     <button
       onClick={handleCopy}
-      className="w-8 h-8 rounded-lg flex items-center justify-center border border-zinc-200 bg-white hover:bg-zinc-50 active:scale-95 transition-all shrink-0 touch-manipulation"
+      className="shrink-0 p-1 text-zinc-400 transition-colors hover:text-zinc-700 touch-manipulation"
       aria-label="Copy guest key"
     >
       {copied ? (
-        <Check className="w-3.5 h-3.5 text-green-600" />
+        <Check className="h-4 w-4 text-emerald-600" />
       ) : (
-        <Copy className="w-3.5 h-3.5 text-zinc-400" />
+        <Copy className="h-4 w-4" />
       )}
     </button>
   );
 }
 
-// ─── Stay status badge ────────────────────────────────────────────────────────
-// Only rendered for non-normal states (upcoming, expired).
-// Active guests have no badge — silence is the default state, reducing noise.
-
-function StayStatusBadge({ status }: { status: ReturnType<typeof resolveStayStatus> }) {
+function StayStatusHint({ status }: { status: ReturnType<typeof resolveStayStatus> }) {
   if (status === "upcoming") {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-md leading-none shrink-0">
-        <Clock className="w-2.5 h-2.5" />
+      <span className="inline-flex items-center gap-1 text-[9px] font-medium text-sky-600">
+        <Clock className="h-3 w-3" />
         Upcoming
       </span>
     );
   }
   if (status === "expired") {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-md leading-none shrink-0">
-        <CalendarX className="w-2.5 h-2.5" />
+      <span className="inline-flex items-center gap-1 text-[9px] font-medium text-rose-500">
+        <CalendarX className="h-3 w-3" />
         Expired
       </span>
     );
   }
   return null;
 }
-
-// ─── Main card ────────────────────────────────────────────────────────────────
 
 export function GuestCard({
   guest,
@@ -143,8 +128,11 @@ export function GuestCard({
   onSelect,
   trackingStatus,
 }: GuestCardProps) {
-  // Cast to access new date/extension fields (client types may lag schema)
-  const raw = guest as any;
+  const raw = guest as Guest & {
+    checkInDate?: string | null;
+    checkOutDate?: string | null;
+    isExtended?: boolean;
+  };
   const hasKey = !!guest.guestKey;
 
   const keyDisplay = guest.guestKey
@@ -152,112 +140,93 @@ export function GuestCard({
         const parts = guest.guestKey.split("-");
         return parts.length === 3
           ? `${parts[0]}-${parts[1]}-••••••`
-          : guest.guestKey.slice(0, 10) + "…";
+          : `${guest.guestKey.slice(0, 10)}…`;
       })()
     : "No active key";
 
-  const checkInDate: string | null = raw.checkInDate ?? null;
-  const checkOutDate: string | null = raw.checkOutDate ?? null;
-  const isExtended: boolean = raw.isExtended ?? false;
-
+  const checkInDate = raw.checkInDate ?? null;
+  const checkOutDate = raw.checkOutDate ?? null;
+  const isExtended = raw.isExtended ?? false;
   const hasStayDates = !!(checkInDate || checkOutDate);
   const stayStatus = resolveStayStatus(checkInDate, checkOutDate);
-
   const hasAnyAction = canEdit || canRenew || hasKey || canDelete;
-
-  // Expired guests get a muted left-border accent so they're visually distinct
-  // at a glance without being alarmist.
-  const cardAccent =
-    stayStatus === "expired"
-      ? "border-l-2 border-l-red-200"
-      : stayStatus === "upcoming"
-        ? "border-l-2 border-l-sky-200"
-        : "";
 
   return (
     <div
       data-testid={`card-guest-${guest.id}`}
-      className={`bg-white rounded-2xl border border-zinc-100 shadow-sm hover:shadow-md hover:border-zinc-200 transition-all duration-150 px-4 py-3.5 flex items-start gap-3 ${cardAccent}`}
+      className={cn(
+        LIST_CARD,
+        "flex items-center gap-3",
+        stayStatus === "expired" && "opacity-70",
+      )}
     >
+      <GuestInitialsAvatar firstName={guest.firstName} lastName={guest.lastName} />
+
       <button
         type="button"
         onClick={onSelect ? () => onSelect(guest) : undefined}
         disabled={!onSelect}
-        className={`flex min-w-0 flex-1 items-start gap-3 text-left touch-manipulation ${
-          onSelect ? "active:scale-[0.99] cursor-pointer" : "cursor-default"
-        }`}
+        className={cn(
+          "min-w-0 flex-1 text-left touch-manipulation",
+          onSelect ? "cursor-pointer" : "cursor-default",
+        )}
       >
-      {/* Avatar */}
-      <GuestAvatar firstName={guest.firstName} lastName={guest.lastName} />
-
-      {/* Identity */}
-      <div className="flex-1 min-w-0">
-
-        {/* Line 1: name + monochrome flag */}
-        <div className="flex items-center gap-1.5 leading-none">
-          <span className="font-medium text-[15px] text-zinc-900 leading-tight truncate">
-            {guest.firstName} {guest.lastName}
-          </span>
-          {guest.countryCode && (
-            <CountryFlag code={guest.countryCode} size="sm" monochrome />
-          )}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <p className="truncate text-sm font-semibold leading-snug text-zinc-900">
+              {guest.firstName} {guest.lastName}
+            </p>
+            {guest.countryCode && (
+              <CountryFlag code={guest.countryCode} size="sm" monochrome />
+            )}
+          </div>
+          {trackingStatus ? <GuestTrackingBadge status={trackingStatus} /> : null}
         </div>
 
-        {/* Line 2: room badge + stay dates + status badges */}
-        <div className="mt-1.5 flex items-center gap-2 flex-wrap">
-          <Badge
-            variant="secondary"
-            className="bg-zinc-100 text-zinc-600 text-[11px] font-mono font-semibold px-2 py-0 h-5 rounded-md border-0 shrink-0 leading-none"
-          >
-            {guest.roomNumber}
-          </Badge>
+        <p className="mt-0.5 text-[11px] text-zinc-500">
+          <span className="font-mono font-semibold text-zinc-700">{guest.roomNumber}</span>
           {hasStayDates && (
-            <span className="text-[11px] text-zinc-500 font-medium leading-none">
-              {formatStayDate(checkInDate)}
+            <>
               {" · "}
+              {formatStayDate(checkInDate)}
+              {" → "}
               {formatStayDate(checkOutDate)}
-            </span>
+            </>
           )}
-          <StayStatusBadge status={stayStatus} />
-          {isExtended && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md leading-none">
-              <CalendarArrowUp className="w-2.5 h-2.5" />
-              Extended
-            </span>
-          )}
-          {trackingStatus && (
-            <GuestTrackingBadge status={trackingStatus} />
-          )}
-        </div>
+        </p>
 
-        {/* Line 3: masked key */}
-        <div className="mt-1">
+        <div className="mt-0.5 flex flex-wrap items-center gap-2">
           <span
-            className={`font-mono text-xs tracking-wider leading-none ${
-              hasKey ? "text-zinc-400" : "text-zinc-300"
-            }`}
+            className={cn(
+              "font-mono text-[10px] tracking-wide",
+              hasKey ? "text-zinc-400" : "text-zinc-300",
+            )}
           >
             {keyDisplay}
           </span>
+          <StayStatusHint status={stayStatus} />
+          {isExtended && (
+            <span className="inline-flex items-center gap-1 text-[9px] font-medium text-amber-600">
+              <CalendarArrowUp className="h-3 w-3" />
+              Extended
+            </span>
+          )}
         </div>
-      </div>
       </button>
 
-      {/* Actions */}
-      <div className="flex items-center gap-1.5 shrink-0 self-center">
+      <div className="flex shrink-0 items-center gap-0.5 self-center">
         {hasKey && <CopyKeyButton guestKey={guest.guestKey!} />}
 
         {hasAnyAction && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="w-8 h-8 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 touch-manipulation"
+              <button
+                type="button"
+                className="shrink-0 p-1 text-zinc-400 transition-colors hover:text-zinc-700 touch-manipulation"
                 aria-label="Guest actions"
               >
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"

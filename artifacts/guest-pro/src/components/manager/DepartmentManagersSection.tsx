@@ -11,11 +11,10 @@ import {
   ShieldCheck,
   ShieldOff,
   Trash2,
-  UserCog,
   KeyRound,
+  UserCog,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -47,10 +46,26 @@ import {
   DEPARTMENT_LABELS,
   DEPARTMENT_COLOURS,
   type DepartmentManager,
+  type DepartmentManagerDepartment,
 } from "@/lib/staff";
 import { tStaff } from "@/lib/staff-i18n";
 
 const DEPT_MANAGERS_QUERY_KEY = ["staff", "department-managers"];
+
+const LIST_CARD =
+  "rounded-xl border border-zinc-200/90 bg-white px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-150 hover:border-zinc-300 hover:shadow-[0_2px_8px_rgba(0,0,0,0.05)]";
+
+function DeptManagerIcon({ dept }: { dept: DepartmentManagerDepartment }) {
+  const colours = DEPARTMENT_COLOURS[dept];
+  return (
+    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center" aria-hidden>
+      <UserCog
+        className={cn("guest-chat-entry-icon h-8 w-8", colours.text)}
+        strokeWidth={1.5}
+      />
+    </span>
+  );
+}
 
 function ManagerCard({
   manager,
@@ -69,82 +84,76 @@ function ManagerCard({
 }) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const dept = manager.staffDepartment;
-  const colours = DEPARTMENT_COLOURS[dept];
   const displayName = departmentManagerDisplayName(manager);
 
   return (
     <>
       <div
         className={cn(
-          "rounded-2xl border bg-white p-4 shadow-sm transition-opacity",
+          LIST_CARD,
+          "flex items-center gap-3",
           !manager.isActive && "opacity-60",
         )}
       >
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-zinc-900">{displayName}</p>
-            <p className="truncate text-xs text-zinc-500 mt-0.5">{manager.email}</p>
-            <span
-              className={cn(
-                "inline-flex mt-2 rounded-lg border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                colours.bg,
-                colours.text,
-                colours.border,
-              )}
+        <DeptManagerIcon dept={dept} />
+
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-zinc-900">{displayName}</p>
+          <p className="mt-0.5 truncate text-[11px] text-zinc-400">{manager.email}</p>
+          <p className="mt-0.5 text-[10px] font-medium text-zinc-500">
+            {DEPARTMENT_LABELS[dept]}
+          </p>
+        </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              disabled={isPending}
+              className="shrink-0 p-1 text-zinc-400 transition-colors hover:text-zinc-700 touch-manipulation"
             >
-              {DEPARTMENT_LABELS[dept]}
-            </span>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                disabled={isPending}
-                className="text-zinc-400 hover:text-zinc-700 p-1.5 rounded-lg hover:bg-zinc-50 transition-colors touch-manipulation shrink-0"
-              >
-                <MoreVertical className="w-3.5 h-3.5" />
-                <span className="sr-only">Actions for {displayName}</span>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl border-zinc-100">
+              <MoreVertical className="h-4 w-4" />
+              <span className="sr-only">Actions for {displayName}</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl border-zinc-100">
+            <DropdownMenuItem
+              onClick={() => onResetPassword(manager)}
+              className="flex items-center gap-2 rounded-lg cursor-pointer"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-zinc-400" />
+              {t.resetPassword}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            {manager.isActive ? (
               <DropdownMenuItem
-                onClick={() => onResetPassword(manager)}
-                className="flex items-center gap-2 rounded-lg cursor-pointer"
+                onClick={() => onToggleActive(manager)}
+                className="flex items-center gap-2 rounded-lg cursor-pointer text-amber-700 focus:text-amber-800 focus:bg-amber-50"
               >
-                <KeyRound className="w-3.5 h-3.5 text-zinc-400" />
-                {t.resetPassword}
+                <ShieldOff className="w-3.5 h-3.5" />
+                {t.deactivateEmployee}
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {manager.isActive ? (
+            ) : (
+              <>
                 <DropdownMenuItem
                   onClick={() => onToggleActive(manager)}
-                  className="flex items-center gap-2 rounded-lg cursor-pointer text-amber-700 focus:text-amber-800 focus:bg-amber-50"
+                  className="flex items-center gap-2 rounded-lg cursor-pointer text-emerald-700 focus:text-emerald-800 focus:bg-emerald-50"
                 >
-                  <ShieldOff className="w-3.5 h-3.5" />
-                  {t.deactivateEmployee}
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  {t.reactivateEmployee}
                 </DropdownMenuItem>
-              ) : (
-                <>
-                  <DropdownMenuItem
-                    onClick={() => onToggleActive(manager)}
-                    className="flex items-center gap-2 rounded-lg cursor-pointer text-emerald-700 focus:text-emerald-800 focus:bg-emerald-50"
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    {t.reactivateEmployee}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => setDeleteOpen(true)}
-                    className="flex items-center gap-2 rounded-lg cursor-pointer text-rose-600 focus:text-rose-700 focus:bg-rose-50"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    {t.deleteEmployeePerm}
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setDeleteOpen(true)}
+                  className="flex items-center gap-2 rounded-lg cursor-pointer text-rose-600 focus:text-rose-700 focus:bg-rose-50"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  {t.deleteEmployeePerm}
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
@@ -227,48 +236,45 @@ export function DepartmentManagersSection() {
     toggleMutation.isPending || passwordMutation.isPending || deleteMutation.isPending;
 
   return (
-    <section className="space-y-3 rounded-2xl border border-zinc-100 bg-zinc-50/40 p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white border border-zinc-100 text-zinc-700">
-            <UserCog className="h-4 w-4" />
-          </span>
-          <div>
-            <h3 className="text-sm font-semibold text-zinc-900">Department managers</h3>
-            <p className="text-xs text-zinc-500 mt-0.5">
-              Email + password accounts for department leads.
-            </p>
-          </div>
+    <section className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            Department managers
+          </h3>
         </div>
-        <Button
-          size="sm"
+        <button
+          type="button"
           onClick={() => setCreateOpen(true)}
-          className="h-9 rounded-xl text-[12px] font-medium shrink-0"
+          className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-600 transition-opacity hover:opacity-70"
         >
-          <Plus className="w-3.5 h-3.5 mr-1" />
+          <Plus className="h-3.5 w-3.5" />
           Add
-        </Button>
+        </button>
       </div>
 
       {isLoading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div className="space-y-2">
           {Array.from({ length: 2 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 rounded-2xl" />
+            <div key={i} className={cn(LIST_CARD, "flex items-center gap-3")}>
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-3.5 w-32 rounded" />
+                <Skeleton className="h-2.5 w-40 rounded" />
+              </div>
+            </div>
           ))}
         </div>
       )}
 
       {!isLoading && (managers ?? []).length === 0 && (
-        <div className="rounded-xl border border-dashed border-zinc-200 bg-white px-4 py-8 text-center">
-          <p className="text-sm font-medium text-zinc-600">No department managers yet</p>
-          <p className="text-xs text-zinc-400 mt-1">
-            Create one manager per department to delegate team and tasks.
-          </p>
-        </div>
+        <p className="py-4 text-center text-[11px] text-zinc-400">
+          No department managers yet
+        </p>
       )}
 
       {!isLoading && (managers ?? []).length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div className="space-y-2">
           {(managers ?? []).map((manager) => (
             <ManagerCard
               key={manager.id}
@@ -286,7 +292,7 @@ export function DepartmentManagersSection() {
       )}
 
       {isPending && (
-        <div className="flex items-center gap-2 text-xs text-zinc-400">
+        <div className="flex items-center gap-2 text-[10px] text-zinc-400">
           <Loader2 className="h-3 w-3 animate-spin" />
           Updating…
         </div>

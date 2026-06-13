@@ -1,5 +1,5 @@
 /**
- * ManagerAiInsightCard — square AI daily insight preview (department manager overview).
+ * ManagerAiInsightCard — premium framed AI insight tile (department manager overview).
  */
 
 import { Brain } from "lucide-react";
@@ -26,47 +26,38 @@ export function ManagerAiInsightCard({
       insight.finishedLate.length > 0 ||
       insight.notFinished.length > 0);
 
+  const summaryText =
+    insight && !pending
+      ? hasLists
+        ? insight.summary
+        : t.tasksAiNobodyOverdue
+      : t.tasksAiOverviewPending;
+
   return (
     <button
       type="button"
       onClick={onPress}
       aria-label={t.tasksAiAnalysisTitle}
       className={cn(
-        "flex aspect-square w-[5.75rem] shrink-0 flex-col justify-between rounded-2xl border p-2.5 text-left shadow-sm transition-transform touch-manipulation",
-        "active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
-        pending || !insight
-          ? "border-violet-100 bg-violet-50/60"
-          : "border-violet-200 bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-violet-300/30",
+        "flex h-full w-full flex-col items-center gap-1.5 rounded-xl border border-zinc-200/90 bg-white px-2 py-3 text-center shadow-[0_1px_2px_rgba(0,0,0,0.04)]",
+        "transition-all duration-150 hover:border-zinc-300 hover:shadow-[0_2px_8px_rgba(0,0,0,0.05)] active:scale-[0.99]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/25 touch-manipulation",
       )}
     >
-      <span
-        className={cn(
-          "flex h-7 w-7 items-center justify-center rounded-lg",
-          pending || !insight ? "bg-violet-100 text-violet-600" : "bg-white/15 text-white",
-        )}
-      >
-        <Brain className="h-3.5 w-3.5" />
+      <span className="inline-flex h-9 w-9 items-center justify-center" aria-hidden>
+        <Brain className="guest-chat-entry-icon h-6 w-6 text-violet-600" strokeWidth={1.5} />
       </span>
-      <span className="min-w-0">
-        <span
-          className={cn(
-            "block text-[9px] font-semibold uppercase tracking-wide leading-none",
-            pending || !insight ? "text-violet-600" : "text-violet-100",
-          )}
-        >
+      <span className="block w-full min-w-0">
+        <span className="block text-[8px] font-semibold uppercase tracking-wide text-violet-500">
           {t.tasksAiOverviewLabel}
         </span>
         <span
           className={cn(
-            "mt-1 line-clamp-3 text-[10px] font-medium leading-snug",
-            pending || !insight ? "text-violet-900/70" : "text-white/95",
+            "mt-1 line-clamp-4 text-[9px] font-medium leading-snug",
+            pending || !insight ? "text-zinc-400" : "text-zinc-600",
           )}
         >
-          {insight && !pending
-            ? hasLists
-              ? insight.summary
-              : t.tasksAiNobodyOverdue
-            : t.tasksAiOverviewPending}
+          {summaryText}
         </span>
       </span>
     </button>

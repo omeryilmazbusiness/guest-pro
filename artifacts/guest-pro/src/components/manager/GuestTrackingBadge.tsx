@@ -57,14 +57,12 @@ export function GuestTrackingBadge({
 
   return (
     <span
-      className="inline-flex items-center gap-1.5"
+      className="flex shrink-0 items-center gap-1 leading-none"
       title={cfg.title}
       aria-label={cfg.title}
     >
-      <span className={`h-2 w-2 rounded-full ${cfg.dotClass} shrink-0`} />
-      <span className="text-[11px] font-medium text-zinc-600 leading-none">
-        {cfg.label}
-      </span>
+      <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${cfg.dotClass}`} />
+      <span className="text-[9px] font-medium text-zinc-500">{cfg.label}</span>
     </span>
   );
 }

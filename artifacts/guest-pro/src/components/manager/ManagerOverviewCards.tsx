@@ -1,5 +1,5 @@
 /**
- * ManagerOverviewCards — compact premium overview for manager mobile dashboard.
+ * ManagerOverviewCards — premium icon overview tiles (GM / reception / dept manager).
  */
 
 import {
@@ -10,6 +10,7 @@ import {
   Building2,
   DoorOpen,
   HelpCircle,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { GuestTrackingSummary } from "@/lib/tracking-summary";
@@ -18,7 +19,6 @@ import { DEPARTMENT_LABELS } from "@/lib/staff";
 import type { StaffTranslations } from "@/lib/staff-i18n";
 import type { DailyTaskInsightRecord } from "@/lib/analytics";
 import { ManagerAiInsightCard } from "@/components/manager/ManagerAiInsightCard";
-import { tasksCard } from "@/lib/tasks-ui";
 
 const ORDERED_DEPTS: StaffDepartment[] = [
   "RECEPTION",
@@ -26,6 +26,9 @@ const ORDERED_DEPTS: StaffDepartment[] = [
   "RESTAURANT",
   "BELLMAN",
 ];
+
+const OVERVIEW_CARD =
+  "relative flex w-full min-w-0 flex-col rounded-xl border border-zinc-200/90 bg-white px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-150 hover:border-zinc-300 hover:shadow-[0_2px_8px_rgba(0,0,0,0.05)]";
 
 interface ManagerOverviewCardsProps {
   variant: "both" | "guests" | "employees";
@@ -42,98 +45,95 @@ interface ManagerOverviewCardsProps {
   t: StaffTranslations;
 }
 
-function PresenceStat({
+function iconActionBtn(className?: string) {
+  return cn(
+    "flex h-6 w-6 items-center justify-center rounded-md text-zinc-400 transition-colors",
+    "hover:bg-zinc-50 hover:text-zinc-700 active:scale-90 disabled:opacity-40",
+    className,
+  );
+}
+
+function OverviewIconCard({
+  icon: Icon,
+  iconClassName,
+  label,
+  value,
+  hint,
+  onPress,
+  action,
+  footer,
+}: {
+  icon: LucideIcon;
+  iconClassName: string;
+  label: string;
+  value: number | string;
+  hint?: string;
+  onPress?: () => void;
+  action?: React.ReactNode;
+  footer?: React.ReactNode;
+}) {
+  const Wrapper = onPress ? "button" : "div";
+
+  return (
+    <div className={OVERVIEW_CARD}>
+      {action ? <div className="absolute end-2 top-2 z-[1]">{action}</div> : null}
+      <Wrapper
+        type={onPress ? "button" : undefined}
+        onClick={onPress}
+        className={cn(
+          "flex w-full flex-col items-center gap-1.5 text-center",
+          onPress &&
+            "cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900/10 rounded-lg active:scale-[0.99] transition-transform",
+        )}
+      >
+        <span className="inline-flex h-9 w-9 items-center justify-center" aria-hidden>
+          <Icon
+            className={cn("guest-chat-entry-icon h-6 w-6", iconClassName)}
+            strokeWidth={1.5}
+          />
+        </span>
+        <span className="block w-full">
+          <span className="block font-mono text-[20px] font-bold tabular-nums leading-none text-zinc-900">
+            {value}
+          </span>
+          <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+            {label}
+          </span>
+          {hint ? (
+            <span className="mt-0.5 block text-[9px] font-medium text-zinc-400">{hint}</span>
+          ) : null}
+        </span>
+      </Wrapper>
+      {footer}
+    </div>
+  );
+}
+
+function PresenceMini({
   icon: Icon,
   value,
   label,
+  iconClassName,
 }: {
-  icon: React.FC<{ className?: string }>;
+  icon: LucideIcon;
   value: number;
   label: string;
+  iconClassName: string;
 }) {
   return (
-    <div className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl bg-slate-50/90 px-2 py-2.5 text-center ring-1 ring-slate-100">
-      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white shadow-sm ring-1 ring-slate-100">
-        <Icon className="h-3.5 w-3.5 text-slate-600" />
-      </span>
-      <span className="font-mono text-base font-bold tabular-nums leading-none text-slate-900">
-        {value}
-      </span>
-      <span className="text-[10px] font-medium leading-snug text-slate-500">{label}</span>
-    </div>
-  );
-}
-
-function DeptStat({ dept, count }: { dept: StaffDepartment; count: number }) {
-  return (
-    <div className="flex items-center justify-between gap-2 rounded-lg bg-slate-50/90 px-2.5 py-2 ring-1 ring-slate-100">
-      <span className="text-[11px] font-medium leading-tight text-slate-600">
-        {DEPARTMENT_LABELS[dept]}
-      </span>
-      <span className="font-mono text-sm font-bold tabular-nums text-slate-900">{count}</span>
-    </div>
-  );
-}
-
-interface OverviewCardShellProps {
-  icon: React.FC<{ className?: string }>;
-  title: string;
-  total: number;
-  subtitle: string;
-  onPress?: () => void;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}
-
-function OverviewCardShell({
-  icon: Icon,
-  title,
-  total,
-  subtitle,
-  onPress,
-  action,
-  children,
-}: OverviewCardShellProps) {
-  const handleKeyDown = onPress
-    ? (e: React.KeyboardEvent) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onPress();
-        }
-      }
-    : undefined;
-
-  return (
     <div
-      role={onPress ? "button" : undefined}
-      tabIndex={onPress ? 0 : undefined}
-      onClick={onPress}
-      onKeyDown={handleKeyDown}
-      className={cn(
-        tasksCard,
-        "flex flex-col gap-2.5 px-3 py-3 text-left",
-        onPress &&
-          "cursor-pointer touch-manipulation transition-transform active:scale-[0.98] hover:border-slate-300/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2",
-      )}
+      className="flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg bg-zinc-50/80 px-1 py-1.5 text-center"
+      title={label}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-white">
-            <Icon className="h-3.5 w-3.5" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 leading-none">
-              {title}
-            </p>
-            <p className="mt-1 font-mono text-xl font-bold tabular-nums leading-none text-slate-900">
-              {total}
-            </p>
-            <p className="mt-0.5 text-[10px] font-medium text-slate-500">{subtitle}</p>
-          </div>
-        </div>
-        {action}
-      </div>
-      {children}
+      <span className="inline-flex items-center gap-1">
+        <Icon className={cn("h-3 w-3 shrink-0", iconClassName)} strokeWidth={2} />
+        <span className="font-mono text-[12px] font-bold tabular-nums leading-none text-zinc-900">
+          {value}
+        </span>
+      </span>
+      <span className="max-w-full truncate text-[7px] font-semibold uppercase tracking-wide text-zinc-400">
+        {label}
+      </span>
     </div>
   );
 }
@@ -156,15 +156,67 @@ export function ManagerOverviewCards({
   const showGuests = variant === "both" || variant === "guests";
   const showEmployees = variant === "both" || variant === "employees";
   const showAiSquare = variant === "employees" && onAiInsightPress;
-  const gridClass =
-    variant === "both" ? "grid grid-cols-2 gap-2.5" : "grid grid-cols-1 gap-2.5";
+  const gridClass = variant === "both" ? "grid grid-cols-2 gap-2.5" : "grid grid-cols-1 gap-2.5";
 
-  const employeesCard = showEmployees ? (
-    <OverviewCardShell
+  const guestsFooter =
+    guestSummary.total === 0 ? (
+      <p className="mt-2 text-center text-[9px] text-zinc-400">{t.noGuestsYet}</p>
+    ) : !guestSummary.hasTrackingData ? (
+      <p className="mt-2 text-center text-[9px] leading-snug text-zinc-400">
+        {t.overviewTrackingPending}
+      </p>
+    ) : (
+      <div className="mt-2 flex w-full gap-1.5">
+        <PresenceMini
+          icon={Building2}
+          value={guestSummary.inHotel}
+          label={t.presenceIn}
+          iconClassName="text-emerald-600"
+        />
+        <PresenceMini
+          icon={DoorOpen}
+          value={guestSummary.outOfHotel}
+          label={t.presenceOut}
+          iconClassName="text-amber-600"
+        />
+        {guestSummary.unknown > 0 && (
+          <PresenceMini
+            icon={HelpCircle}
+            value={guestSummary.unknown}
+            label={t.presenceUnknown}
+            iconClassName="text-zinc-400"
+          />
+        )}
+      </div>
+    );
+
+  const employeesFooter =
+    staffInfo.total === 0 ? (
+      <p className="mt-2 text-center text-[9px] text-zinc-400">{t.overviewNoEmployees}</p>
+    ) : deptEntries.length > 0 ? (
+      <div className="mt-2 w-full space-y-1 rounded-lg bg-zinc-50/80 px-2 py-1.5">
+        {deptEntries.slice(0, 2).map((dept) => (
+          <div key={dept} className="flex items-center justify-between gap-2 text-[9px]">
+            <span className="truncate text-zinc-500">{DEPARTMENT_LABELS[dept]}</span>
+            <span className="shrink-0 font-mono font-semibold tabular-nums text-zinc-800">
+              {staffInfo.byDept[dept] ?? 0}
+            </span>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <p className="mt-2 text-center text-[9px] text-zinc-400">
+        {staffInfo.active} {t.overviewActiveShort}
+      </p>
+    );
+
+  const employeesTile = showEmployees ? (
+    <OverviewIconCard
       icon={Briefcase}
-      title={t.overviewEmployees}
-      total={staffInfo.total}
-      subtitle={`${staffInfo.active} ${t.overviewActiveShort}`}
+      iconClassName="text-violet-600"
+      label={t.overviewEmployees}
+      value={staffInfo.total}
+      hint={`${staffInfo.active} ${t.overviewActiveShort}`}
       onPress={onEmployeesPress}
       action={
         <button
@@ -174,32 +226,19 @@ export function ManagerOverviewCards({
             onAddEmployee();
           }}
           aria-label={t.overviewAddEmployee}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-800 active:scale-90"
+          className={iconActionBtn()}
         >
-          <Plus className="h-3 w-3" strokeWidth={2} />
+          <Plus className="h-3.5 w-3.5" strokeWidth={2} />
         </button>
       }
-    >
-      {staffInfo.total === 0 ? (
-        <p className="text-[11px] italic text-slate-300">{t.overviewNoEmployees}</p>
-      ) : deptEntries.length > 0 ? (
-        <div className="flex flex-col gap-1">
-          {deptEntries.slice(0, 2).map((dept) => (
-            <DeptStat key={dept} dept={dept} count={staffInfo.byDept[dept] ?? 0} />
-          ))}
-        </div>
-      ) : (
-        <p className="text-[11px] text-slate-400">
-          {staffInfo.active} {t.overviewActiveShort}
-        </p>
-      )}
-    </OverviewCardShell>
+      footer={employeesFooter}
+    />
   ) : null;
 
   if (showAiSquare) {
     return (
-      <div className="grid grid-cols-[minmax(0,1fr)_5.75rem] items-stretch gap-2.5">
-        {employeesCard}
+      <div className="grid grid-cols-[minmax(0,1fr)_5.5rem] items-stretch gap-2.5">
+        {employeesTile}
         <ManagerAiInsightCard
           insight={dailyTaskInsight}
           pending={insightPending || !dailyTaskInsight}
@@ -213,49 +252,35 @@ export function ManagerOverviewCards({
   return (
     <div className={gridClass}>
       {showGuests && (
-      <OverviewCardShell
-        icon={Users}
-        title={t.overviewGuests}
-        total={guestSummary.total}
-        subtitle={
-          guestSummary.total === 1 ? t.overviewGuestSingular : t.overviewGuestPlural
-        }
-        onPress={onGuestsPress}
-        action={
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onRefresh();
-            }}
-            disabled={isRefreshing}
-            aria-label={t.overviewRefresh}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-800 active:scale-90 disabled:opacity-40"
-          >
-            <RefreshCw
-              className={cn("h-3 w-3", isRefreshing && "animate-spin")}
-              strokeWidth={2}
-            />
-          </button>
-        }
-      >
-        {guestSummary.total === 0 ? (
-          <p className="text-[11px] italic text-slate-300">{t.noGuestsYet}</p>
-        ) : !guestSummary.hasTrackingData ? (
-          <p className="text-[11px] text-slate-400 leading-snug">{t.overviewTrackingPending}</p>
-        ) : (
-          <div className="flex gap-1.5">
-            <PresenceStat icon={Building2} value={guestSummary.inHotel} label={t.presenceIn} />
-            <PresenceStat icon={DoorOpen} value={guestSummary.outOfHotel} label={t.presenceOut} />
-            {guestSummary.unknown > 0 && (
-              <PresenceStat icon={HelpCircle} value={guestSummary.unknown} label={t.presenceUnknown} />
-            )}
-          </div>
-        )}
-      </OverviewCardShell>
+        <OverviewIconCard
+          icon={Users}
+          iconClassName="text-sky-600"
+          label={t.overviewGuests}
+          value={guestSummary.total}
+          hint={guestSummary.total === 1 ? t.overviewGuestSingular : t.overviewGuestPlural}
+          onPress={onGuestsPress}
+          action={
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRefresh();
+              }}
+              disabled={isRefreshing}
+              aria-label={t.overviewRefresh}
+              className={iconActionBtn()}
+            >
+              <RefreshCw
+                className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")}
+                strokeWidth={2}
+              />
+            </button>
+          }
+          footer={guestsFooter}
+        />
       )}
 
-      {showEmployees && employeesCard}
+      {showEmployees && employeesTile}
     </div>
   );
 }

@@ -145,14 +145,13 @@ function StickyRoomFilterBar({
 
 function GuestCardSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm px-4 py-3.5 flex items-center gap-3">
-      <Skeleton className="w-10 h-10 rounded-xl shrink-0" />
-      <div className="flex-1 space-y-2">
-        <Skeleton className="h-4 w-44" />
-        <Skeleton className="h-3 w-28" />
+    <div className="flex items-center gap-3 rounded-xl border border-zinc-200/90 bg-white px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+      <Skeleton className="h-11 w-11 shrink-0 rounded-xl" />
+      <div className="flex-1 space-y-1.5">
+        <Skeleton className="h-3.5 w-40 rounded" />
+        <Skeleton className="h-2.5 w-32 rounded" />
+        <Skeleton className="h-2.5 w-24 rounded" />
       </div>
-      <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
-      <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
     </div>
   );
 }
@@ -664,9 +663,11 @@ export default function ManagerDashboard() {
             )}
 
             {/* Guest list */}
-            <div className="space-y-2">
+            <div>
               {isLoading ? (
-                Array.from({ length: 6 }).map((_, i) => <GuestCardSkeleton key={i} />)
+                <div className="space-y-2">
+                  {Array.from({ length: 6 }).map((_, i) => <GuestCardSkeleton key={i} />)}
+                </div>
               ) : filteredGuests.length === 0 ? (
                 <div className="text-center py-14 bg-white rounded-2xl border border-zinc-100">
                   <Users className="w-10 h-10 text-zinc-200 mx-auto mb-3" />
@@ -698,20 +699,22 @@ export default function ManagerDashboard() {
                   )}
                 </div>
               ) : (
-                filteredGuests.map((guest) => (
-                  <GuestCard
-                    key={guest.id}
-                    guest={guest}
-                    canEdit={canEdit}
-                    canDelete={canDelete}
-                    canRenew={canRenew}
-                    onEdit={setEditingGuest}
-                    onDelete={setDeletingGuest}
-                    onRenew={handleRenewKey}
-                    onSelect={setDetailGuest}
-                    trackingStatus={presenceMap.get(guest.id)}
-                  />
-                ))
+                <div className="space-y-2">
+                  {filteredGuests.map((guest) => (
+                    <GuestCard
+                      key={guest.id}
+                      guest={guest}
+                      canEdit={canEdit}
+                      canDelete={canDelete}
+                      canRenew={canRenew}
+                      onEdit={setEditingGuest}
+                      onDelete={setDeletingGuest}
+                      onRenew={handleRenewKey}
+                      onSelect={setDetailGuest}
+                      trackingStatus={presenceMap.get(guest.id)}
+                    />
+                  ))}
+                </div>
               )}
             </div>
           </div>

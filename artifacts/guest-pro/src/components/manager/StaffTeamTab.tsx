@@ -44,6 +44,7 @@ import {
   Megaphone,
   Dumbbell,
   Calculator,
+  type LucideIcon,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -112,7 +113,7 @@ import {
 
 // ── Department icon map ───────────────────────────────────────────────────────
 
-const DEPT_ICONS: Record<StaffDepartment, React.FC<{ className?: string }>> = {
+const DEPT_ICONS: Record<StaffDepartment, LucideIcon> = {
   HOUSEKEEPING: Sparkles,
   RECEPTION: ConciergeBell,
   BELLMAN: Luggage,
@@ -181,47 +182,27 @@ type EditFormValues = z.infer<typeof editSchema>;
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-/** Coloured pill badge with icon for a staff department. */
-function DepartmentBadge({ dept }: { dept: StaffDepartment | null }) {
-  if (!dept) return null;
-  const c = DEPARTMENT_COLOURS[dept as keyof typeof DEPARTMENT_COLOURS];
-  if (!c) return null;
+const LIST_CARD =
+  "rounded-xl border border-zinc-200/90 bg-white px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-150 hover:border-zinc-300 hover:shadow-[0_2px_8px_rgba(0,0,0,0.05)]";
+
+/** Frameless department icon for an employee row. */
+function EmployeeDeptIcon({ dept }: { dept: StaffDepartment | null }) {
+  if (!dept) {
+    return (
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center" aria-hidden>
+        <Users className="guest-chat-entry-icon h-8 w-8 text-zinc-300" strokeWidth={1.5} />
+      </span>
+    );
+  }
+  const colours = DEPARTMENT_COLOURS[dept];
   const Icon = DEPT_ICONS[dept];
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border leading-none shrink-0",
-        c.bg, c.text, c.border,
-      )}
-    >
-      <Icon className="w-2.5 h-2.5 shrink-0" />
-      {DEPARTMENT_LABELS[dept]}
+    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center" aria-hidden>
+      <Icon
+        className={cn("guest-chat-entry-icon h-8 w-8", colours.text)}
+        strokeWidth={1.5}
+      />
     </span>
-  );
-}
-
-/** Initials avatar — department-coloured ring when dept is set. */
-function EmployeeAvatar({ member }: { member: StaffMember }) {
-  const initials =
-    [(member.firstName ?? "")[0], (member.lastName ?? "")[0]]
-      .filter(Boolean)
-      .join("")
-      .toUpperCase() || "?";
-
-  const dept = member.staffDepartment;
-  const deptColours = dept ? DEPARTMENT_COLOURS[dept] : undefined;
-  const ring = deptColours ? deptColours.border.replace("border-", "ring-") : "ring-zinc-100";
-
-  return (
-    <div
-      className={cn(
-        "w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center",
-        "text-[13px] font-semibold text-zinc-500 shrink-0 ring-2",
-        ring,
-      )}
-    >
-      {initials}
-    </div>
   );
 }
 
@@ -239,9 +220,12 @@ function PresenceBadge({ member }: { member: StaffMember }) {
   };
   const s = styles[presence] ?? styles.UNKNOWN;
   return (
-    <span className="flex items-center gap-1 leading-none shrink-0">
-      <span className={cn("w-1.5 h-1.5 rounded-full inline-block shrink-0", s.dot)} />
-      <span className={cn("text-[10px] font-medium", s.label)}>
+    <span
+      className="flex shrink-0 items-center gap-1 leading-none"
+      title={EMPLOYEE_PRESENCE_LABEL[presence]}
+    >
+      <span className={cn("inline-block h-1.5 w-1.5 shrink-0 rounded-full", s.dot)} />
+      <span className={cn("text-[9px] font-medium", s.label)}>
         {EMPLOYEE_PRESENCE_LABEL[presence]}
       </span>
     </span>
@@ -370,11 +354,10 @@ function EmployeeCard({
     <>
       <div
         className={cn(
-          "bg-white border rounded-2xl p-3.5 flex items-start gap-3 transition-opacity",
-          member.isActive
-            ? "border-zinc-100 shadow-sm shadow-zinc-100/60"
-            : "border-zinc-100 opacity-55",
-          onSelect && "cursor-pointer hover:border-zinc-200 active:scale-[0.99]",
+          LIST_CARD,
+          "flex items-center gap-3",
+          !member.isActive && "opacity-60",
+          onSelect && "cursor-pointer active:scale-[0.995]",
         )}
         role={onSelect ? "button" : undefined}
         tabIndex={onSelect ? 0 : undefined}
@@ -390,34 +373,31 @@ function EmployeeCard({
             : undefined
         }
       >
-        {/* Avatar */}
-        <EmployeeAvatar member={member} />
+        <EmployeeDeptIcon dept={member.staffDepartment} />
 
-        {/* Body */}
-        <div className="flex-1 min-w-0 space-y-1">
-          {/* Name row */}
+        <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <p className="text-sm font-semibold text-zinc-900 truncate leading-snug">
+            <p className="truncate text-sm font-semibold leading-snug text-zinc-900">
               {staffDisplayName(member)}
             </p>
             <PresenceBadge member={member} />
           </div>
+          <p className="mt-0.5 truncate text-[11px] text-zinc-400">{member.email}</p>
+          {member.staffDepartment && (
+            <p className="mt-0.5 text-[10px] font-medium text-zinc-500">
+              {DEPARTMENT_LABELS[member.staffDepartment]}
+            </p>
+          )}
+        </div>
 
-          {/* Email */}
-          <p className="text-[11px] text-zinc-400 truncate">{member.email}</p>
-
-          {/* Department + actions row */}
-          <div className="flex items-center justify-between gap-2 pt-0.5">
-            <DepartmentBadge dept={member.staffDepartment} />
-
-            <DropdownMenu>
+        <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
                   onClick={(e) => e.stopPropagation()}
-                  className="text-zinc-400 hover:text-zinc-700 p-1.5 rounded-lg hover:bg-zinc-50 transition-colors touch-manipulation shrink-0"
+                  className="shrink-0 p-1 text-zinc-400 transition-colors hover:text-zinc-700 touch-manipulation"
                 >
-                  <MoreVertical className="w-3.5 h-3.5" />
+                  <MoreVertical className="h-4 w-4" />
                   <span className="sr-only">Actions for {staffDisplayName(member)}</span>
                 </button>
               </DropdownMenuTrigger>
@@ -468,8 +448,6 @@ function EmployeeCard({
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-        </div>
       </div>
 
       {/* ── Permanent delete confirmation dialog ── */}
@@ -501,12 +479,12 @@ function EmployeeCard({
 
 function EmployeeCardSkeleton() {
   return (
-    <div className="bg-white border border-zinc-100 rounded-2xl p-3.5 flex items-start gap-3">
-      <Skeleton className="w-10 h-10 rounded-xl shrink-0" />
-      <div className="flex-1 space-y-2">
+    <div className={cn(LIST_CARD, "flex items-center gap-3")}>
+      <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+      <div className="flex-1 space-y-1.5">
         <Skeleton className="h-3.5 w-32 rounded" />
         <Skeleton className="h-2.5 w-48 rounded" />
-        <Skeleton className="h-4 w-20 rounded-full mt-1" />
+        <Skeleton className="h-2.5 w-20 rounded" />
       </div>
     </div>
   );
@@ -757,7 +735,7 @@ export function StaffTeamTab({
 
       {/* ── Loading skeletons ─────────────────────────────────────── */}
       {isLoading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-2">
           {Array.from({ length: 4 }).map((_, i) => <EmployeeCardSkeleton key={i} />)}
         </div>
       )}
@@ -810,7 +788,7 @@ export function StaffTeamTab({
               {activeVisible.length} employee{activeVisible.length !== 1 ? "s" : ""}
             </p>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div className="space-y-2">
             {activeVisible.map((member) => (
               <EmployeeCard
                 key={member.id}
@@ -835,7 +813,7 @@ export function StaffTeamTab({
           <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest px-0.5">
             Inactive ({inactiveVisible.length})
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div className="space-y-2">
             {inactiveVisible.map((member) => (
               <EmployeeCard
                 key={member.id}
