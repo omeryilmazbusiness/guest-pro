@@ -58,6 +58,41 @@ export const DEPARTMENT_MANAGER_DEPARTMENTS = [
 
 export type DepartmentManagerDepartment = (typeof DEPARTMENT_MANAGER_DEPARTMENTS)[number];
 
+/** Personnel who sign in with a 4-digit employee number (staff portal). */
+export const EMPLOYEE_NUMBER_DEPARTMENTS = [
+  "HOUSEKEEPING",
+  "BELLMAN",
+  "KITCHEN",
+  "FINANCIAL_ACCOUNTING",
+  "SECURITY",
+  "MAINTENANCE",
+  "MARKETING",
+  "SPA_GYM",
+] as const satisfies readonly StaffDepartment[];
+
+/** Reception / restaurant personnel — email + password, not employee numbers. */
+export const EMAIL_LOGIN_PERSONNEL_DEPARTMENTS = ["RECEPTION", "RESTAURANT"] as const satisfies readonly StaffDepartment[];
+
+export type EmailLoginPersonnelDepartment = (typeof EMAIL_LOGIN_PERSONNEL_DEPARTMENTS)[number];
+
+export function isEmailLoginPersonnelDepartment(
+  dept: string | null | undefined,
+): dept is EmailLoginPersonnelDepartment {
+  return (
+    dept != null &&
+    (EMAIL_LOGIN_PERSONNEL_DEPARTMENTS as readonly string[]).includes(dept)
+  );
+}
+
+export function isEmployeeNumberDepartment(
+  dept: string | null | undefined,
+): dept is (typeof EMPLOYEE_NUMBER_DEPARTMENTS)[number] {
+  return (
+    dept != null &&
+    (EMPLOYEE_NUMBER_DEPARTMENTS as readonly string[]).includes(dept)
+  );
+}
+
 export const DEPARTMENT_COLOURS: Record<
   StaffDepartment,
   { bg: string; text: string; border: string }
@@ -136,14 +171,22 @@ export async function listStaff(): Promise<StaffMember[]> {
   return apiFetch<StaffMember[]>("/api/staff");
 }
 
-export interface CreateStaffInput {
-  email: string;
-  password: string;
+export type CreateEmployeeNumberStaffInput = {
   firstName: string;
   lastName: string;
   employeeNumber: string;
-  staffDepartment: StaffDepartment;
-}
+  staffDepartment: (typeof EMPLOYEE_NUMBER_DEPARTMENTS)[number];
+};
+
+export type CreateEmailPersonnelInput = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  staffDepartment: EmailLoginPersonnelDepartment;
+};
+
+export type CreateStaffInput = CreateEmployeeNumberStaffInput | CreateEmailPersonnelInput;
 
 export async function createStaff(data: CreateStaffInput): Promise<StaffMember> {
   return apiFetch<StaffMember>("/api/staff", {
@@ -283,7 +326,22 @@ export interface StaffInfo {
 
 export function staffDisplayName(member: StaffMember): string {
   const full = [member.firstName, member.lastName].filter(Boolean).join(" ");
-  return full || member.email;
+  return full || staffLoginLabel(member);
+}
+
+export function isInternalStaffEmail(email: string): boolean {
+  return email.endsWith("@staff.internal");
+}
+
+/** Login identifier shown in lists — employee number or work email. */
+export function staffLoginLabel(member: StaffMember): string {
+  if (member.employeeNumber && !isEmailLoginPersonnelDepartment(member.staffDepartment)) {
+    return `#${member.employeeNumber}`;
+  }
+  if (!isInternalStaffEmail(member.email)) {
+    return member.email;
+  }
+  return member.employeeNumber ? `#${member.employeeNumber}` : "—";
 }
 
 export function departmentManagerDisplayName(manager: DepartmentManager): string {

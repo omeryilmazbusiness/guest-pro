@@ -67,11 +67,14 @@ export interface StaffTranslations {
 
   addStaffMember: string;
   addStaffSubtitle: string;
+  addStaffSubtitleNumber: string;
+  addStaffSubtitleEmail: string;
   addStaffMemberBtn: string;
   staffFirstName: string;
   staffLastName: string;
   staffEmail: string;
   staffTempPassword: string;
+  staffEmployeeNumber: string;
   staffDepartment: string;
   staffMemberAdded: string;
   failedCreateStaff: string;
@@ -79,6 +82,7 @@ export interface StaffTranslations {
   staffLastNameRequired: string;
   staffEmailInvalid: string;
   staffPasswordMin: string;
+  staffEmployeeNumberInvalid: string;
   staffDeptRequired: string;
 
   addGuestSubtitle: string;
@@ -615,11 +619,14 @@ const en: StaffTranslations = {
 
   addStaffMember: "Add team member",
   addStaffSubtitle: "Create login credentials and assign a department.",
+  addStaffSubtitleNumber: "Assign a 4-digit employee number for staff portal login.",
+  addStaffSubtitleEmail: "Create email and password for reception or restaurant sign-in.",
   addStaffMemberBtn: "Add member",
   staffFirstName: "First name",
   staffLastName: "Last name",
   staffEmail: "Work email",
   staffTempPassword: "Temporary password",
+  staffEmployeeNumber: "Employee no.",
   staffDepartment: "Department",
   staffMemberAdded: "Team member added",
   failedCreateStaff: "Could not add team member",
@@ -627,6 +634,7 @@ const en: StaffTranslations = {
   staffLastNameRequired: "Last name is required",
   staffEmailInvalid: "Enter a valid email",
   staffPasswordMin: "Password must be at least 8 characters",
+  staffEmployeeNumberInvalid: "Employee number must be 4 digits",
   staffDeptRequired: "Select a department",
 
   addGuestSubtitle: "Issue a digital key and QR login for the guest.",
@@ -1143,11 +1151,14 @@ const tr: StaffTranslations = {
 
   addStaffMember: "Çalışan ekle",
   addStaffSubtitle: "Giriş bilgilerini oluşturun ve departman atayın.",
+  addStaffSubtitleNumber: "Personel portalı için 4 haneli çalışan numarası atayın.",
+  addStaffSubtitleEmail: "Resepsiyon veya restoran girişi için e-posta ve şifre oluşturun.",
   addStaffMemberBtn: "Üye ekle",
   staffFirstName: "Ad",
   staffLastName: "Soyad",
   staffEmail: "İş e-postası",
   staffTempPassword: "Geçici şifre",
+  staffEmployeeNumber: "Çalışan no.",
   staffDepartment: "Departman",
   staffMemberAdded: "Çalışan eklendi",
   failedCreateStaff: "Çalışan eklenemedi",
@@ -1155,6 +1166,7 @@ const tr: StaffTranslations = {
   staffLastNameRequired: "Soyad zorunludur",
   staffEmailInvalid: "Geçerli bir e-posta girin",
   staffPasswordMin: "Şifre en az 8 karakter olmalı",
+  staffEmployeeNumberInvalid: "Çalışan numarası 4 haneli olmalı",
   staffDeptRequired: "Departman seçin",
 
   addGuestSubtitle: "Misafir için dijital anahtar ve QR girişi oluşturun.",
@@ -1671,11 +1683,14 @@ const ar: StaffTranslations = {
 
   addStaffMember: "إضافة موظف",
   addStaffSubtitle: "أنشئ بيانات الدخول وعيّن القسم.",
+  addStaffSubtitleNumber: "عيّن رقم موظف من 4 أرقام لتسجيل الدخول عبر بوابة الموظفين.",
+  addStaffSubtitleEmail: "أنشئ بريداً إلكترونياً وكلمة مرور لتسجيل دخول الاستقبال أو المطعم.",
   addStaffMemberBtn: "إضافة",
   staffFirstName: "الاسم الأول",
   staffLastName: "اسم العائلة",
   staffEmail: "البريد الإلكتروني",
   staffTempPassword: "كلمة مرور مؤقتة",
+  staffEmployeeNumber: "رقم الموظف",
   staffDepartment: "القسم",
   staffMemberAdded: "تمت إضافة الموظف",
   failedCreateStaff: "تعذرت إضافة الموظف",
@@ -1683,6 +1698,7 @@ const ar: StaffTranslations = {
   staffLastNameRequired: "اسم العائلة مطلوب",
   staffEmailInvalid: "أدخل بريداً إلكترونياً صالحاً",
   staffPasswordMin: "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
+  staffEmployeeNumberInvalid: "يجب أن يكون رقم الموظف 4 أرقام",
   staffDeptRequired: "اختر القسم",
 
   addGuestSubtitle: "إصدار مفتاح رقمي ورمز QR لتسجيل دخول الضيف.",

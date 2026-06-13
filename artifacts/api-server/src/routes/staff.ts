@@ -18,7 +18,14 @@ import { db, usersTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireStaffManagement, requireGeneralManager } from "../middlewares/requireAuth";
 import { hashPassword, generateSalt } from "../lib/auth";
-import { isValidDepartment, STAFF_DEPARTMENTS, DEPARTMENT_MANAGER_DEPARTMENTS } from "../lib/roles";
+import {
+  isValidDepartment,
+  STAFF_DEPARTMENTS,
+  DEPARTMENT_MANAGER_DEPARTMENTS,
+  EMPLOYEE_NUMBER_DEPARTMENTS,
+  EMAIL_LOGIN_PERSONNEL_DEPARTMENTS,
+  isEmailLoginPersonnelDepartment,
+} from "../lib/roles";
 import {
   canManageStaffMember,
   getDepartmentScope,
@@ -36,7 +43,20 @@ const router: IRouter = Router();
 
 // ── Validation schemas ─────────────────────────────────────────────────────
 
-const createStaffSchema = z.object({
+const createEmployeeNumberStaffSchema = z.object({
+  firstName: z.string().min(1, "First name is required").max(80),
+  lastName: z.string().min(1, "Last name is required").max(80),
+  employeeNumber: z
+    .string()
+    .regex(/^\d{4}$/, "Employee number must be exactly 4 digits"),
+  staffDepartment: z.enum(EMPLOYEE_NUMBER_DEPARTMENTS, {
+    errorMap: () => ({
+      message: "Department must be one of: " + EMPLOYEE_NUMBER_DEPARTMENTS.join(", "),
+    }),
+  }),
+});
+
+const createEmailPersonnelSchema = z.object({
   email: z.string().email("A valid email address is required"),
   password: z
     .string()
@@ -44,13 +64,16 @@ const createStaffSchema = z.object({
     .max(200, "Password too long"),
   firstName: z.string().min(1, "First name is required").max(80),
   lastName: z.string().min(1, "Last name is required").max(80),
-  employeeNumber: z
-    .string()
-    .regex(/^\d{4}$/, "Employee number must be exactly 4 digits"),
-  staffDepartment: z.enum(STAFF_DEPARTMENTS, {
-    errorMap: () => ({ message: "Department must be one of: " + STAFF_DEPARTMENTS.join(", ") }),
+  staffDepartment: z.enum(EMAIL_LOGIN_PERSONNEL_DEPARTMENTS, {
+    errorMap: () => ({
+      message: "Department must be RECEPTION or RESTAURANT",
+    }),
   }),
 });
+
+function buildEmployeePlaceholderEmail(hotelId: number, employeeNumber: string): string {
+  return `emp+${hotelId}-${employeeNumber}@staff.internal`;
+}
 
 const updateStaffSchema = z
   .object({
@@ -118,48 +141,78 @@ router.post("/staff", requireStaffManagement, async (req, res): Promise<void> =>
   const actor = { role: session.role, staffDepartment: session.staffDepartment };
   const deptScope = getDepartmentScope(actor);
 
-  const parsed = createStaffSchema.safeParse(req.body);
+  const deptFromBody =
+    typeof req.body?.staffDepartment === "string" ? req.body.staffDepartment : null;
+  let staffDepartment = deptFromBody;
+  if (deptScope) {
+    staffDepartment = deptScope;
+  }
+
+  const useEmailLogin =
+    staffDepartment != null && isEmailLoginPersonnelDepartment(staffDepartment);
+
+  const parsed = useEmailLogin
+    ? createEmailPersonnelSchema.safeParse({ ...req.body, staffDepartment })
+    : createEmployeeNumberStaffSchema.safeParse({ ...req.body, staffDepartment });
+
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid request" });
     return;
   }
 
-  let { email, password, firstName, lastName, employeeNumber, staffDepartment } = parsed.data;
+  const { firstName, lastName } = parsed.data;
+  staffDepartment = parsed.data.staffDepartment;
 
-  if (deptScope) {
-    staffDepartment = deptScope;
+  if (deptScope && staffDepartment !== deptScope) {
+    res.status(403).json({ error: "Cannot assign staff outside your department" });
+    return;
   }
-  const normalizedEmail = email.toLowerCase().trim();
-  const normalizedEmployeeNumber = employeeNumber.trim();
 
-  // Prevent duplicate email across the whole system
+  let normalizedEmail: string;
+  let passwordHash: string | null = null;
+  let normalizedEmployeeNumber: string | null = null;
+
+  if (useEmailLogin) {
+    const { email, password } = parsed.data as z.infer<typeof createEmailPersonnelSchema>;
+    normalizedEmail = email.toLowerCase().trim();
+    const salt = generateSalt();
+    passwordHash = hashPassword(password, salt);
+  } else {
+    const { employeeNumber } = parsed.data as z.infer<typeof createEmployeeNumberStaffSchema>;
+    normalizedEmployeeNumber = employeeNumber.trim();
+    normalizedEmail = buildEmployeePlaceholderEmail(hotelId, normalizedEmployeeNumber);
+  }
+
   const [existing] = await db
     .select({ id: usersTable.id })
     .from(usersTable)
     .where(eq(usersTable.email, normalizedEmail));
 
   if (existing) {
-    res.status(409).json({ error: "A user with this email address already exists" });
+    res.status(409).json({
+      error: useEmailLogin
+        ? "A user with this email address already exists"
+        : "This employee number is already in use",
+    });
     return;
   }
 
-  const [existingEmployeeNo] = await db
-    .select({ id: usersTable.id })
-    .from(usersTable)
-    .where(
-      and(
-        eq(usersTable.hotelId, hotelId),
-        eq(usersTable.employeeNumber, normalizedEmployeeNumber),
-      ),
-    );
+  if (normalizedEmployeeNumber) {
+    const [existingEmployeeNo] = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(
+        and(
+          eq(usersTable.hotelId, hotelId),
+          eq(usersTable.employeeNumber, normalizedEmployeeNumber),
+        ),
+      );
 
-  if (existingEmployeeNo) {
-    res.status(409).json({ error: "This employee number is already in use" });
-    return;
+    if (existingEmployeeNo) {
+      res.status(409).json({ error: "This employee number is already in use" });
+      return;
+    }
   }
-
-  const salt = generateSalt();
-  const passwordHash = hashPassword(password, salt);
 
   const [newUser] = await db
     .insert(usersTable)

@@ -85,6 +85,41 @@ export const DEPARTMENT_MANAGER_DEPARTMENTS = [
 
 export type DepartmentManagerDepartment = (typeof DEPARTMENT_MANAGER_DEPARTMENTS)[number];
 
+/** Personnel who sign in with a 4-digit employee number (staff portal). */
+export const EMPLOYEE_NUMBER_DEPARTMENTS = [
+  "HOUSEKEEPING",
+  "BELLMAN",
+  "KITCHEN",
+  "FINANCIAL_ACCOUNTING",
+  "SECURITY",
+  "MAINTENANCE",
+  "MARKETING",
+  "SPA_GYM",
+] as const satisfies readonly StaffDepartment[];
+
+/** Reception / restaurant personnel — email + password, not employee numbers. */
+export const EMAIL_LOGIN_PERSONNEL_DEPARTMENTS = ["RECEPTION", "RESTAURANT"] as const satisfies readonly StaffDepartment[];
+
+export type EmailLoginPersonnelDepartment = (typeof EMAIL_LOGIN_PERSONNEL_DEPARTMENTS)[number];
+
+export function isEmailLoginPersonnelDepartment(
+  dept: string | null | undefined,
+): dept is EmailLoginPersonnelDepartment {
+  return (
+    dept != null &&
+    (EMAIL_LOGIN_PERSONNEL_DEPARTMENTS as readonly string[]).includes(dept)
+  );
+}
+
+export function isEmployeeNumberDepartment(
+  dept: string | null | undefined,
+): dept is Exclude<StaffDepartment, EmailLoginPersonnelDepartment> {
+  return (
+    dept != null &&
+    (EMPLOYEE_NUMBER_DEPARTMENTS as readonly string[]).includes(dept)
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Permission definitions
 // ---------------------------------------------------------------------------

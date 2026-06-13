@@ -102,6 +102,7 @@ import {
   permanentDeleteStaff,
   staffDisplayName,
   resolveEmployeePresence,
+  staffLoginLabel,
   STAFF_DEPARTMENTS,
   DEPARTMENT_LABELS,
   DEPARTMENT_COLOURS,
@@ -382,7 +383,7 @@ function EmployeeCard({
             </p>
             <PresenceBadge member={member} />
           </div>
-          <p className="mt-0.5 truncate text-[11px] text-zinc-400">{member.email}</p>
+          <p className="mt-0.5 truncate text-[11px] text-zinc-400">{staffLoginLabel(member)}</p>
           {member.staffDepartment && (
             <p className="mt-0.5 text-[10px] font-medium text-zinc-500">
               {DEPARTMENT_LABELS[member.staffDepartment]}

@@ -25,6 +25,8 @@ import { ManagerCenterSheet } from "@/components/manager/ManagerCenterSheet";
 import {
   staffDisplayName,
   resolveEmployeePresence,
+  staffLoginLabel,
+  isEmailLoginPersonnelDepartment,
   DEPARTMENT_LABELS,
   DEPARTMENT_COLOURS,
   EMPLOYEE_PRESENCE_LABEL,
@@ -141,17 +143,20 @@ export function EmployeeDetailSheet({
         </div>
 
         <div className="mt-5 rounded-2xl border border-zinc-100 bg-zinc-50/80 px-4 py-3">
-          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
-            <Mail className="h-3 w-3" />
-            Email
-          </p>
-          <p className="mt-1 truncate font-mono text-sm text-zinc-700">{member.email}</p>
-          {member.employeeNumber && (
+          {member.employeeNumber && !isEmailLoginPersonnelDepartment(member.staffDepartment) ? (
             <>
-              <p className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
                 Employee No.
               </p>
               <p className="mt-1 font-mono text-sm text-zinc-700">#{member.employeeNumber}</p>
+            </>
+          ) : (
+            <>
+              <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">
+                <Mail className="h-3 w-3" />
+                Email
+              </p>
+              <p className="mt-1 truncate font-mono text-sm text-zinc-700">{staffLoginLabel(member)}</p>
             </>
           )}
         </div>
