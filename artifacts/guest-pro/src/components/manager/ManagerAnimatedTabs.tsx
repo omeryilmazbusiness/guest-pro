@@ -12,6 +12,7 @@ import {
   Bell,
   MessageSquare,
   TrendingUp,
+  MessageCircle,
   type LucideIcon,
 } from "lucide-react";
 import { PILL_SPRING } from "@/lib/manager-motion";
@@ -40,6 +41,7 @@ interface ManagerAnimatedTabsProps {
   requestCount: number;
   feedbackCount: number;
   teamCount: number;
+  liveChatCount: number;
   t: StaffTranslations;
 }
 
@@ -51,6 +53,7 @@ const TAB_ICON_CLASS: Record<ManagerDashboardTab, string> = {
   requests: "text-rose-500",
   feedback: "text-teal-600",
   summary: "text-emerald-600",
+  live_chat: "text-indigo-600",
 };
 
 const ALL_TABS: Omit<TabDef, "label" | "count">[] = [
@@ -59,6 +62,7 @@ const ALL_TABS: Omit<TabDef, "label" | "count">[] = [
   { key: "guests", icon: Users, iconClassName: TAB_ICON_CLASS.guests },
   { key: "rooms", icon: DoorOpen, iconClassName: TAB_ICON_CLASS.rooms },
   { key: "requests", icon: Bell, iconClassName: TAB_ICON_CLASS.requests },
+  { key: "live_chat", icon: MessageCircle, iconClassName: TAB_ICON_CLASS.live_chat },
   { key: "feedback", icon: MessageSquare, iconClassName: TAB_ICON_CLASS.feedback },
   { key: "summary", icon: TrendingUp, iconClassName: TAB_ICON_CLASS.summary },
 ];
@@ -72,6 +76,7 @@ export function ManagerAnimatedTabs({
   requestCount,
   feedbackCount,
   teamCount,
+  liveChatCount,
   t,
 }: ManagerAnimatedTabsProps) {
   const counts: Record<ManagerDashboardTab, number> = {
@@ -82,6 +87,7 @@ export function ManagerAnimatedTabs({
     requests: requestCount,
     feedback: feedbackCount,
     summary: 0,
+    live_chat: liveChatCount,
   };
 
   const labels: Record<ManagerDashboardTab, string> = {
@@ -92,6 +98,7 @@ export function ManagerAnimatedTabs({
     requests: t.tabRequests,
     feedback: t.tabFeedback,
     summary: t.tabSummary,
+    live_chat: t.tabLiveChat,
   };
 
   const visibleTabs = useMemo(
@@ -101,7 +108,7 @@ export function ManagerAnimatedTabs({
         label: labels[tab.key],
         count: counts[tab.key],
       })),
-    [scope, t, guestCount, roomCount, requestCount, feedbackCount, teamCount],
+    [scope, t, guestCount, roomCount, requestCount, feedbackCount, teamCount, liveChatCount],
   );
 
   const activeIndex = visibleTabs.findIndex((tab) => tab.key === active);

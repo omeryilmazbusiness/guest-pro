@@ -10,6 +10,7 @@ import RestaurantLoginPage from "@/pages/login/restaurant-login";
 import {
   GuestHomePage,
   GuestChatPage,
+  GuestLiveChatPage,
   GuestFlowPage,
   GuestAutoLoginPage,
   GuestPassportScanPage,
@@ -23,6 +24,8 @@ import ManagerSettings from "@/pages/manager/settings";
 import NotFound from "@/pages/not-found";
 import { HotelTenantPathFix } from "@/routes/HotelTenantPathFix";
 import { GuestLogoutProvider } from "@/contexts/guest-logout-context";
+import { GuestLiveChatUnreadProvider } from "@/contexts/guest-live-chat-unread-context";
+import { GuestRememberMePrompt } from "@/components/guest/GuestRememberMePrompt";
 
 export default function HotelTenantRoutes() {
   const params = useParams<{ hotelSlug: string }>();
@@ -62,6 +65,8 @@ function HotelTenantGate() {
 
   return (
     <GuestLogoutProvider>
+    <GuestLiveChatUnreadProvider>
+    <GuestRememberMePrompt />
     <Switch>
       <Route path={ROUTES.login} component={Login} />
       <Route path={ROUTES.guestLogin} component={GuestLoginPage} />
@@ -71,6 +76,7 @@ function HotelTenantGate() {
       <Route path={ROUTES.welcoming} component={GuestWelcoming} />
       <Route path={ROUTES.guest} component={GuestHomePage} />
       <Route path={ROUTES.guestChat} component={GuestChatPage} />
+      <Route path={ROUTES.guestLiveChat} component={GuestLiveChatPage} />
       <Route path={ROUTES.guestFlow} component={GuestFlowPage} />
       <Route path={ROUTES.guestAutoLogin} component={GuestAutoLoginPage} />
       <Route path={ROUTES.guestPassportScan} component={GuestPassportScanPage} />
@@ -83,6 +89,7 @@ function HotelTenantGate() {
       <Route path={ROUTES.restaurant} component={RestaurantDashboard} />
       <Route component={NotFound} />
     </Switch>
+    </GuestLiveChatUnreadProvider>
     </GuestLogoutProvider>
   );
 }

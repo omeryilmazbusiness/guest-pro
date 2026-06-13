@@ -18,6 +18,7 @@ export const ROUTES = {
   restaurantLogin: "/restaurant-login",
   guest: "/guest",
   guestChat: "/guest/chat",
+  guestLiveChat: "/guest/live-chat",
   guestFlow: "/guest/flow",
   guestAutoLogin: "/guest/auto-login",
   guestPassportScan: "/guest/passport-scan",

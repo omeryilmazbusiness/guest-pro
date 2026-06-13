@@ -15,6 +15,12 @@ import { Keyboard } from "lucide-react";
 import { GuestDashboardHeader } from "@/components/guest/GuestDashboardHeader";
 import { GuestVoiceTalkCard } from "@/components/guest/GuestVoiceTalkCard";
 import { GuestChatEntryTiles } from "@/components/guest/GuestChatEntryTiles";
+import { GuestRememberMeModal } from "@/components/guest/GuestRememberMeModal";
+import { useGuestLiveChatUnreadContext } from "@/contexts/guest-live-chat-unread-context";
+import {
+  startLiveChatSession,
+  triggerLiveChatEmergency,
+} from "@/lib/live-chat-api";
 import { GUEST_SECTION_IDS } from "@/lib/guest-dashboard-nav";
 import { getWelcomingStrings } from "@/lib/welcoming/hotel-content";
 import { getWelcomingLanguage } from "@/lib/welcoming/languages";
@@ -111,6 +117,8 @@ export default function GuestHome() {
 
   const voiceStopRef = useRef<(() => void) | null>(null);
   const [voiceOverlayOpen, setVoiceOverlayOpen] = useState(false);
+  const [rememberMeOpen, setRememberMeOpen] = useState(false);
+  const liveChatUnread = useGuestLiveChatUnreadContext();
 
   const closeVoiceOverlay = useCallback(() => {
     voiceStopRef.current?.();
@@ -168,7 +176,28 @@ export default function GuestHome() {
   const welcomingStrings = getWelcomingStrings(welcomingLocale);
 
   const openReceptionChat = () => {
-    goToChat(t.receptionChatPrompt);
+    void liveChatUnread.acknowledgeSeen();
+    goTo(ROUTES.guestLiveChat);
+  };
+
+  const openReceptionUrgent = async () => {
+    markGuestDashboardScrollRestore();
+    try {
+      const clientEventId =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `em-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const { session } = await startLiveChatSession(uiLocale);
+      await triggerLiveChatEmergency(session.id, clientEventId);
+      try {
+        sessionStorage.setItem("live_chat_urgent_emergency_sent", String(session.id));
+      } catch {
+        /* ignore */
+      }
+    } catch {
+      toast.error(t.liveChatEmergencyError);
+    }
+    goTo(`${ROUTES.guestLiveChat}?urgent=1`);
   };
 
   return (
@@ -243,6 +272,9 @@ export default function GuestHome() {
           <GuestChatEntryTiles
             onStartConversation={() => goToChat()}
             onReceptionChat={openReceptionChat}
+            onReceptionUrgent={openReceptionUrgent}
+            onRememberMe={() => setRememberMeOpen(true)}
+            receptionUnreadCount={liveChatUnread.unreadCount}
           />
         </div>
 
@@ -313,6 +345,8 @@ export default function GuestHome() {
           onCancel={closeVoiceOverlay}
         />
       )}
+
+      <GuestRememberMeModal open={rememberMeOpen} onClose={() => setRememberMeOpen(false)} />
     </>
   );
 }

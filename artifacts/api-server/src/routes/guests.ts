@@ -1,7 +1,7 @@
 import { Router } from "express";
 import type { IRouter, Request } from "express";
 import { db, guestsTable, guestKeysTable, auditLogsTable, hotelWifiNetworksTable } from "@workspace/db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, count } from "drizzle-orm";
 import {
   requireGuestOperations,
   requireGeneralManager,
@@ -66,19 +66,59 @@ async function resolveWifiNetworkId(
   return network ? id : "invalid";
 }
 
+const GUESTS_PAGE_SIZE_DEFAULT = 50;
+const GUESTS_PAGE_SIZE_MAX = 50;
+
+function parseGuestsPagination(query: Request["query"]) {
+  const rawPage = query.page;
+  if (rawPage == null || rawPage === "") return null;
+  const page = Math.max(1, Number(rawPage) || 1);
+  const limit = Math.min(
+    GUESTS_PAGE_SIZE_MAX,
+    Math.max(1, Number(query.limit) || GUESTS_PAGE_SIZE_DEFAULT),
+  );
+  return { page, limit, offset: (page - 1) * limit };
+}
+
 // ---------------------------------------------------------------------------
-// GET /guests — list all guests for this hotel
+// GET /guests — list guests (paginated when ?page= is set)
 // ---------------------------------------------------------------------------
 router.get("/guests", requireGuestOperations, async (req, res): Promise<void> => {
   const hotelId = req.session!.hotelId;
-  const guests = await db
+  const pagination = parseGuestsPagination(req.query);
+
+  const baseQuery = db
     .select(GUEST_SELECT)
     .from(guestsTable)
     .leftJoin(guestKeysTable, and(eq(guestKeysTable.guestId, guestsTable.id), eq(guestKeysTable.isActive, true)))
     .where(and(eq(guestsTable.hotelId, hotelId), eq(guestsTable.isActive, true)))
     .orderBy(desc(guestsTable.createdAt));
 
-  res.json(guests);
+  if (!pagination) {
+    const guests = await baseQuery;
+    res.json(guests);
+    return;
+  }
+
+  const { page, limit, offset } = pagination;
+
+  const [totalRow] = await db
+    .select({ total: count() })
+    .from(guestsTable)
+    .where(and(eq(guestsTable.hotelId, hotelId), eq(guestsTable.isActive, true)));
+
+  const total = Number(totalRow?.total ?? 0);
+  const guests = await baseQuery.limit(limit).offset(offset);
+
+  res.json({
+    items: guests,
+    pagination: {
+      page,
+      limit,
+      total,
+      hasMore: offset + guests.length < total,
+    },
+  });
 });
 
 // ---------------------------------------------------------------------------

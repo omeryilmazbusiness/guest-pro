@@ -20,6 +20,7 @@ import guestPreferencesRouter from "./guest-preferences";
 import ttsRouter from "./tts";
 import assistantConfigRouter from "./assistant-config";
 import hotelSetupRouter from "./hotel-setup";
+import liveChatRouter from "./live-chat";
 import platformRouter from "./platform";
 import platformAuthRouter from "./platform-auth";
 import publicHotelsRouter from "./public-hotels";
@@ -54,5 +55,6 @@ router.use(guestPreferencesRouter);
 router.use(ttsRouter);
 router.use(assistantConfigRouter);
 router.use(hotelSetupRouter);
+router.use(liveChatRouter);
 
 export default router;

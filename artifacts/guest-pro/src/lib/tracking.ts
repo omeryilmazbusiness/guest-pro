@@ -179,3 +179,47 @@ export interface MyIpResponse {
 export async function getMyIp(): Promise<MyIpResponse> {
   return customFetch<MyIpResponse>(`${BASE}/tracking/my-ip`);
 }
+
+export async function scheduleEntryTrack(
+  expectedEntryAt: string,
+): Promise<{ id: number; expectedEntryAt: string }> {
+  return customFetch(`${BASE}/tracking/entry-schedule`, {
+    method: "POST",
+    body: JSON.stringify({ expectedEntryAt }),
+  });
+}
+
+export interface RememberMePendingPrompt {
+  scheduleId: number;
+  expectedEntryAt: string;
+  promptedAt: string;
+  secondsUntilEscalation: number;
+}
+
+export interface RememberMeActiveSchedule {
+  scheduleId: number;
+  expectedEntryAt: string;
+  progress: number;
+  awaitingAck: boolean;
+  secondsUntilEscalation: number | null;
+}
+
+export async function fetchRememberMeActive(): Promise<RememberMeActiveSchedule | null> {
+  const res = await customFetch<{ active: RememberMeActiveSchedule | null }>(
+    `${BASE}/tracking/remember-me/active`,
+  );
+  return res.active;
+}
+
+export async function fetchRememberMePending(): Promise<RememberMePendingPrompt | null> {
+  const res = await customFetch<{ pending: RememberMePendingPrompt | null }>(
+    `${BASE}/tracking/remember-me/pending`,
+  );
+  return res.pending;
+}
+
+export async function acknowledgeRememberMe(scheduleId: number): Promise<void> {
+  await customFetch(`${BASE}/tracking/remember-me/${scheduleId}/acknowledge`, {
+    method: "POST",
+  });
+}

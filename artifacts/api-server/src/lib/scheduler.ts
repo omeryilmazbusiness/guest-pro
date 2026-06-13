@@ -14,6 +14,7 @@ import {
   istanbulDateString,
   isTaskInsightTriggerTime,
 } from "./daily-task-insight";
+import { processDueEntryTrackSchedules } from "./entry-track-scheduler";
 import { logger } from "./logger";
 import { redisClient } from "./redis";
 
@@ -108,6 +109,10 @@ async function runDailyTaskInsightJob(): Promise<void> {
 export function startScheduler(): void {
   setInterval(() => {
     const now = new Date();
+
+    processDueEntryTrackSchedules().catch((err) =>
+      logger.error({ err }, "Scheduler: entry track job failed"),
+    );
 
     if (now.getUTCHours() === SUMMARY_HOUR_UTC && now.getUTCMinutes() === SUMMARY_MINUTE_UTC) {
       generateDailySummariesForAllHotels().catch((err) =>

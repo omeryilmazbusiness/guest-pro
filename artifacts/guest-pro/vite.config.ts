@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import type { Plugin, ProxyOptions } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
@@ -9,6 +10,23 @@ import type { Connect } from "vite";
 const port = Number(process.env.VITE_DEV_PORT ?? process.env.WEB_PORT ?? "5173");
 const basePath = process.env.BASE_PATH ?? "/";
 const startUrl = basePath === "/" ? "/" : `${basePath}/`;
+
+function apiDevProxy(): ProxyOptions {
+  return {
+    target: process.env.VITE_API_PROXY_TARGET ?? "http://localhost:3000",
+    changeOrigin: true,
+    secure: false,
+    configure: (proxy) => {
+      proxy.on("error", (_err, _req, res) => {
+        const socket = res as Connect.ServerResponse | undefined;
+        if (socket && !socket.headersSent) {
+          socket.writeHead(503, { "Content-Type": "application/json" });
+          socket.end(JSON.stringify({ error: "API temporarily unavailable" }));
+        }
+      });
+    },
+  };
+}
 
 /** Full Colega pages at /about and /contact (not React shell). */
 function guestProMarketingPagesPlugin() {
@@ -134,11 +152,7 @@ export default defineConfig({
       clientPort: port,
     },
     proxy: {
-      "/api": {
-        target: process.env.VITE_API_PROXY_TARGET ?? "http://localhost:3000",
-        changeOrigin: true,
-        secure: false,
-      },
+      "/api": apiDevProxy(),
     },
   },
   preview: { port, host: "0.0.0.0", allowedHosts: true },

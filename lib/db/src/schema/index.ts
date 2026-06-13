@@ -22,3 +22,5 @@ export * from "./hotel-wifi-networks";
 export * from "./hotel-nearby-places";
 export * from "./hotel-nearby-settings";
 export * from "./hotel-assistant-config";
+export * from "./live-chat";
+export * from "./guest-entry-track";

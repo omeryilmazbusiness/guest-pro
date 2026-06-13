@@ -20,8 +20,19 @@ import PlatformRoutes from "@/routes/PlatformRoutes";
 import LegacyTenantRedirect from "@/routes/LegacyTenantRedirect";
 import { DuplicateTenantSlugRedirect } from "@/routes/DuplicateTenantSlugRedirect";
 import { ROUTES } from "@/lib/app-routes";
+import {
+  defaultQueryRetry,
+  defaultQueryRetryDelay,
+} from "@/lib/query-defaults";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: defaultQueryRetry,
+      retryDelay: defaultQueryRetryDelay,
+    },
+  },
+});
 
 function Router() {
   return (
@@ -72,6 +83,9 @@ function Router() {
       </Route>
       <Route path={ROUTES.guestChat}>
         <LegacyTenantRedirect segment={ROUTES.guestChat} />
+      </Route>
+      <Route path={ROUTES.guestLiveChat}>
+        <LegacyTenantRedirect segment={ROUTES.guestLiveChat} />
       </Route>
       <Route path={ROUTES.guestFlow}>
         <LegacyTenantRedirect segment={ROUTES.guestFlow} />

@@ -7,33 +7,58 @@ import { statSync, watch } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const apiRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = path.resolve(apiRoot, "../..");
+const dotenvPath = path.join(repoRoot, ".env");
 const distEntry = path.join(apiRoot, "dist", "index.mjs");
 const buildStamp = path.join(apiRoot, "dist", ".build-stamp");
 const apiPort = Number(process.env["PORT"] ?? "3000");
 
-function freeListenPort(port) {
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function pidsOnPort(port) {
   try {
     const out = execSync(`lsof -ti :${port}`, { encoding: "utf8" }).trim();
-    if (!out) return;
-    for (const pid of out.split("\n")) {
-      if (!pid) continue;
-      const n = Number(pid);
-      if (n === process.pid) continue;
-      console.log(`[dev-loop] Port ${port} in use — stopping PID ${pid}`);
-      process.kill(n, "SIGTERM");
-    }
+    if (!out) return [];
+    return out.split("\n").map((s) => Number(s.trim())).filter(Boolean);
   } catch {
-    // Port is free.
+    return [];
   }
 }
 
 function isPortListening(port) {
-  try {
-    const out = execSync(`lsof -ti :${port}`, { encoding: "utf8" }).trim();
-    return Boolean(out);
-  } catch {
-    return false;
+  return pidsOnPort(port).length > 0;
+}
+
+async function freeListenPort(port, { keepPid } = {}) {
+  const pids = pidsOnPort(port).filter((pid) => pid !== keepPid && pid !== process.pid);
+  if (pids.length === 0) return;
+
+  for (const pid of pids) {
+    console.log(`[dev-loop] Port ${port} in use — stopping PID ${pid}`);
+    try {
+      process.kill(pid, "SIGTERM");
+    } catch {
+      /* already gone */
+    }
   }
+
+  for (let i = 0; i < 40; i++) {
+    const remaining = pidsOnPort(port).filter((pid) => pid !== keepPid && pid !== process.pid);
+    if (remaining.length === 0) return;
+    await sleep(100);
+  }
+
+  for (const pid of pidsOnPort(port).filter((p) => p !== keepPid && p !== process.pid)) {
+    try {
+      process.kill(pid, "SIGKILL");
+      console.log(`[dev-loop] Force-killed PID ${pid} on port ${port}`);
+    } catch {
+      /* ignore */
+    }
+  }
+  await sleep(200);
 }
 
 function run(cmd, args, opts = {}) {
@@ -67,7 +92,7 @@ function startApiProcess() {
       env: {
         ...process.env,
         NODE_ENV: "development",
-        DOTENV_CONFIG_PATH: "../../.env",
+        DOTENV_CONFIG_PATH: dotenvPath,
       },
       stdio: "inherit",
     },
@@ -76,63 +101,70 @@ function startApiProcess() {
 
 console.log("[dev-loop] Starting API (watch build + auto-restart)…");
 
-const MAX_FATAL_RESTARTS = 8;
-let fatalRestarts = 0;
 let watchBuild = null;
 let apiProcess = null;
+let stoppingApi = false;
 let restartTimer = null;
 let pendingRestartTimer = null;
 let pendingRestartReason = null;
-let manualRestart = false;
 let lastRestartAt = 0;
 let lastBundleMtime = 0;
 let launching = false;
-
-function stopApi() {
-  if (!apiProcess) return;
-  manualRestart = true;
-  apiProcess.kill("SIGTERM");
-}
+let crashRestarts = 0;
 
 let ignoreWatchUntil = 0;
 
-function launchApi() {
-  if (launching) return;
-  launching = true;
-  freeListenPort(apiPort);
-  apiProcess = startApiProcess();
-  ignoreWatchUntil = Date.now() + 2000;
-  launching = false;
-
-  apiProcess.on("exit", (code, signal) => {
-    const wasManual = manualRestart;
-    manualRestart = false;
-    apiProcess = null;
-
-    if (wasManual) return;
+function attachApiExitHandler(child) {
+  child.on("exit", (code, signal) => {
+    if (apiProcess === child) apiProcess = null;
+    if (stoppingApi) return;
 
     if (code === 0) {
-      fatalRestarts = 0;
-      console.log("[dev-loop] API stopped cleanly.");
-      process.exit(0);
+      crashRestarts = 0;
+      return;
     }
 
-    fatalRestarts += 1;
-    if (fatalRestarts >= MAX_FATAL_RESTARTS) {
-      console.error(
-        "\n[dev-loop] API failed to stay up after",
-        MAX_FATAL_RESTARTS,
-        "attempts.",
-      );
-      process.exit(code ?? 1);
-    }
-
-    const delaySec = Math.min(2 + fatalRestarts, 15);
+    crashRestarts += 1;
+    const delaySec = Math.min(2 + crashRestarts, 15);
     console.log(
-      `[dev-loop] API exited (${code ?? signal}). Restarting in ${delaySec}s… (${fatalRestarts}/${MAX_FATAL_RESTARTS})`,
+      `[dev-loop] API crashed (${code ?? signal}). Restarting in ${delaySec}s… (attempt ${crashRestarts})`,
     );
-    setTimeout(launchApi, delaySec * 1000);
+    setTimeout(() => void launchApi(), delaySec * 1000);
   });
+}
+
+async function stopApi() {
+  if (!apiProcess) return;
+  const child = apiProcess;
+  stoppingApi = true;
+  apiProcess = null;
+  child.kill("SIGTERM");
+
+  await new Promise((resolve) => {
+    const timeout = setTimeout(resolve, 4000);
+    child.once("exit", () => {
+      clearTimeout(timeout);
+      resolve();
+    });
+  });
+
+  stoppingApi = false;
+}
+
+async function launchApi() {
+  if (launching) return;
+  launching = true;
+  try {
+    await stopApi();
+    await freeListenPort(apiPort);
+    const child = startApiProcess();
+    apiProcess = child;
+    crashRestarts = 0;
+    ignoreWatchUntil = Date.now() + 3000;
+    attachApiExitHandler(child);
+  } finally {
+    launching = false;
+  }
 }
 
 function queuePendingRestart(reason, waitMs, detail) {
@@ -151,15 +183,15 @@ function scheduleApiRestart(reason) {
   if (Date.now() < ignoreWatchUntil) {
     queuePendingRestart(
       reason,
-      ignoreWatchUntil - Date.now() + 100,
+      ignoreWatchUntil - Date.now() + 200,
       "API just launched",
     );
     return;
   }
-  if (Date.now() - lastRestartAt < 2500) {
+  if (Date.now() - lastRestartAt < 3000) {
     queuePendingRestart(
       reason,
-      2500 - (Date.now() - lastRestartAt) + 100,
+      3000 - (Date.now() - lastRestartAt) + 200,
       "debounce",
     );
     return;
@@ -170,9 +202,8 @@ function scheduleApiRestart(reason) {
     restartTimer = null;
     lastRestartAt = Date.now();
     console.log(`[dev-loop] ${reason} — restarting API…`);
-    stopApi();
-    setTimeout(launchApi, 400);
-  }, 400);
+    void launchApi();
+  }, 500);
 }
 
 function readDiskBuildStamp() {
@@ -184,6 +215,8 @@ function readDiskBuildStamp() {
 }
 
 function ensureApiRunning() {
+  if (launching || stoppingApi) return;
+
   const diskStampMtime = readDiskBuildStamp();
   if (diskStampMtime > lastBundleMtime) {
     lastBundleMtime = diskStampMtime;
@@ -191,17 +224,19 @@ function ensureApiRunning() {
     return;
   }
 
-  if (apiProcess && isPortListening(apiPort)) return;
-  if (!apiProcess && isPortListening(apiPort)) {
-    console.log("[dev-loop] Port busy but no managed API — reclaiming port…");
-    freeListenPort(apiPort);
+  if (apiProcess) {
+    const alive = apiProcess.pid && !apiProcess.killed;
+    if (alive && isPortListening(apiPort)) return;
+    if (!alive) apiProcess = null;
   }
-  if (launching) return;
-  if (Date.now() - lastRestartAt < 2500) return;
+
+  if (isPortListening(apiPort)) return;
+
+  if (Date.now() - lastRestartAt < 3000) return;
+
   console.log("[dev-loop] API not listening — starting…");
   lastRestartAt = Date.now();
-  stopApi();
-  launchApi();
+  void launchApi();
 }
 
 async function main() {
@@ -214,11 +249,10 @@ async function main() {
   watchBuild = startWatchBuild();
   watchBuild.on("exit", (code) => {
     console.error("[dev-loop] esbuild watch exited with code", code);
-    if (apiProcess) apiProcess.kill("SIGTERM");
-    process.exit(code ?? 1);
+    void stopApi().finally(() => process.exit(code ?? 1));
   });
 
-  launchApi();
+  await launchApi();
 
   for (const file of [distEntry, buildStamp]) {
     try {
@@ -253,21 +287,21 @@ async function main() {
       lastBundleMtime = mtime;
       onBundleChange();
     }
-  }, 1500);
+  }, 2000);
 
-  setInterval(ensureApiRunning, 5000);
+  setInterval(ensureApiRunning, 8000);
 }
 
-function shutdown() {
+async function shutdown() {
   if (restartTimer) clearTimeout(restartTimer);
   if (pendingRestartTimer) clearTimeout(pendingRestartTimer);
   if (watchBuild) watchBuild.kill("SIGTERM");
-  if (apiProcess) apiProcess.kill("SIGTERM");
+  await stopApi();
   process.exit(0);
 }
 
-process.on("SIGINT", shutdown);
-process.on("SIGTERM", shutdown);
+process.on("SIGINT", () => void shutdown());
+process.on("SIGTERM", () => void shutdown());
 
 main().catch((err) => {
   console.error("[dev-loop] Fatal error:", err);

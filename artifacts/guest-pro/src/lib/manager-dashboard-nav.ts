@@ -9,6 +9,7 @@ import {
   DoorOpen,
   Bell,
   MessageSquare,
+  MessageCircle,
   TrendingUp,
   Plus,
   Settings,
@@ -44,6 +45,7 @@ export interface ManagerDashboardNavContext {
   requestCount: number;
   feedbackCount: number;
   teamCount: number;
+  liveChatCount: number;
   canCreateGuest: boolean;
   isGeneralManager: boolean;
 }
@@ -96,6 +98,14 @@ const NAV_DEFS: NavDef[] = [
     action: { type: "tab", tab: "requests" },
     badge: (c) => (c.requestCount > 0 ? c.requestCount : undefined),
     isVisible: (c) => canAccessManagerTab(c.scope, "requests"),
+  },
+  {
+    id: "live_chat",
+    icon: MessageCircle,
+    resolveLabel: ({ t }) => t.tabLiveChat,
+    action: { type: "tab", tab: "live_chat" },
+    badge: (c) => (c.liveChatCount > 0 ? c.liveChatCount : undefined),
+    isVisible: (c) => canAccessManagerTab(c.scope, "live_chat"),
   },
   {
     id: "feedback",

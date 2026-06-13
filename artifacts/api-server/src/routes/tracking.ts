@@ -18,9 +18,16 @@ import {
   hotelTrackingConfigsTable,
   hotelTrackingNetworksTable,
   guestPresenceSnapshotsTable,
+  guestEntryTrackSchedulesTable,
+  liveChatSessionsTable,
 } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { requireManager, requireStaff, requireGuest } from "../middlewares/requireAuth";
+import {
+  acknowledgeRememberMeSchedule,
+  getRememberMeActiveSchedule,
+  getRememberMePendingPrompt,
+} from "../lib/entry-track-service";
 import {
   resolveTrackingStatus,
   extractSourceIp,
@@ -357,6 +364,126 @@ router.get("/tracking/my-ip", requireStaff, (req, res): void => {
     xForwardedFor: req.headers["x-forwarded-for"] ?? null,
     socketRemoteAddress: req.socket?.remoteAddress ?? null,
   });
+});
+
+// ---------------------------------------------------------------------------
+// POST /tracking/entry-schedule — guest schedules expected hotel entry time
+// ---------------------------------------------------------------------------
+router.post("/tracking/entry-schedule", requireGuest, async (req, res): Promise<void> => {
+  const { guestId, hotelId } = req.session!;
+
+  if (!guestId) {
+    res.status(400).json({ error: "Guest session missing guestId" });
+    return;
+  }
+
+  const raw = req.body?.expectedEntryAt;
+  if (typeof raw !== "string" || !raw.trim()) {
+    res.status(400).json({ error: "expectedEntryAt is required (ISO 8601)" });
+    return;
+  }
+
+  const expectedEntryAt = new Date(raw);
+  if (Number.isNaN(expectedEntryAt.getTime())) {
+    res.status(400).json({ error: "expectedEntryAt must be a valid date" });
+    return;
+  }
+
+  const minLeadMs = 2 * 60 * 1000;
+  if (expectedEntryAt.getTime() < Date.now() + minLeadMs) {
+    res.status(400).json({ error: "expectedEntryAt must be at least 2 minutes in the future" });
+    return;
+  }
+
+  const now = new Date();
+
+  await db
+    .update(guestEntryTrackSchedulesTable)
+    .set({ cancelledAt: now, updatedAt: now })
+    .where(
+      and(
+        eq(guestEntryTrackSchedulesTable.guestId, guestId),
+        eq(guestEntryTrackSchedulesTable.hotelId, hotelId),
+        isNull(guestEntryTrackSchedulesTable.alertTriggeredAt),
+        isNull(guestEntryTrackSchedulesTable.cancelledAt),
+      ),
+    );
+
+  const [session] = await db
+    .select({ id: liveChatSessionsTable.id })
+    .from(liveChatSessionsTable)
+    .where(
+      and(
+        eq(liveChatSessionsTable.guestId, guestId),
+        eq(liveChatSessionsTable.hotelId, hotelId),
+        eq(liveChatSessionsTable.status, "active"),
+      ),
+    )
+    .limit(1);
+
+  const [schedule] = await db
+    .insert(guestEntryTrackSchedulesTable)
+    .values({
+      guestId,
+      hotelId,
+      sessionId: session?.id ?? null,
+      expectedEntryAt,
+    })
+    .returning();
+
+  res.status(201).json({
+    id: schedule!.id,
+    expectedEntryAt: schedule!.expectedEntryAt.toISOString(),
+  });
+});
+
+// ---------------------------------------------------------------------------
+// GET /tracking/remember-me/active — icon progress arc
+// ---------------------------------------------------------------------------
+router.get("/tracking/remember-me/active", requireGuest, async (req, res): Promise<void> => {
+  const { guestId, hotelId } = req.session!;
+  if (!guestId) {
+    res.status(400).json({ error: "Guest session missing guestId" });
+    return;
+  }
+
+  const active = await getRememberMeActiveSchedule(guestId, hotelId);
+  res.json({ active });
+});
+
+// ---------------------------------------------------------------------------
+// GET /tracking/remember-me/pending — guest popup when scheduled time passed
+// ---------------------------------------------------------------------------
+router.get("/tracking/remember-me/pending", requireGuest, async (req, res): Promise<void> => {
+  const { guestId, hotelId } = req.session!;
+  if (!guestId) {
+    res.status(400).json({ error: "Guest session missing guestId" });
+    return;
+  }
+
+  const pending = await getRememberMePendingPrompt(guestId, hotelId);
+  res.json({ pending });
+});
+
+// ---------------------------------------------------------------------------
+// POST /tracking/remember-me/:id/acknowledge — guest confirms awareness
+// ---------------------------------------------------------------------------
+router.post("/tracking/remember-me/:id/acknowledge", requireGuest, async (req, res): Promise<void> => {
+  const { guestId, hotelId } = req.session!;
+  const scheduleId = Number(req.params.id);
+
+  if (!guestId || !Number.isFinite(scheduleId)) {
+    res.status(400).json({ error: "Invalid request" });
+    return;
+  }
+
+  const ok = await acknowledgeRememberMeSchedule(scheduleId, guestId, hotelId);
+  if (!ok) {
+    res.status(404).json({ error: "Schedule not found" });
+    return;
+  }
+
+  res.json({ ok: true });
 });
 
 // ---------------------------------------------------------------------------

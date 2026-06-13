@@ -388,7 +388,9 @@
   .guest-voice-liquid-sheen,
   .guest-chat-entry-icon,
   .guest-chat-typing-dot,
-  .guest-reception-live-ring {
+  .guest-reception-live-ring,
+  .guest-track-me-ring,
+  .guest-urgent-live-ring {
     animation: none !important;
   }
 }
@@ -439,6 +441,18 @@
 .guest-reception-live-ring {
   animation: guest-reception-live-pulse 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
   border: 2px solid rgb(52 211 153 / 0.45);
+  border-radius: 9999px;
+}
+
+.guest-track-me-ring {
+  animation: guest-reception-live-pulse 2.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  border: 2px solid rgb(56 189 248 / 0.42);
+  border-radius: 9999px;
+}
+
+.guest-urgent-live-ring {
+  animation: guest-reception-live-pulse 1.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  border: 2px solid rgb(244 63 94 / 0.5);
   border-radius: 9999px;
 }
 

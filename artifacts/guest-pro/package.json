@@ -8,7 +8,7 @@
     "build": "vite build --config vite.config.ts",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node ../../node_modules/.pnpm/tsx@4.21.0/node_modules/tsx/dist/cli.mjs --test src/lib/passport/passport.unit.test.ts src/lib/marketing-routes.unit.test.ts src/lib/colega-youtube-hero.unit.test.ts src/lib/session-token.unit.test.ts src/lib/welcoming/maps.unit.test.ts src/lib/nearby/coords.unit.test.ts src/lib/guest-concierge.unit.test.ts src/lib/guest-locale.unit.test.ts src/lib/setup-section-validation.unit.test.ts src/lib/guest-chat-starters.unit.test.ts src/lib/staff-scope.unit.test.ts",
+    "test": "node ../../node_modules/.pnpm/tsx@4.21.0/node_modules/tsx/dist/cli.mjs --test src/lib/passport/passport.unit.test.ts src/lib/marketing-routes.unit.test.ts src/lib/colega-youtube-hero.unit.test.ts src/lib/session-token.unit.test.ts src/lib/welcoming/maps.unit.test.ts src/lib/nearby/coords.unit.test.ts src/lib/guest-concierge.unit.test.ts src/lib/guest-locale.unit.test.ts src/lib/setup-section-validation.unit.test.ts src/lib/guest-chat-starters.unit.test.ts src/lib/staff-scope.unit.test.ts src/lib/live-chat-api.unit.test.ts src/lib/live-chat-sync-poll.unit.test.ts src/lib/live-chat-messages.unit.test.ts src/lib/remember-me-datetime.unit.test.ts src/lib/guest-live-chat-alert.unit.test.ts src/hooks/use-live-chat-inbox.unit.test.ts",
     "guest-chat:self-test": "node scripts/guest-chat-self-test.mjs",
     "session:self-test": "node ../api-server/scripts/self-test-persistent-session.mjs",
     "colega:self-test": "node scripts/self-test-colega-hero.mjs",

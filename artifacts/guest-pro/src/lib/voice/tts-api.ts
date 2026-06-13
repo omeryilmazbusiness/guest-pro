@@ -59,10 +59,16 @@ export function shouldTryPremiumTts(): boolean {
   return !premiumTtsDisabled;
 }
 
+/** True when cached status says ElevenLabs is usable (call refreshTtsStatus first). */
 export function isElevenLabsTtsAvailable(): boolean {
   if (premiumTtsDisabled) return false;
-  if (!cachedStatus) return true;
+  if (!cachedStatus) return false;
   return cachedStatus.available && cachedStatus.remaining > 0;
+}
+
+/** After refreshTtsStatus, true when premium TTS is worth attempting. */
+export function isPremiumTtsReady(): boolean {
+  return shouldTryPremiumTts() && isElevenLabsTtsAvailable();
 }
 
 export function markPremiumTtsUnavailable(): void {
@@ -98,39 +104,34 @@ function isFallbackTtsError(err: unknown): boolean {
   );
 }
 
-function errorStatus(err: unknown): number {
-  if (!err || typeof err !== "object" || !("status" in err)) return 0;
-  return (err as { status: number }).status;
-}
-
 export async function fetchElevenLabsAudio(text: string, lang: string): Promise<Blob | null> {
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const blob = await customFetch<Blob>("/api/tts/synthesize", {
-        method: "POST",
-        body: JSON.stringify({ text, lang }),
-        responseType: "blob",
-        headers: { Accept: "audio/mpeg" },
-      });
-      if (blob && blob.size > 0) {
-        markPremiumTtsSuccess();
-        return blob;
-      }
-    } catch (err) {
-      const status = errorStatus(err);
-      if (status === 502 && attempt === 0) continue;
-      if (isFallbackTtsError(err)) {
-        const payload =
-          err && typeof err === "object" && "data" in err
-            ? ((err as { data: unknown }).data as TtsErrorPayload | null)
-            : null;
-        if (import.meta.env.DEV && payload?.code) {
-          console.warn("[TTS]", payload.code, payload.message ?? "");
-        }
-        markPremiumTtsUnavailable();
-      }
-      return null;
+  if (!shouldTryPremiumTts() || !isElevenLabsTtsAvailable()) {
+    return null;
+  }
+
+  try {
+    const blob = await customFetch<Blob>("/api/tts/synthesize", {
+      method: "POST",
+      body: JSON.stringify({ text, lang }),
+      responseType: "blob",
+      headers: { Accept: "audio/mpeg" },
+    });
+    if (blob && blob.size > 0) {
+      markPremiumTtsSuccess();
+      return blob;
     }
+  } catch (err) {
+    if (isFallbackTtsError(err)) {
+      const payload =
+        err && typeof err === "object" && "data" in err
+          ? ((err as { data: unknown }).data as TtsErrorPayload | null)
+          : null;
+      if (import.meta.env.DEV && payload?.code) {
+        console.warn("[TTS]", payload.code, payload.message ?? "");
+      }
+      markPremiumTtsUnavailable();
+    }
+    return null;
   }
 
   markPremiumTtsUnavailable();

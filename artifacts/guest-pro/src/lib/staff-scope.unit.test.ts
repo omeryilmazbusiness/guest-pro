@@ -18,8 +18,8 @@ describe("reception dashboard scope", () => {
     );
   });
 
-  it("shows guests and requests tabs only", () => {
-    assert.deepEqual(getVisibleManagerTabs("reception"), ["guests", "requests"]);
+  it("shows guests, live chat and requests tabs only", () => {
+    assert.deepEqual(getVisibleManagerTabs("reception"), ["guests", "live_chat", "requests"]);
     assert.equal(getDefaultManagerTab("reception"), "guests");
   });
 });

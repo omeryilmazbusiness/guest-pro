@@ -62,7 +62,7 @@ type GenerateContentRequest = Omit<
   "model"
 >;
 
-async function generateContentWithModelFallback(
+export async function generateContentWithModelFallback(
   request: GenerateContentRequest,
   lang?: string,
   opts?: { fastOnly?: boolean },

@@ -30,6 +30,7 @@ export interface ManagerDashboardHeaderProps {
   requestCount: number;
   feedbackCount: number;
   teamCount: number;
+  liveChatCount: number;
   canCreateGuest: boolean;
   onTabChange: (tab: ManagerDashboardTab) => void;
   onCreateGuest: () => void;
@@ -51,6 +52,7 @@ export function ManagerDashboardHeader({
   requestCount,
   feedbackCount,
   teamCount,
+  liveChatCount,
   canCreateGuest,
   onTabChange,
   onCreateGuest,
@@ -70,10 +72,11 @@ export function ManagerDashboardHeader({
         requestCount,
         feedbackCount,
         teamCount,
+        liveChatCount,
         canCreateGuest,
         isGeneralManager,
       }),
-    [t, scope, guestCount, roomCount, requestCount, feedbackCount, teamCount, canCreateGuest, isGeneralManager],
+    [t, scope, guestCount, roomCount, requestCount, feedbackCount, teamCount, liveChatCount, canCreateGuest, isGeneralManager],
   );
 
   const handleNavSelect = useCallback(

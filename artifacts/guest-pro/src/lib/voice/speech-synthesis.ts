@@ -36,8 +36,8 @@ import { cancelElevenLabsPlayback, playElevenLabsAudio } from "./elevenlabs-play
 import {
   fetchElevenLabsAudio,
   getCachedTtsStatus,
+  isPremiumTtsReady,
   refreshTtsStatus,
-  shouldTryPremiumTts,
 } from "./tts-api";
 import { VoiceDiagnosticsLogger } from "./diagnostics";
 
@@ -123,8 +123,9 @@ async function synthesizeWithFallback(
 
   cancelSpeech();
 
-  if (shouldTryPremiumTts()) {
-    await refreshTtsStatus(!getCachedTtsStatus());
+  await refreshTtsStatus(!getCachedTtsStatus());
+
+  if (isPremiumTtsReady()) {
     try {
       VoiceDiagnosticsLogger.log("tts:elevenlabs-request");
       const blob = await fetchElevenLabsAudio(clean, lang);

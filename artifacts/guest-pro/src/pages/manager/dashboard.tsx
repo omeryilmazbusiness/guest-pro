@@ -46,12 +46,10 @@ import {
   Settings,
 } from "lucide-react";
 import {
-  useListGuests,
   useLogout,
   useUpdateGuest,
   useDeleteGuest,
   useRenewGuestKey,
-  getListGuestsQueryKey,
   type Guest,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -75,6 +73,20 @@ import { GuestHandoffModal, type HandoffData } from "@/components/GuestHandoffMo
 import { getGuestPresences, type TrackingStatus } from "@/lib/tracking";
 import { computeTrackingSummary } from "@/lib/tracking-summary";
 import { listServiceRequests, type ServiceRequest } from "@/lib/service-requests";
+import { LiveChatTab } from "@/components/manager/LiveChatTab";
+import { LiveChatReceptionProvider } from "@/components/manager/LiveChatReceptionContext";
+import { LiveChatPopupsLayer } from "@/components/manager/LiveChatPopupsLayer";
+import { LiveChatOpenSessionBridge } from "@/components/manager/LiveChatOpenSessionBridge";
+import {
+  useLiveChatInboxBadgeQuery,
+} from "@/hooks/use-live-chat-inbox";
+import {
+  flattenGuestsPages,
+  useGuestsInfiniteQuery,
+  GUESTS_INFINITE_QUERY_KEY,
+} from "@/hooks/use-guests-infinite";
+import { useInfiniteScrollSentinel } from "@/hooks/use-infinite-scroll-sentinel";
+import { LiveChatEmergencyOverlay } from "@/components/manager/LiveChatEmergencyOverlay";
 import { isGuestFeedbackRequest } from "@/lib/guest-feedback";
 import { GuestsOverviewCard } from "@/components/manager/GuestsOverviewCard";
 import { ManagerOverviewCards } from "@/components/manager/ManagerOverviewCards";
@@ -212,13 +224,20 @@ export default function ManagerDashboard() {
   const canSeeFeedback = Boolean(staffScope?.canAccessTab("feedback"));
   const needsServiceRequests = canSeeRequests || canSeeFeedback;
 
-  // ── Data
-  const { data: guests, isLoading } = useListGuests({
-    query: {
-      queryKey: ["guests", "list"],
-      enabled: isAuthenticated && isStaffRole(user?.role) && needsGuestData,
-    },
+  // ── Data — guests paginated (50 per page, infinite scroll on guests tab)
+  const {
+    data: guestsPages,
+    isLoading: guestsLoading,
+    fetchNextPage: fetchNextGuestsPage,
+    hasNextPage: hasMoreGuests,
+    isFetchingNextPage: isFetchingMoreGuests,
+  } = useGuestsInfiniteQuery({
+    enabled: isAuthenticated && isStaffRole(user?.role) && needsGuestData,
   });
+
+  const guests = useMemo(() => flattenGuestsPages(guestsPages), [guestsPages]);
+  const guestsTotal = guestsPages?.pages[0]?.pagination?.total ?? guests.length;
+  const isLoading = guestsLoading;
 
   // ── Presence data (tracking) — refetch every 60 s while dashboard is open.
   const { data: presences, isFetching: presencesFetching } = useQuery({
@@ -228,6 +247,14 @@ export default function ManagerDashboard() {
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
+
+  const canAccessLiveChat = Boolean(
+    isAuthenticated && isStaffRole(user?.role) && staffScope?.canAccessTab("live_chat"),
+  );
+
+  const { data: liveChatBadge } = useLiveChatInboxBadgeQuery({ enabled: canAccessLiveChat });
+
+  const liveChatUnreadCount = liveChatBadge?.unreadCount ?? 0;
 
   const { data: serviceRequests } = useQuery<ServiceRequest[]>({
     queryKey: ["service-requests"],
@@ -249,7 +276,7 @@ export default function ManagerDashboard() {
 
   // Compute tracking summary — source of truth for the overview card.
   const trackingSummary = useMemo(
-    () => computeTrackingSummary(guests?.map((g) => g.id) ?? [], presenceMap),
+    () => computeTrackingSummary(guests.map((g) => g.id), presenceMap),
     [guests, presenceMap]
   );
 
@@ -268,7 +295,8 @@ export default function ManagerDashboard() {
       param === "feedback" ||
       param === "summary" ||
       param === "team" ||
-      param === "tasks"
+      param === "tasks" ||
+      param === "live_chat"
     ) {
       return param;
     }
@@ -402,15 +430,15 @@ export default function ManagerDashboard() {
 
   // ── Derived data (all from lib — no logic in page)
   const stats = useMemo(() => {
-    if (!guests) return { total: 0, newToday: 0, roomsOccupied: 0 };
+    if (!guests.length && !guestsTotal) return { total: 0, newToday: 0, roomsOccupied: 0 };
     const today = new Date().toDateString();
     const rooms = aggregateRooms(guests);
     return {
-      total: guests.length,
+      total: guestsTotal,
       newToday: guests.filter((g) => new Date(g.createdAt).toDateString() === today).length,
       roomsOccupied: rooms.filter((r) => r.isOccupied).length,
     };
-  }, [guests]);
+  }, [guests, guestsTotal]);
 
   const roomNumbers = useMemo(() => extractRoomNumbers(guests ?? []), [guests]);
 
@@ -432,9 +460,20 @@ export default function ManagerDashboard() {
   const roomHasFilters = roomSearch.length > 0;
 
   // ── Handlers
+  const loadMoreGuests = useCallback(() => {
+    if (hasMoreGuests && !isFetchingMoreGuests) void fetchNextGuestsPage();
+  }, [hasMoreGuests, isFetchingMoreGuests, fetchNextGuestsPage]);
+
+  const guestsScrollSentinelRef = useInfiniteScrollSentinel(loadMoreGuests, {
+    enabled: activeTab === "guests" && hasMoreGuests === true && !isFetchingMoreGuests,
+  });
+
   const invalidateGuests = useCallback(
-    () => queryClient.invalidateQueries({ queryKey: getListGuestsQueryKey() }),
-    [queryClient]
+    () =>
+      queryClient.invalidateQueries({
+        queryKey: [...GUESTS_INFINITE_QUERY_KEY],
+      }),
+    [queryClient],
   );
 
   const handleRefreshTracking = useCallback(
@@ -523,6 +562,7 @@ export default function ManagerDashboard() {
   if (!isAuthenticated || !isStaffRole(user?.role) || !staffScope) return null;
 
   return (
+    <LiveChatReceptionProvider>
     <div className="min-h-dvh bg-zinc-50/60" dir={dir}>
 
       {/* ── Sticky header (56px) ── */}
@@ -535,11 +575,12 @@ export default function ManagerDashboard() {
         onLocaleChange={setLocale}
         scope={staffScope.scope}
         isGeneralManager={staffScope.isGeneralManager}
-        guestCount={guests?.length ?? 0}
+        guestCount={guestsTotal}
         roomCount={allRooms.length}
         requestCount={openRequestCount}
         feedbackCount={openFeedbackCount}
         teamCount={staffInfo.active}
+        liveChatCount={liveChatUnreadCount}
         canCreateGuest={canCreate}
         onTabChange={setActiveTab}
         onCreateGuest={handleNavigateCreate}
@@ -643,11 +684,12 @@ export default function ManagerDashboard() {
           active={activeTab}
           onChange={setActiveTab}
           scope={staffScope.scope}
-          guestCount={guests?.length ?? 0}
+          guestCount={guestsTotal}
           roomCount={allRooms.length}
           requestCount={openRequestCount}
           feedbackCount={openFeedbackCount}
           teamCount={staffInfo.active}
+          liveChatCount={liveChatUnreadCount}
           t={t}
         />
 
@@ -671,12 +713,15 @@ export default function ManagerDashboard() {
             />
 
             {/* Count + clear */}
-            {!isLoading && guests && (guestHasFilters || guests.length > 0) && (
+            {!isLoading && (guestHasFilters || guestsTotal > 0) && (
               <div className="flex items-center justify-between px-1">
                 <p className="text-xs text-zinc-400 font-medium">
-                  {filteredGuests.length === guests.length
-                    ? tStaff(t.guestsNewestFirst, { n: guests.length })
-                    : tStaff(t.guestsFiltered, { n: filteredGuests.length, total: guests.length })}
+                  {filteredGuests.length === guests.length && !hasMoreGuests
+                    ? tStaff(t.guestsNewestFirst, { n: guestsTotal })
+                    : tStaff(t.guestsFiltered, {
+                        n: filteredGuests.length,
+                        total: guestHasFilters ? guests.length : guestsTotal,
+                      })}
                 </p>
                 {guestHasFilters && (
                   <button
@@ -699,7 +744,7 @@ export default function ManagerDashboard() {
               ) : filteredGuests.length === 0 ? (
                 <div className="text-center py-14 bg-white rounded-2xl border border-zinc-100">
                   <Users className="w-10 h-10 text-zinc-200 mx-auto mb-3" />
-                  {guests && guests.length > 0 ? (
+                  {guests.length > 0 ? (
                     <>
                       <p className="text-sm font-medium text-zinc-700 mb-1">{t.noMatches}</p>
                       <p className="text-xs text-zinc-400 mb-4">{t.tryDifferentSearch}</p>
@@ -742,6 +787,12 @@ export default function ManagerDashboard() {
                       trackingStatus={presenceMap.get(guest.id)}
                     />
                   ))}
+                  <div ref={guestsScrollSentinelRef} className="h-1" aria-hidden />
+                  {isFetchingMoreGuests && (
+                    <div className="flex justify-center py-3">
+                      <Loader2 className="h-5 w-5 animate-spin text-zinc-300" />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -806,6 +857,12 @@ export default function ManagerDashboard() {
         {/* ══════════════════════════════════
             REQUESTS TAB
         ══════════════════════════════════ */}
+        {activeTab === "live_chat" && staffScope.canAccessTab("live_chat") && (
+          <div className="animate-in fade-in duration-200">
+            <LiveChatTab />
+          </div>
+        )}
+
         {activeTab === "requests" && staffScope.canAccessTab("requests") && (
           <div className="animate-in fade-in duration-200">
             <StaffRequestsBoard presenceMap={presenceMap} />
@@ -929,6 +986,18 @@ export default function ManagerDashboard() {
         enabled={isAuthenticated && !!user}
       />
 
+      <LiveChatEmergencyOverlay
+        enabled={canAccessLiveChat}
+        onNavigateToLiveChat={() => setActiveTab("live_chat")}
+      />
+
+      {canAccessLiveChat && (
+        <>
+          <LiveChatOpenSessionBridge />
+          <LiveChatPopupsLayer />
+        </>
+      )}
+
       {/* ── Welcome-area alert banner — shows when anonymous guests call for help ── */}
       <WelcomeAreaAlertBanner enabled={isAuthenticated && !!user} />
 
@@ -943,5 +1012,6 @@ export default function ManagerDashboard() {
         t={t}
       />
     </div>
+    </LiveChatReceptionProvider>
   );
 }

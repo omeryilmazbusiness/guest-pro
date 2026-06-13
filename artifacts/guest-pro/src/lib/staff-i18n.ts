@@ -125,6 +125,7 @@ export interface StaffTranslations {
   tabGuests: string;
   tabRooms: string;
   tabRequests: string;
+  tabLiveChat: string;
   tabFeedback: string;
   tabSummary: string;
   tabTeam: string;
@@ -566,6 +567,30 @@ export interface StaffTranslations {
   careNoInsights: string;
   careNoInsightsHint: string;
   careRoomLabel: string;
+
+  liveChatTabTitle: string;
+  liveChatInboxEmpty: string;
+  liveChatInputPlaceholder: string;
+  liveChatEmergencyCode: string;
+  liveChatEmergencyTitle: string;
+  liveChatEmergencyBody: string;
+  liveChatEmergencyGoToChat: string;
+  liveChatEmergencyDismiss: string;
+  liveChatWarningCode: string;
+  liveChatWarningTitle: string;
+  liveChatWarningBody: string;
+  liveChatRoomLabel: string;
+  liveChatMinimize: string;
+  liveChatSendError: string;
+  liveChatClearLabel: string;
+  liveChatClearTitle: string;
+  liveChatClearMessage: string;
+  liveChatClearConfirm: string;
+  liveChatCleared: string;
+  liveChatGuestTyping: string;
+  liveChatDeleteSession: string;
+  liveChatDeleteError: string;
+  liveChatSessionDeleted: string;
 }
 
 // ── Dictionaries ──────────────────────────────────────────────────────────────
@@ -679,6 +704,7 @@ const en: StaffTranslations = {
   tabGuests: "Guests",
   tabRooms: "Rooms",
   tabRequests: "Requests",
+  tabLiveChat: "Live chat",
   tabFeedback: "Feedback",
   tabSummary: "Summary",
   tabTeam: "Employees",
@@ -1105,6 +1131,31 @@ const en: StaffTranslations = {
   careNoInsightsHint:
     "When guests fill in Care About Me, tap Refresh to analyze their notes and get 3 preparation rules for the kitchen.",
   careRoomLabel: "Room",
+
+  liveChatTabTitle: "Live chat inbox",
+  liveChatInboxEmpty: "No active guest chats",
+  liveChatInputPlaceholder: "Type a reply…",
+  liveChatEmergencyCode: "EMERGENCY",
+  liveChatEmergencyTitle: "Guest emergency alert",
+  liveChatEmergencyBody: "Room {room} — {name} sent an urgent message via live chat.",
+  liveChatEmergencyGoToChat: "Go to chat",
+  liveChatEmergencyDismiss: "Dismiss",
+  liveChatWarningCode: "WARNING",
+  liveChatWarningTitle: "Remember Me — guest not checked in",
+  liveChatWarningBody:
+    "Room {room} — {name} did not confirm their scheduled return. Please follow up.",
+  liveChatRoomLabel: "Room {room}",
+  liveChatMinimize: "Minimize",
+  liveChatSendError: "Message could not be sent",
+  liveChatClearLabel: "Clear chat",
+  liveChatClearTitle: "Clear conversation?",
+  liveChatClearMessage: "All messages in this chat will be removed.",
+  liveChatClearConfirm: "Clear",
+  liveChatCleared: "Conversation cleared.",
+  liveChatGuestTyping: "Guest is typing",
+  liveChatDeleteSession: "Delete chat",
+  liveChatDeleteError: "Could not delete chat",
+  liveChatSessionDeleted: "Chat removed from inbox",
 };
 
 const tr: StaffTranslations = {
@@ -1216,6 +1267,7 @@ const tr: StaffTranslations = {
   tabGuests: "Misafirler",
   tabRooms: "Odalar",
   tabRequests: "Talepler",
+  tabLiveChat: "Canlı sohbet",
   tabFeedback: "Geri Bildirim",
   tabSummary: "Özet",
   tabTeam: "Çalışanlar",
@@ -1642,6 +1694,31 @@ const tr: StaffTranslations = {
   careNoInsightsHint:
     "Misafirler Care About Me doldurduğunda Analiz Et'e basarak notları inceletip mutfak için 3 hazırlık kuralı alabilirsiniz.",
   careRoomLabel: "Oda",
+
+  liveChatTabTitle: "Canlı sohbet gelen kutusu",
+  liveChatInboxEmpty: "Aktif misafir sohbeti yok",
+  liveChatInputPlaceholder: "Yanıt yazın…",
+  liveChatEmergencyCode: "ACİL",
+  liveChatEmergencyTitle: "Misafir acil durum bildirimi",
+  liveChatEmergencyBody: "Oda {room} — {name} canlı sohbetten acil mesaj bıraktı.",
+  liveChatEmergencyGoToChat: "Sohbete git",
+  liveChatEmergencyDismiss: "Kapat",
+  liveChatWarningCode: "UYARI",
+  liveChatWarningTitle: "Remember Me — otelde değil",
+  liveChatWarningBody:
+    "Oda {room} — {name} belirlenen saatte dönüşünü onaylamadı. Lütfen kontrol edin.",
+  liveChatRoomLabel: "Oda {room}",
+  liveChatMinimize: "Küçült",
+  liveChatSendError: "Mesaj gönderilemedi",
+  liveChatClearLabel: "Sohbeti temizle",
+  liveChatClearTitle: "Konuşma silinsin mi?",
+  liveChatClearMessage: "Bu sohbetteki tüm mesajlar kaldırılacak.",
+  liveChatClearConfirm: "Temizle",
+  liveChatCleared: "Konuşma silindi.",
+  liveChatGuestTyping: "Misafir yazıyor",
+  liveChatDeleteSession: "Sohbeti sil",
+  liveChatDeleteError: "Sohbet silinemedi",
+  liveChatSessionDeleted: "Sohbet listeden kaldırıldı",
 };
 
 const ar: StaffTranslations = {
@@ -1753,6 +1830,7 @@ const ar: StaffTranslations = {
   tabGuests: "الضيوف",
   tabRooms: "الغرف",
   tabRequests: "الطلبات",
+  tabLiveChat: "دردشة مباشرة",
   tabFeedback: "التعليقات",
   tabSummary: "الملخص",
   tabTeam: "الموظفون",
@@ -2177,6 +2255,30 @@ const ar: StaffTranslations = {
   careNoInsights: "لا توجد توصيات بعد",
   careNoInsightsHint: "عندما يبدأ الضيوف في ملء Care About Me، سيقوم الذكاء الاصطناعي بتحليلها.",
   careRoomLabel: "غرفة",
+
+  liveChatTabTitle: "صندوق الدردشة المباشرة",
+  liveChatInboxEmpty: "لا توجد محادثات نشطة",
+  liveChatInputPlaceholder: "اكتب رداً…",
+  liveChatEmergencyCode: "طوارئ",
+  liveChatEmergencyTitle: "تنبيه طوارئ من ضيف",
+  liveChatEmergencyBody: "غرفة {room} — {name} أرسل رسالة عاجلة عبر الدردشة.",
+  liveChatEmergencyGoToChat: "اذهب إلى الدردشة",
+  liveChatEmergencyDismiss: "إغلاق",
+  liveChatWarningCode: "تحذير",
+  liveChatWarningTitle: "Remember Me — الضيف غير موجود",
+  liveChatWarningBody: "غرفة {room} — {name} لم يؤكد العودة في الوقت المحدد.",
+  liveChatRoomLabel: "غرفة {room}",
+  liveChatMinimize: "تصغير",
+  liveChatSendError: "تعذر إرسال الرسالة",
+  liveChatClearLabel: "مسح المحادثة",
+  liveChatClearTitle: "مسح المحادثة؟",
+  liveChatClearMessage: "سيتم حذف جميع الرسائل في هذه المحادثة.",
+  liveChatClearConfirm: "مسح",
+  liveChatCleared: "تم مسح المحادثة.",
+  liveChatGuestTyping: "الضيف يكتب",
+  liveChatDeleteSession: "Delete chat",
+  liveChatDeleteError: "Could not delete chat",
+  liveChatSessionDeleted: "Chat removed from inbox",
 };
 
 const DICT: Record<StaffLocale, StaffTranslations> = { en, tr, ar };
