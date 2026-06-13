@@ -11,7 +11,7 @@
     "push": "echo 'WARNING: push is for local dev only' && drizzle-kit push --config ./drizzle.config.ts",
     "push-force": "echo 'WARNING: push-force is for local dev only' && drizzle-kit push --force --config ./drizzle.config.ts",
     "generate": "drizzle-kit generate --config ./drizzle.config.ts",
-    "migrate": "drizzle-kit migrate --config ./drizzle.config.ts"
+    "migrate": "node ./scripts/validate-migration-journal.mjs && drizzle-kit migrate --config ./drizzle.config.ts"
   },
   "dependencies": {
     "drizzle-orm": "catalog:",

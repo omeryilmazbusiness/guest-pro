@@ -143,6 +143,13 @@
       "breakpoints": true
     },
     {
+      "idx": 20,
+      "version": "7",
+      "when": 1777497700000,
+      "tag": "0020_hotel_assistant_country_code",
+      "breakpoints": true
+    },
+    {
       "idx": 21,
       "version": "7",
       "when": 1777497800000,
@@ -164,10 +171,24 @@
       "breakpoints": true
     },
     {
+      "idx": 24,
+      "version": "7",
+      "when": 1777498100000,
+      "tag": "0024_live_chat_location_entry_track",
+      "breakpoints": true
+    },
+    {
       "idx": 25,
       "version": "7",
       "when": 1777498200000,
       "tag": "0025_live_chat_guest_ui_locale",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1777498300000,
+      "tag": "0026_live_chat_guest_translating",
       "breakpoints": true
     },
     {
