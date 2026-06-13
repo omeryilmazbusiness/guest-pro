@@ -55,6 +55,8 @@ export interface StaffTranslations {
   deactivateEmployee: string;
   reactivateEmployee: string;
   deleteEmployeePerm: string;
+  deleteEmployeeTitle: string;
+  deleteEmployeeDesc: string;
   resetPassword: string;
   resetPasswordFor: string;
   confirmPassword: string;
@@ -606,6 +608,8 @@ const en: StaffTranslations = {
   deactivateEmployee: "Deactivate",
   reactivateEmployee: "Reactivate",
   deleteEmployeePerm: "Delete permanently",
+  deleteEmployeeTitle: "Delete staff member?",
+  deleteEmployeeDesc: "{name} will be permanently removed. This cannot be undone.",
   resetPassword: "Reset password",
   resetPasswordFor: "Reset password for {name}",
   confirmPassword: "Confirm password",
@@ -1138,6 +1142,8 @@ const tr: StaffTranslations = {
   deactivateEmployee: "Pasifleştir",
   reactivateEmployee: "Yeniden aktifleştir",
   deleteEmployeePerm: "Kalıcı olarak sil",
+  deleteEmployeeTitle: "Çalışan silinsin mi?",
+  deleteEmployeeDesc: "{name} kalıcı olarak kaldırılacak. Bu işlem geri alınamaz.",
   resetPassword: "Şifreyi sıfırla",
   resetPasswordFor: "{name} için şifre sıfırla",
   confirmPassword: "Şifreyi onayla",
@@ -1670,6 +1676,8 @@ const ar: StaffTranslations = {
   deactivateEmployee: "إلغاء التفعيل",
   reactivateEmployee: "إعادة التفعيل",
   deleteEmployeePerm: "حذف نهائي",
+  deleteEmployeeTitle: "حذف الموظف؟",
+  deleteEmployeeDesc: "سيتم إزالة {name} نهائياً. لا يمكن التراجع عن ذلك.",
   resetPassword: "إعادة تعيين كلمة المرور",
   resetPasswordFor: "إعادة تعيين كلمة المرور لـ {name}",
   confirmPassword: "تأكيد كلمة المرور",

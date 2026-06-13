@@ -429,24 +429,22 @@ function EmployeeCard({
                     Deactivate
                   </DropdownMenuItem>
                 ) : (
-                  <>
-                    <DropdownMenuItem
-                      onClick={() => onReactivate(member)}
-                      className="flex items-center gap-2 rounded-lg cursor-pointer text-emerald-700 focus:text-emerald-800 focus:bg-emerald-50"
-                    >
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      Reactivate
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => setDeleteOpen(true)}
-                      className="flex items-center gap-2 rounded-lg cursor-pointer text-rose-600 focus:text-rose-700 focus:bg-rose-50"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Delete permanently
-                    </DropdownMenuItem>
-                  </>
+                  <DropdownMenuItem
+                    onClick={() => onReactivate(member)}
+                    className="flex items-center gap-2 rounded-lg cursor-pointer text-emerald-700 focus:text-emerald-800 focus:bg-emerald-50"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Reactivate
+                  </DropdownMenuItem>
                 )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setDeleteOpen(true)}
+                  className="flex items-center gap-2 rounded-lg cursor-pointer text-rose-600 focus:text-rose-700 focus:bg-rose-50"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete permanently
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
       </div>

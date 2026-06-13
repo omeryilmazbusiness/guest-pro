@@ -18,6 +18,7 @@ import { db, usersTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireStaffManagement, requireGeneralManager } from "../middlewares/requireAuth";
 import { hashPassword, generateSalt } from "../lib/auth";
+import { hardDeleteHotelUser } from "../lib/staff-user-delete";
 import {
   isValidDepartment,
   STAFF_DEPARTMENTS,
@@ -360,11 +361,6 @@ router.delete("/staff/:id", requireStaffManagement, async (req, res): Promise<vo
     return;
   }
 
-  if (isPermanent && !isGeneralManager(actor)) {
-    res.status(403).json({ error: "Only general managers may permanently delete staff" });
-    return;
-  }
-
   const [target] = await db
     .select({
       id: usersTable.id,
@@ -386,15 +382,11 @@ router.delete("/staff/:id", requireStaffManagement, async (req, res): Promise<vo
   }
 
   if (isPermanent) {
-    // Hard delete — removes the row permanently.
-    // Only allowed on inactive accounts to prevent accidental removal of active staff.
-    if (target.isActive) {
-      res.status(409).json({ error: "Deactivate the staff member before permanently deleting them" });
+    const deleted = await hardDeleteHotelUser(hotelId, id);
+    if (!deleted) {
+      res.status(404).json({ error: "Staff member not found" });
       return;
     }
-    await db
-      .delete(usersTable)
-      .where(and(eq(usersTable.id, id), eq(usersTable.hotelId, hotelId)));
 
     logger.info({ actorId: req.session!.userId, deletedId: id }, "Staff member permanently deleted");
     res.status(204).send();
@@ -663,15 +655,11 @@ router.delete(
     }
 
     if (isPermanent) {
-      if (target.isActive) {
-        res.status(409).json({
-          error: "Deactivate the department manager before permanently deleting them",
-        });
+      const deleted = await hardDeleteHotelUser(hotelId, id);
+      if (!deleted) {
+        res.status(404).json({ error: "Department manager not found" });
         return;
       }
-      await db
-        .delete(usersTable)
-        .where(and(eq(usersTable.id, id), eq(usersTable.hotelId, hotelId)));
 
       logger.info(
         { actorId: session.userId, deletedId: id },

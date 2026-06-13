@@ -8,8 +8,9 @@
     "build": "node ./build.mjs",
     "start": "DOTENV_CONFIG_PATH=../../.env node --import dotenv/config --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "tsx --test src/lib/chat-actions.unit.test.ts src/lib/session-policy.unit.test.ts src/lib/platform-auth/platform-login-lockout.unit.test.ts src/routes/routine-tasks.unit.test.ts src/lib/elevenlabs/quota-store.unit.test.ts src/lib/assistant-config/completion.unit.test.ts src/lib/assistant-config/prompt-block.unit.test.ts src/lib/assistant-config/city-context.unit.test.ts src/lib/hotel-setup/completion.unit.test.ts src/lib/guided-prompts.unit.test.ts",
+    "test": "tsx --test src/lib/chat-actions.unit.test.ts src/lib/session-policy.unit.test.ts src/lib/platform-auth/platform-login-lockout.unit.test.ts src/routes/routine-tasks.unit.test.ts src/lib/elevenlabs/quota-store.unit.test.ts src/lib/assistant-config/completion.unit.test.ts src/lib/assistant-config/prompt-block.unit.test.ts src/lib/assistant-config/city-context.unit.test.ts src/lib/hotel-setup/completion.unit.test.ts src/lib/guided-prompts.unit.test.ts src/lib/staff-user-delete.unit.test.ts",
     "hotel-setup:self-test": "node scripts/hotel-setup-self-test.mjs",
+    "staff-delete:self-test": "node scripts/staff-delete-self-test.mjs",
     "session:self-test": "node scripts/self-test-persistent-session.mjs"
   },
   "dependencies": {

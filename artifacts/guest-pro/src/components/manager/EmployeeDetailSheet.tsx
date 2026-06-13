@@ -2,6 +2,7 @@
  * EmployeeDetailSheet — centered employee detail popup (manager dashboard).
  */
 
+import { useState } from "react";
 import {
   Pencil,
   ShieldOff,
@@ -21,6 +22,16 @@ import {
   Calculator,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ManagerCenterSheet } from "@/components/manager/ManagerCenterSheet";
 import {
   staffDisplayName,
@@ -34,6 +45,7 @@ import {
   type StaffDepartment,
 } from "@/lib/staff";
 import type { StaffTranslations } from "@/lib/staff-i18n";
+import { tStaff } from "@/lib/staff-i18n";
 import { cn } from "@/lib/utils";
 
 const DEPT_ICONS: Record<StaffDepartment, React.FC<{ className?: string }>> = {
@@ -72,8 +84,10 @@ export function EmployeeDetailSheet({
   onResetPassword,
   t,
 }: EmployeeDetailSheetProps) {
+  const [deleteOpen, setDeleteOpen] = useState(false);
   if (!member) return null;
 
+  const displayName = staffDisplayName(member);
   const presence = resolveEmployeePresence(member);
   const dept = member.staffDepartment;
   const deptColours = dept ? DEPARTMENT_COLOURS[dept] : null;
@@ -201,33 +215,53 @@ export function EmployeeDetailSheet({
               {t.deactivateEmployee}
             </Button>
           ) : (
-            <>
-              <Button
-                variant="outline"
-                className="h-11 w-full justify-start gap-2.5 rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                onClick={() => {
-                  onClose();
-                  onReactivate(member);
-                }}
-              >
-                <ShieldCheck className="h-4 w-4" />
-                {t.reactivateEmployee}
-              </Button>
-              <Button
-                variant="outline"
-                className="h-11 w-full justify-start gap-2.5 rounded-xl border-red-200 text-red-600 hover:bg-red-50"
-                onClick={() => {
-                  onClose();
-                  onPermanentDelete(member);
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-                {t.deleteEmployeePerm}
-              </Button>
-            </>
+            <Button
+              variant="outline"
+              className="h-11 w-full justify-start gap-2.5 rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+              onClick={() => {
+                onClose();
+                onReactivate(member);
+              }}
+            >
+              <ShieldCheck className="h-4 w-4" />
+              {t.reactivateEmployee}
+            </Button>
           )}
+
+          <Button
+            variant="outline"
+            className="h-11 w-full justify-start gap-2.5 rounded-xl border-red-200 text-red-600 hover:bg-red-50"
+            onClick={() => setDeleteOpen(true)}
+          >
+            <Trash2 className="h-4 w-4" />
+            {t.deleteEmployeePerm}
+          </Button>
         </div>
       </div>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent className="max-w-sm rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.deleteEmployeeTitle}</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-500">
+              {tStaff(t.deleteEmployeeDesc, { name: displayName })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">{t.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setDeleteOpen(false);
+                onClose();
+                onPermanentDelete(member);
+              }}
+              className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white"
+            >
+              {t.deleteEmployeePerm}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </ManagerCenterSheet>
   );
 }

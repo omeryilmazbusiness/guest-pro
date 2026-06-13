@@ -134,24 +134,22 @@ function ManagerCard({
                 {t.deactivateEmployee}
               </DropdownMenuItem>
             ) : (
-              <>
-                <DropdownMenuItem
-                  onClick={() => onToggleActive(manager)}
-                  className="flex items-center gap-2 rounded-lg cursor-pointer text-emerald-700 focus:text-emerald-800 focus:bg-emerald-50"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  {t.reactivateEmployee}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setDeleteOpen(true)}
-                  className="flex items-center gap-2 rounded-lg cursor-pointer text-rose-600 focus:text-rose-700 focus:bg-rose-50"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  {t.deleteEmployeePerm}
-                </DropdownMenuItem>
-              </>
+              <DropdownMenuItem
+                onClick={() => onToggleActive(manager)}
+                className="flex items-center gap-2 rounded-lg cursor-pointer text-emerald-700 focus:text-emerald-800 focus:bg-emerald-50"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                {t.reactivateEmployee}
+              </DropdownMenuItem>
             )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => setDeleteOpen(true)}
+              className="flex items-center gap-2 rounded-lg cursor-pointer text-rose-600 focus:text-rose-700 focus:bg-rose-50"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              {t.deleteEmployeePerm}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
