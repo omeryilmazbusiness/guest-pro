@@ -8,6 +8,16 @@
 
 export type GeoPermission = PermissionState | "unsupported";
 
+export type GeolocationFailureReason =
+  | "unsupported"
+  | "denied"
+  | "unavailable"
+  | "timeout";
+
+export type PositionReadOutcome =
+  | { ok: true; position: PositionReadResult }
+  | { ok: false; reason: GeolocationFailureReason };
+
 /** True on desktop / non-touch devices where coarse location is preferred. */
 export function prefersCoarseLocation(): boolean {
   if (typeof window === "undefined") return true;
@@ -42,32 +52,55 @@ const DEFAULT_OPTIONS: PositionOptions = {
   maximumAge: 60_000,
 };
 
+function mapGeolocationError(error: GeolocationPositionError): GeolocationFailureReason {
+  switch (error.code) {
+    case error.PERMISSION_DENIED:
+      return "denied";
+    case error.TIMEOUT:
+      return "timeout";
+    case error.POSITION_UNAVAILABLE:
+    default:
+      return "unavailable";
+  }
+}
+
 /**
- * Single geolocation read. Resolves null on any failure — never throws.
+ * Single geolocation read. Never throws.
  * Tries low accuracy first on desktop; optional high-accuracy retry on mobile.
  */
 export function readPositionOnce(
   preferHighAccuracy = !prefersCoarseLocation(),
-): Promise<PositionReadResult | null> {
-  if (!isGeolocationSupported()) return Promise.resolve(null);
+): Promise<PositionReadOutcome> {
+  if (!isGeolocationSupported()) {
+    return Promise.resolve({ ok: false, reason: "unsupported" });
+  }
 
   const attempt = (enableHighAccuracy: boolean) =>
-    new Promise<PositionReadResult | null>((resolve) => {
+    new Promise<PositionReadOutcome>((resolve) => {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           resolve({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-            accuracy: pos.coords.accuracy,
+            ok: true,
+            position: {
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+              accuracy: pos.coords.accuracy,
+            },
           });
         },
-        () => resolve(null),
+        (err) => resolve({ ok: false, reason: mapGeolocationError(err) }),
         { ...DEFAULT_OPTIONS, enableHighAccuracy },
       );
     });
 
   return attempt(preferHighAccuracy).then((result) => {
-    if (result || !preferHighAccuracy) return result;
+    if (result.ok || !preferHighAccuracy) return result;
     return attempt(false);
   });
+}
+
+/** @deprecated Prefer readPositionOnce — kept for simple null-on-failure callers. */
+export async function readPositionOrNull(): Promise<PositionReadResult | null> {
+  const outcome = await readPositionOnce();
+  return outcome.ok ? outcome.position : null;
 }

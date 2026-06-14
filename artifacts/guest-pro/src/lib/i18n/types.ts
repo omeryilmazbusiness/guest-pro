@@ -451,6 +451,7 @@ export interface GuestTranslations {
   liveChatSendLocation: string;
   liveChatLocationSent: string;
   liveChatLocationError: string;
+  liveChatLocationUnavailable: string;
   liveChatLocationShared: string;
   liveChatOpenMap: string;
   liveChatUrgentAutoMessage: string;

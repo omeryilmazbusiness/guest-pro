@@ -429,12 +429,16 @@ export default function GuestLiveChatPage() {
     if (!sessionId || locationSending) return;
     setLocationSending(true);
     try {
-      const pos = await readPositionOnce();
-      if (!pos) {
-        toast.error(t.liveChatLocationError);
+      const outcome = await readPositionOnce();
+      if (!outcome.ok) {
+        if (outcome.reason === "denied" || outcome.reason === "unsupported") {
+          toast.error(t.liveChatLocationError);
+        } else {
+          toast.info(t.liveChatLocationUnavailable);
+        }
         return;
       }
-      const msg = await sendLiveChatGuestLocation(sessionId, pos, uiLocale);
+      const msg = await sendLiveChatGuestLocation(sessionId, outcome.position, uiLocale);
       seenIdsRef.current.add(msg.id);
       setMessages((prev) => appendLiveChatMessage(prev, msg));
       syncPollRef.current?.kick();
@@ -475,9 +479,9 @@ export default function GuestLiveChatPage() {
   const voiceActive = dictation.active;
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-[#F8F8F8]">
-      <header className="sticky top-0 z-20 shrink-0 border-b border-zinc-100/80 bg-white/95 backdrop-blur-sm">
-        <div className="mx-auto flex h-[64px] max-w-3xl items-center gap-3 px-4">
+    <div className="flex h-[100dvh] flex-col bg-[#F4F4F5]">
+      <header className="sticky top-0 z-20 shrink-0 border-b border-zinc-200/80 bg-white/95 pt-[env(safe-area-inset-top)] backdrop-blur-md">
+        <div className="mx-auto flex h-14 max-w-3xl items-center gap-2.5 px-3 sm:h-[60px] sm:gap-3 sm:px-4">
           <button
             type="button"
             onClick={() => {
@@ -486,17 +490,19 @@ export default function GuestLiveChatPage() {
               cancelSpeech();
               setLocation(ROUTES.guest);
             }}
-            className="-ms-1 flex h-9 w-9 items-center justify-center rounded-xl text-zinc-400 transition-all hover:bg-zinc-50 hover:text-zinc-700"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-zinc-500 transition-colors active:bg-zinc-100"
             aria-label={t.liveChatBack}
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
 
-          <HotelBrandMark variant="header" framed className="shrink-0" />
+          <HotelBrandMark variant="header" framed className="hidden shrink-0 sm:block" />
 
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[15px] font-medium text-zinc-900">{t.liveChatTitle}</p>
-            <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-400">
+            <p className="truncate text-[16px] font-semibold tracking-tight text-zinc-900">
+              {t.liveChatTitle}
+            </p>
+            <p className="truncate text-[12px] text-zinc-500">
               {tFmt(t.headerRoom, {
                 name: user.firstName ?? "",
                 room: user.roomNumber ?? "",
@@ -508,7 +514,7 @@ export default function GuestLiveChatPage() {
             <button
               type="button"
               onClick={() => setShowClearConfirm(true)}
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-zinc-400 transition-all hover:bg-zinc-50 hover:text-zinc-700"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-zinc-400 transition-colors active:bg-zinc-100"
               aria-label={t.clearChatLabel}
             >
               <Trash2 className="h-4 w-4" />
@@ -518,8 +524,8 @@ export default function GuestLiveChatPage() {
           <button
             type="button"
             className={cn(
-              "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors",
-              speaking ? "bg-rose-50 text-rose-600" : "bg-zinc-50 text-zinc-500",
+              "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors",
+              speaking ? "bg-rose-50 text-rose-600" : "bg-zinc-100 text-zinc-500",
             )}
             aria-label={speaking ? t.liveChatVoiceSpeaking : t.liveChatVoiceChat}
             title={speaking ? t.liveChatVoiceSpeaking : t.liveChatVoiceChat}
@@ -540,7 +546,7 @@ export default function GuestLiveChatPage() {
           </div>
         ) : (
           <>
-            <div className="flex-1 space-y-3 overflow-y-auto px-4 py-5 md:px-8">
+            <div className="flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-4 sm:px-4 md:px-8">
               {messages.map((msg) => (
                 <LiveChatMessageBubble
                   key={msg.id}
@@ -562,15 +568,15 @@ export default function GuestLiveChatPage() {
               <div ref={bottomRef} className="h-2" />
             </div>
 
-            <div className="sticky bottom-0 z-20 shrink-0 bg-[#F8F8F8]/95 backdrop-blur-sm">
-              <div className="px-4 pb-6 pt-2 md:px-8">
+            <div className="sticky bottom-0 z-20 shrink-0 border-t border-zinc-200/60 bg-white/95 backdrop-blur-md">
+              <div className="px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2.5 sm:px-4 md:px-8">
                 {isUrgentMode && (
-                  <div className="mb-3 grid grid-cols-2 gap-2">
+                  <div className="mb-2.5 grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => void handleEmergency()}
                       disabled={emergencySending || isEmergencyOnCooldown || !sessionId}
-                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-200/90 bg-rose-50/90 px-3 py-2.5 text-[13px] font-semibold text-rose-600 shadow-sm transition-all hover:bg-rose-100/90 active:scale-[0.98] disabled:opacity-60"
+                      className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-[13px] font-semibold text-rose-600 shadow-sm transition-all active:scale-[0.98] disabled:opacity-60"
                       aria-label={t.liveChatEmergencyBtn}
                     >
                       {emergencySending ? (
@@ -584,7 +590,7 @@ export default function GuestLiveChatPage() {
                       type="button"
                       onClick={() => void handleSendLocation()}
                       disabled={locationSending || !sessionId}
-                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-zinc-200/90 bg-white px-3 py-2.5 text-[13px] font-semibold text-zinc-700 shadow-sm transition-all hover:bg-zinc-50 active:scale-[0.98] disabled:opacity-60"
+                      className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white px-3 py-2.5 text-[13px] font-semibold text-zinc-700 shadow-sm transition-all active:scale-[0.98] disabled:opacity-60"
                       aria-label={t.liveChatSendLocation}
                     >
                       {locationSending ? (
@@ -599,10 +605,10 @@ export default function GuestLiveChatPage() {
 
                 <div
                   className={cn(
-                    "flex items-end gap-2 rounded-3xl border bg-white px-4 py-2.5 shadow-sm transition-all duration-200",
+                    "flex items-end gap-2 rounded-[22px] border bg-zinc-50 px-3 py-2 shadow-sm transition-all duration-200 sm:px-4 sm:py-2.5",
                     voiceActive
-                      ? "border-zinc-300 shadow-md"
-                      : "border-zinc-200 focus-within:border-zinc-300 focus-within:shadow-md",
+                      ? "border-zinc-300 bg-white shadow-md"
+                      : "border-zinc-200 focus-within:border-zinc-300 focus-within:bg-white focus-within:shadow-md",
                   )}
                 >
                   <textarea

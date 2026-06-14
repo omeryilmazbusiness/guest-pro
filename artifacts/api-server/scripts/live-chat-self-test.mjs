@@ -84,14 +84,22 @@ if (!route.includes("staff-messages") || !route.includes("staff-clear") || !rout
 }
 
 const guestPage = readGuest("src/pages/guest/live-chat.tsx");
+const geolocation = readGuest("src/lib/geolocation.ts");
 if (!guestPage.includes("MicrophoneButton") || !guestPage.includes("clearLiveChatSession")) {
   fail("guest UI", "missing mic dictation or clear chat");
 } else if (!guestPage.includes("uiLocale")) {
   fail("guest UI", "live chat must pass guest uiLocale for translation");
 } else if (!guestPage.includes("isUrgentMode &&")) {
   fail("guest UI", "location/emergency buttons must be urgent-mode only");
+} else if (
+  !geolocation.includes("PositionReadOutcome") ||
+  !geolocation.includes("unavailable") ||
+  !guestPage.includes("toast.info(t.liveChatLocationUnavailable)") ||
+  !guestPage.includes("safe-area-inset-bottom")
+) {
+  fail("guest UI", "location info toast or geolocation outcome types missing");
 } else {
-  pass("guest live chat with uiLocale + urgent-only action buttons");
+  pass("guest live chat mobile-first + location info vs error toasts");
 }
 
 const guestHome = readGuest("src/pages/guest/home.tsx");
@@ -126,15 +134,32 @@ if (!receptionPopup.includes("useStaffLocale") || !receptionPopup.includes("fetc
   fail("reception UI", "popup must fetch messages with staff locale");
 } else if (!receptionPopup.includes("liveChatGuestTyping")) {
   fail("reception UI", "popup must show guest typing during translation");
+} else if (
+  !receptionPopup.includes("h-[100dvh]") ||
+  !receptionPopup.includes("safe-area-inset-top")
+) {
+  fail("reception UI", "popup must be fullscreen mobile with safe areas");
 } else {
-  pass("reception popup passes staff locale + guest typing");
+  pass("reception popup mobile-first fullscreen + staff locale");
 }
 
 const receptionTab = readGuest("src/components/manager/LiveChatTab.tsx");
 if (!receptionTab.includes("openChat")) {
   fail("reception UI", "missing inbox open chat");
+} else if (
+  !receptionTab.includes("liveChatInboxSubtitle") ||
+  !receptionTab.includes("min-h-[76px]")
+) {
+  fail("reception UI", "inbox tab missing mobile-first card layout");
 } else {
-  pass("reception live chat tab");
+  pass("reception live chat tab mobile-first inbox");
+}
+
+const guestI18n = readGuest("src/lib/i18n/locales/en.ts");
+if (!guestI18n.includes("liveChatLocationUnavailable")) {
+  fail("i18n", "missing liveChatLocationUnavailable guest string");
+} else {
+  pass("guest location unavailable info string in i18n");
 }
 
 const scope = readGuest("src/lib/staff-scope.ts");

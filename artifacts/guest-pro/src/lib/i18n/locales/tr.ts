@@ -432,7 +432,9 @@ export const tr: GuestTranslations = {
     rememberMePromptCountdown: "Resepsiyona bildirim: {seconds} sn",
     liveChatSendLocation: "Konumumu gönder",
     liveChatLocationSent: "Konum resepsiyonla paylaşıldı",
-    liveChatLocationError: "Konum paylaşılamadı",
+    liveChatLocationError: "Konum izni verilmedi veya paylaşılamıyor",
+    liveChatLocationUnavailable:
+      "Konum henüz alınamadı. Birkaç saniye bekleyip tekrar deneyin.",
     liveChatLocationShared: "Paylaşılan konum",
     liveChatOpenMap: "Haritada aç",
     liveChatUrgentAutoMessage: "Acil desteğinize ihtiyacım var.",

@@ -432,7 +432,9 @@ export const en: GuestTranslations = {
     rememberMePromptCountdown: "Reception alert in {seconds}s",
     liveChatSendLocation: "Send my location",
     liveChatLocationSent: "Location shared with reception",
-    liveChatLocationError: "Could not share location",
+    liveChatLocationError: "Location permission denied or could not be shared",
+    liveChatLocationUnavailable:
+      "Location isn't ready yet. Wait a moment and try again.",
     liveChatLocationShared: "Shared location",
     liveChatOpenMap: "Open in Maps",
     liveChatUrgentAutoMessage: "I need urgent help.",

@@ -1,9 +1,9 @@
 /**
- * LiveChatPopup — bottom-right chat window for reception staff.
+ * LiveChatPopup — reception chat window (fullscreen mobile, docked desktop).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { X, Minus, Send, Loader2, Trash2 } from "lucide-react";
+import { X, ChevronDown, Send, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useStaffLocale } from "@/hooks/use-staff-locale";
 import { invalidateLiveChatInbox } from "@/hooks/use-live-chat-inbox";
@@ -167,54 +167,75 @@ export function LiveChatPopup({
       <button
         type="button"
         onClick={onMinimize}
-        className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-2.5 text-[12px] font-semibold text-white shadow-lg"
+        className="flex max-w-[calc(100vw-2rem)] items-center gap-2 rounded-full bg-zinc-900 px-4 py-3 text-[13px] font-semibold text-white shadow-lg active:scale-[0.98]"
       >
-        {roomNumber} · {guestName}
+        <span className="truncate">
+          {t.liveChatRoomLabel.replace("{room}", roomNumber)} · {guestName}
+        </span>
       </button>
     );
   }
 
   return (
     <>
-      <div className="flex h-[min(480px,70dvh)] w-[min(360px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50 px-3 py-2.5">
-          <div className="min-w-0">
-            <p className="truncate text-[13px] font-semibold text-zinc-900">
-              {t.liveChatRoomLabel.replace("{room}", roomNumber)}
-            </p>
-            <p className="truncate text-[11px] text-zinc-400">{guestName}</p>
-          </div>
-          <div className="flex shrink-0 items-center gap-1">
-            {messages.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setShowClearConfirm(true)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100"
-                aria-label={t.liveChatClearLabel}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            )}
+      <div
+        className={cn(
+          "flex flex-col overflow-hidden bg-[#F4F4F5]",
+          "h-[100dvh] w-full md:h-[min(520px,72dvh)] md:w-[min(380px,calc(100vw-2rem))]",
+          "md:rounded-2xl md:border md:border-zinc-200 md:shadow-2xl",
+        )}
+      >
+        <header className="shrink-0 border-b border-zinc-200/80 bg-white/95 pt-[env(safe-area-inset-top)] backdrop-blur-sm">
+          <div className="flex items-center gap-2 px-3 py-3 md:px-4">
             <button
               type="button"
               onClick={onMinimize}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-zinc-500 transition-colors active:bg-zinc-100 md:hidden"
               aria-label={t.liveChatMinimize}
             >
-              <Minus className="h-4 w-4" />
+              <ChevronDown className="h-5 w-5" />
             </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100"
-              aria-label={t.cancel}
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[16px] font-semibold text-zinc-900">
+                {t.liveChatRoomLabel.replace("{room}", roomNumber)}
+              </p>
+              <p className="truncate text-[12px] text-zinc-500">
+                {guestName}
+                {guestLanguage ? ` · ${guestLanguage.toUpperCase()}` : ""}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-0.5">
+              {messages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowClearConfirm(true)}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl text-zinc-400 transition-colors active:bg-zinc-100"
+                  aria-label={t.liveChatClearLabel}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onMinimize}
+                className="hidden h-10 w-10 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-zinc-100 md:flex"
+                aria-label={t.liveChatMinimize}
+              >
+                <ChevronDown className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex h-10 w-10 items-center justify-center rounded-xl text-zinc-400 transition-colors active:bg-zinc-100"
+                aria-label={t.cancel}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
-        </div>
+        </header>
 
-        <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3">
+        <div className="flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4">
           {messages.map((msg) => (
             <div key={msg.id} className="space-y-1">
               <LiveChatMessageBubble
@@ -231,11 +252,11 @@ export function LiveChatPopup({
             </div>
           ))}
           {guestTyping && <LiveChatTypingBubble label={t.liveChatGuestTyping} />}
-          <div ref={bottomRef} />
+          <div ref={bottomRef} className="h-1" />
         </div>
 
-        <div className="border-t border-zinc-100 p-2.5">
-          <div className="flex items-end gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-2 focus-within:border-zinc-300">
+        <div className="shrink-0 border-t border-zinc-200/80 bg-white/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-sm md:px-4">
+          <div className="flex items-end gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-2 shadow-sm focus-within:border-zinc-300 focus-within:bg-white">
             <textarea
               value={input}
               onChange={(e) => handleInputChange(e.target.value)}
@@ -247,18 +268,23 @@ export function LiveChatPopup({
               }}
               rows={1}
               placeholder={t.liveChatInputPlaceholder}
-              className="max-h-24 flex-1 resize-none bg-transparent text-[13px] outline-none"
+              className="max-h-28 min-h-[40px] flex-1 resize-none bg-transparent py-2 text-[15px] leading-relaxed text-zinc-900 outline-none"
             />
             <button
               type="button"
               onClick={() => void handleSend()}
               disabled={!input.trim() || sending}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-zinc-900 text-white disabled:opacity-40"
+              className={cn(
+                "mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all active:scale-[0.94]",
+                input.trim() && !sending
+                  ? "bg-zinc-900 text-white shadow-sm"
+                  : "bg-zinc-200 text-zinc-400",
+              )}
             >
               {sending ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Send className="h-3.5 w-3.5" />
+                <Send className="h-4 w-4" strokeWidth={2.25} />
               )}
             </button>
           </div>
@@ -266,16 +292,16 @@ export function LiveChatPopup({
       </div>
 
       {showClearConfirm && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-xs rounded-2xl bg-white p-5 shadow-2xl">
-            <h3 className="text-[15px] font-semibold text-zinc-900">{t.liveChatClearTitle}</h3>
-            <p className="mt-2 text-[13px] leading-relaxed text-zinc-500">{t.liveChatClearMessage}</p>
-            <div className="mt-4 flex gap-2">
+        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/35 p-4 backdrop-blur-sm md:items-center">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl">
+            <h3 className="text-[16px] font-semibold text-zinc-900">{t.liveChatClearTitle}</h3>
+            <p className="mt-2 text-[14px] leading-relaxed text-zinc-500">{t.liveChatClearMessage}</p>
+            <div className="mt-5 flex gap-2">
               <button
                 type="button"
                 onClick={() => setShowClearConfirm(false)}
                 disabled={isClearing}
-                className="flex-1 rounded-xl border border-zinc-200 py-2.5 text-[13px] font-medium text-zinc-600"
+                className="flex-1 rounded-xl border border-zinc-200 py-3 text-[14px] font-medium text-zinc-600"
               >
                 {t.cancel}
               </button>
@@ -283,7 +309,7 @@ export function LiveChatPopup({
                 type="button"
                 onClick={() => void handleClear()}
                 disabled={isClearing}
-                className="flex-1 rounded-xl bg-zinc-900 py-2.5 text-[13px] font-medium text-white disabled:opacity-50"
+                className="flex-1 rounded-xl bg-zinc-900 py-3 text-[14px] font-medium text-white disabled:opacity-50"
               >
                 {isClearing ? "…" : t.liveChatClearConfirm}
               </button>

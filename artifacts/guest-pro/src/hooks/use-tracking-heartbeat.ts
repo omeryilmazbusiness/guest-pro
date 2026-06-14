@@ -55,17 +55,17 @@ export function useTrackingHeartbeat() {
     }
 
     const position = await readPositionOnce();
-    if (!position) {
+    if (!position.ok) {
       dispatchHeartbeat(null, null, null);
       return;
     }
 
-    if (position.accuracy > MAX_ACCURACY_METERS) {
-      dispatchHeartbeat(null, null, position.accuracy);
+    if (position.position.accuracy > MAX_ACCURACY_METERS) {
+      dispatchHeartbeat(null, null, position.position.accuracy);
       return;
     }
 
-    dispatchHeartbeat(position.lat, position.lng, position.accuracy);
+    dispatchHeartbeat(position.position.lat, position.position.lng, position.position.accuracy);
   }, [dispatchHeartbeat]);
 
   useEffect(() => {

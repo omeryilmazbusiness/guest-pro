@@ -569,6 +569,7 @@ export interface StaffTranslations {
   careRoomLabel: string;
 
   liveChatTabTitle: string;
+  liveChatInboxSubtitle: string;
   liveChatInboxEmpty: string;
   liveChatInputPlaceholder: string;
   liveChatEmergencyCode: string;
@@ -1133,6 +1134,7 @@ const en: StaffTranslations = {
   careRoomLabel: "Room",
 
   liveChatTabTitle: "Live chat inbox",
+  liveChatInboxSubtitle: "Tap a conversation to reply",
   liveChatInboxEmpty: "No active guest chats",
   liveChatInputPlaceholder: "Type a reply…",
   liveChatEmergencyCode: "EMERGENCY",
@@ -1696,6 +1698,7 @@ const tr: StaffTranslations = {
   careRoomLabel: "Oda",
 
   liveChatTabTitle: "Canlı sohbet gelen kutusu",
+  liveChatInboxSubtitle: "Yanıtlamak için bir sohbete dokunun",
   liveChatInboxEmpty: "Aktif misafir sohbeti yok",
   liveChatInputPlaceholder: "Yanıt yazın…",
   liveChatEmergencyCode: "ACİL",
@@ -2257,6 +2260,7 @@ const ar: StaffTranslations = {
   careRoomLabel: "غرفة",
 
   liveChatTabTitle: "صندوق الدردشة المباشرة",
+  liveChatInboxSubtitle: "اضغط على محادثة للرد",
   liveChatInboxEmpty: "لا توجد محادثات نشطة",
   liveChatInputPlaceholder: "اكتب رداً…",
   liveChatEmergencyCode: "طوارئ",

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { readPositionOnce, type PositionReadResult } from "@/lib/geolocation";
+import { readPositionOnce } from "@/lib/geolocation";
 import type { PlaceCoords } from "@/lib/welcoming/types";
 
 export interface GuestLocationState {
@@ -20,13 +20,13 @@ export function useGuestLocation(enabled = true): GuestLocationState {
       return;
     }
     setLoading(true);
-    const result: PositionReadResult | null = await readPositionOnce();
-    if (result) {
-      setPosition({ lat: result.lat, lng: result.lng });
+    const result = await readPositionOnce();
+    if (result.ok) {
+      setPosition({ lat: result.position.lat, lng: result.position.lng });
       setDenied(false);
     } else {
       setPosition(null);
-      setDenied(true);
+      setDenied(result.reason === "denied");
     }
     setLoading(false);
   }, [enabled]);
