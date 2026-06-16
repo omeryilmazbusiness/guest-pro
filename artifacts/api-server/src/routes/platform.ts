@@ -32,10 +32,22 @@ import {
   clearHotelLogo,
   resolveHotelLogoUrl,
 } from "../lib/hotel-logo-storage";
+import { logger } from "../lib/logger";
 import {
   hotelAiBudgetService,
   hotelAiConfigRepository,
 } from "../lib/hotel-ai";
+
+function postgresErrorCode(err: unknown): string | undefined {
+  if (!err || typeof err !== "object") return undefined;
+  const direct = (err as { code?: string }).code;
+  if (direct) return direct;
+  const cause = (err as { cause?: unknown }).cause;
+  if (cause && typeof cause === "object") {
+    return (cause as { code?: string }).code;
+  }
+  return undefined;
+}
 
 const router: IRouter = Router();
 
@@ -438,14 +450,17 @@ async function handleDeleteHotel(
       res.status(status).json({ error: err.message, code: err.code });
       return;
     }
-    const pgCode = (err as { code?: string })?.code;
+    const pgCode = postgresErrorCode(err);
     if (pgCode === "23503") {
       res.status(409).json({
         error: "Could not delete hotel because related data still exists. Contact support.",
       });
       return;
     }
-    throw err;
+    logger.error({ err, hotelId }, "platform_delete_hotel_failed");
+    res.status(500).json({
+      error: "Hotel deletion failed on the server. Try again after deploy or contact support.",
+    });
   }
 }
 

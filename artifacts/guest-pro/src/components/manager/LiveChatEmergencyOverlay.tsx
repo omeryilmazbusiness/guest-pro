@@ -116,8 +116,8 @@ export function LiveChatEmergencyOverlay({
   };
 
   const goToChat = async (event: LiveChatEmergencyEvent) => {
-    onNavigateToLiveChat();
     dispatchLiveChatOpenSession(event);
+    onNavigateToLiveChat();
     await dismiss(event);
   };
 

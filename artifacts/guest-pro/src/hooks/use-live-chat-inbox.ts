@@ -60,7 +60,7 @@ export function useLiveChatInboxBadgeQuery(options?: { enabled?: boolean }) {
 
   return useQuery({
     queryKey: [...liveChatInboxQueryKey(locale), "badge"] as const,
-    queryFn: ({ signal }) => fetchLiveChatInbox(locale, { page: 1, limit: 1 }, signal),
+    queryFn: ({ signal }) => fetchLiveChatInbox(locale, { page: 1, limit: 20 }, signal),
     enabled,
     ...liveChatInboxQueryOptions,
     refetchInterval: (query) =>
@@ -68,6 +68,7 @@ export function useLiveChatInboxBadgeQuery(options?: { enabled?: boolean }) {
     select: (data) => ({
       unreadCount: data.unreadCount ?? countLiveChatUnread(data.items),
       pendingEmergencies: data.pendingEmergencies,
+      items: data.items,
     }),
   });
 }

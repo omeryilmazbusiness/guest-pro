@@ -87,6 +87,7 @@ import {
 } from "@/hooks/use-guests-infinite";
 import { useInfiniteScrollSentinel } from "@/hooks/use-infinite-scroll-sentinel";
 import { LiveChatEmergencyOverlay } from "@/components/manager/LiveChatEmergencyOverlay";
+import { LiveChatNewMessageAlert } from "@/components/manager/LiveChatNewMessageAlert";
 import { isGuestFeedbackRequest } from "@/lib/guest-feedback";
 import { GuestsOverviewCard } from "@/components/manager/GuestsOverviewCard";
 import { ManagerOverviewCards } from "@/components/manager/ManagerOverviewCards";
@@ -990,6 +991,8 @@ export default function ManagerDashboard() {
         enabled={canAccessLiveChat}
         onNavigateToLiveChat={() => setActiveTab("live_chat")}
       />
+
+      <LiveChatNewMessageAlert enabled={canAccessLiveChat} />
 
       {canAccessLiveChat && (
         <>

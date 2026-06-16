@@ -23,6 +23,18 @@ import {
   restaurantMenuItemsTable,
   restaurantStockItemsTable,
   restaurantCareInsightsTable,
+  liveChatSessionsTable,
+  liveChatMessagesTable,
+  liveChatEmergencyEventsTable,
+  guestEntryTrackSchedulesTable,
+  routineTasksTable,
+  hotelWifiNetworksTable,
+  hotelNearbyPlacesTable,
+  hotelNearbySettingsTable,
+  hotelAssistantConfigsTable,
+  dailyTaskInsightsTable,
+  hotelAiConfigsTable,
+  hotelAiUsageTable,
 } from "@workspace/db";
 import { eq, inArray } from "drizzle-orm";
 import { hashPassword } from "./auth";
@@ -226,13 +238,32 @@ export async function deleteHotelPermanently(hotelId: number, confirmSlug: strin
   await deleteHotelLogoFile(hotelId);
 
   await db.transaction(async (tx) => {
-    const sessionRows = await tx
+    const liveChatSessionRows = await tx
+      .select({ id: liveChatSessionsTable.id })
+      .from(liveChatSessionsTable)
+      .where(eq(liveChatSessionsTable.hotelId, hotelId));
+    const liveChatSessionIds = liveChatSessionRows.map((r) => r.id);
+    if (liveChatSessionIds.length) {
+      await tx
+        .delete(liveChatEmergencyEventsTable)
+        .where(inArray(liveChatEmergencyEventsTable.sessionId, liveChatSessionIds));
+      await tx
+        .delete(liveChatMessagesTable)
+        .where(inArray(liveChatMessagesTable.sessionId, liveChatSessionIds));
+    }
+    await tx
+      .delete(liveChatEmergencyEventsTable)
+      .where(eq(liveChatEmergencyEventsTable.hotelId, hotelId));
+    await tx.delete(guestEntryTrackSchedulesTable).where(eq(guestEntryTrackSchedulesTable.hotelId, hotelId));
+    await tx.delete(liveChatSessionsTable).where(eq(liveChatSessionsTable.hotelId, hotelId));
+
+    const aiChatSessionRows = await tx
       .select({ id: chatSessionsTable.id })
       .from(chatSessionsTable)
       .where(eq(chatSessionsTable.hotelId, hotelId));
-    const sessionIds = sessionRows.map((r) => r.id);
-    if (sessionIds.length) {
-      await tx.delete(messagesTable).where(inArray(messagesTable.sessionId, sessionIds));
+    const aiChatSessionIds = aiChatSessionRows.map((r) => r.id);
+    if (aiChatSessionIds.length) {
+      await tx.delete(messagesTable).where(inArray(messagesTable.sessionId, aiChatSessionIds));
     }
 
     await tx.delete(guestFolioEntriesTable).where(eq(guestFolioEntriesTable.hotelId, hotelId));
@@ -255,12 +286,20 @@ export async function deleteHotelPermanently(hotelId: number, confirmSlug: strin
     await tx.delete(welcomeAlertsTable).where(eq(welcomeAlertsTable.hotelId, hotelId));
     await tx.delete(quickActionsTable).where(eq(quickActionsTable.hotelId, hotelId));
     await tx.delete(staffTasksTable).where(eq(staffTasksTable.hotelId, hotelId));
+    await tx.delete(routineTasksTable).where(eq(routineTasksTable.hotelId, hotelId));
     await tx.delete(restaurantCareInsightsTable).where(eq(restaurantCareInsightsTable.hotelId, hotelId));
     await tx.delete(restaurantStockItemsTable).where(eq(restaurantStockItemsTable.hotelId, hotelId));
     await tx.delete(restaurantMenuItemsTable).where(eq(restaurantMenuItemsTable.hotelId, hotelId));
     await tx.delete(hotelTrackingNetworksTable).where(eq(hotelTrackingNetworksTable.hotelId, hotelId));
     await tx.delete(hotelTrackingConfigsTable).where(eq(hotelTrackingConfigsTable.hotelId, hotelId));
     await tx.delete(dailySummariesTable).where(eq(dailySummariesTable.hotelId, hotelId));
+    await tx.delete(dailyTaskInsightsTable).where(eq(dailyTaskInsightsTable.hotelId, hotelId));
+    await tx.delete(hotelNearbyPlacesTable).where(eq(hotelNearbyPlacesTable.hotelId, hotelId));
+    await tx.delete(hotelNearbySettingsTable).where(eq(hotelNearbySettingsTable.hotelId, hotelId));
+    await tx.delete(hotelAssistantConfigsTable).where(eq(hotelAssistantConfigsTable.hotelId, hotelId));
+    await tx.delete(hotelAiUsageTable).where(eq(hotelAiUsageTable.hotelId, hotelId));
+    await tx.delete(hotelAiConfigsTable).where(eq(hotelAiConfigsTable.hotelId, hotelId));
+    await tx.delete(hotelWifiNetworksTable).where(eq(hotelWifiNetworksTable.hotelId, hotelId));
     await tx.delete(auditLogsTable).where(eq(auditLogsTable.hotelId, hotelId));
     await tx.delete(usersTable).where(eq(usersTable.hotelId, hotelId));
     await tx.delete(hotelBrandingTable).where(eq(hotelBrandingTable.hotelId, hotelId));

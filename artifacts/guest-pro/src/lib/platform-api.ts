@@ -74,7 +74,8 @@ async function platformFetch<T>(
     }
     if (res.status >= 500) {
       throw new Error(
-        "API server is unavailable. Stop pnpm dev (Ctrl+C) and start it again from the project root.",
+        payload.error ??
+          "The server could not complete this request. Try again in a moment or check Railway logs.",
       );
     }
     throw new Error(`Request failed (${res.status})`);
