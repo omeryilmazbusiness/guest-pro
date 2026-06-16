@@ -10,10 +10,23 @@ function errorMessage(err: unknown): string {
 export async function initializeDatabase(): Promise<boolean> {
   const { runMigrations } = await import("@workspace/db");
   const { ensureLogosDirectory } = await import("./hotel-logo-storage");
+  const { getMenuItemsDir, getUploadsRoot } = await import("./uploads-path");
+  const fs = await import("node:fs/promises");
 
   logger.info("Running database migrations...");
   await runMigrations();
+  const uploadsRoot = getUploadsRoot();
   await ensureLogosDirectory();
+  await fs.mkdir(getMenuItemsDir(), { recursive: true });
+  if (env.NODE_ENV === "production" && !process.env.RAILWAY_VOLUME_MOUNT_PATH?.trim()) {
+    logger.warn(
+      { uploadsRoot },
+      "No Railway volume mounted for uploads — logos and menu images are lost on every redeploy. " +
+        "Add a volume with mount path /app/uploads in the Railway dashboard.",
+    );
+  } else {
+    logger.info({ uploadsRoot }, "Upload storage ready");
+  }
   logger.info("Migrations complete");
   return true;
 }

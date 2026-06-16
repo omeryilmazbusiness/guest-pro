@@ -52,6 +52,9 @@ COPY --from=builder /app/lib ./lib
 
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV UPLOADS_DIR=/app/uploads
+
+RUN mkdir -p /app/uploads/hotels /app/uploads/menu-items
 
 EXPOSE 3000
 

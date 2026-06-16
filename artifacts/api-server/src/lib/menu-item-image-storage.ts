@@ -1,11 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { db, restaurantMenuItemsTable } from "@workspace/db";
 import { and, eq } from "drizzle-orm";
+import { getMenuItemsDir } from "./uploads-path";
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
-export const MENU_ITEMS_DIR = path.join(repoRoot, "uploads", "menu-items");
+export const MENU_ITEMS_DIR = getMenuItemsDir();
 
 export function menuItemImageFileName(itemId: number): string {
   return `item-${itemId}.jpg`;

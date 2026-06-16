@@ -1,11 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { db, hotelBrandingTable, hotelsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { getHotelLogosDir } from "./uploads-path";
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
-export const HOTEL_LOGOS_DIR = path.join(repoRoot, "uploads", "hotels");
+export const HOTEL_LOGOS_DIR = getHotelLogosDir();
 
 export function hotelLogoFileName(hotelId: number): string {
   return `hotel-${hotelId}.jpg`;
